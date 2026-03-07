@@ -5,6 +5,7 @@ CascadeProjects is a multi-project local workspace. Each major subdirectory is a
 - **AI / agents**: See [CLAUDE.md](CLAUDE.md) and [AGENTS.md](AGENTS.md) for workspace guidance, project-specific commands, and coding rules.
 - **Repo and git**: See [docs/GIT_REPO.md](docs/GIT_REPO.md) for branch conventions, nested repo handling, line-ending policy, and remote setup.
 - **Data contracts**: See [docs/DATA_CONTRACTS.md](docs/DATA_CONTRACTS.md) for shared audit and snapshot contracts.
+- **Contributing**: [CONTRIBUTING.md](CONTRIBUTING.md) · **Changelog**: [CHANGELOG.md](CHANGELOG.md) · **Security**: [SECURITY.md](SECURITY.md) · **Docs index**: [docs/README.md](docs/README.md).
 
 ## Workspace overview
 
