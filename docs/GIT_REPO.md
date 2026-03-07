@@ -36,6 +36,15 @@ Some directories (e.g. `GRID-main/`, `mcp-tool-experiment/`) contain their own `
 - `.gitattributes` at the repo root enforces consistent line endings (LF in repo; CRLF for `*.cmd`/`*.bat` on checkout where applicable).
 - Binary files (e.g. images, fonts) are marked so git does not alter them.
 
+## Staging and push workflow (best practices)
+
+1. **Check state** — Run `git status` and `git diff` to see what changed.
+2. **Stage selectively** — Use `git add <file>` or `git add -p` for partial staging. Stage only what belongs in one logical commit; keep commits atomic (one intention per commit).
+3. **Commit** — Use a clear, imperative message (e.g. `feat: add X`, `chore: update Y`). Avoid mixing unrelated changes in a single commit.
+4. **Push** — With upstream set: `git push`. First time: `git push -u origin main`. Ensures the remote has your commits and keeps branch tracking in sync.
+
+Root repo tip: Nested repos (e.g. `GRID-main`, `mcp-tool-experiment`) show as “modified” when their checked-out commit or working tree differs. To record updated refs only, stage those paths and commit; to ignore their state, leave them unstaged.
+
 ## Ignored paths
 
 See root `.gitignore`. It excludes dependencies (`node_modules/`, `.venv/`, etc.), build output, editor/IDE folders, secrets (`.env*`), and operational data (e.g. `*.ndjson` audit logs). Per-project ignores may exist inside subdirectories.
