@@ -1,0 +1,474 @@
+{
+  "contract_id": "c-receiving-agent-v1.1-2026",
+  "contract_version": "1.1.0",
+  "agent_role": "receiver",
+
+  "contract_expiry": {
+    "valid_until": "2027-01-01",
+    "rotation_reminder_days_before": 14
+  },
+
+  "partition": {
+    "label": "C:\\",
+    "root_path": "C:\\Users\\USER\\cascadeprojects",
+    "purpose": "deployment_target",
+    "staging_path": "C:\\Users\\USER\\cascadeprojects\\gate\\incoming"
+  },
+
+  "cross_partition_validation": {
+    "trusted_source_partitions": ["E:\\"],
+    "trusted_target_partitions": ["C:\\Users\\USER\\cascadeprojects"],
+    "reject_on_unknown_source": true,
+    "reject_on_unknown_target": true
+  },
+
+  "security_primitives": {
+    "user_fingerprint": {
+      "algorithm": "HMAC-SHA256",
+      "key_source": "windows_credential_manager",
+      "key_name": "TransitionGate",
+      "binding_factors": ["machine_fingerprint", "partition_label"]
+    },
+    "machine_fingerprint": {
+      "algorithm": "SHA-256",
+      "attributes": [
+        "node_name",
+        "platform_system",
+        "platform_machine",
+        "username"
+      ]
+    },
+    "nonce": {
+      "format": "uuid4_hex",
+      "registry_path": "C:\\Users\\USER\\cascadeprojects\\gate\\.nonce_registry.json",
+      "single_use": true,
+      "burn_on_verify": true
+    },
+    "payload_hash": {
+      "algorithm": "SHA-256",
+      "serialization": "canonical_json"
+    },
+    "envelope_expiry": {
+      "max_age_seconds": 600
+    },
+    "envelope_field_strictness": {
+      "required_fields": [
+        "envelope_id",
+        "payload",
+        "payload_hash",
+        "nonce",
+        "timestamp",
+        "user_fingerprint",
+        "machine_fingerprint",
+        "scope",
+        "source_partition",
+        "target_partition",
+        "tests_passed",
+        "lint_passed"
+      ],
+      "reject_on_unknown_fields": false
+    }
+  },
+
+  "pipeline": {
+    "description": "9-step verification pipeline: validate envelope integrity, verify identity, enforce scope, burn nonce, audit.",
+    "fail_mode": "fail_closed",
+    "steps": [
+      {
+        "step_number": 1,
+        "name": "envelope_exists",
+        "description": "Check that a sealed envelope JSON file exists in gate/incoming/ and can be parsed. Verify all required_fields are present. Verify source_partition is in trusted_source_partitions.",
+        "command": "python -c \"from boundaries.transition_gate import TransitionEnvelope; e = TransitionEnvelope.from_file('gate/incoming/envelope_*.json'); print('OK')\"",
+        "expected_output": "Envelope loaded with all required fields present and source_partition trusted.",
+        "on_failure": "reject_envelope",
+        "timeout_seconds": 10
+      },
+      {
+        "step_number": 2,
+        "name": "payload_integrity",
+        "description": "Recompute SHA-256 of the payload using canonical JSON serialization (sorted keys, no extra whitespace). Compare against envelope.payload_hash using timing-safe hmac.compare_digest.",
+        "command": null,
+        "expected_output": "Recomputed hash matches envelope.payload_hash.",
+        "on_failure": "reject_envelope",
+        "timeout_seconds": 10
+      },
+      {
+        "step_number": 3,
+        "name": "fingerprint_match",
+        "description": "Recompute user fingerprint using the shared secret (from Windows Credential Manager, key_name=TransitionGate) and the machine_fingerprint embedded in the envelope. Compare with hmac.compare_digest (timing-safe). NEVER log the secret.",
+        "command": null,
+        "expected_output": "User fingerprint matches (timing-safe comparison).",
+        "on_failure": "reject_envelope",
+        "timeout_seconds": 10
+      },
+      {
+        "step_number": 4,
+        "name": "nonce_valid",
+        "description": "Check that the nonce exists in the nonce registry at registry_path, has not been burned, and has not expired (age < max_age_seconds). Mark as pending-burn only — actual burn happens in step 9 after all checks pass.",
+        "command": null,
+        "expected_output": "Nonce is valid, unburned, and within max_age_seconds.",
+        "on_failure": "reject_envelope",
+        "timeout_seconds": 5
+      },
+      {
+        "step_number": 5,
+        "name": "timestamp_fresh",
+        "description": "Verify that the envelope's timestamp is within max_age_seconds (600s) of current time. Reject stale envelopes to prevent delayed replay attacks.",
+        "command": null,
+        "expected_output": "Envelope age < 600 seconds.",
+        "on_failure": "reject_envelope",
+        "timeout_seconds": 5
+      },
+      {
+        "step_number": 6,
+        "name": "tests_verified",
+        "description": "Verify that the source reports tests_passed=true in the envelope. Lint check: require lint_passed=true only if require_lint is enabled in GateKeeper config. These reflect source-side quality gate execution.",
+        "command": null,
+        "expected_output": "tests_passed=true (and lint_passed=true if require_lint is configured).",
+        "on_failure": "reject_envelope",
+        "timeout_seconds": 5
+      },
+      {
+        "step_number": 7,
+        "name": "scope_present",
+        "description": "Verify that the envelope contains a non-empty scope declaration with at least one permission. All permissions must be within known_permissions. Any unknown permission causes rejection.",
+        "command": null,
+        "expected_output": "Scope declaration present with recognized permissions only.",
+        "on_failure": "reject_envelope",
+        "timeout_seconds": 5
+      },
+      {
+        "step_number": 8,
+        "name": "deploy_within_scope",
+        "description": "Verify that the requested_action (e.g. deploy, run_tests, start_server) is listed in the envelope's scope.permissions. Reject any action not explicitly granted. Unknown permissions are always rejected regardless of scope.",
+        "command": null,
+        "expected_output": "Requested action is within the declared scope permissions.",
+        "on_failure": "reject_envelope",
+        "timeout_seconds": 5
+      },
+      {
+        "step_number": 9,
+        "name": "audit_log",
+        "description": "Burn the nonce (mark as used in nonce registry, persist to disk). Append a verification result entry to gate/audit.ndjson: envelope_id, timestamp, status, reason, step results, duration_ms, nonce_burned=true. Feed event to Overwatch if integration is enabled.",
+        "command": null,
+        "expected_output": "Nonce burned. Audit entry appended. Overwatch event emitted.",
+        "on_failure": "log_and_continue",
+        "timeout_seconds": 10
+      }
+    ]
+  },
+
+  "dry_run_policy": {
+    "permitted": [
+      "validate_envelope_parse",
+      "validate_payload_integrity",
+      "validate_fingerprint",
+      "validate_nonce_exists",
+      "validate_timestamp",
+      "log_dry_run_event"
+    ],
+    "forbidden": [
+      "burn_nonce",
+      "write_gate_audit_entry",
+      "deploy",
+      "start_server",
+      "write_results"
+    ],
+    "nonce_behavior": "validate_only",
+    "audit_behavior": "no_audit"
+  },
+
+  "secret_rotation_sop": {
+    "rotation_frequency_days": 90,
+    "rollback_window_hours": 2,
+    "steps": [
+      "1. Coordinate with E: operator — rotation must happen on both sides within rollback_window_hours",
+      "2. Receive new secret out-of-band from E: operator (never in an envelope)",
+      "3. Update Windows Credential Manager: cmdkey /add:TransitionGate /user:USER /pass:<new_secret>",
+      "4. Confirm readiness to E: operator",
+      "5. E: operator runs dry-run seal with new secret",
+      "6. Verify dry-run envelope passes GateKeeper.verify() with dry_run=True",
+      "7. If verification fails: signal E: operator to revert within rollback_window_hours",
+      "8. Log rotation event to gate/audit.ndjson with timestamp and operator"
+    ],
+    "emergency_revocation": "Delete the credential: 'cmdkey /delete:TransitionGate'. All subsequent verifications will fail fingerprint_match. Notify E: operator immediately. Do not re-issue until compromise is assessed."
+  },
+
+  "never_rules": [
+    {
+      "id": "NR-R01",
+      "rule": "Never accept an envelope whose payload_hash does not match the recomputed SHA-256. Any mismatch means the payload was tampered with after sealing.",
+      "severity": "critical",
+      "enforcement": "automated"
+    },
+    {
+      "id": "NR-R02",
+      "rule": "Never accept an envelope whose user_fingerprint does not match the recomputed HMAC-SHA256. A mismatch means the secret or machine identity differs.",
+      "severity": "critical",
+      "enforcement": "automated"
+    },
+    {
+      "id": "NR-R03",
+      "rule": "Never accept a replayed nonce. Once a nonce is burned, any subsequent envelope presenting the same nonce must be immediately rejected.",
+      "severity": "critical",
+      "enforcement": "automated"
+    },
+    {
+      "id": "NR-R04",
+      "rule": "Never accept an envelope older than max_age_seconds (600s). Stale envelopes are a replay risk regardless of nonce status.",
+      "severity": "high",
+      "enforcement": "automated"
+    },
+    {
+      "id": "NR-R05",
+      "rule": "Never execute an action outside the envelope's declared scope.permissions. If scope says read_only, never deploy, start servers, or write results.",
+      "severity": "critical",
+      "enforcement": "automated"
+    },
+    {
+      "id": "NR-R06",
+      "rule": "Never store or log the user_secret. Used only transiently for HMAC recomputation. Must never persist in logs, audit entries, config, or environment.",
+      "severity": "critical",
+      "enforcement": "both"
+    },
+    {
+      "id": "NR-R07",
+      "rule": "Never skip the audit_log step, even on rejection. Every verification attempt must produce an append-only NDJSON audit entry for forensic review.",
+      "severity": "high",
+      "enforcement": "automated"
+    },
+    {
+      "id": "NR-R08",
+      "rule": "Never use string equality (==) for fingerprint or hash comparison. Always use hmac.compare_digest to prevent timing side-channel attacks.",
+      "severity": "critical",
+      "enforcement": "automated"
+    },
+    {
+      "id": "NR-R09",
+      "rule": "Never accept an envelope with tests_passed=false when require_tests is enabled in GateKeeper. The quality gate is non-negotiable.",
+      "severity": "high",
+      "enforcement": "automated"
+    },
+    {
+      "id": "NR-R10",
+      "rule": "Never accept an envelope from a source_partition not in trusted_source_partitions. Only E:\\ is a trusted source.",
+      "severity": "high",
+      "enforcement": "automated"
+    },
+    {
+      "id": "NR-R11",
+      "rule": "Never allow fail-open behavior. If any verification step encounters an unexpected exception, reject the entire envelope. Ambiguity is treated as hostile.",
+      "severity": "critical",
+      "enforcement": "automated"
+    },
+    {
+      "id": "NR-R12",
+      "rule": "Never modify the envelope payload before or during verification. The pipeline operates on an immutable snapshot.",
+      "severity": "critical",
+      "enforcement": "automated"
+    },
+    {
+      "id": "NR-R13",
+      "rule": "Never burn a nonce before all 8 prior verification steps pass. Nonce burn happens exclusively in step 9 on a full PASS verdict.",
+      "severity": "critical",
+      "enforcement": "automated"
+    },
+    {
+      "id": "NR-R14",
+      "rule": "Never operate with an expired contract (past contract_expiry.valid_until). Verification pipeline must refuse to run until a valid contract is present.",
+      "severity": "high",
+      "enforcement": "review"
+    }
+  ],
+
+  "scope_enforcement": {
+    "known_permissions": [
+      "deploy",
+      "run_tests",
+      "start_server",
+      "read_only",
+      "write_results",
+      "network"
+    ],
+    "default_permission": "read_only",
+    "principle": "least_privilege",
+    "unknown_permission_action": "reject"
+  },
+
+  "audit": {
+    "enabled": true,
+    "format": "ndjson",
+    "log_path": "C:\\Users\\USER\\cascadeprojects\\gate\\audit.ndjson",
+    "retention_days": 90,
+    "overwatch_integration": true
+  },
+
+  "kpis": {
+    "transfer_success_rate": {
+      "target": 0.95,
+      "window": "7d",
+      "alert_below": 0.85
+    },
+    "verification_latency_ms": {
+      "p50_target": 50,
+      "p99_target": 500,
+      "alert_above_p99": 1000
+    },
+    "replay_attempt_rate": {
+      "alert_threshold": 0.01,
+      "window": "24h"
+    }
+  },
+
+  "overwatch_escalation": {
+    "threshold_count": 3,
+    "window_minutes": 60,
+    "notify_channels": [],
+    "escalation_events": [
+      "rejected:payload_integrity_failed",
+      "rejected:fingerprint_mismatch",
+      "rejected:nonce_replay_or_expired",
+      "rejected:envelope_expired",
+      "rejected:action_out_of_scope",
+      "rejected:tests_not_passed",
+      "rejected:unknown_source_partition",
+      "rejected:unknown_permission"
+    ]
+  },
+
+  "deployment_targets": {
+    "grid-server": {
+      "path": "C:\\Users\\USER\\cascadeprojects\\grid-server",
+      "port": 8080,
+      "allowed_permissions": [
+        "deploy",
+        "run_tests",
+        "start_server",
+        "write_results"
+      ],
+      "description": "GRID-main deployment target"
+    },
+    "afloat-server": {
+      "path": "C:\\Users\\USER\\cascadeprojects\\afloat-server",
+      "port": 3000,
+      "allowed_permissions": ["deploy", "start_server"],
+      "description": "Afloat deployment target"
+    },
+    "echoes-server": {
+      "path": "C:\\Users\\USER\\cascadeprojects\\echoes-server",
+      "port": 8000,
+      "allowed_permissions": [
+        "deploy",
+        "run_tests",
+        "start_server",
+        "write_results"
+      ],
+      "description": "Echoes deployment target"
+    },
+    "lots-server": {
+      "path": "C:\\Users\\USER\\cascadeprojects\\lots-server",
+      "port": 8001,
+      "allowed_permissions": ["deploy", "run_tests"],
+      "description": "Light of the Seven deployment target"
+    },
+    "experiments": {
+      "path": "C:\\Users\\USER\\cascadeprojects\\experiments",
+      "port": null,
+      "allowed_permissions": ["read_only", "run_tests", "write_results"],
+      "description": "Experimental workspace (no deploy or server permissions)"
+    }
+  },
+
+  "directory_structure": {
+    "gate": {
+      "description": "Root directory for gate operations",
+      "children": {
+        "incoming": {
+          "description": "Sealed envelopes land here for verification",
+          "auto_clean_after_verify": true
+        },
+        "results": {
+          "description": "Verification results and processed envelope metadata",
+          "auto_clean_after_days": 30
+        },
+        "audit.ndjson": {
+          "description": "Append-only NDJSON audit trail for all verification events"
+        },
+        ".nonce_registry.json": {
+          "description": "Persistent nonce registry (burned nonces tracked here)"
+        }
+      }
+    },
+    "archive": {
+      "description": "Archived old source-like folders (read-only, no deploy)"
+    }
+  },
+
+  "migration_checklist": [
+    {
+      "id": "MC-01",
+      "task": "Create directory: C:\\Users\\USER\\cascadeprojects\\grid-server\\",
+      "status": "pending"
+    },
+    {
+      "id": "MC-02",
+      "task": "Create directory: C:\\Users\\USER\\cascadeprojects\\afloat-server\\",
+      "status": "pending"
+    },
+    {
+      "id": "MC-03",
+      "task": "Create directory: C:\\Users\\USER\\cascadeprojects\\echoes-server\\",
+      "status": "pending"
+    },
+    {
+      "id": "MC-04",
+      "task": "Create directory: C:\\Users\\USER\\cascadeprojects\\lots-server\\",
+      "status": "pending"
+    },
+    {
+      "id": "MC-05",
+      "task": "Create directory: C:\\Users\\USER\\cascadeprojects\\gate\\incoming\\",
+      "status": "pending"
+    },
+    {
+      "id": "MC-06",
+      "task": "Create directory: C:\\Users\\USER\\cascadeprojects\\gate\\results\\",
+      "status": "pending"
+    },
+    {
+      "id": "MC-07",
+      "task": "Create directory: C:\\Users\\USER\\cascadeprojects\\experiments\\",
+      "status": "pending"
+    },
+    {
+      "id": "MC-08",
+      "task": "Create directory: C:\\Users\\USER\\cascadeprojects\\archive\\",
+      "status": "pending"
+    },
+    {
+      "id": "MC-09",
+      "task": "Initialize: C:\\Users\\USER\\cascadeprojects\\gate\\audit.ndjson (empty file)",
+      "status": "pending"
+    },
+    {
+      "id": "MC-10",
+      "task": "Initialize: C:\\Users\\USER\\cascadeprojects\\gate\\.nonce_registry.json with {}",
+      "status": "pending"
+    },
+    {
+      "id": "MC-11",
+      "task": "Store shared secret: cmdkey /add:TransitionGate /user:USER /pass:<secret> on BOTH drives",
+      "status": "pending"
+    },
+    {
+      "id": "MC-12",
+      "task": "Archive existing source-like folders to archive/ if not needed as deploy targets",
+      "status": "pending"
+    },
+    {
+      "id": "MC-13",
+      "task": "Create MANIFEST.md at C:\\Users\\USER\\cascadeprojects\\ documenting deployed artifacts",
+      "status": "pending"
+    }
+  ]
+}

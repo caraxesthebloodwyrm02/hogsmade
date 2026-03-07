@@ -1,0 +1,23 @@
+{
+  "name": "@cascade/shared-types",
+  "version": "1.0.0",
+  "description": "Shared schemas and utilities for CascadeProjects MCP servers",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js",
+    "./audit-client": "./dist/audit-client.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "zod": "^3.22.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "~5.5.0"
+  }
+}

@@ -1,0 +1,338 @@
+{
+  "meta": {
+    "id": "tg-c-receive-001",
+    "version": "1.0.0",
+    "title": "C:\\ Receiving Agent — Transition Gate Contract",
+    "created": "2026-06-14T00:00:00Z",
+    "status": "active",
+    "anchored_to": "transition-gate-contract.template.json v1.0.0",
+    "purpose": "Defines the operating boundary, security obligations, and processing discipline for the C:\\ receiving agent. This agent verifies sealed envelopes, deploys within scope, runs server-side experiments, and reports results. It does NOT produce envelopes or manage E:\\ source code.",
+    "scope": "Governs all operations on C:\\Users\\USER\\cascadeprojects that consume sealed envelopes and manage deployed artifacts."
+  },
+
+  "foundation": {
+    "model": "subtrahend_minuend",
+    "description": "The full system context is the minuend. The subtrahend is everything that belongs to E:\\'s internal operating context (source trees, git workflows, build systems, test infrastructure, ecosystem baseline governance). The difference is this contract: what C:\\ agent owns, knows, and does.",
+    "axioms": [
+      {
+        "id": "AX-01",
+        "statement": "minuend - subtrahend = difference",
+        "application": "Full system (minuend) minus E:\\'s source internals (subtrahend) equals the receiving agent's operating scope (this contract)."
+      },
+      {
+        "id": "AX-02",
+        "statement": "every gate check is a difference measurement against a threshold",
+        "application": "Fingerprint match, nonce validity, timestamp freshness, scope presence — each is a binary difference check. Match = pass. Mismatch = block."
+      },
+      {
+        "id": "AX-03",
+        "statement": "difference has a name",
+        "application": "Every gate verdict has a verdict code. No unnamed rejections. Every decision is logged with gate_id and reason."
+      },
+      {
+        "id": "AX-04",
+        "statement": "the response is proportional to the difference",
+        "application": "A fingerprint mismatch triggers an alert. A stale envelope triggers a re-seal request. A scope violation terminates the deployment. Severity scales with the security gap."
+      }
+    ]
+  },
+
+  "party": {
+    "identity": {
+      "name": "C:\\ Receiving Agent",
+      "role": "receiving_agent",
+      "zone": "C",
+      "root_path": "C:\\Users\\USER\\cascadeprojects"
+    },
+    "responsibilities": [
+      "Verify every sealed envelope through the full gate pipeline before accepting",
+      "Burn nonces after verification — no reuse",
+      "Deploy artifacts only within the scope declared in the envelope",
+      "Run server-side tests when scope permits",
+      "Start servers only on declared ports when scope permits",
+      "Log every gate decision to gate/audit.ndjson",
+      "Append successful transfers to MANIFEST.md",
+      "Report results back through gate receipts",
+      "Never modify source code — source lives on E:\\"
+    ]
+  },
+
+  "counterparty": {
+    "zone": "E",
+    "role": "source_agent",
+    "interface": "Sealed envelope received from E:\\Fruits\\releases\\ via Seeds-Deploy.ps1, deposited in gate\\incoming\\"
+  },
+
+  "security": {
+    "primitives": [
+      {
+        "id": "SP-01",
+        "name": "fingerprint_verification",
+        "purpose": "Recompute HMAC-SHA256 fingerprint from payload_hash + machine_fingerprint + nonce using user_secret. Must match envelope.fingerprint exactly.",
+        "location": "gate/gate_keeper.py::GateKeeper.verify()",
+        "algorithm": "HMAC-SHA256 with timing-safe comparison (hmac.compare_digest)",
+        "properties": ["user_verification", "tamper_detection", "timing_safe"]
+      },
+      {
+        "id": "SP-02",
+        "name": "nonce_verification",
+        "purpose": "Verify nonce was issued, is unused, and is not expired. Burn after verification.",
+        "location": "gate/.nonce_registry.json",
+        "algorithm": "Lookup + delete (burn-after-verify), max_age_seconds=600",
+        "properties": ["anti_replay", "anti_duplication", "single_use"]
+      },
+      {
+        "id": "SP-03",
+        "name": "payload_integrity",
+        "purpose": "Recompute SHA-256 of canonical JSON payload. Must match envelope.payload_hash.",
+        "location": "gate/gate_keeper.py::GateKeeper.verify()",
+        "algorithm": "SHA-256 of JSON.dumps(payload, sort_keys=True)",
+        "properties": ["integrity_verification", "tamper_detection"]
+      },
+      {
+        "id": "SP-04",
+        "name": "timestamp_freshness",
+        "purpose": "Reject envelopes older than max_age_seconds (600 = 10 minutes).",
+        "location": "gate/gate_keeper.py::GateKeeper.verify()",
+        "algorithm": "UTC delta comparison",
+        "properties": ["anti_staleness", "time_bounded"]
+      },
+      {
+        "id": "SP-05",
+        "name": "scope_enforcement",
+        "purpose": "Deployed operations must not exceed the permissions declared in the envelope scope.",
+        "location": "gate/scope_enforcer.py",
+        "algorithm": "Permission set intersection — requested action must be subset of declared permissions",
+        "properties": ["least_privilege", "boundary_enforcement"]
+      }
+    ],
+    "trust_model": "Zero trust. Every envelope is verified from scratch. No cached trust. No session carry-over. The envelope is the sole unit of trust, and it is verified and discarded.",
+    "fail_closed": true
+  },
+
+  "pipeline": {
+    "description": "The ordered sequence of gates every incoming envelope must pass. This is the Gate Keeper. It listens to nothing but the fingerprint.",
+    "steps": [
+      {
+        "step": 1,
+        "gate_id": "envelope_exists",
+        "layer": "transport",
+        "check": "Sealed envelope file exists in gate/incoming/ and is valid JSON",
+        "pass": "parse envelope into TransitionEnvelope object",
+        "block": { "error": "no_envelope", "status": 404 },
+        "fail_closed": true,
+        "source": "gate/receiver.py"
+      },
+      {
+        "step": 2,
+        "gate_id": "payload_integrity",
+        "layer": "security",
+        "check": "SHA-256(canonical_json(envelope.payload)) == envelope.payload_hash",
+        "pass": "payload was not modified after sealing",
+        "block": { "error": "payload_integrity_failed", "status": 403 },
+        "fail_closed": true,
+        "source": "gate/gate_keeper.py"
+      },
+      {
+        "step": 3,
+        "gate_id": "fingerprint_match",
+        "layer": "security",
+        "check": "HMAC-SHA256(user_secret, payload_hash + machine_fingerprint + nonce) == envelope.fingerprint (timing-safe comparison)",
+        "pass": "envelope was sealed by the authorized user on the authorized machine",
+        "block": { "error": "fingerprint_mismatch", "status": 403 },
+        "fail_closed": true,
+        "source": "gate/gate_keeper.py"
+      },
+      {
+        "step": 4,
+        "gate_id": "nonce_valid",
+        "layer": "security",
+        "check": "Nonce exists in registry, is not expired, and has not been used before. Burned after this check.",
+        "pass": "this is not a replayed or duplicated envelope",
+        "block": { "error": "nonce_replay_or_expired", "status": 403 },
+        "fail_closed": true,
+        "source": "gate/nonce_registry.py"
+      },
+      {
+        "step": 5,
+        "gate_id": "timestamp_fresh",
+        "layer": "security",
+        "check": "now_utc - envelope.timestamp < max_age_seconds (600)",
+        "pass": "envelope is recent",
+        "block": { "error": "envelope_expired", "status": 410 },
+        "fail_closed": true,
+        "source": "gate/gate_keeper.py"
+      },
+      {
+        "step": 6,
+        "gate_id": "tests_verified",
+        "layer": "quality",
+        "check": "envelope.tests_passed == true",
+        "pass": "source code was tested before transfer",
+        "block": { "error": "tests_not_passed", "status": 412 },
+        "fail_closed": true,
+        "source": "gate/gate_keeper.py"
+      },
+      {
+        "step": 7,
+        "gate_id": "scope_present",
+        "layer": "security",
+        "check": "envelope.scope is non-empty and contains at least one permission with a valid target_project",
+        "pass": "scope is declared and actionable",
+        "block": { "error": "invalid_scope", "status": 422 },
+        "fail_closed": true,
+        "source": "gate/gate_keeper.py"
+      },
+      {
+        "step": 8,
+        "gate_id": "deploy_within_scope",
+        "layer": "enforcement",
+        "check": "All deployment actions are within the declared scope permissions. Ports match allowed_ports. Paths match allowed_paths.",
+        "pass": "artifacts deployed to target directory",
+        "block": { "error": "scope_violation", "status": 403 },
+        "fail_closed": true,
+        "source": "gate/scope_enforcer.py"
+      },
+      {
+        "step": 9,
+        "gate_id": "audit_log",
+        "layer": "audit",
+        "check": "Gate decision (envelope_id, verdict, timestamp, details) appended to gate/audit.ndjson. MANIFEST.md updated if verdict=passed.",
+        "pass": "decision recorded and traceable",
+        "block": "non-blocking — deployment is not rolled back on log failure, but alert is raised",
+        "fail_closed": false,
+        "source": "gate/audit.py"
+      }
+    ]
+  },
+
+  "scope": {
+    "permissions": [
+      {
+        "permission": "verify_envelope",
+        "description": "Verify incoming sealed envelopes through the full gate pipeline"
+      },
+      {
+        "permission": "deploy",
+        "description": "Place verified artifacts in the designated server directory",
+        "constraints": {
+          "allowed_paths": [
+            "C:\\Users\\USER\\cascadeprojects\\grid-server\\",
+            "C:\\Users\\USER\\cascadeprojects\\afloat-server\\",
+            "C:\\Users\\USER\\cascadeprojects\\echoes-server\\",
+            "C:\\Users\\USER\\cascadeprojects\\lots-server\\"
+          ]
+        }
+      },
+      {
+        "permission": "run_tests",
+        "description": "Execute test suites against deployed artifacts when envelope scope includes run_tests"
+      },
+      {
+        "permission": "start_server",
+        "description": "Bind to declared ports when envelope scope includes start_server",
+        "constraints": {
+          "allowed_ports": [9000, 4000, 9080, 9081]
+        }
+      },
+      {
+        "permission": "write_results",
+        "description": "Write test results and experiment outputs to gate/results/ and experiments/",
+        "constraints": {
+          "allowed_paths": [
+            "C:\\Users\\USER\\cascadeprojects\\gate\\results\\",
+            "C:\\Users\\USER\\cascadeprojects\\experiments\\"
+          ]
+        }
+      },
+      {
+        "permission": "read_only",
+        "description": "Inspect deployed artifacts without modification. Used for audit and verification."
+      }
+    ]
+  },
+
+  "measurement": {
+    "description": "KPIs for the receiving agent. Each threshold is a gate on operational health.",
+    "kpis": [
+      {
+        "id": "KPI-01",
+        "name": "gate_verification_success_rate",
+        "threshold": 0.90,
+        "unit": "ratio",
+        "measurement": "passed_envelopes / total_envelopes_received",
+        "window": "rolling_30_day",
+        "action_if_breached": "Audit gate/audit.ndjson for pattern in rejections. If fingerprint mismatches dominate, verify user_secret sync between E:\\ and C:\\."
+      },
+      {
+        "id": "KPI-02",
+        "name": "verification_latency",
+        "threshold": 5,
+        "unit": "seconds",
+        "measurement": "time_from_envelope_receipt_to_verdict",
+        "window": "per_envelope",
+        "action_if_breached": "Profile nonce registry I/O and HMAC computation. Consider in-memory nonce cache."
+      },
+      {
+        "id": "KPI-03",
+        "name": "replay_attempt_rate",
+        "threshold": 0.0,
+        "unit": "count",
+        "measurement": "envelopes_rejected_for_nonce_replay",
+        "window": "rolling_7_day",
+        "action_if_breached": "Any replay attempt is a security event. Trigger Overwatch escalation immediately."
+      },
+      {
+        "id": "KPI-04",
+        "name": "scope_violation_rate",
+        "threshold": 0.0,
+        "unit": "count",
+        "measurement": "operations_blocked_for_scope_violation",
+        "window": "rolling_7_day",
+        "action_if_breached": "Any scope violation is a boundary breach. Log, alert, and halt all deployments pending review."
+      }
+    ]
+  },
+
+  "never": [
+    "modify source code — source lives on E:\\, not here",
+    "create or seal a new envelope — only E:\\ seals envelopes",
+    "accept a transfer without running the full gate verification pipeline",
+    "exceed the permissions declared in the envelope scope",
+    "copy artifacts back to E:\\ — results flow through gate receipts only",
+    "store user_secret in any file — read from Windows Credential Manager only",
+    "bypass the nonce check for any reason",
+    "accept an envelope with tests_passed=false",
+    "start a server on an undeclared port",
+    "write to any path outside allowed_paths",
+    "trust an envelope based on its envelope_id alone — verify the fingerprint",
+    "delete or truncate gate/audit.ndjson"
+  ],
+
+  "integration": {
+    "audit_trail": "C:\\Users\\USER\\cascadeprojects\\gate\\audit.ndjson",
+    "manifest": "C:\\Users\\USER\\cascadeprojects\\MANIFEST.md",
+    "nonce_registry": "C:\\Users\\USER\\cascadeprojects\\gate\\.nonce_registry.json",
+    "incoming_dir": "C:\\Users\\USER\\cascadeprojects\\gate\\incoming\\",
+    "results_dir": "C:\\Users\\USER\\cascadeprojects\\gate\\results\\",
+    "experiments_dir": "C:\\Users\\USER\\cascadeprojects\\experiments\\",
+    "archive_dir": "C:\\Users\\USER\\cascadeprojects\\archive\\"
+  },
+
+  "changelog": [
+    {
+      "version": "1.0.0",
+      "date": "2026-06-14",
+      "changes": [
+        "Initial contract. Derived from transition-gate-contract.template.json v1.0.0.",
+        "Foundation axioms AX-01 through AX-04 instantiated for receiving agent context.",
+        "Nine-step verification pipeline: envelope_exists, payload_integrity, fingerprint_match, nonce_valid, timestamp_fresh, tests_verified, scope_present, deploy_within_scope, audit_log.",
+        "Five security primitives: fingerprint_verification, nonce_verification, payload_integrity, timestamp_freshness, scope_enforcement.",
+        "Six scope permissions: verify_envelope, deploy, run_tests, start_server, write_results, read_only.",
+        "Twelve never-rules define the subtrahend — what is removed from C:\\ agent's scope.",
+        "Port assignments: GRID=9000, afloat=4000, echoes=9080, lots=9081.",
+        "Migration plan: archive GRID-main/ and Afloat/ from current root, create clean server targets."
+      ]
+    }
+  ]
+}

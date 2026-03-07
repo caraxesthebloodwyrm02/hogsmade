@@ -1,0 +1,139 @@
+{
+  "_README": "Claude Code MCP config — merge this into ~/.claude.json under the 'mcpServers' key",
+  "_updated": "2026-03-07",
+  "_note": "Claude Code supports 'cwd' unlike Windsurf, so Python servers use relative args + cwd. All TS servers use npx tsx with absolute paths (same as Windsurf).",
+
+  "mcpServers": {
+
+    "echoes": {
+      "command": "npx",
+      "args": ["-y", "tsx", "C:\\Users\\USER\\CascadeProjects\\mcp-tool-experiment\\src\\server.ts"]
+    },
+
+    "echoes-server": {
+      "command": "npx",
+      "args": ["-y", "tsx", "C:\\Users\\USER\\CascadeProjects\\echoes-server\\src\\server.ts"],
+      "env": {
+        "ECHOES_AUDIT_PATH": "C:\\Users\\USER\\.echoes\\audit.ndjson"
+      }
+    },
+
+    "grid-server": {
+      "command": "npx",
+      "args": ["-y", "tsx", "C:\\Users\\USER\\CascadeProjects\\grid-server\\src\\server.ts"],
+      "env": {
+        "CASCADE_WORKSPACE_ROOT": "C:\\Users\\USER\\CascadeProjects",
+        "GATE_DIR": "C:\\Users\\USER\\CascadeProjects\\GATE",
+        "GRID_API_URL": "http://localhost:8080"
+      }
+    },
+
+    "afloat-server": {
+      "command": "npx",
+      "args": ["-y", "tsx", "C:\\Users\\USER\\CascadeProjects\\afloat-server\\src\\server.ts"]
+    },
+
+    "lots-server": {
+      "command": "npx",
+      "args": ["-y", "tsx", "C:\\Users\\USER\\CascadeProjects\\lots-server\\src\\server.ts"],
+      "env": {
+        "LOTS_EXPERIMENTS_DIR": "C:\\Users\\USER\\CascadeProjects\\experiments",
+        "ECHOES_AUDIT_PATH": "C:\\Users\\USER\\.echoes\\audit.ndjson"
+      }
+    },
+
+    "seeds-server": {
+      "command": "npx",
+      "args": ["-y", "tsx", "C:\\Users\\USER\\CascadeProjects\\seeds-server\\src\\server.ts"],
+      "env": {
+        "SEEDS_ROOT": "E:\\Seeds"
+      }
+    },
+
+    "pulse-server": {
+      "command": "npx",
+      "args": ["-y", "tsx", "C:\\Users\\USER\\CascadeProjects\\pulse-server\\src\\server.ts"],
+      "env": {
+        "ECHOES_AUDIT_PATH": "C:\\Users\\USER\\.echoes\\audit.ndjson"
+      }
+    },
+
+    "grid-rag": {
+      "command": "e:\\grid\\.venv\\Scripts\\python.exe",
+      "args": ["mcp-setup/server/grid_rag_mcp_server.py"],
+      "cwd": "e:\\grid",
+      "env": {
+        "PYTHONPATH": "e:\\grid\\src;e:\\grid",
+        "RAG_EMBEDDING_PROVIDER": "ollama",
+        "RAG_EMBEDDING_MODEL": "nomic-embed-text-v2-moe:latest",
+        "RAG_LLM_MODE": "ollama",
+        "RAG_LLM_MODEL_OLLAMA": "ministral:latest",
+        "RAG_VECTOR_STORE_PROVIDER": "chromadb",
+        "RAG_VECTOR_STORE_PATH": ".rag_db",
+        "OLLAMA_BASE_URL": "http://localhost:11434"
+      }
+    },
+
+    "grid-rag-enhanced": {
+      "command": "e:\\grid\\.venv\\Scripts\\python.exe",
+      "args": ["-m", "grid.mcp.enhanced_rag_server"],
+      "cwd": "e:\\grid",
+      "env": {
+        "PYTHONPATH": "e:\\grid\\src;e:\\grid",
+        "RAG_EMBEDDING_PROVIDER": "ollama",
+        "RAG_EMBEDDING_MODEL": "nomic-embed-text-v2-moe:latest",
+        "RAG_LLM_MODE": "ollama",
+        "RAG_LLM_MODEL_OLLAMA": "ministral:latest",
+        "RAG_VECTOR_STORE_PROVIDER": "chromadb",
+        "RAG_VECTOR_STORE_PATH": ".rag_db",
+        "OLLAMA_BASE_URL": "http://localhost:11434"
+      }
+    },
+
+    "grid-enhanced-tools": {
+      "command": "e:\\grid\\.venv\\Scripts\\python.exe",
+      "args": ["mcp-setup/server/enhanced_tools_mcp_server.py"],
+      "cwd": "e:\\grid",
+      "env": {
+        "PYTHONPATH": "e:\\grid\\src;e:\\grid"
+      }
+    },
+
+    "portfolio-safety-lens": {
+      "command": "e:\\grid\\.venv\\Scripts\\python.exe",
+      "args": ["mcp-setup/server/portfolio_safety_mcp_server.py"],
+      "cwd": "e:\\grid",
+      "env": {
+        "PYTHONPATH": "e:\\grid\\src;e:\\grid;e:\\Coinbase"
+      }
+    },
+
+    "code-analysis": {
+      "command": "e:\\grid\\.venv\\Scripts\\python.exe",
+      "args": ["mcp-setup/server/code_analysis_mcp_server.py"],
+      "cwd": "e:\\grid",
+      "env": {
+        "PYTHONPATH": "e:\\grid\\src;e:\\grid"
+      }
+    },
+
+    "test-runner": {
+      "command": "e:\\grid\\.venv\\Scripts\\python.exe",
+      "args": ["mcp-setup/server/test_runner_mcp_server.py"],
+      "cwd": "e:\\grid",
+      "env": {
+        "PYTHONPATH": "e:\\grid\\src;e:\\grid"
+      }
+    },
+
+    "maintain-server": {
+      "command": "npx",
+      "args": ["-y", "tsx", "C:\\Users\\USER\\CascadeProjects\\maintain-server\\src\\server.ts"],
+      "env": {
+        "CASCADE_WORKSPACE_ROOT": "C:\\Users\\USER\\CascadeProjects",
+        "SEEDS_ROOT": "E:\\Seeds",
+        "ECHOES_AUDIT_PATH": "C:\\Users\\USER\\.echoes\\audit.ndjson"
+      }
+    }
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "envelope_id": "envelope_GRID-main_fec6aa7f",
+  "passed": true,
+  "steps": [
+    {
+      "step": "envelope_exists",
+      "passed": true,
+      "details": "Envelope envelope_GRID-main_fec6aa7f loaded"
+    },
+    {
+      "step": "payload_integrity",
+      "passed": true,
+      "details": "Hash matches"
+    },
+    {
+      "step": "fingerprint_match",
+      "passed": true,
+      "details": "Fingerprint valid"
+    },
+    {
+      "step": "nonce_valid",
+      "passed": true,
+      "details": "Nonce is valid and unburned"
+    },
+    {
+      "step": "timestamp_fresh",
+      "passed": true,
+      "details": "Envelope age 14.1s < 600.0s"
+    },
+    {
+      "step": "tests_verified",
+      "passed": true,
+      "details": "tests_passed=True"
+    },
+    {
+      "step": "scope_present",
+      "passed": true,
+      "details": "Scope has 2 permissions"
+    },
+    {
+      "step": "deploy_within_scope",
+      "passed": true,
+      "details": "Action read_only permitted"
+    },
+    {
+      "step": "audit_log",
+      "passed": true,
+      "details": "Nonce burned=True"
+    }
+  ],
+  "reason": "all_checks_passed",
+  "nonce_burned": true,
+  "duration_ms": 4.600048065185547
+}

@@ -1,0 +1,347 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "transition-gate-contract-template-v1.1",
+  "title": "Transition Gate Agent Contract Template",
+  "description": "Schema for machine-readable contracts governing sealed-envelope transfers between partitions. Version 1.1 adds: contract_expiry, dry_run_policy, secret_rotation_sop, cross_partition_validation, envelope strictness declaration, and KPI healthy ranges.",
+  "version": "1.1.0",
+  "contract_expiry": {
+    "description": "Contracts themselves have a TTL. After valid_until, the contract must be re-signed/re-issued before transfers resume.",
+    "valid_until": "<ISO8601 date — set at issuance>",
+    "rotation_reminder_days_before": 14
+  },
+  "type": "object",
+  "required": [
+    "contract_id",
+    "contract_version",
+    "agent_role",
+    "partition",
+    "security_primitives",
+    "pipeline",
+    "never_rules",
+    "scope_enforcement",
+    "audit",
+    "cross_partition_validation",
+    "dry_run_policy",
+    "secret_rotation_sop"
+  ],
+  "properties": {
+    "contract_id": { "type": "string" },
+    "contract_version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+    "agent_role": { "type": "string", "enum": ["source", "receiver"] },
+    "contract_expiry": {
+      "type": "object",
+      "required": ["valid_until"],
+      "properties": {
+        "valid_until": {
+          "type": "string",
+          "description": "ISO 8601 date after which this contract is stale."
+        },
+        "rotation_reminder_days_before": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "partition": {
+      "type": "object",
+      "required": ["label", "root_path", "purpose", "staging_path"],
+      "properties": {
+        "label": { "type": "string" },
+        "root_path": { "type": "string" },
+        "purpose": {
+          "type": "string",
+          "enum": ["source_build", "deployment_target", "hybrid"]
+        },
+        "staging_path": { "type": "string" }
+      }
+    },
+    "cross_partition_validation": {
+      "type": "object",
+      "description": "Explicit trusted-source / trusted-target declarations to prevent misdirected envelopes.",
+      "required": [
+        "trusted_source_partitions",
+        "trusted_target_partitions",
+        "reject_on_unknown_source"
+      ],
+      "properties": {
+        "trusted_source_partitions": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Partition labels the source agent may seal from, OR that the receiver trusts."
+        },
+        "trusted_target_partitions": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Partition labels the envelope may be routed to."
+        },
+        "reject_on_unknown_source": { "type": "boolean", "default": true },
+        "reject_on_unknown_target": { "type": "boolean", "default": true }
+      }
+    },
+    "security_primitives": {
+      "type": "object",
+      "required": [
+        "user_fingerprint",
+        "machine_fingerprint",
+        "nonce",
+        "payload_hash",
+        "envelope_expiry",
+        "envelope_field_strictness"
+      ],
+      "properties": {
+        "user_fingerprint": {
+          "type": "object",
+          "properties": {
+            "algorithm": { "type": "string", "const": "HMAC-SHA256" },
+            "key_source": { "type": "string" },
+            "key_name": { "type": "string" },
+            "binding_factors": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          }
+        },
+        "machine_fingerprint": {
+          "type": "object",
+          "properties": {
+            "algorithm": { "type": "string", "const": "SHA-256" },
+            "attributes": { "type": "array", "items": { "type": "string" } }
+          }
+        },
+        "nonce": {
+          "type": "object",
+          "properties": {
+            "format": { "type": "string", "const": "uuid4_hex" },
+            "registry_path": { "type": "string" },
+            "single_use": { "type": "boolean", "const": true },
+            "burn_on_verify": { "type": "boolean", "const": true }
+          }
+        },
+        "payload_hash": {
+          "type": "object",
+          "properties": {
+            "algorithm": { "type": "string", "const": "SHA-256" },
+            "serialization": { "type": "string", "const": "canonical_json" }
+          }
+        },
+        "envelope_expiry": {
+          "type": "object",
+          "properties": {
+            "max_age_seconds": {
+              "type": "number",
+              "minimum": 60,
+              "maximum": 3600,
+              "default": 600
+            }
+          }
+        },
+        "envelope_field_strictness": {
+          "type": "object",
+          "description": "Declares which fields are required in every envelope and how unknown fields are treated.",
+          "properties": {
+            "required_fields": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "All envelope top-level fields that must be present for the envelope to be accepted."
+            },
+            "reject_on_unknown_fields": {
+              "type": "boolean",
+              "default": false,
+              "description": "If true, envelopes with extra/unrecognized top-level fields are rejected. Set true for strict mode."
+            }
+          }
+        }
+      }
+    },
+    "pipeline": {
+      "type": "object",
+      "required": ["description", "fail_mode", "steps"],
+      "properties": {
+        "description": { "type": "string" },
+        "fail_mode": {
+          "type": "string",
+          "enum": ["fail_closed", "fail_open"],
+          "default": "fail_closed"
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "step_number",
+              "name",
+              "description",
+              "on_failure",
+              "timeout_seconds"
+            ],
+            "properties": {
+              "step_number": { "type": "integer", "minimum": 1 },
+              "name": { "type": "string" },
+              "description": { "type": "string" },
+              "command": { "type": ["string", "null"] },
+              "expected_output": { "type": "string" },
+              "on_failure": {
+                "type": "string",
+                "enum": [
+                  "abort",
+                  "reject_envelope",
+                  "log_and_continue",
+                  "escalate"
+                ]
+              },
+              "timeout_seconds": { "type": "number", "minimum": 1 }
+            }
+          }
+        }
+      }
+    },
+    "dry_run_policy": {
+      "type": "object",
+      "description": "Governs what is permitted and forbidden during a dry-run invocation.",
+      "required": [
+        "permitted",
+        "forbidden",
+        "nonce_behavior",
+        "audit_behavior"
+      ],
+      "properties": {
+        "permitted": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Actions allowed during dry-run (e.g. seal, validate, log_dry_run_event)."
+        },
+        "forbidden": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Actions that must NOT happen during dry-run (e.g. transfer, burn_nonce, write_audit_entry)."
+        },
+        "nonce_behavior": {
+          "type": "string",
+          "enum": ["validate_only", "skip_nonce", "generate_ephemeral"],
+          "description": "How nonces are handled during dry-run."
+        },
+        "audit_behavior": {
+          "type": "string",
+          "enum": ["no_audit", "dry_run_log_only", "full_audit"],
+          "description": "Whether audit entries are written during dry-run."
+        }
+      }
+    },
+    "secret_rotation_sop": {
+      "type": "object",
+      "description": "Standard operating procedure for rotating the shared HMAC secret.",
+      "required": ["rotation_frequency_days", "steps", "rollback_window_hours"],
+      "properties": {
+        "rotation_frequency_days": { "type": "integer", "minimum": 1 },
+        "rollback_window_hours": {
+          "type": "integer",
+          "description": "Hours during which the old secret remains valid for in-flight envelopes."
+        },
+        "steps": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Ordered steps to rotate the secret safely."
+        },
+        "emergency_revocation": {
+          "type": "string",
+          "description": "How to immediately revoke the secret if a compromise is suspected."
+        }
+      }
+    },
+    "never_rules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "rule", "severity", "enforcement"],
+        "properties": {
+          "id": { "type": "string" },
+          "rule": { "type": "string" },
+          "severity": {
+            "type": "string",
+            "enum": ["critical", "high", "medium"]
+          },
+          "enforcement": {
+            "type": "string",
+            "enum": ["automated", "review", "both"]
+          }
+        }
+      }
+    },
+    "scope_enforcement": {
+      "type": "object",
+      "required": [
+        "known_permissions",
+        "default_permission",
+        "principle",
+        "unknown_permission_action"
+      ],
+      "properties": {
+        "known_permissions": { "type": "array", "items": { "type": "string" } },
+        "default_permission": { "type": "string" },
+        "principle": { "type": "string", "const": "least_privilege" },
+        "unknown_permission_action": {
+          "type": "string",
+          "enum": ["reject", "log_and_reject", "escalate"]
+        }
+      }
+    },
+    "audit": {
+      "type": "object",
+      "required": [
+        "enabled",
+        "format",
+        "log_path",
+        "retention_days",
+        "overwatch_integration"
+      ],
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "format": { "type": "string", "enum": ["ndjson", "json", "csv"] },
+        "log_path": { "type": "string" },
+        "retention_days": { "type": "integer", "minimum": 7 },
+        "overwatch_integration": { "type": "boolean" }
+      }
+    },
+    "kpis": {
+      "type": "object",
+      "properties": {
+        "transfer_success_rate": {
+          "type": "object",
+          "properties": {
+            "target": { "type": "number" },
+            "window": { "type": "string" },
+            "alert_below": {
+              "type": "number",
+              "description": "Alert if rate drops below this threshold."
+            }
+          }
+        },
+        "verification_latency_ms": {
+          "type": "object",
+          "properties": {
+            "p50_target": { "type": "number" },
+            "p99_target": { "type": "number" },
+            "alert_above_p99": {
+              "type": "number",
+              "description": "Alert if p99 exceeds this value."
+            }
+          }
+        },
+        "replay_attempt_rate": {
+          "type": "object",
+          "properties": {
+            "alert_threshold": { "type": "number" },
+            "window": { "type": "string" }
+          }
+        }
+      }
+    },
+    "overwatch_escalation": {
+      "type": "object",
+      "properties": {
+        "threshold_count": { "type": "integer", "minimum": 1 },
+        "window_minutes": { "type": "integer", "minimum": 1 },
+        "notify_channels": { "type": "array", "items": { "type": "string" } },
+        "escalation_events": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,13 @@
+{
+  "nonces": {
+    "c8409de95f794569842e081b626f6256": {
+      "nonce": "c8409de95f794569842e081b626f6256",
+      "created_at": 1772903345.1322713,
+      "burned": false,
+      "burned_at": null,
+      "envelope_id": "edb45829-9ae6-46b9-b48c-21f6ea7dae71",
+      "source": "E:\\"
+    }
+  },
+  "max_age_seconds": 600.0
+}
