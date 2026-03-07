@@ -28,6 +28,7 @@ Windsurf configuration was written to:
 | `grid-server` | GATE validation and deployment target checks | `grid-server/src/server.ts` |
 | `afloat-server` | Workflow create/list/execute/history | `afloat-server/src/server.ts` |
 | `lots-server` | Experiment create/run/compare | `lots-server/src/server.ts` |
+| `maintain-server` | Cleanup, diagnostics, multi-step safety | `maintain-server/src/server.ts` |
 | `grid-rag` | Existing GRID RAG server | `e:\grid\mcp-setup\server\grid_rag_mcp_server.py` |
 | `grid-enhanced-tools` | Existing GRID tools server | `e:\grid\mcp-setup\server\enhanced_tools_mcp_server.py` |
 | `grid-code-analysis` | Existing GRID code analysis | `e:\grid\mcp-setup\server\code_analysis_mcp_server.py` |
@@ -48,6 +49,8 @@ Windsurf Cascade
     +-- afloat-server ----------> workflow definitions + execution history
     |
     +-- lots-server ------------> experiment catalog + script execution
+    |
+    +-- maintain-server -------> cleanup (dry-run → previewToken → execute), diagnostics
     |
     +-- GRID Python MCPs -------> RAG, analysis, testing, portfolio safety
 ```

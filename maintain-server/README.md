@@ -29,8 +29,8 @@ Supported cleanup types:
 
 ## Safety Model
 
-- All cleanup actions default to `dryRun: true` (preview only)
-- Actual execution requires `confirmPhrase: "CONFIRM-CLEANUP"`
+- **Multi-step required:** Step 1: run with `dryRun: true` (default) to get a `previewToken`. Step 2: pass that `previewToken` with `confirmPhrase: "CONFIRM-CLEANUP"` and `dryRun: false` to execute. The token expires in 5 minutes and must match the same actions.
+- Single-call execute (no prior dry-run) is rejected.
 - Every action is logged to `~/.maintain-server/cleanup-log.json`
 
 ## Data Directory

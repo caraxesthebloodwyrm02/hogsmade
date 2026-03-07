@@ -1,0 +1,12 @@
+# Line endings: normalize to LF in repo; check out per OS.
+* text=auto eol=lf
+*.{cmd,bat} text eol=crlf
+
+# Binary / generated
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary

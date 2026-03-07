@@ -20,6 +20,14 @@ npm run start
 
 - `GRID_API_URL`: enables additive GRID-main validation after local checks pass
 
+## GRID-main integration (optional)
+
+When `GRID_API_URL` is set, grid-server calls `POST {GRID_API_URL}/api/v1/gate/validate` **after** local envelope checks pass. The response is used only to attach `enhancedValidation` to the tool result; local validation remains authoritative.
+
+When `GRID_API_URL` is unset or the request fails (e.g. GRID-main down or unreachable), grid-server does not block: it either skips the call (when unset) or uses a fallback result with `approved: true` and `flags: ['grid_unavailable']`. Base validation therefore works when GRID-main is unavailable.
+
+The GRID-main `/api/v1/gate/validate` endpoint is **optional and not yet implemented** in GRID-main. When implemented, it should follow the request/response shape used by grid-server (see `src/server.ts`: request body `source_agent`, `target`, `action`, `payload_hash`, `test_status`; response with `approved`, `flags`, `reasoning`).
+
 ## Notes
 
 - The server fails fast when required machine-specific roots are missing.

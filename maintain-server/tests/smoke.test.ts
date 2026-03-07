@@ -63,4 +63,26 @@ describe("maintain-server smoke", () => {
     expect(health.isError).not.toBe(true);
     expect(system.isError).not.toBe(true);
   });
+
+  it("cleanup_execute: dry-run returns previewToken; execute without token is rejected", async () => {
+    const server = buildServer();
+    const dryResult = await invokeTool(server, "cleanup_execute", {
+      actions: [{ type: "temp_clean" }],
+      dryRun: true,
+    });
+    expect(dryResult.isError).not.toBe(true);
+    const dryText = (dryResult as { content?: Array<{ text?: string }> }).content?.[0]?.text;
+    const dryJson = JSON.parse(dryText ?? "{}");
+    expect(dryJson.previewToken).toBeDefined();
+    expect(typeof dryJson.previewToken).toBe("string");
+
+    const executeNoToken = await invokeTool(server, "cleanup_execute", {
+      actions: [{ type: "temp_clean" }],
+      dryRun: false,
+      confirmPhrase: "CONFIRM-CLEANUP",
+    });
+    const noTokenText = (executeNoToken as { content?: Array<{ text?: string }> }).content?.[0]?.text;
+    const noTokenJson = JSON.parse(noTokenText ?? "{}");
+    expect(noTokenJson.error).toMatch(/Multi-step|previewToken|dry-run first/i);
+  });
 });

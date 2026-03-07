@@ -22,4 +22,5 @@ npm run start
 ## Notes
 
 - `morning_briefing`, `check_alerts`, and `what_should_i_work_on` are rules-based correlations over local files.
-- Pulse remains read-only with respect to the other servers’ data stores.
+- **Adaptive briefings**: `briefing_preferences_set` stores section skip and priority-promotion preferences in `~/.pulse/preferences.json`; the morning briefing applies them.
+- Pulse remains read-only with respect to the other servers' data stores.’ data stores.
