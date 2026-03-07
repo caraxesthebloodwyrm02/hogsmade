@@ -27,9 +27,9 @@ git push -u origin main
 
 If you use multiple remotes (e.g. backup, mirror), name them explicitly and push when needed.
 
-## Nested repos
+## Nested repos / submodules
 
-Some directories (e.g. `GRID-main/`, `mcp-tool-experiment/`) contain their own `.git` and are **not** git submodules—they are independent repos. The root repo tracks their path as a directory; updates inside those trees are managed in their own repos. Do not run `git add` from the root on them if you intend to keep them as separate repos; use `.gitignore` or leave them as untracked if you want to avoid accidentally committing their content from the root.
+`GRID-main/` and `mcp-tool-experiment/` are tracked as **submodules** (see root `.gitmodules`). They have their own remotes and branches; the root repo records only the commit ref for each. To avoid a permanently "dirty" status from local changes inside those repos, `.gitmodules` sets `ignore = dirty`. For remediation options (clean, commit-and-update, or ignore), see [docs/SUBMODULES.md](SUBMODULES.md).
 
 ## Line endings and attributes
 

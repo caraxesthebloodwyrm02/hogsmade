@@ -1,0 +1,8 @@
+[submodule "GRID-main"]
+	path = GRID-main
+	url = https://github.com/GRID-INTELLIGENCE/GRID.git
+	ignore = dirty
+[submodule "mcp-tool-experiment"]
+	path = mcp-tool-experiment
+	url = https://github.com/modelcontextprotocol/typescript-sdk
+	ignore = dirty
