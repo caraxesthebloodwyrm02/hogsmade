@@ -2,11 +2,19 @@
 
 This repo is the **single dedicated local git repository** for the CascadeProjects workspace. The root is `CascadeProjects`; all projects under it are tracked here unless they are nested repos (e.g. `GRID-main`, `mcp-tool-experiment`) with their own `.git`.
 
+## Repository setup status
+
+- **Root repo**: `C:\Users\USER\CascadeProjects`
+- **Default branch**: `main`
+- **Remotes**: none configured by default
+- **Nested repos intentionally left separate**: `GRID-main/`, `mcp-tool-experiment/`
+
 ## Branch and commit
 
 - **Default branch**: `main`.
 - **Commits**: Prefer scoped messages, e.g. `pulse-server: add health check`, `docs: add GIT_REPO`, `afloat-server: fix task registration`.
 - **Scope**: One logical change per commit when practical; avoid mixing unrelated projects in one commit.
+- **Current local baseline commit**: `chore: configure repo, add README and git/docs conventions`.
 
 ## Remotes
 
