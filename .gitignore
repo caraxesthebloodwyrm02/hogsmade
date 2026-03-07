@@ -10,9 +10,12 @@ dist/
 build/
 *.tsbuildinfo
 
-# Editor state
+# Editor state (track .cursor/agents, .cursor/skills, .cursor/rules for sharing)
 .claude/
-.cursor/
+.cursor/*
+!.cursor/agents/
+!.cursor/skills/
+!.cursor/rules/
 .windsurf/
 
 # Secrets and local config
