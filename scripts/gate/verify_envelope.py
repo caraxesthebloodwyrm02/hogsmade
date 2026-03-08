@@ -1,32 +1,34 @@
 """Run the transition gate verification on the incoming envelope."""
 
 import sys
-import glob
 import os
 import json
+from pathlib import Path
 
-sys.path.insert(0, r'C:\Users\USER\CascadeProjects\GRID-main')
+root = Path(__file__).resolve().parents[2]
+grid_main = root / 'GRID-main'
+gate_dir = root / 'GATE'
+sys.path.insert(0, str(grid_main))
 
 from boundaries.transition_gate import GateKeeper, NonceRegistry
 from boundaries.transition_gate.credential import get_secret
 
-matches = glob.glob(
-    r'C:\Users\USER\CascadeProjects\gate\incoming\envelope_GRID-main_*.json'
-)
-assert matches, "No envelope found -- check gate/incoming/"
+incoming = gate_dir / 'incoming'
+matches = list(incoming.glob('envelope_GRID-main_*.json'))
+assert matches, f"No envelope found in {incoming}"
 path = matches[0]
-print(f"Processing: {os.path.basename(path)}")
+print(f"Processing: {path.name}")
 
 secret = get_secret("TransitionGate")
 assert secret, "TransitionGate credential missing"
 
 registry = NonceRegistry(
-    r"C:\Users\USER\CascadeProjects\gate\.nonce_registry.json",
+    str(gate_dir / '.nonce_registry.json'),
     max_age_seconds=600.0,
 )
 
 # Register the nonce from the envelope first (simulating it was issued)
-env_data = json.load(open(path))
+env_data = json.loads(path.read_text())
 registry._ensure_exists()
 data = registry._load()
 data[env_data["nonce"]] = {
@@ -40,19 +42,21 @@ print(f"Registered nonce: {env_data['nonce'][:16]}...")
 gk = GateKeeper(
     user_secret=secret,
     nonce_registry=registry,
-    audit_path=r"C:\Users\USER\CascadeProjects\gate\audit.ndjson",
+    audit_path=str(gate_dir / 'audit.ndjson'),
     max_age_seconds=600.0,
     require_tests=True,
     require_lint=False,
 )
 
-result = gk.verify_from_file(path, requested_action="read_only")
+result = gk.verify_from_file(str(path), requested_action="read_only")
 print(result.to_json())
 
 if result.passed:
-    out = fr"C:\Users\USER\CascadeProjects\gate\results\{result.envelope_id}.json"
-    json.dump(result.to_dict(), open(out, "w"), indent=2)
-    os.remove(path)
+    out = gate_dir / 'results' / f'{result.envelope_id}.json'
+    out.parent.mkdir(parents=True, exist_ok=True)
+    with open(out, 'w') as f:
+        json.dump(result.to_dict(), f, indent=2)
+    path.unlink()
     print(f"\nWritten:  {out}")
     print(f"Cleaned:  {path}")
     print(f"Burned:   nonce_burned={result.nonce_burned}")

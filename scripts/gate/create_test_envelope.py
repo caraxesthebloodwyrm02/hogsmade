@@ -8,8 +8,14 @@ import os
 from datetime import datetime, timezone
 from pathlib import Path
 
-# Load the secret
-secret = 'test-secret-for-grid-main-2026'
+# Secret must come from environment (never commit test secrets).
+# For local test runs only: set TRANSITION_GATE_TEST_SECRET to the same value
+# used in your test credential store (e.g. Windows Credential Manager key "TransitionGate").
+secret = os.environ.get("TRANSITION_GATE_TEST_SECRET")
+if not secret:
+    raise SystemExit(
+        "TRANSITION_GATE_TEST_SECRET is not set. Set it for local test envelope creation only."
+    )
 
 # Create envelope payload
 payload = {
@@ -56,8 +62,9 @@ envelope = {
     'lint_passed': True,
 }
 
-# Save to incoming
-incoming_dir = Path('C:/Users/USER/CascadeProjects/gate/incoming')
+# Save to incoming (GATE dir at workspace root)
+root = Path(__file__).resolve().parents[2]
+incoming_dir = root / 'GATE' / 'incoming'
 incoming_dir.mkdir(parents=True, exist_ok=True)
 path = incoming_dir / f"{envelope['envelope_id']}.json"
 path.write_text(json.dumps(envelope, indent=2))

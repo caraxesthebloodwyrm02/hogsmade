@@ -2,6 +2,7 @@
 
 CascadeProjects is a multi-project local workspace. Each major subdirectory is an independent project with its own toolchain, lockfile, and runtime concerns, while the root repository provides shared documentation, conventions, and cross-project coordination.
 
+- **Where things live**: [docs/STRUCTURE.md](docs/STRUCTURE.md) — directory map, attention taxonomy, and ownership (agency).
 - **AI / agents**: See [CLAUDE.md](CLAUDE.md) and [AGENTS.md](AGENTS.md) for workspace guidance, project-specific commands, and coding rules.
 - **Repo and git**: See [docs/GIT_REPO.md](docs/GIT_REPO.md) for branch conventions, nested repo handling, line-ending policy, and remote setup.
 - **Data contracts**: See [docs/DATA_CONTRACTS.md](docs/DATA_CONTRACTS.md) for shared audit and snapshot contracts.

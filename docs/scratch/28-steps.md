@@ -24,7 +24,7 @@ Subagents and hooks. The plan does not reference or invoke any subagents (e.g. p
 | design-5  | Add micro-interactions or loading states for any action that can exceed the Doherty threshold                                       | pending |
 | arch-1    | Choose or confirm the event loop / runtime model (e.g. browser event loop, framework lifecycle) so the app stays non-blocking       | pending |
 | arch-2    | Define the UI tree (or component tree) and which nodes are interactive                                                              | pending |
-| arch-3    | Map input events to hit-testing (or equivalent) and then to the correct handler and state update                                    | pending |
+| arch-3    | Map input events to hit-testing (or equivalent) and then to the correct handler and state update                                  | pending |
 | arch-4    | Plan the render path (state change → layout/paint/composite or framework equivalent) and where to optimize (e.g. incremental/dirty) | pending |
 | impl-1    | Implement the event loop (or integrate with the framework's) and event queue                                                        | pending |
 | impl-2    | Implement the UI tree and layout so every interactive element has a well-defined box/hit area                                       | pending |

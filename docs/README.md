@@ -2,6 +2,14 @@
 
 Root-level documentation for the CascadeProjects workspace.
 
+## Directory and attention map
+
+| Document | Description |
+|----------|-------------|
+| [STRUCTURE.md](STRUCTURE.md) | **Workspace structure and attention map** — Where things live, who owns what, where to look first. Start here for navigation and agency. |
+
+## Core docs
+
 | Document | Description |
 |----------|-------------|
 | [progress-and-vision.html](progress-and-vision.html) | **Progress and vision** — Single-page visual of current state (phases 1–3 done, Phase 4 next) and Phase 4 vision. Open in browser for full view. |
@@ -17,6 +25,20 @@ Root-level documentation for the CascadeProjects workspace.
 | [DEBUGGING.md](DEBUGGING.md) | Reproduce steps, key logs, Cursor debug session, timestamp rules (UTC / +06:00). |
 | [AFTERHOURS_CHECKLIST.md](AFTERHOURS_CHECKLIST.md) | Afterhours sprint checklist: verify, merge, escalation, rollback. |
 | [plans/](plans/) | Planning and phase documents. |
+
+## MCP and security
+
+| Document | Description |
+|----------|-------------|
+| [MCP_SETUP_GUIDE.md](MCP_SETUP_GUIDE.md) | MCP server registration, architecture, usage demos, CLI validation. |
+| [YOUR_MCP_ECOSYSTEM_GUIDE.md](YOUR_MCP_ECOSYSTEM_GUIDE.md) | Plain-English guide to all 7 MCP servers, daily workflow, privacy and safety. |
+| [SECURITY_STATUS.md](SECURITY_STATUS.md) | Security implementation status: implemented vs referenced-but-not-implemented, recommendations. |
+
+## Scratch and working plans
+
+| Document | Description |
+|----------|-------------|
+| [scratch/28-steps.md](scratch/28-steps.md) | Interactive tools research summary and 28-step implementation checklist. |
 
 **Phase timeline (from [progress-and-vision.html](progress-and-vision.html)):**
 
