@@ -1,12 +1,7 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   darkMode: ["class"],
-  content: [
-    "./pages/**/*.{ts,tsx}",
-    "./components/**/*.{ts,tsx}",
-    "./app/**/*.{ts,tsx}",
-    "./src/**/*.{ts,tsx}",
-  ],
+  content: ["./index.html", "./src/**/*.{ts,tsx}"],
   prefix: "",
   theme: {
     container: {
@@ -19,9 +14,12 @@ export default {
     extend: {
       colors: {
         canvas: {
-          bg: "var(--canvas-bg)",
-          surface: "var(--surface)",
-          raised: "var(--surface-raised)",
+          bg: "rgb(var(--canvas-bg-rgb) / <alpha-value>)",
+          surface: "rgb(var(--surface-rgb) / <alpha-value>)",
+          raised: "rgb(var(--surface-raised-rgb) / <alpha-value>)",
+        },
+        surface: {
+          raised: "rgb(var(--surface-raised-rgb) / <alpha-value>)",
         },
         ink: {
           DEFAULT: "var(--ink)",
@@ -82,6 +80,9 @@ export default {
         md: "var(--radius-md)",
         sm: "var(--radius-sm)",
         full: "var(--radius-full)",
+      },
+      borderColor: {
+        "border-color": "var(--border-color)",
       },
     },
   },
