@@ -71,7 +71,7 @@ export function AppShell() {
       )}
 
       {/* View panels */}
-      <div className="flex-1 min-h-0" id={`panel-${activeView}`} role="tabpanel">
+      <div className="flex-1 min-h-0 overflow-auto" id={`panel-${activeView}`} role="tabpanel">
         {activeView === 'dashboard' && <DashboardView />}
         {activeView === 'canvas' && <ScenarioCanvasView />}
         {activeView === 'gate' && <GateView />}

@@ -6,6 +6,8 @@ Workflow orchestration MCP server.
 
 ```bash
 npm install
+# If using local shared-types (workspace root): build it first:
+#   cd ../shared-types && npm run build
 npm run build
 npm test
 npm run start

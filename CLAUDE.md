@@ -12,6 +12,8 @@ This is a multi-project workspace. Each subdirectory is an independent project w
 | `mcp-tool-experiment/typescript-sdk/` | MCP TypeScript SDK v2 | TypeScript 5.2, pnpm, Vitest, Zod v4 | Pre-alpha |
 | `glimpse-artifact/` | React component library | React 18, TypeScript, Vite, TailwindCSS | Complete |
 | `afloat-server/` | Workflow orchestration MCP server | TypeScript, MCP SDK | Working |
+| `shared-types/` | Shared types and audit client | TypeScript | Build before dependent servers |
+| Other MCP servers | `echoes-server/`, `grid-server/`, `lots-server/`, `maintain-server/`, `pulse-server/`, `seeds-server/` | TypeScript, MCP SDK | See root [README](README.md) |
 
 ## Per-Project Guidance
 
@@ -71,6 +73,8 @@ Components follow shadcn-style: CVA + clsx + tailwind-merge for variants. Icons:
 
 ### afloat-server
 
+Depends on `shared-types` (local path). Build shared-types first when working from workspace root: `cd shared-types && npm run build`.
+
 ```bash
 cd afloat-server
 npm install
@@ -84,3 +88,4 @@ npm run start
 - `prompt.md` at the workspace root is a scratch/notes file, not configuration.
 - Each project uses its own lockfile (`uv.lock`, `pnpm-lock.yaml`, `package-lock.json`) — do not mix package managers across projects.
 - When working across projects, always `cd` into the project root before running commands.
+- **Build order**: Servers that depend on `shared-types` (e.g. `afloat-server`) require `shared-types` to be built first (`cd shared-types && npm run build`).

@@ -1,0 +1,97 @@
+/*
+ * Afloat — Design tokens
+ *
+ * Drop into src/app/tokens.css and @import in globals.css.
+ * Replaces ad-hoc Tailwind values with a coherent scale.
+ *
+ * Addresses analysis items: #17 (font), #22 (type scale),
+ * #25 (token set), #27 (spacing scale), #28 (success/error colors).
+ */
+
+:root {
+  /* ── Semantic colors ── */
+  --color-primary: theme(colors.zinc.900);
+  --color-primary-hover: theme(colors.zinc.800);
+  --color-secondary: theme(colors.zinc.100);
+  --color-secondary-hover: theme(colors.zinc.200);
+  --color-surface: theme(colors.white);
+  --color-surface-muted: theme(colors.zinc.50);
+  --color-border: theme(colors.zinc.200);
+
+  --color-success: theme(colors.emerald.600);
+  --color-success-bg: theme(colors.emerald.50);
+  --color-danger: theme(colors.red.600);
+  --color-danger-bg: theme(colors.red.50);
+  --color-warning: theme(colors.amber.600);
+  --color-warning-bg: theme(colors.amber.50);
+
+  --color-text: theme(colors.zinc.900);
+  --color-text-muted: theme(colors.zinc.500);
+  --color-text-inverse: theme(colors.white);
+
+  /* ── Typography scale ── */
+  --text-page-title: 2.25rem;     /* 36px — h1 page title */
+  --text-section-title: 1.5rem;   /* 24px — h2 section */
+  --text-subsection: 1.125rem;    /* 18px — h3 subsection */
+  --text-body: 1rem;              /* 16px — body */
+  --text-caption: 0.875rem;       /* 14px — captions, metadata */
+  --text-micro: 0.75rem;          /* 12px — badges, timestamps */
+
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  --leading-tight: 1.25;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.75;
+
+  /* ── Spacing scale (4px base) ── */
+  --space-1: 0.25rem;   /* 4px  — inline tight */
+  --space-2: 0.5rem;    /* 8px  — inline */
+  --space-3: 0.75rem;   /* 12px — block tight */
+  --space-4: 1rem;      /* 16px — block */
+  --space-6: 1.5rem;    /* 24px — section tight */
+  --space-8: 2rem;      /* 32px — section */
+  --space-12: 3rem;     /* 48px — page section */
+  --space-16: 4rem;     /* 64px — hero / major section */
+
+  /* ── Radius scale ── */
+  --radius-sm: 0.375rem;  /* 6px  — inputs, small elements */
+  --radius-md: 0.5rem;    /* 8px  — buttons, cards */
+  --radius-lg: 0.75rem;   /* 12px — modals, panels */
+  --radius-full: 9999px;  /* pills */
+
+  /* ── Control heights ── */
+  --height-input: 2.5rem;   /* 40px — h-10 */
+  --height-button: 2.5rem;  /* 40px — h-10 */
+  --height-button-sm: 2rem; /* 32px — h-8 */
+
+  /* ── Transitions ── */
+  --duration-fast: 150ms;
+  --duration-normal: 200ms;
+  --duration-slow: 300ms;
+  --easing-default: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── Dark mode overrides ── */
+.dark {
+  --color-primary: theme(colors.white);
+  --color-primary-hover: theme(colors.zinc.100);
+  --color-secondary: theme(colors.zinc.800);
+  --color-secondary-hover: theme(colors.zinc.700);
+  --color-surface: theme(colors.zinc.950);
+  --color-surface-muted: theme(colors.zinc.900);
+  --color-border: theme(colors.zinc.800);
+
+  --color-success: theme(colors.emerald.400);
+  --color-success-bg: theme(colors.emerald.950);
+  --color-danger: theme(colors.red.400);
+  --color-danger-bg: theme(colors.red.950);
+  --color-warning: theme(colors.amber.400);
+  --color-warning-bg: theme(colors.amber.950);
+
+  --color-text: theme(colors.zinc.100);
+  --color-text-muted: theme(colors.zinc.400);
+  --color-text-inverse: theme(colors.zinc.900);
+}

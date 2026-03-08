@@ -13,6 +13,7 @@ import type {
   GlimpseSnapshot,
   Annotation,
 } from '@/components/phase4/types';
+import { cn } from '@/lib/utils';
 
 /* ── Seed shelf (C2: plain language, real-world metaphor) ────────── */
 const SEED_SHELF: ScenarioSeed[] = [
@@ -217,7 +218,7 @@ export function ScenarioCanvasView() {
 
   /* ── Render ────────────────────────────────────────────────────── */
   return (
-    <div className="h-screen flex flex-col bg-canvas-bg font-body relative">
+    <div className="h-full min-h-0 flex flex-col bg-canvas-bg font-body relative">
       {/* Toolbar — fixed top center */}
       <CanvasToolbar actions={toolbarActions} />
 
@@ -262,8 +263,14 @@ export function ScenarioCanvasView() {
         </div>
       )}
 
-      {/* Canvas */}
-      <div className="flex-1 relative">
+      {/* Canvas — bottom padding when timeline ribbon or comparison tray is visible */}
+      <div
+        className={cn(
+          'flex-1 min-h-0 relative',
+          timelineMarkers.length > 0 && 'pb-14',
+          selectedGlimpses.size >= 2 && 'pb-48'
+        )}
+      >
         <ScenarioCanvas className="w-full h-full">
           {/* Fork edges */}
           {edges.map((edge) => (

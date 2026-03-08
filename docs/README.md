@@ -14,6 +14,8 @@ Root-level documentation for the CascadeProjects workspace.
 | [GIT_REPO.md](GIT_REPO.md) | Git conventions, branching, staging/push workflow, remotes, nested repos. |
 | [SUBMODULES.md](SUBMODULES.md) | Dirty submodules: remediation, best practices, and organizing the submodule-dirty branch. |
 | [DATA_CONTRACTS.md](DATA_CONTRACTS.md) | Cross-server data contracts (audit, snapshots, etc.). |
+| [DEBUGGING.md](DEBUGGING.md) | Reproduce steps, key logs, Cursor debug session, timestamp rules (UTC / +06:00). |
+| [AFTERHOURS_CHECKLIST.md](AFTERHOURS_CHECKLIST.md) | Afterhours sprint checklist: verify, merge, escalation, rollback. |
 | [plans/](plans/) | Planning and phase documents. |
 
 **Phase timeline (from [progress-and-vision.html](progress-and-vision.html)):**
