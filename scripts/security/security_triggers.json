@@ -1,0 +1,332 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "version": "1.0.0",
+  "description": "Declarative trigger-hook bindings for the CascadeProjects security safeguard system. Each trigger fires on a security-relevant event and invokes one or more bound hooks (custom function calls) with conditional if-then policies.",
+  "metadata": {
+    "generated": "2026-03-08",
+    "source_reports": [
+      "docs/CascadeProjects-threat-model.md",
+      "docs/security_best_practices_report.md",
+      "docs/security_ownership_map_report.md"
+    ],
+    "method": "subtractive-analysis"
+  },
+
+  "known_test_secrets": [
+    "test-secret-for-grid-main-2026",
+    "grid-main-secret",
+    "TransitionGate",
+    "test-secret",
+    "secret",
+    "GRID-main-2026"
+  ],
+
+  "known_audit_sources": [
+    "echoes-server",
+    "grid-server",
+    "lots-server",
+    "maintain-server",
+    "pulse-server",
+    "seeds-server",
+    "afloat-server"
+  ],
+
+  "sensitive_paths": [
+    "src/grid/auth/*",
+    "safety/auth/*",
+    "src/application/mothership/security/*",
+    "src/grid/security/*",
+    "scripts/gate/*"
+  ],
+
+  "triggers": [
+    {
+      "id": "TRG-001",
+      "name": "on_request_received",
+      "fires_when": "Any HTTP request enters GRID-main middleware stack",
+      "threat_basis": ["TM-002", "SBP-002", "SBP-004"],
+      "hooks": [
+        {
+          "function": "CORSPolicyGuard.validate",
+          "module": "safeguard_hooks",
+          "policy_rules": [
+            {
+              "id": "P-NET-002",
+              "if": "configured_origins == ['*'] AND allow_credentials == true",
+              "then": "block_startup_with_critical_log",
+              "severity": "critical"
+            }
+          ]
+        },
+        {
+          "function": "DocsExposureGuard.check",
+          "module": "safeguard_hooks",
+          "policy_rules": [
+            {
+              "id": "P-NET-003",
+              "if": "environment == 'production' AND docs_url is not None",
+              "then": "override_docs_url_to_none",
+              "severity": "medium"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "TRG-002",
+      "name": "on_auth_attempt",
+      "fires_when": "Login, token refresh, or API-key validation is attempted",
+      "threat_basis": ["TM-001", "SBP-001", "SBP-003"],
+      "hooks": [
+        {
+          "function": "SecretHygieneGuard.check_secrets",
+          "module": "safeguard_hooks",
+          "policy_rules": [
+            {
+              "id": "P-INT-006",
+              "if": "active_secret in known_test_secrets AND environment != 'test'",
+              "then": "reject_with_secret_hygiene_error",
+              "severity": "critical"
+            }
+          ]
+        },
+        {
+          "function": "TokenStorageGuard.enforce",
+          "module": "safeguard_hooks",
+          "policy_rules": [
+            {
+              "id": "P-NET-004",
+              "if": "token_delivery_method == 'response_body' AND environment == 'production'",
+              "then": "emit_deprecation_warning_and_set_csp_header",
+              "severity": "high"
+            },
+            {
+              "id": "P-NET-005",
+              "if": "token_age_seconds > MAX_TOKEN_AGE_SECONDS",
+              "then": "force_reauthentication",
+              "severity": "medium"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "TRG-003",
+      "name": "on_websocket_connect",
+      "fires_when": "WebSocket upgrade request is received on any /ws/ path",
+      "threat_basis": ["TM-002"],
+      "hooks": [
+        {
+          "function": "WebSocketAuthHook.validate_connection",
+          "module": "safeguard_hooks",
+          "policy_rules": [
+            {
+              "id": "P-NET-001",
+              "if": "request targets /ws/ AND no valid auth token present",
+              "then": "reject_upgrade_with_401",
+              "severity": "high"
+            },
+            {
+              "id": "P-NET-006",
+              "if": "ws_connections_from_ip > WS_MAX_PER_IP",
+              "then": "throttle_and_emit_alert",
+              "severity": "medium"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "TRG-004",
+      "name": "on_mcp_tool_call",
+      "fires_when": "Any MCP tool invocation is dispatched by a local MCP host",
+      "threat_basis": ["TM-003", "TM-006"],
+      "hooks": [
+        {
+          "function": "ExecutionPolicyEngine.evaluate",
+          "module": "security-policy",
+          "policy_rules": [
+            {
+              "id": "P-MCP-001",
+              "if": "tool == 'experiment_run' AND resolved_script_path is not under EXPERIMENTS_DIR",
+              "then": "block_execution_and_emit_audit",
+              "severity": "high"
+            },
+            {
+              "id": "P-MCP-002",
+              "if": "tool == 'cleanup_execute' AND dryRun == false AND preview_token is invalid",
+              "then": "block_require_dry_run_first",
+              "severity": "high"
+            },
+            {
+              "id": "P-MCP-003",
+              "if": "tool == 'workflow_execute' AND dryRun == false AND commands contain shell_operators",
+              "then": "block_require_command_allowlist",
+              "severity": "high"
+            },
+            {
+              "id": "P-MCP-005",
+              "if": "resolved_target_path is not under any configured workspace root",
+              "then": "block_with_path_violation",
+              "severity": "high"
+            }
+          ]
+        },
+        {
+          "function": "ReadScopePolicy.check",
+          "module": "security-policy",
+          "policy_rules": [
+            {
+              "id": "P-MCP-004",
+              "if": "count(scan_calls from session in sliding_window) > READ_BURST_LIMIT",
+              "then": "throttle_and_emit_warning_audit",
+              "severity": "medium"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "TRG-005",
+      "name": "on_audit_write",
+      "fires_when": "An audit entry is appended to the shared NDJSON file",
+      "threat_basis": ["TM-004"],
+      "hooks": [
+        {
+          "function": "AuditIntegrityGuard.validate_entry",
+          "module": "security-policy",
+          "policy_rules": [
+            {
+              "id": "P-INT-001",
+              "if": "entry.timestamp is in the future OR entry.timestamp is > 24h stale",
+              "then": "reject_entry_and_emit_integrity_alert",
+              "severity": "high"
+            },
+            {
+              "id": "P-INT-002",
+              "if": "entry.source not in known_audit_sources",
+              "then": "reject_entry_and_emit_provenance_alert",
+              "severity": "high"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "TRG-006",
+      "name": "on_snapshot_write",
+      "fires_when": "Seeds snapshot is saved to disk via ecosystem_scan(saveSnapshot=true)",
+      "threat_basis": ["TM-004"],
+      "hooks": [
+        {
+          "function": "AuditIntegrityGuard.validate_snapshot",
+          "module": "security-policy",
+          "policy_rules": [
+            {
+              "id": "P-INT-003",
+              "if": "abs(new_snapshot.overallScore - previous_snapshot.overallScore) > SCORE_DELTA_THRESHOLD",
+              "then": "flag_as_anomalous_require_confirmation",
+              "severity": "medium"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "TRG-007",
+      "name": "on_gate_validate",
+      "fires_when": "A GATE envelope is submitted for validation via grid-server validate_envelope",
+      "threat_basis": ["TM-005", "SBP-001"],
+      "hooks": [
+        {
+          "function": "GateSecurityPolicy.enforce",
+          "module": "security-policy",
+          "policy_rules": [
+            {
+              "id": "P-INT-004",
+              "if": "envelope.nonce not in nonce_registry OR nonce.burned == true",
+              "then": "reject_envelope_replay_detected",
+              "severity": "high"
+            },
+            {
+              "id": "P-INT-005",
+              "if": "remote_validation_unavailable AND target_partition == 'production'",
+              "then": "fail_closed_approved_false",
+              "severity": "critical"
+            },
+            {
+              "id": "P-INT-006",
+              "if": "GATE_USER_SECRET matches any known_test_secret AND environment != 'test'",
+              "then": "block_with_secret_hygiene_error",
+              "severity": "critical"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "TRG-008",
+      "name": "on_cleanup_execute",
+      "fires_when": "Destructive cleanup operation initiated via maintain-server",
+      "threat_basis": ["TM-003"],
+      "hooks": [
+        {
+          "function": "ExecutionPolicyEngine.require_approval",
+          "module": "security-policy",
+          "policy_rules": [
+            {
+              "id": "P-MCP-002",
+              "if": "dryRun == false AND confirmation_phrase != 'CONFIRM-CLEANUP'",
+              "then": "block_execution",
+              "severity": "high"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "TRG-009",
+      "name": "on_sensitive_pr",
+      "fires_when": "A pull request modifies files matching sensitive_paths patterns",
+      "threat_basis": ["OWN-001", "OWN-002"],
+      "hooks": [
+        {
+          "function": "OwnershipGovernance.enforce_review",
+          "module": "security-policy",
+          "policy_rules": [
+            {
+              "id": "P-GOV-001",
+              "if": "PR modifies any file in sensitive_paths",
+              "then": "require_minimum_2_reviewers",
+              "severity": "medium"
+            },
+            {
+              "id": "P-GOV-002",
+              "if": "PR author is sole owner of modified sensitive path",
+              "then": "emit_review_escalation_alert",
+              "severity": "medium"
+            },
+            {
+              "id": "P-GOV-003",
+              "if": "PR touches security/ AND no corresponding test file changed",
+              "then": "block_merge_require_test_coverage",
+              "severity": "medium"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+
+  "thresholds": {
+    "MAX_TOKEN_AGE_SECONDS": 900,
+    "WS_MAX_PER_IP": 10,
+    "WS_MAX_MESSAGES_PER_MINUTE": 60,
+    "READ_BURST_LIMIT": 20,
+    "READ_BURST_WINDOW_SECONDS": 60,
+    "SCORE_DELTA_THRESHOLD": 40,
+    "AUDIT_MAX_STALENESS_HOURS": 24,
+    "NONCE_FRESHNESS_SECONDS": 600,
+    "MAX_BODY_SIZE_BYTES": 50000
+  }
+}
