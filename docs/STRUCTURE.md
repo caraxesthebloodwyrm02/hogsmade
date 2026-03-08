@@ -9,7 +9,7 @@ This document is the **single map** for where things live and who owns what. Use
 | **Entry points** | `README.md`, `CLAUDE.md`, `AGENTS.md` | Start here for orientation and AI/agent rules. |
 | **Conventions** | `CONTRIBUTING.md`, `CHANGELOG.md`, `LICENSE`, `SECURITY.md` | Contributing, history, license, security policy. |
 | **Scratch / notes** | `prompt.md` | Session scratch; not config. |
-| **Config (root)** | `.editorconfig`, `.env.example`, `.gitattributes`, `.gitignore`, `.gitmodules` | Editor, env template, git. |
+| **Config (root)** | `.editorconfig`, `.env.example`, `.gitattributes`, `.gitignore`, `.gitmodules` | Editor, env template, git. Ignored: `.cursor/hooks*`, `debug-*.log`, `.session-state.json` — see [GIT_REPO.md](GIT_REPO.md#ignored-paths). |
 | **Tool config** | `mcp_config.json`, `claude_code_config.json` | MCP and editor tooling; do not commit secrets. |
 | **Docs** | `docs/` | All shared documentation; index in [docs/README.md](README.md). |
 | **Scripts** | `scripts/` | Workspace-level scripts; index in [scripts/README.md](../scripts/README.md). |

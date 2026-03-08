@@ -16,7 +16,14 @@ build/
 !.cursor/agents/
 !.cursor/skills/
 !.cursor/rules/
+# Cursor hooks and local hook config (project-level hooks disabled; do not track)
+.cursor/hooks/
+.cursor/hooks.json
 .windsurf/
+
+# Debug and session state (IDE / agent logs)
+debug-*.log
+.session-state.json
 
 # Secrets and local config
 .env
@@ -38,3 +45,7 @@ Desktop.ini
 # Security ownership map outputs and local venv (generated / machine-local)
 ownership-map-out/
 .tmp-ownership-venv/
+
+# Optional: local hook stubs (if re-added, keep empty or use .cursor/hooks.json)
+hooks/
+scripts/hooks/
