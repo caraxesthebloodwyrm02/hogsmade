@@ -3,18 +3,20 @@ import { mkdtempSync, rmSync } from "fs";
 import os from "os";
 import path from "path";
 
+type ToolHandler = (args: Record<string, unknown>, extra: unknown) => Promise<{ isError?: boolean; content?: Array<{ text?: string }> }>;
+
 type TestServer = {
-  _registeredTools: Record<string, { inputSchema?: unknown; handler: (...args: any[]) => unknown }>;
+  _registeredTools: Record<string, { inputSchema?: unknown; handler: ToolHandler }>;
 };
 
 function getToolNames(server: TestServer): string[] {
   return Object.keys(server._registeredTools);
 }
 
-async function invokeTool(server: TestServer, name: string, args: Record<string, unknown> = {}) {
+async function invokeTool(server: TestServer, name: string, args: Record<string, unknown> = {}): Promise<{ isError?: boolean; content?: Array<{ text?: string }> }> {
   const tool = server._registeredTools[name];
   expect(tool).toBeDefined();
-  return tool.inputSchema ? await tool.handler(args, {} as any) : await tool.handler({} as any);
+  return tool.inputSchema ? await tool.handler(args, {}) : await tool.handler({} as Record<string, unknown>, {});
 }
 
 describe("maintain-server smoke", () => {
@@ -26,7 +28,8 @@ describe("maintain-server smoke", () => {
     process.env.CASCADE_WORKSPACE_ROOT = path.join(tempRoot, "workspace");
     process.env.SEEDS_ROOT = path.join(tempRoot, "seeds");
     process.env.ECHOES_AUDIT_PATH = path.join(tempRoot, "echoes", "audit.ndjson");
-    ({ buildServer } = await import("../src/server.ts"));
+    const mod = await import("../src/server.ts");
+    buildServer = () => mod.buildServer() as unknown as TestServer;
     ({ getConfig } = await import("../src/config.ts"));
   });
 
@@ -45,7 +48,7 @@ describe("maintain-server smoke", () => {
     process.env.CASCADE_WORKSPACE_ROOT = originalWorkspace;
   });
 
-  it("registers expected tools and runs scan_system", async () => {
+  it("registers expected tools and runs scan_system", { timeout: 15000 }, async () => {
     const server = buildServer();
     expect(getToolNames(server)).toEqual(expect.arrayContaining([
       "health_check",

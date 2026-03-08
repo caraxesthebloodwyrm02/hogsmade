@@ -9,7 +9,7 @@
     "prebuild": "node scripts/verify-rollup-platform.mjs",
     "build": "tsc && vite build",
     "lint": "tsc --noEmit --pretty false",
-    "test": "node --test --experimental-strip-types tests/*.test.ts",
+    "test": "npx tsx --test tests/*.test.ts",
     "check": "npm run lint && npm run test && npm run build",
     "perf:smoke": "node scripts/perf-smoke.mjs",
     "preview": "vite preview"

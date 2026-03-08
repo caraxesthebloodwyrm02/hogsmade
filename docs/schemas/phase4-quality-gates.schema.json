@@ -1,0 +1,123 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "phase4-quality-gates.schema.json",
+  "title": "Phase 4 Quality Gate Report",
+  "description": "Schema for Phase 4 quality-gate reports as defined in PHASE4_QUALITY_CONTRACT.md",
+  "type": "object",
+  "required": ["version", "timestamp", "initiatives", "checklist", "probabilityOfFullDelivery", "overallStatus"],
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Contract/schema version (semver)"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp when the report was generated"
+    },
+    "initiatives": {
+      "type": "object",
+      "description": "Completion status per Phase 4 initiative",
+      "required": ["4.1", "4.2", "4.3", "4.4"],
+      "additionalProperties": false,
+      "properties": {
+        "4.1": {
+          "$ref": "#/$defs/initiativeStatus"
+        },
+        "4.2": {
+          "$ref": "#/$defs/initiativeStatus"
+        },
+        "4.3": {
+          "$ref": "#/$defs/initiativeStatus"
+        },
+        "4.4": {
+          "$ref": "#/$defs/initiativeStatus"
+        }
+      }
+    },
+    "checklist": {
+      "type": "array",
+      "description": "List of acceptance criterion IDs and their status",
+      "items": {
+        "$ref": "#/$defs/checklistItem"
+      },
+      "minItems": 1
+    },
+    "probabilityOfFullDelivery": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Confidence that all acceptance criteria will be (or have been) met"
+    },
+    "overallStatus": {
+      "type": "string",
+      "enum": ["on_track", "at_risk", "fully_delivered", "blocked"],
+      "description": "Overall Phase 4 delivery status"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Optional notes or context"
+    },
+    "designDocSignedOff": {
+      "type": "boolean",
+      "description": "Whether the design doc for 4.3 (real-time event stream) has been signed off"
+    }
+  },
+  "$defs": {
+    "initiativeStatus": {
+      "type": "object",
+      "required": ["completion", "status"],
+      "additionalProperties": false,
+      "properties": {
+        "completion": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Completion fraction 0-1 (or 0-100% as decimal)"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["not_started", "in_progress", "completed", "blocked"],
+          "description": "Current status of the initiative"
+        },
+        "notes": {
+          "type": "string",
+          "description": "Optional notes for this initiative"
+        },
+        "blockingIssues": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of blocking issue IDs or descriptions"
+        }
+      }
+    },
+    "checklistItem": {
+      "type": "object",
+      "required": ["id", "description", "status"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Criterion ID (e.g., '4.1.1', '4.2.3')"
+        },
+        "description": {
+          "type": "string",
+          "description": "Human-readable description of the criterion"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["done", "not_done", "partial", "blocked"],
+          "description": "Status of this acceptance criterion"
+        },
+        "evidence": {
+          "type": "string",
+          "description": "Optional link or reference to evidence of completion"
+        }
+      }
+    }
+  }
+}
