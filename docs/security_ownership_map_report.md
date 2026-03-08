@@ -83,7 +83,7 @@ Relevant lines: [summary.json](/mnt/c/Users/USER/CascadeProjects/ownership-map-o
 
 ### Exclude flags for a cleaner GRID-main run
 
-The skill’s runner supports `--path-exclude` (repeatable). Paths matching these globs are excluded from ownership/touch analysis so archive/backup worktrees do not appear as hotspots. I reran `GRID-main` with:
+The skill's runner supports `--path-exclude` (repeatable). Paths matching these globs are excluded from ownership/touch analysis so archive/backup worktrees do not appear as hotspots. I reran `GRID-main` with:
 
 ```bash
 /mnt/c/Users/USER/CascadeProjects/.tmp-ownership-venv/bin/python \
@@ -123,7 +123,7 @@ Repo-level verification shows:
 
 So the ownership script used the flag correctly, but Git in this environment did not canonicalize those commit identities in the log output consumed by the script. Treat the mailmap run as an attempted normalization pass, not a successful identity collapse.
 
-**Update:** The ownership-map script was patched to apply **post-log mailmap resolution**: when `--use-mailmap` is set, each commit’s author/committer is resolved via `git check-mailmap` (with caching) and the canonical identity is used for people/edges. Rerunning with `--use-mailmap` should now collapse identities regardless of whether `git log --use-mailmap` canonicalizes in your environment. Use the same command as above with a fresh output dir (e.g. `--out .../ownership-map-out/GRID-main-mailmap-v2`) to verify.
+**Update:** The ownership-map script was patched to apply **post-log mailmap resolution**: when `--use-mailmap` is set, each commit's author/committer is resolved via `git check-mailmap` (with caching) and the canonical identity is used for people/edges. Rerunning with `--use-mailmap` should now collapse identities regardless of whether `git log --use-mailmap` canonicalizes in your environment. Use the same command as above with a fresh output dir (e.g. `--out .../ownership-map-out/GRID-main-mailmap-v2`) to verify.
 
 ### CODEOWNERS vs ownership map (drift check)
 

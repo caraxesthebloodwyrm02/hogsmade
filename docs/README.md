@@ -33,6 +33,9 @@ Root-level documentation for the CascadeProjects workspace.
 | [MCP_SETUP_GUIDE.md](MCP_SETUP_GUIDE.md) | MCP server registration, architecture, usage demos, CLI validation. |
 | [YOUR_MCP_ECOSYSTEM_GUIDE.md](YOUR_MCP_ECOSYSTEM_GUIDE.md) | Plain-English guide to all 7 MCP servers, daily workflow, privacy and safety. |
 | [SECURITY_STATUS.md](SECURITY_STATUS.md) | Security implementation status: implemented vs referenced-but-not-implemented, recommendations. |
+| [CascadeProjects-threat-model.md](CascadeProjects-threat-model.md) | Workspace threat model: trust boundaries, abuse paths, mitigations, GATE/MCP/GRID-main. |
+| [security_ownership_map_report.md](security_ownership_map_report.md) | Security ownership map: bus factor, sensitive paths, CODEOWNERS drift, mailmap. |
+| [security_best_practices_report.md](security_best_practices_report.md) | Security best-practices review: CORS, token storage, gate secrets, API docs. |
 
 ## Scratch and working plans
 
