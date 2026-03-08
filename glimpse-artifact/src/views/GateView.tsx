@@ -1,16 +1,7 @@
 import { AuditTimeline, WorkflowStatusCard } from "@/components/phase4";
-<<<<<<< C:/Users/USER/CascadeProjects/glimpse-artifact/src/views/GateView.tsx
 import { useGateData } from "@/hooks/useGateData";
 import type { NonceEntry, Deployment } from "@/hooks/useGateData";
 import { formatDebugTimestamp } from "@/lib/debugTime";
-||||||| C:/Users/USER/.windsurf/worktrees/CascadeProjects/CascadeProjects-f61c48a1/glimpse-artifact/src/views/GateView.tsx.base
-import { AuditTimeline, WorkflowStatusCard } from '@/components/phase4';
-import { useGateData } from '@/hooks/useGateData';
-import type { NonceEntry, Deployment } from '@/hooks/useGateData';
-=======
-import type { Deployment, NonceEntry } from "@/hooks/useGateData";
-import { useGateData } from "@/hooks/useGateData";
->>>>>>> C:/Users/USER/.windsurf/worktrees/CascadeProjects/CascadeProjects-f61c48a1/glimpse-artifact/src/views/GateView.tsx
 
 // ── Style helpers ───────────────────────────────────────────────────
 
@@ -45,32 +36,12 @@ function riskColor(score: number): string {
 }
 
 function formatDate(ts: string): string {
-<<<<<<< C:/Users/USER/CascadeProjects/glimpse-artifact/src/views/GateView.tsx
   return formatDebugTimestamp(ts);
-||||||| C:/Users/USER/.windsurf/worktrees/CascadeProjects/CascadeProjects-f61c48a1/glimpse-artifact/src/views/GateView.tsx.base
-  try {
-    return new Date(ts).toLocaleString(undefined, {
-      month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
-    });
-  } catch { return ts; }
-=======
-  try {
-    return new Date(ts).toLocaleString(undefined, {
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  } catch {
-    return ts;
-  }
->>>>>>> C:/Users/USER/.windsurf/worktrees/CascadeProjects/CascadeProjects-f61c48a1/glimpse-artifact/src/views/GateView.tsx
 }
 
 // ── GateView ────────────────────────────────────────────────────────
 
 export function GateView() {
-<<<<<<< C:/Users/USER/CascadeProjects/glimpse-artifact/src/views/GateView.tsx
   const {
     verifications,
     auditEvents,
@@ -79,12 +50,6 @@ export function GateView() {
     loading,
     debugContext,
   } = useGateData();
-||||||| C:/Users/USER/.windsurf/worktrees/CascadeProjects/CascadeProjects-f61c48a1/glimpse-artifact/src/views/GateView.tsx.base
-  const { verifications, auditEvents, nonces, deployments, loading } = useGateData();
-=======
-  const { verifications, auditEvents, nonces, deployments, loading } =
-    useGateData();
->>>>>>> C:/Users/USER/.windsurf/worktrees/CascadeProjects/CascadeProjects-f61c48a1/glimpse-artifact/src/views/GateView.tsx
 
   return (
     <div className="h-full overflow-y-auto bg-canvas-bg font-body">
@@ -192,7 +157,7 @@ export function GateView() {
                           key={n.nonce}
                           className="border-b border-border-color last:border-0"
                         >
-                          <td className="font-body text-sm text-ink px-4 py-2 font-mono">
+                          <td className="text-sm text-ink px-4 py-2 font-mono">
                             {n.nonce}
                           </td>
                           <td className="px-4 py-2">
