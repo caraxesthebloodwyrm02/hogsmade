@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils";
 import type { HealthScore } from "./types";
+import { TrendingUp, TrendingDown, Minus, AlertTriangle } from "lucide-react";
 
 interface HealthGaugeProps {
   data?: HealthScore;
@@ -20,10 +21,10 @@ function scoreToLabel(score: number): string {
   return "At risk";
 }
 
-function trendArrow(trend: "up" | "down" | "stable"): string {
-  if (trend === "up") return "\u2191";
-  if (trend === "down") return "\u2193";
-  return "\u2192";
+function TrendIcon({ trend, className, style }: { trend: "up" | "down" | "stable", className?: string, style?: React.CSSProperties }) {
+  if (trend === "up") return <TrendingUp className={className} style={style} />;
+  if (trend === "down") return <TrendingDown className={className} style={style} />;
+  return <Minus className={className} style={style} />;
 }
 
 export function HealthGauge({
@@ -32,24 +33,20 @@ export function HealthGauge({
   error,
   className,
 }: HealthGaugeProps) {
-  const size = 120;
-  const strokeWidth = 10;
-  const radius = (size - strokeWidth) / 2;
-  const circumference = 2 * Math.PI * radius;
-
   if (error) {
     return (
       <div
         className={cn(
-          "flex flex-col items-center justify-center p-4 rounded-md border border-rose-500 bg-rose-100 min-h-[160px]",
+          "flex flex-col items-center justify-center p-4 rounded-xl border border-rose-500/30 bg-rose-50/50 min-h-[140px] shadow-sm",
           className,
         )}
         role="alert"
       >
+        <AlertTriangle className="w-6 h-6 text-rose-500 mb-2" />
         <p className="font-body text-sm text-rose-600 font-medium text-center">
-          Something went wrong loading health data.
+          Loading error
         </p>
-        <p className="font-body text-sm text-ink-muted mt-1 text-center">
+        <p className="font-body text-xs text-rose-500/80 mt-1 text-center line-clamp-2">
           {error}
         </p>
       </div>
@@ -60,78 +57,74 @@ export function HealthGauge({
     return (
       <div
         className={cn(
-          "flex flex-col items-center justify-center p-4 min-h-[160px]",
+          "flex flex-col p-4 rounded-xl border border-border-color/50 bg-canvas-surface shadow-token-sm min-h-[140px]",
           className,
         )}
         aria-busy="true"
         aria-label="Loading health score"
       >
-        <div className="w-[120px] h-[120px] rounded-full border-4 border-border-color animate-pulse" />
-        <p className="font-body text-sm text-ink-muted mt-2">
-          Loading health...
-        </p>
+        <div className="flex justify-between items-start mb-4">
+          <div className="h-4 bg-border-color/30 rounded w-1/2 animate-pulse" />
+          <div className="w-4 h-4 bg-border-color/30 rounded-full animate-pulse" />
+        </div>
+
+        <div className="h-10 bg-border-color/20 rounded w-1/3 mb-4 animate-pulse" />
+
+        <div className="mt-auto">
+          <div className="h-3 bg-border-color/20 rounded w-1/4 mb-2 animate-pulse" />
+          <div className="h-1.5 w-full bg-border-color/10 rounded-full overflow-hidden animate-pulse" />
+        </div>
       </div>
     );
   }
 
   const score = Math.max(0, Math.min(100, data.score));
-  const offset = circumference - (score / 100) * circumference;
   const color = scoreToColor(score);
   const label = data.label || scoreToLabel(score);
 
   return (
     <div
-      className={cn("flex flex-col items-center p-4", className)}
+      className={cn(
+        "flex flex-col p-4 rounded-xl border border-border-color/50 bg-canvas-surface shadow-token-sm min-h-[140px]",
+        "transition-all duration-300 hover:shadow-token-md hover:border-border-color",
+        className
+      )}
       role="figure"
       aria-label={`${data.repoName}: health score ${score} out of 100, ${label}`}
     >
-      <svg
-        width={size}
-        height={size}
-        viewBox={`0 0 ${size} ${size}`}
-        className="transform -rotate-90"
-        aria-hidden="true"
-      >
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          fill="none"
-          stroke="var(--border-color)"
-          strokeWidth={strokeWidth}
-        />
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          fill="none"
-          stroke={color}
-          strokeWidth={strokeWidth}
-          strokeDasharray={circumference}
-          strokeDashoffset={offset}
-          strokeLinecap="round"
-          style={{
-            transition: `stroke-dashoffset var(--duration-slow) var(--easing-default)`,
-          }}
-        />
-      </svg>
+      <div className="flex justify-between items-start mb-2">
+        <span className="font-heading text-sm font-bold text-ink truncate pr-2 tracking-tight" title={data.repoName}>
+          {data.repoName}
+        </span>
+        <span aria-label={`trend ${data.trend}`} className="shrink-0 bg-canvas-bg/50 p-1 rounded-md border border-border-color/30">
+          <TrendIcon trend={data.trend} className="w-3.5 h-3.5" style={{ color: data.trend === 'up' ? 'var(--emerald-500)' : data.trend === 'down' ? 'var(--rose-500)' : 'var(--ink-muted)' }} />
+        </span>
+      </div>
 
-      <div className="flex flex-col items-center mt-2 gap-0.5">
+      <div className="flex items-baseline gap-1.5 mb-2 mt-1">
         <span
-          className="font-heading text-xl font-bold text-ink"
+          className="font-heading text-4xl font-black tracking-tight leading-none drop-shadow-sm"
           style={{ color }}
         >
           {score}
         </span>
-        <span className="font-body text-sm font-medium text-ink">
-          {data.repoName}
-        </span>
-        <span className="font-body text-sm text-ink-muted flex items-center gap-1">
-          {label}
-          <span aria-label={`trend ${data.trend}`}>
-            {trendArrow(data.trend)}
+      </div>
+
+      <div className="mt-auto pt-2 border-t border-border-color/20">
+        <div className="flex justify-between items-center mb-2">
+          <span className="font-body text-xs font-semibold text-ink-muted uppercase tracking-wider">
+            {label}
           </span>
-        </span>
+        </div>
+        <div className="h-1.5 w-full bg-surface-raised rounded-full overflow-hidden border border-border-color/10">
+          <div
+            className="h-full rounded-full transition-all duration-1000 ease-out shadow-sm"
+            style={{
+              width: `${Math.max(2, score)}%`,
+              backgroundColor: color
+            }}
+          />
+        </div>
       </div>
     </div>
   );

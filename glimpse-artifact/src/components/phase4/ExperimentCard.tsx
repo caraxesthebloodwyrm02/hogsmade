@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils";
 import type { Experiment } from "./types";
+import { Activity, CheckCircle2, XCircle, Clock, BarChart3, TrendingUp, TrendingDown } from "lucide-react";
 
 interface ExperimentCardProps {
   data?: Experiment;
@@ -10,23 +11,31 @@ interface ExperimentCardProps {
 
 const STATUS_LABELS: Record<
   Experiment["status"],
-  { label: string; color: string; bg: string }
+  { label: string; color: string; bg: string; icon: React.ElementType }
 > = {
   running: {
     label: "Running",
     color: "var(--teal-600)",
     bg: "var(--teal-100)",
+    icon: Activity,
   },
   completed: {
     label: "Completed",
     color: "var(--emerald-600)",
     bg: "var(--emerald-100)",
+    icon: CheckCircle2,
   },
-  failed: { label: "Failed", color: "var(--rose-600)", bg: "var(--rose-100)" },
+  failed: {
+    label: "Failed",
+    color: "var(--rose-600)",
+    bg: "var(--rose-100)",
+    icon: XCircle,
+  },
   queued: {
     label: "Queued",
     color: "var(--ink-muted)",
     bg: "var(--surface-raised)",
+    icon: Clock,
   },
 };
 
@@ -84,6 +93,7 @@ export function ExperimentCard({
   }
 
   const statusCfg = STATUS_LABELS[data.status];
+  const StatusIcon = statusCfg.icon;
   const maxVal = Math.max(data.baselineValue, data.currentValue, 1);
   const baselinePct = (data.baselineValue / maxVal) * 100;
   const currentPct = (data.currentValue / maxVal) * 100;
@@ -93,77 +103,85 @@ export function ExperimentCard({
   return (
     <div
       className={cn(
-        "rounded-lg border border-border-color bg-canvas-surface p-4 shadow-token-sm",
-        "transition-shadow duration-fast hover:shadow-token-md",
+        "rounded-xl border border-border-color/50 bg-canvas-surface p-5 shadow-token-sm",
+        "transition-all duration-300 hover:shadow-token-md hover:border-border-color",
         className,
       )}
       role="article"
       aria-label={`Experiment: ${data.name}, status: ${statusCfg.label}`}
     >
       <div className="flex items-start justify-between gap-2 mb-3">
-        <h3 className="font-heading text-base font-bold text-ink leading-snug">
+        <h3 className="font-heading text-base font-bold text-ink leading-snug tracking-tight">
           {data.name}
         </h3>
         <span
-          className="shrink-0 font-body text-xs font-medium px-2 py-1 rounded-full"
+          className="shrink-0 flex items-center gap-1.5 font-body text-xs font-semibold px-2.5 py-1 rounded-full shadow-sm"
           style={{ backgroundColor: statusCfg.bg, color: statusCfg.color }}
         >
+          <StatusIcon className="w-3.5 h-3.5" />
           {statusCfg.label}
         </span>
       </div>
 
-      <p className="font-body text-sm text-ink-muted mb-3">
-        Measuring: {data.metric}
-      </p>
+      <div className="flex items-center gap-2 mb-5 bg-surface-raised/50 p-2 rounded-lg border border-border-color/30">
+        <div className="flex items-center justify-center w-6 h-6 rounded-md bg-canvas-surface border border-border-color/50 shadow-sm">
+          <BarChart3 className="w-3.5 h-3.5 text-ink-muted" />
+        </div>
+        <p className="font-body text-sm text-ink font-semibold">
+          {data.metric}
+        </p>
+      </div>
 
-      <div className="space-y-2" aria-label="Comparison bars">
+      <div className="space-y-4 p-4 rounded-lg bg-canvas-bg/50 border border-border-color/30" aria-label="Comparison bars">
         <div>
-          <div className="flex justify-between font-body text-xs text-ink-muted mb-0.5">
+          <div className="flex justify-between font-body text-xs font-medium text-ink-muted/80 mb-2">
             <span>Baseline</span>
             <span>{data.baselineValue.toFixed(1)}</span>
           </div>
-          <div className="h-2 rounded-full bg-surface-raised overflow-hidden">
+          <div className="h-2 rounded-full bg-surface-raised overflow-hidden border border-border-color/20">
             <div
               className="h-full rounded-full transition-all duration-slow"
               style={{
-                width: `${baselinePct}%`,
+                width: `${Math.max(2, baselinePct)}%`,
                 backgroundColor: "var(--ink-muted)",
               }}
             />
           </div>
         </div>
         <div>
-          <div className="flex justify-between font-body text-xs text-ink-muted mb-0.5">
-            <span>Current</span>
-            <span>
-              {data.currentValue.toFixed(1)}{" "}
+          <div className="flex justify-between font-body mb-2 items-center">
+            <span className="text-sm font-semibold text-ink">Current</span>
+            <span className="flex items-center gap-1.5 font-bold text-base text-ink tracking-tight shadow-sm rounded bg-surface-raised px-1 border border-border-color/30">
+              {data.currentValue.toFixed(1)}
               <span
+                className="flex items-center text-xs px-1.5 py-0.5 rounded font-bold"
                 style={{
-                  color: delta >= 0 ? "var(--emerald-600)" : "var(--rose-600)",
+                  color: delta >= 0 ? "var(--emerald-700)" : "var(--rose-700)",
+                  backgroundColor: delta >= 0 ? "var(--emerald-100)" : "var(--rose-100)",
                 }}
               >
-                ({deltaSign}
-                {delta.toFixed(1)})
+                {delta >= 0 ? <TrendingUp className="w-3.5 h-3.5 mr-0.5" /> : <TrendingDown className="w-3.5 h-3.5 mr-0.5" />}
+                {deltaSign}{delta.toFixed(1)}
               </span>
             </span>
           </div>
-          <div className="h-2 rounded-full bg-surface-raised overflow-hidden">
+          <div className="h-2.5 rounded-full bg-surface-raised overflow-hidden border border-border-color/20">
             <div
-              className="h-full rounded-full transition-all duration-slow"
+              className="h-full rounded-full transition-all duration-slow shadow-sm"
               style={{
-                width: `${currentPct}%`,
-                backgroundColor:
-                  delta >= 0 ? "var(--emerald-500)" : "var(--rose-500)",
+                width: `${Math.max(2, currentPct)}%`,
+                backgroundImage: `linear-gradient(90deg, ${delta >= 0 ? "var(--teal-500), var(--emerald-400)" : "var(--rose-600), var(--rose-400)"
+                  })`,
               }}
             />
           </div>
         </div>
       </div>
 
-      <div className="flex items-center gap-3 mt-3 font-body text-xs text-ink-muted">
-        <span>Started {formatDate(data.startedAt)}</span>
+      <div className="flex items-center gap-4 mt-5 font-body text-xs text-ink-muted/80 border-t border-border-color/30 pt-3">
+        <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> {formatDate(data.startedAt)}</span>
         {data.completedAt && (
-          <span>Finished {formatDate(data.completedAt)}</span>
+          <span className="flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5" /> Finished {formatDate(data.completedAt)}</span>
         )}
       </div>
     </div>

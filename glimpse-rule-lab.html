@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Glimpse Rule Lab — Engineering Playground</title>
+<style>
+:root {
+  --bg: #fafaf8; --surface: #fff; --raised: #f5f5f0; --ink: #1a1a1a;
+  --muted: #6b7280; --faint: #9ca3af; --border: #e5e7eb;
+  --teal: #14b8a6; --teal-dark: #0f766e; --teal-bg: #f0fdfa; --teal-border: #99f6e4;
+  --amber: #d97706; --amber-bg: #fffbeb;
+  --emerald: #059669; --emerald-bg: #ecfdf5;
+  --rose: #f43f5e; --rose-bg: #fff1f2;
+  --indigo: #6366f1; --indigo-bg: #eef2ff;
+  --font: "DM Sans", system-ui, sans-serif;
+  --heading: "Outfit", system-ui, sans-serif;
+  --radius: 8px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font); background: var(--bg); color: var(--ink); line-height: 1.6; }
+.lab { max-width: 1100px; margin: 0 auto; padding: 1.5rem; }
+h1, h2, h3 { font-family: var(--heading); }
+h1 { font-size: 1.4rem; margin-bottom: 0.25rem; }
+h1 span { color: var(--teal); }
+.subtitle { color: var(--muted); font-size: 0.85rem; margin-bottom: 1.5rem; }
+h2 { font-size: 1.1rem; margin-bottom: 0.75rem; color: var(--teal-dark); }
+h3 { font-size: 0.9rem; margin-bottom: 0.5rem; }
+
+.grid { display: grid; gap: 1.5rem; }
+.grid-2 { grid-template-columns: 1fr 1fr; }
+.grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+@media(max-width:800px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; }
+.card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; }
+.badge { font-size: 0.65rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 999px; text-transform: uppercase; letter-spacing: 0.04em; }
+.badge-teal { background: var(--teal-bg); color: var(--teal-dark); border: 1px solid var(--teal-border); }
+.badge-amber { background: var(--amber-bg); color: var(--amber); }
+.badge-rose { background: var(--rose-bg); color: var(--rose); }
+
+.pill { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.3rem 0.65rem; border-radius: 999px; font-size: 0.75rem; border: 1px solid var(--border); background: var(--raised); margin: 0.15rem; }
+.pill strong { font-weight: 600; }
+
+label { display: block; font-size: 0.78rem; font-weight: 600; color: var(--muted); margin-bottom: 0.3rem; text-transform: uppercase; letter-spacing: 0.04em; }
+select, input[type=text], input[type=number], textarea {
+  width: 100%; padding: 0.6rem 0.8rem; font-family: var(--font); font-size: 0.875rem;
+  border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); color: var(--ink);
+}
+select:focus, input:focus, textarea:focus { outline: none; border-color: var(--teal); box-shadow: 0 0 0 3px rgba(20,184,166,0.1); }
+textarea { min-height: 100px; resize: vertical; font-family: monospace; font-size: 0.8rem; }
+
+.btn { font-family: var(--font); font-size: 0.8rem; font-weight: 600; padding: 0.55rem 1rem; border: none; border-radius: var(--radius); cursor: pointer; }
+.btn-primary { background: var(--teal); color: #fff; }
+.btn-primary:hover { background: var(--teal-dark); }
+.btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+.btn-ghost:hover { background: var(--raised); }
+.btn-row { display: flex; gap: 0.5rem; margin-top: 0.75rem; }
+
+.anatomy { display: grid; grid-template-columns: 120px 1fr; gap: 0.25rem 0.75rem; font-size: 0.82rem; }
+.anatomy dt { color: var(--muted); font-weight: 600; text-align: right; }
+.anatomy dd { color: var(--ink); }
+
+.preview-box { background: var(--raised); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; font-family: monospace; font-size: 0.78rem; white-space: pre-wrap; max-height: 400px; overflow: auto; }
+
+.section { margin-bottom: 2rem; }
+.divider { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
+
+.flow-diagram { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin: 1rem 0; }
+.flow-step { background: var(--teal-bg); border: 1px solid var(--teal-border); border-radius: var(--radius); padding: 0.5rem 0.75rem; font-size: 0.78rem; font-weight: 600; color: var(--teal-dark); }
+.flow-arrow { color: var(--faint); font-size: 1.2rem; }
+
+.ref-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; margin-top: 0.5rem; }
+.ref-table th { text-align: left; padding: 0.4rem 0.6rem; background: var(--raised); border-bottom: 2px solid var(--border); font-size: 0.7rem; text-transform: uppercase; color: var(--muted); }
+.ref-table td { padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--border); }
+.ref-table code { background: var(--raised); padding: 0.1rem 0.3rem; border-radius: 3px; font-size: 0.75rem; }
+
+.example-block { background: var(--indigo-bg); border: 1px solid #c7d2fe; border-radius: var(--radius); padding: 0.75rem 1rem; margin: 0.75rem 0; font-size: 0.82rem; }
+.example-block strong { color: var(--indigo); }
+</style>
+</head>
+<body>
+<div class="lab">
+  <h1><span>Glimpse</span> Rule Lab</h1>
+  <p class="subtitle">Engineering playground for authoring, testing, and understanding Glimpse rules.</p>
+
+  <!-- Section 1: How It Works -->
+  <div class="section">
+    <h2>How the System Works</h2>
+    <p style="font-size:0.9rem;margin-bottom:0.75rem">When you drop a data file into Glimpse, it flows through four stages:</p>
+    <div class="flow-diagram">
+      <div class="flow-step">1. Ingest<br><small>Parse CSV/JSON</small></div>
+      <div class="flow-arrow">&rarr;</div>
+      <div class="flow-step">2. Profile<br><small>Detect fields, types, dimensions</small></div>
+      <div class="flow-arrow">&rarr;</div>
+      <div class="flow-step">3. Rules<br><small>Fire rules, collect evidence</small></div>
+      <div class="flow-arrow">&rarr;</div>
+      <div class="flow-step">4. Articulate<br><small>Score lenses, rank views, render</small></div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--muted)">Rules are the brain. Each rule says: "IF these conditions are true about the data, THEN boost this context lens or prefer this visual view." Rules produce evidence. Evidence drives everything you see.</p>
+  </div>
+
+  <hr class="divider">
+
+  <!-- Section 2: Rule Anatomy -->
+  <div class="section">
+    <h2>Anatomy of a Rule</h2>
+    <p style="font-size:0.85rem;margin-bottom:1rem">Every rule has the same shape. Here's what each part means:</p>
+    <div class="grid grid-2">
+      <div class="card">
+        <h3>The Template</h3>
+        <div class="anatomy">
+          <dt>id</dt><dd>Unique name (kebab-case)</dd>
+          <dt>label</dt><dd>Human-readable description</dd>
+          <dt>applies_to</dt><dd>What does this rule inspect? <code>dataset</code>, <code>entity</code>, or <code>relation</code></dd>
+          <dt>function</dt><dd>Which safe function to call (e.g. <code>taxonomy_score</code>)</dd>
+          <dt>args</dt><dd>Arguments passed to the function</dd>
+          <dt>guards</dt><dd>Preconditions that must pass first</dd>
+          <dt>derive</dt><dd>What happens when the rule fires: <code>boost_lens</code> or <code>prefer_view</code></dd>
+          <dt>because</dt><dd>Plain English explanation of why this rule exists</dd>
+          <dt>priority</dt><dd>Higher number = runs first (1-100)</dd>
+          <dt>promotion</dt><dd><code>experimental</code> or <code>active</code></dd>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Example in Plain Language</h3>
+        <div class="example-block">
+          <strong>Rule:</strong> "When records share the same country, favor the map view."<br><br>
+          <strong>Translation:</strong><br>
+          &bull; <em>applies_to:</em> relation (comparing two records)<br>
+          &bull; <em>function:</em> shared_dimension (check if they share a value)<br>
+          &bull; <em>args:</em> dimension = space<br>
+          &bull; <em>guards:</em> dataset must have a space dimension<br>
+          &bull; <em>derive:</em> prefer_view = map, score = 0.25<br>
+          &bull; <em>because:</em> Shared place relations are more legible in spatial views.
+        </div>
+        <div class="example-block">
+          <strong>Rule:</strong> "Education keywords boost the education lens."<br><br>
+          <strong>Translation:</strong><br>
+          &bull; <em>applies_to:</em> entity (each record)<br>
+          &bull; <em>function:</em> taxonomy_score (count keyword matches)<br>
+          &bull; <em>args:</em> domain = education, min_score = 1<br>
+          &bull; <em>derive:</em> boost_lens = education, score = 0.7<br>
+          &bull; <em>because:</em> Learning terms indicate pedagogical framing.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- Section 3: Rule Builder -->
+  <div class="section">
+    <h2>Rule Builder</h2>
+    <p style="font-size:0.85rem;margin-bottom:1rem">Fill in the fields below to construct a new rule. The YAML preview updates live.</p>
+    <div class="grid grid-2">
+      <div class="card">
+        <div style="display:grid;gap:0.75rem">
+          <div>
+            <label>What does this rule check?</label>
+            <select id="rb-scope">
+              <option value="dataset">The whole dataset (dataset)</option>
+              <option value="entity">Each individual record (entity)</option>
+              <option value="relation">Relationships between records (relation)</option>
+            </select>
+          </div>
+          <div>
+            <label>Which function should it use?</label>
+            <select id="rb-function">
+              <option value="">-- No function (legacy fact check) --</option>
+              <option value="taxonomy_score">taxonomy_score — Count domain keyword matches</option>
+              <option value="tone_score">tone_score — Detect emotional tone</option>
+              <option value="semantic_proximity">semantic_proximity — Find related terms in text</option>
+              <option value="shared_dimension">shared_dimension — Check if two records share a value</option>
+              <option value="temporal_distance">temporal_distance — Measure time gap between records</option>
+              <option value="influence_link">influence_link — Detect influence chains</option>
+              <option value="field_exists">field_exists — Check if a field is present</option>
+              <option value="equals_value">equals_value — Compare a field to a value</option>
+              <option value="numeric_threshold">numeric_threshold — Compare a number to a threshold</option>
+              <option value="data_shape">data_shape — Classify dataset complexity</option>
+              <option value="density_score">density_score — Measure information density</option>
+              <option value="relationship_type">relationship_type — Detect hierarchy/network/sequence</option>
+              <option value="field_pattern">field_pattern — Match field names by pattern</option>
+              <option value="cardinality_check">cardinality_check — Count distinct values</option>
+              <option value="record_range">record_range — Check record count range</option>
+            </select>
+          </div>
+          <div>
+            <label>What should happen when it fires?</label>
+            <select id="rb-action">
+              <option value="boost_lens">Boost a context lens</option>
+              <option value="prefer_view">Prefer a visual view</option>
+              <option value="both">Both: boost lens + prefer view</option>
+            </select>
+          </div>
+          <div class="grid grid-2">
+            <div>
+              <label>Lens to boost</label>
+              <select id="rb-lens">
+                <option value="innovation">Innovation</option>
+                <option value="history">History</option>
+                <option value="narrative">Narrative</option>
+                <option value="geography">Geography</option>
+                <option value="communication">Communication</option>
+                <option value="arts">Arts</option>
+                <option value="analytics">Analytics</option>
+                <option value="education">Education</option>
+                <option value="economics">Economics</option>
+                <option value="biology">Biology</option>
+                <option value="technology">Technology</option>
+                <option value="social">Social</option>
+              </select>
+            </div>
+            <div>
+              <label>View to prefer</label>
+              <select id="rb-view">
+                <option value="constellation">Constellation</option>
+                <option value="timeline">Timeline</option>
+                <option value="clusters">Clusters</option>
+                <option value="explorer">Explorer</option>
+                <option value="matrix">Matrix</option>
+                <option value="flow">Flow</option>
+                <option value="map">Map</option>
+              </select>
+            </div>
+          </div>
+          <div class="grid grid-2">
+            <div>
+              <label>Boost strength (0.1 - 1.5)</label>
+              <input type="number" id="rb-score" value="0.6" step="0.05" min="0.1" max="1.5">
+            </div>
+            <div>
+              <label>Priority (1-100)</label>
+              <input type="number" id="rb-priority" value="75" min="1" max="100">
+            </div>
+          </div>
+          <div>
+            <label>Why does this rule exist? (plain English)</label>
+            <input type="text" id="rb-because" placeholder="e.g. Market language signals an economics-oriented dataset.">
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-primary" onclick="generateRule()">Generate YAML</button>
+            <button class="btn btn-ghost" onclick="copyYaml()">Copy to clipboard</button>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>YAML Preview</h3>
+        <div class="preview-box" id="yaml-preview">Fill in the fields and click "Generate YAML" to see your rule here.</div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- Section 4: Function Reference -->
+  <div class="section">
+    <h2>Function Reference</h2>
+    <p style="font-size:0.85rem;margin-bottom:0.75rem">Every function is a safe, validated operation. The engine will not run a function if its arguments are invalid.</p>
+    <table class="ref-table">
+      <thead>
+        <tr><th>Function</th><th>What it does</th><th>Arguments</th><th>Returns</th><th>Use when...</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>taxonomy_score</code></td><td>Counts keyword matches for a domain</td><td><code>path</code>, <code>domain</code>, <code>min_score</code></td><td>score</td><td>You want to detect a topic/domain in the data text</td></tr>
+        <tr><td><code>tone_score</code></td><td>Counts emotional tone cues</td><td><code>path</code>, <code>tone</code>, <code>min_score</code></td><td>score</td><td>Narrative data has moods (anxious, determined, etc.)</td></tr>
+        <tr><td><code>semantic_proximity</code></td><td>Finds synonym-expanded terms in text</td><td><code>path</code>, <code>term</code>, <code>min_matches</code></td><td>score</td><td>You want fuzzy matching — "place" also finds "region", "locale"</td></tr>
+        <tr><td><code>shared_dimension</code></td><td>Checks if two records share a dimension value</td><td><code>dimension</code></td><td>boolean</td><td>You're comparing relationships (same country? same era?)</td></tr>
+        <tr><td><code>temporal_distance</code></td><td>Measures year gap between two records</td><td><code>max_gap</code></td><td>score</td><td>Time proximity matters for the relationship</td></tr>
+        <tr><td><code>influence_link</code></td><td>Detects explicit influence chains</td><td>(none)</td><td>boolean</td><td>Data has influenced_by or inspired_by fields</td></tr>
+        <tr><td><code>data_shape</code></td><td>Classifies dataset complexity</td><td><code>min_records</code></td><td>score</td><td>You want rules that respond to data size/shape</td></tr>
+        <tr><td><code>density_score</code></td><td>Measures records x fields ratio</td><td><code>dense_threshold</code></td><td>score</td><td>Dense data should use matrix, sparse should use graph</td></tr>
+        <tr><td><code>relationship_type</code></td><td>Detects hierarchy, network, sequence, etc.</td><td>(none)</td><td>score</td><td>You want the system to auto-detect the data structure</td></tr>
+        <tr><td><code>field_pattern</code></td><td>Matches field names by regex</td><td><code>pattern</code></td><td>boolean</td><td>Specific field names (parent, child, step) signal structure</td></tr>
+        <tr><td><code>cardinality_check</code></td><td>Counts distinct values in a dimension</td><td><code>dimension</code>, <code>max_distinct</code></td><td>score</td><td>Low cardinality = good for clusters. High = needs different encoding</td></tr>
+        <tr><td><code>record_range</code></td><td>Checks if record count is in a range</td><td><code>min</code>, <code>max</code></td><td>boolean</td><td>Small datasets work well with graphs. Large ones need tables.</td></tr>
+        <tr><td><code>field_exists</code></td><td>Checks if a path has a value</td><td><code>path</code></td><td>boolean</td><td>Guard: only run a rule if a certain field exists</td></tr>
+        <tr><td><code>equals_value</code></td><td>Compares a path to an exact value</td><td><code>path</code>, <code>value</code></td><td>boolean</td><td>Guard: only run if a flag is true</td></tr>
+        <tr><td><code>numeric_threshold</code></td><td>Compares a number against a threshold</td><td><code>path</code>, <code>op</code>, <code>value</code></td><td>score</td><td>Score-based gating</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <hr class="divider">
+
+  <!-- Section 5: Recipes -->
+  <div class="section">
+    <h2>Common Recipes</h2>
+    <p style="font-size:0.85rem;margin-bottom:1rem">Copy-paste these patterns when you want to add new rules.</p>
+    <div class="grid grid-3">
+      <div class="card">
+        <h3>Add a New Domain</h3>
+        <p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.5rem">3 steps:</p>
+        <ol style="font-size:0.82rem;padding-left:1.2rem">
+          <li>Add domain to <code>taxonomy.domains</code> in YAML with id, label, keywords</li>
+          <li>Create a rule using <code>taxonomy_score</code> pointing to your new domain</li>
+          <li>Add the rule id to <code>rule_sets.base.rules</code></li>
+        </ol>
+      </div>
+      <div class="card">
+        <h3>Add a New View Preference</h3>
+        <p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.5rem">When data shape should prefer a specific view:</p>
+        <ol style="font-size:0.82rem;padding-left:1.2rem">
+          <li>Pick the right function (density_score, field_pattern, record_range)</li>
+          <li>Set <code>derive: prefer_view</code></li>
+          <li>Add a guard if the preference requires a dimension to exist</li>
+        </ol>
+      </div>
+      <div class="card">
+        <h3>Add a New Preset</h3>
+        <p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.5rem">Presets change weights without changing rules:</p>
+        <ol style="font-size:0.82rem;padding-left:1.2rem">
+          <li>Add to <code>presets</code> section with label</li>
+          <li>Set <code>lens_weights</code> (multiply lens scores)</li>
+          <li>Set <code>view_bias</code> (multiply view scores)</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- Section 6: Workflow -->
+  <div class="section">
+    <h2>Engineering Workflow</h2>
+    <div class="flow-diagram">
+      <div class="flow-step">1. Design rule<br><small>Use this lab</small></div>
+      <div class="flow-arrow">&rarr;</div>
+      <div class="flow-step">2. Add to YAML<br><small>glimpse.master.yaml</small></div>
+      <div class="flow-arrow">&rarr;</div>
+      <div class="flow-step">3. Sync default<br><small>node scripts/sync-default-master.mjs</small></div>
+      <div class="flow-arrow">&rarr;</div>
+      <div class="flow-step">4. Test in browser<br><small>Load data, check trace</small></div>
+      <div class="flow-arrow">&rarr;</div>
+      <div class="flow-step">5. Promote<br><small>experimental &rarr; active</small></div>
+    </div>
+    <div class="card" style="margin-top:1rem">
+      <h3>Quick Commands</h3>
+      <div style="font-family:monospace;font-size:0.82rem;line-height:2">
+        <div><code>node scripts/sync-default-master.mjs</code> — Sync YAML changes to default-master.js</div>
+        <div><code>node scripts/bootstrap_glimpse_logic.mjs</code> — Validate all rules and functions</div>
+        <div>Open <code>glimpse-engine.html</code> — Run the full engine with your rules</div>
+        <div>Open <code>glimpse-rule-lab.html</code> — This playground</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function slugify(text) {
+  return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 30) || 'custom-rule';
+}
+
+function getArgs(fn) {
+  const scope = document.getElementById('rb-scope').value;
+  switch(fn) {
+    case 'taxonomy_score': return scope === 'entity'
+      ? { path: 'entity.domain_keyword_hits', domain: document.getElementById('rb-lens').value, min_score: 1 }
+      : { path: 'dataset.domain_keyword_hits', domain: document.getElementById('rb-lens').value, min_score: 1 };
+    case 'tone_score': return { path: 'entity.tone_hits', tone: 'anxious', min_score: 1 };
+    case 'semantic_proximity': return { path: 'entity.text', term: 'place', min_matches: 1 };
+    case 'shared_dimension': return { dimension: 'space' };
+    case 'temporal_distance': return { max_gap: 10 };
+    case 'influence_link': return {};
+    case 'data_shape': return { min_records: 3 };
+    case 'density_score': return { dense_threshold: 2 };
+    case 'relationship_type': return {};
+    case 'field_pattern': return { pattern: 'parent|child|level' };
+    case 'cardinality_check': return { dimension: 'domain', max_distinct: 8 };
+    case 'record_range': return { min: 2, max: 50 };
+    case 'field_exists': return { path: 'dataset.flags.has_time_dimension' };
+    case 'equals_value': return { path: 'dataset.flags.has_space_dimension', value: true };
+    case 'numeric_threshold': return { path: 'dataset.record_count', op: '>', value: 10 };
+    default: return {};
+  }
+}
+
+function generateRule() {
+  const fn = document.getElementById('rb-function').value;
+  const scope = document.getElementById('rb-scope').value;
+  const action = document.getElementById('rb-action').value;
+  const lens = document.getElementById('rb-lens').value;
+  const view = document.getElementById('rb-view').value;
+  const score = parseFloat(document.getElementById('rb-score').value) || 0.6;
+  const priority = parseInt(document.getElementById('rb-priority').value) || 75;
+  const because = document.getElementById('rb-because').value || 'Custom rule.';
+  const id = slugify(because);
+
+  const derive = [];
+  const affects = [];
+  if (action === 'boost_lens' || action === 'both') {
+    derive.push(`    - action: boost_lens\n      lens: ${lens}\n      score: ${score}`);
+    affects.push('context_lens');
+  }
+  if (action === 'prefer_view' || action === 'both') {
+    derive.push(`    - action: prefer_view\n      view: ${view}\n      score: ${score}`);
+    affects.push('view');
+  }
+
+  const args = fn ? getArgs(fn) : {};
+  const argsYaml = Object.keys(args).length === 0 ? '  args: {}' :
+    '  args:\n' + Object.entries(args).map(([k,v]) => `    ${k}: ${typeof v === 'string' ? v : JSON.stringify(v)}`).join('\n');
+
+  const lines = [
+    `- id: ${id}`,
+    `  label: ${because.length > 72 ? because.slice(0,69) + '...' : because}`,
+    `  applies_to: ${scope}`,
+    `  enabled: true`,
+    `  priority: ${priority}`,
+  ];
+
+  if (fn) {
+    lines.push(`  function: ${fn}`);
+    lines.push(argsYaml);
+    lines.push(`  returns: ${fn === 'shared_dimension' || fn === 'influence_link' || fn === 'field_pattern' || fn === 'record_range' || fn === 'field_exists' || fn === 'equals_value' ? 'boolean' : 'score'}`);
+    lines.push(`  weight_strategy: ${fn === 'shared_dimension' || fn === 'influence_link' || fn === 'record_range' ? 'boolean_boost' : 'direct_score'}`);
+  } else {
+    lines.push(`  when:`);
+    lines.push(`    - fact: dataset.record_count`);
+    lines.push(`      op: ">"`);
+    lines.push(`      value: 0`);
+  }
+
+  lines.push(`  derive:`);
+  derive.forEach(d => lines.push(d));
+  lines.push(`  affects:`);
+  affects.forEach(a => lines.push(`    - ${a}`));
+  lines.push(`  because: ${because}`);
+  lines.push(`  promotion: experimental`);
+
+  document.getElementById('yaml-preview').textContent = lines.join('\n');
+}
+
+function copyYaml() {
+  const text = document.getElementById('yaml-preview').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.querySelector('.btn-ghost');
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy to clipboard', 1500);
+  });
+}
+
+// Auto-update on any change
+document.querySelectorAll('select, input').forEach(el => {
+  el.addEventListener('change', generateRule);
+  el.addEventListener('input', generateRule);
+});
+</script>
+</body>
+</html>
