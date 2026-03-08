@@ -34,3 +34,7 @@ Desktop.ini
 
 # Package manager caches
 .pnpm-store/
+
+# Security ownership map outputs and local venv (generated / machine-local)
+ownership-map-out/
+.tmp-ownership-venv/
