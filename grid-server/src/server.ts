@@ -62,13 +62,31 @@ function computeHash(data: string): string {
   return crypto.createHash('sha256').update(data).digest('hex');
 }
 
+/** HMAC-SHA256 of message with secret; matches create_test_envelope.py / debug_fingerprint.py. */
+function computeUserFingerprint(secret: string, payloadHash: string, machineFingerprint: string, nonce: string): string {
+  const message = `${payloadHash}:${machineFingerprint}:${nonce}`;
+  return crypto.createHmac('sha256', secret).update(message).digest('hex');
+}
+
+type NonceRegistryEntry = { issued_at?: string; burned?: boolean; burned_at?: string | null };
+
+async function readNonceRegistry(): Promise<Record<string, NonceRegistryEntry>> {
+  const data = await readJsonFile<Record<string, NonceRegistryEntry>>(NONCE_REGISTRY_PATH);
+  return data ?? {};
+}
+
+async function writeNonceRegistry(registry: Record<string, NonceRegistryEntry>): Promise<void> {
+  await fs.writeFile(NONCE_REGISTRY_PATH, JSON.stringify(registry, null, 2), 'utf-8');
+}
+
 async function getEnhancedValidation(envelope: Record<string, unknown>): Promise<Record<string, unknown> | null> {
-  if (!config.gridApiUrl) {
+  const gridApiUrl = process.env.GRID_API_URL?.trim() || config.gridApiUrl || "";
+  if (!gridApiUrl) {
     return null;
   }
 
   try {
-    const response = await fetch(`${config.gridApiUrl.replace(/\/$/, '')}/api/v1/gate/validate`, {
+    const response = await fetch(`${gridApiUrl.replace(/\/$/, '')}/api/v1/gate/validate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -90,9 +108,10 @@ async function getEnhancedValidation(envelope: Record<string, unknown>): Promise
       ...payload,
     };
   } catch (error) {
+    // Fail closed: when remote validation is requested but GRID is unavailable, do not approve.
     return {
       consulted: true,
-      approved: true,
+      approved: false,
       flags: ['grid_unavailable'],
       reasoning: error instanceof Error ? error.message : String(error),
     };
@@ -179,7 +198,7 @@ server.registerTool(
 server.registerTool(
   'validate_envelope',
   {
-    description: 'Validate a GATE envelope JSON structure without executing — checks required fields, trusted source, payload hash integrity',
+    description: 'Validate a GATE envelope: required fields, trusted source, payload hash, user_fingerprint (HMAC when GATE_USER_SECRET set), nonce registered and not reused; burns nonce on success; remote validation fails closed when GRID unavailable.',
     inputSchema: z.object({
       envelopePath: z.string().optional().describe('Path to envelope JSON file. If omitted, scans incoming/ directory.'),
     }),
@@ -259,16 +278,69 @@ server.registerTool(
       detail: `tests_passed=${envelope['tests_passed']}`,
     });
 
+    // user_fingerprint: HMAC-SHA256(secret, payload_hash:machine_fingerprint:nonce) when GATE_USER_SECRET is set
+    const payloadHash = envelope['payload_hash'] as string | undefined;
+    const machineFp = envelope['machine_fingerprint'] as string | undefined;
+    const nonceVal = envelope['nonce'] as string | undefined;
+    const userFp = envelope['user_fingerprint'] as string | undefined;
+    if (config.gateUserSecret) {
+      const expected =
+        payloadHash != null && machineFp != null && nonceVal != null
+          ? computeUserFingerprint(config.gateUserSecret, payloadHash, machineFp, nonceVal)
+          : '';
+      const bufDeclared = typeof userFp === 'string' && /^[a-f0-9]+$/i.test(userFp) ? Buffer.from(userFp, 'hex') : null;
+      const bufExpected = expected.length > 0 ? Buffer.from(expected, 'hex') : null;
+      const passed = bufDeclared != null && bufExpected != null && bufDeclared.length === bufExpected.length && crypto.timingSafeEqual(bufDeclared, bufExpected);
+      checks.push({
+        check: 'user_fingerprint_verified',
+        passed,
+        detail: passed ? 'HMAC verified' : (userFp ? 'HMAC mismatch or missing fields' : 'user_fingerprint missing'),
+      });
+    } else {
+      checks.push({ check: 'user_fingerprint_verified', passed: true, detail: 'skipped (GATE_USER_SECRET not set)' });
+    }
+
+    // Nonce: must be registered and not already burned (replay protection)
+    const nonceRegistry = await readNonceRegistry();
+    const nonceEntry = nonceVal != null ? nonceRegistry[nonceVal] : undefined;
+    const nonceRegistered = nonceVal != null && nonceEntry != null;
+    const nonceNotReused = nonceRegistered && nonceEntry.burned !== true;
+    checks.push({
+      check: 'nonce_registered',
+      passed: nonceRegistered,
+      detail: nonceRegistered ? 'nonce in registry' : (nonceVal ? 'nonce not in registry' : 'nonce missing'),
+    });
+    checks.push({
+      check: 'nonce_not_reused',
+      passed: nonceNotReused,
+      detail: nonceNotReused ? 'nonce not burned' : (nonceEntry?.burned === true ? 'nonce already burned' : 'nonce not registered'),
+    });
+
     const allPassed = checks.every(c => c.passed);
     const enhancedValidation = allPassed ? await getEnhancedValidation(envelope) : null;
     const enhancedApproved = enhancedValidation == null
       || enhancedValidation['approved'] !== false;
 
+    const valid = allPassed && enhancedApproved;
+
+    // On success, burn the nonce so it cannot be reused (replay protection).
+    if (valid && nonceVal != null && nonceRegistry[nonceVal]) {
+      const updated = { ...nonceRegistry };
+      updated[nonceVal] = {
+        ...updated[nonceVal],
+        burned: true,
+        burned_at: new Date().toISOString(),
+      };
+      await writeNonceRegistry(updated).catch(() => {
+        // Best-effort; validation result already computed
+      });
+    }
+
     return {
       content: [{
         type: 'text' as const,
         text: JSON.stringify({
-          valid: allPassed && enhancedApproved,
+          valid,
           file: envelopePath,
           checks,
           enhancedValidation,

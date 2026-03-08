@@ -20,6 +20,8 @@ export function getConfig() {
     workspaceRoot,
     gateDir,
     gridApiUrl: process.env.GRID_API_URL?.trim() || "",
+    /** When set, validate_envelope verifies user_fingerprint via HMAC-SHA256 (same as create_test_envelope.py). */
+    gateUserSecret: process.env.GATE_USER_SECRET?.trim() || "",
     trustedSourcePartitions,
     deploymentTargets: {
       "grid-server": { path: path.join(workspaceRoot, "grid-server"), port: 8080, permissions: ["deploy", "run_tests", "start_server", "write_results"] },
