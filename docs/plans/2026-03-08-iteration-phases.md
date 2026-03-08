@@ -614,3 +614,25 @@ These items do not fit neatly into a single phase and should be tracked alongsid
 1. Clarify that `mcp-tool-experiment` is the main safety-first workspace analysis server, not a mandatory proxy
 2. Clarify that the other MCP servers remain independently callable peers
 3. Document which integrations are file-based shortcuts versus actual server-to-server protocol calls
+
+---
+
+## Future Considerations (Beyond 4.4)
+
+Not in current Phase 4 scope. Track as candidates for a future phase once 4.1–4.4 are delivered and validated.
+
+### Generative Glimpses
+
+Use text-to-image models to visualize scenario descriptions. An author inputs a seed situation; the tool generates visual variations (mood, lighting, perspective). Requires API integration (e.g. Hugging Face, Replicate) or a lightweight local model for offline use. Evaluate whether this belongs in glimpse-artifact or as a separate service behind the canvas.
+
+### Offline-First Design
+
+The target audience (authors, artists, creative workers) may not have reliable connectivity. Core canvas, annotation, and scenario branching should work without a network connection. Data syncs when online. Evaluate service worker + IndexedDB for local persistence.
+
+### Touch and Gesture Support
+
+Pinch-to-zoom, swipe to navigate, tap to annotate. The canvas currently supports pan/zoom via mouse; extend to touch events for tablet-aspected devices. Consider Pointer Events API for unified mouse/touch/pen input.
+
+### Progressive Disclosure
+
+Show advanced features (experiment charts, audit timeline, GATE viz) only when the user explicitly opens them. Keep the default canvas surface minimal — seed card, branch, glimpse, and annotation only. Advanced panels behind a collapsible sidebar or explicit "show more" interaction.

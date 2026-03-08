@@ -1,0 +1,846 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Progress and vision — CascadeProjects</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Outfit:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <style>
+      /*
+        Vibe: quiet, focused doc. One cool base, one ink, one accent — minimal variables, one ambiance.
+        All colors derive from: base (page), surface (cards), ink (text), mute (secondary), accent (links/active).
+      */
+      :root {
+        --base: #f6f7f9;
+        --surface: #fff;
+        --edge: #e5e7eb;
+        --ink: #111827;
+        --mute: #6b7280;
+        --accent: #0d9488;
+        --accent-hover: #0f766e;
+        --accent-tint: rgba(13, 148, 136, 0.07);
+        --done: #059669;
+        --done-bg: #ecfdf5;
+        --progress: #d97706;
+        --progress-bg: #fffbeb;
+        --blocked: #dc2626;
+        --blocked-bg: #fef2f2;
+        --pending: #6b7280;
+        --pending-bg: #f3f4f6;
+        --elev: 0 2px 8px rgba(17, 24, 39, 0.06);
+        --elev-hover: 0 6px 20px rgba(17, 24, 39, 0.07);
+        --font-head: "Outfit", system-ui, sans-serif;
+        --font-body: "DM Sans", system-ui, sans-serif;
+        --motion: 0.2s ease;
+        --radius: 6px;
+      }
+
+      body {
+        max-width: 56rem;
+        margin: 0 auto;
+        padding: 1.5rem;
+        font-family: var(--font-body);
+        font-size: 1rem;
+        line-height: 1.6;
+        color: var(--ink);
+        background: var(--base);
+      }
+      .toolbar {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        margin-bottom: 1.5rem;
+        align-items: center;
+      }
+      .toolbar button {
+        padding: 0.4rem 0.9rem;
+        font-size: 0.875rem;
+        font-family: var(--font-body);
+        font-weight: 500;
+        border: 1px solid var(--edge);
+        background: var(--surface);
+        color: var(--ink);
+        border-radius: var(--radius);
+        cursor: pointer;
+        box-shadow: var(--elev);
+        transition:
+          background var(--motion),
+          border-color var(--motion),
+          transform var(--motion),
+          box-shadow var(--motion);
+      }
+      .toolbar button:hover {
+        background: var(--base);
+        border-color: var(--edge);
+        transform: translateY(-1px);
+        box-shadow: var(--elev-hover);
+      }
+      .toolbar button.active {
+        background: var(--accent-tint);
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+      h1 {
+        font-family: var(--font-head);
+        font-size: 1.75rem;
+        font-weight: 600;
+        margin-top: 0;
+        margin-bottom: 0.5rem;
+        color: var(--ink);
+        letter-spacing: -0.02em;
+      }
+      .subtitle {
+        color: var(--mute);
+        font-size: 0.95rem;
+        margin-bottom: 1.5rem;
+      }
+      .subtitle time {
+        font-weight: 500;
+      }
+      h2 {
+        font-family: var(--font-head);
+        font-size: 1.15rem;
+        font-weight: 600;
+        margin-top: 0;
+        margin-bottom: 0.75rem;
+        padding-bottom: 0.35rem;
+        border-bottom: 2px solid var(--edge);
+        color: var(--ink);
+        letter-spacing: -0.01em;
+      }
+      h3 {
+        font-family: var(--font-head);
+        font-size: 1rem;
+        font-weight: 600;
+        margin: 1rem 0 0.5rem;
+        color: var(--ink);
+      }
+      section {
+        margin-bottom: 2rem;
+        padding: 1.35rem;
+        background: var(--surface);
+        border: 1px solid var(--edge);
+        border-radius: var(--radius);
+        box-shadow: var(--elev);
+        transition:
+          transform var(--motion),
+          box-shadow var(--motion),
+          border-color var(--motion);
+        opacity: 0;
+        animation: sectionIn 0.4s ease forwards;
+      }
+      .content section:nth-child(1) { animation-delay: 0s; }
+      .content section:nth-child(2) { animation-delay: 0.05s; }
+      .content section:nth-child(3) { animation-delay: 0.1s; }
+      .content section:nth-child(4) { animation-delay: 0.15s; }
+      .content section:nth-child(5) { animation-delay: 0.2s; }
+      .content section:nth-child(6) { animation-delay: 0.25s; }
+      .content section:nth-child(7) { animation-delay: 0.3s; }
+      .content section:nth-child(8) { animation-delay: 0.35s; }
+      section:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--elev-hover);
+        border-color: var(--edge);
+      }
+      @keyframes sectionIn {
+        from { opacity: 0; transform: translateY(8px); }
+        to   { opacity: 1; transform: translateY(0); }
+      }
+      .diagram-wrap {
+        margin: 1rem 0;
+        min-height: 120px;
+        overflow: hidden;
+        border-radius: var(--radius);
+        border: 1px solid var(--edge);
+        background: var(--base);
+        box-shadow: var(--elev);
+        transition:
+          border-color var(--motion),
+          box-shadow var(--motion);
+      }
+      .diagram-wrap:hover {
+        box-shadow: var(--elev-hover);
+      }
+      .diagram-wrap.zoomable {
+        cursor: zoom-in;
+      }
+      .diagram-wrap.zoomable.zoomed {
+        cursor: zoom-out;
+      }
+      .diagram-wrap .mermaid {
+        margin: 0;
+        padding: 0.5rem;
+        transition: transform 0.25s ease;
+        transform-origin: center center;
+      }
+      .diagram-wrap.zoomed .mermaid {
+        transform: scale(1.4);
+      }
+      ul {
+        margin: 0.5rem 0;
+        padding-left: 1.5rem;
+      }
+      li {
+        margin: 0.35rem 0;
+        color: var(--mute);
+        transition:
+          transform var(--motion),
+          color var(--motion);
+      }
+      li:hover {
+        transform: translateX(4px);
+        color: var(--ink);
+      }
+      li strong {
+        color: var(--ink);
+      }
+      a {
+        color: var(--accent);
+        text-decoration: none;
+        font-weight: 500;
+        transition:
+          color var(--motion),
+          text-decoration var(--motion);
+      }
+      a:hover {
+        color: var(--accent-hover);
+        text-decoration: underline;
+      }
+
+      /* Status badges */
+      .badge {
+        display: inline-block;
+        font-size: 0.7rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        padding: 0.15rem 0.5rem;
+        border-radius: 99px;
+        vertical-align: middle;
+        margin-left: 0.4rem;
+      }
+      .badge-done     { color: var(--done);     background: var(--done-bg); }
+      .badge-progress { color: var(--progress);  background: var(--progress-bg); }
+      .badge-blocked  { color: var(--blocked);   background: var(--blocked-bg); }
+      .badge-pending  { color: var(--pending);   background: var(--pending-bg); }
+
+      /* Compact table */
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.9rem;
+        margin: 0.75rem 0;
+      }
+      th, td {
+        text-align: left;
+        padding: 0.4rem 0.6rem;
+        border-bottom: 1px solid var(--edge);
+      }
+      th {
+        font-weight: 600;
+        color: var(--ink);
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+      }
+      td { color: var(--mute); }
+      td strong { color: var(--ink); }
+      tr:last-child td { border-bottom: none; }
+
+      .about {
+        font-size: 0.9rem;
+        color: var(--mute);
+        margin-top: 2rem;
+        padding: 1.15rem;
+        background: var(--surface);
+        border-radius: var(--radius);
+        border: 1px solid var(--edge);
+        box-shadow: var(--elev);
+      }
+      body.layout-grid .content {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+      }
+      body.layout-grid section {
+        margin-bottom: 0;
+      }
+      @media (max-width: 640px) {
+        body.layout-grid .content {
+          grid-template-columns: 1fr;
+        }
+      }
+      @media print {
+        body { padding: 0.5rem; }
+        h2 { break-after: avoid; }
+        section {
+          box-shadow: none;
+          animation: none;
+          opacity: 1;
+        }
+        .toolbar { display: none; }
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Progress and vision — CascadeProjects</h1>
+    <p class="subtitle">
+      Single-page view of current state and Phase 4 vision. Last updated
+      <time datetime="2026-03-08">2026-03-08</time>. Sources:
+      <a href="plans/2026-03-08-iteration-phases.md">iteration-phases</a>,
+      <a href="plans/2026-03-08-phase3-next-steps.md">phase3-next-steps</a>,
+      <a href="DATA_CONTRACTS.md">DATA_CONTRACTS</a>,
+      <a href="PHASE4_QUALITY_CONTRACT.md">quality contract</a>,
+      <a href="VISION_AGENTS_AND_UI_UX_OWNERSHIP.md">ownership</a>,
+      <a href="../README.md">README</a>. Update when phases, contracts, or the
+      project map change.
+    </p>
+
+    <div class="toolbar" role="toolbar" aria-label="View options">
+      <button type="button" id="btn-layout" aria-pressed="false">
+        Grid layout
+      </button>
+      <button type="button" id="btn-zoom-reset" aria-label="Reset diagram zoom">
+        Reset zoom
+      </button>
+    </div>
+
+    <div class="content">
+      <!-- ─── 1. Current progress ────────────────────────────────── -->
+      <section aria-labelledby="current-heading">
+        <h2 id="current-heading">Current progress</h2>
+        <p>
+          Phases 1–3 closed. Phase 4 (Visual Operating System) in progress.
+          The visual layer is additive — it sits on top of the repo, contracts,
+          and docs that already exist. Phase 4 depends on Phase 2; Phase 3
+          is optional.
+        </p>
+        <div
+          class="diagram-wrap zoomable"
+          id="wrap-phase"
+          tabindex="0"
+          role="button"
+          aria-label="Phase timeline diagram, activate to zoom"
+        >
+          <div class="mermaid" id="phase-timeline">
+flowchart LR
+  P1["Phase 1\nHousekeeping"]
+  P2["Phase 2\nIntegration"]
+  P3["Phase 3\nIntelligence"]
+  P4["Phase 4\nVisual"]
+  P1 -->|Done| P2
+  P2 -->|Done| P3
+  P3 -->|Done| P4
+  style P1 fill:#ecfdf5,stroke:#059669,color:#065f46
+  style P2 fill:#ecfdf5,stroke:#059669,color:#065f46
+  style P3 fill:#ecfdf5,stroke:#059669,color:#065f46
+  style P4 fill:#fffbeb,stroke:#d97706,color:#92400e
+          </div>
+        </div>
+        <ul>
+          <li>
+            <strong>Phase 1</strong> <span class="badge badge-done">Done</span>
+            — Git history, env vars, smoke tests, Afloat cleanup.
+          </li>
+          <li>
+            <strong>Phase 2</strong> <span class="badge badge-done">Done</span>
+            — Shared types, audit contract, cross-referencing, GATE + GRID
+            optional, seeds snapshot contract.
+          </li>
+          <li>
+            <strong>Phase 3</strong> <span class="badge badge-done">Done</span>
+            — Scheduled diagnostics E2E, threshold + scan_workspaces,
+            pattern-driven experiments, adaptive briefings,
+            &quot;what should I work on?&quot; rules-based.
+          </li>
+          <li>
+            <strong>Phase 4</strong>
+            <span class="badge badge-progress">In progress</span>
+            — Design tokens established. 11 components built (4 data-viz,
+            7 canvas). Three views functional with mock data.
+            <a href="../glimpse-artifact/">glimpse-artifact/</a>
+          </li>
+        </ul>
+      </section>
+
+      <!-- ─── 2. Phase 4 initiative status ───────────────────────── -->
+      <section aria-labelledby="initiative-heading">
+        <h2 id="initiative-heading">Phase 4 initiative status</h2>
+        <p>
+          Each initiative has an acceptance criteria checklist in
+          <a href="PHASE4_QUALITY_CONTRACT.md">PHASE4_QUALITY_CONTRACT.md</a>.
+          Ownership anchors are in
+          <a href="VISION_AGENTS_AND_UI_UX_OWNERSHIP.md">ownership</a>.
+        </p>
+        <table>
+          <thead>
+            <tr>
+              <th>Initiative</th>
+              <th>Status</th>
+              <th>What remains</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <strong>4.1 Mycelium Dashboard</strong><br />
+                Surface seeds health, echoes audit, lots experiments, and pulse
+                focus timer inside GRID-main Mycelium.
+              </td>
+              <td><span class="badge badge-pending">Pending</span></td>
+              <td>
+                API routes in GRID-main to serve MCP data to the Mycelium
+                frontend. Layout and data binding. Needs 4.2 components.
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <strong>4.2 Glimpse components</strong><br />
+                Reusable health gauges, audit timeline, experiment charts,
+                workflow status cards.
+              </td>
+              <td><span class="badge badge-progress">In progress</span></td>
+              <td>
+                11 components built. Integration with live data sources
+                (hooks currently use mock data). Canvas view needs user testing.
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <strong>4.3 Real-time event stream</strong><br />
+                Live updates for audit events, experiment completion,
+                health-score changes.
+              </td>
+              <td><span class="badge badge-blocked">Blocked</span></td>
+              <td>
+                Design doc required first — must cover hosting model, auth,
+                event fan-out, and coexistence with stdio MCP. No implementation
+                until doc is approved.
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <strong>4.4 GATE visualization</strong><br />
+                Envelope flow, nonce registry, deployment history with risk
+                scores as a read-only pipeline view.
+              </td>
+              <td><span class="badge badge-progress">In progress</span></td>
+              <td>
+                GateView exists with mock data. Needs connection to
+                grid-server GATE data for live envelope and nonce state.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- ─── 3. Project map ─────────────────────────────────────── -->
+      <section aria-labelledby="project-heading">
+        <h2 id="project-heading">Project map</h2>
+        <p>
+          The workspace has shared docs, shared types, and documented
+          local-first contracts. Phase 4 sits on top of those foundations.
+          Seven first-party MCP servers provide the data layer.
+        </p>
+        <div
+          class="diagram-wrap zoomable"
+          id="wrap-project"
+          tabindex="0"
+          role="button"
+          aria-label="Project map diagram, activate to zoom"
+        >
+          <div class="mermaid" id="project-map">
+flowchart TB
+  Root["CascadeProjects root"]
+  Docs["Docs / plans / contracts"]
+  Shared["shared-types"]
+  Grid["GRID-main\nMycelium host"]
+  Experiment["mcp-tool-experiment"]
+  Glimpse["glimpse-artifact\n11 Phase 4 components"]
+
+  subgraph Servers["First-party MCP servers"]
+    afloat["afloat-server"]
+    echoes["echoes-server"]
+    grid-s["grid-server"]
+    lots["lots-server"]
+    maintain["maintain-server"]
+    pulse["pulse-server"]
+    seeds["seeds-server"]
+  end
+
+  subgraph Contracts["Data contracts"]
+    Audit["Echoes audit NDJSON"]
+    Snap["Seeds snapshots"]
+  end
+
+  Surfaces["Phase 4 surfaces\nCanvas / Dashboard / GATE"]
+
+  Root --> Docs
+  Root --> Servers
+  Root --> Shared
+  Root --> Grid
+  Root --> Experiment
+  Root --> Glimpse
+
+  echoes --> Audit
+  seeds --> Snap
+  Contracts -. informs .-> Surfaces
+  Grid -. hosts .-> Surfaces
+  Glimpse -. component base .-> Surfaces
+          </div>
+        </div>
+        <ul>
+          <li>
+            <strong>7 MCP servers</strong> — afloat (workflow orchestration),
+            echoes (audit logging), grid (GATE envelope validation),
+            lots (experiments), maintain (diagnostics and cleanup),
+            pulse (briefings and focus), seeds (repo health).
+          </li>
+          <li>
+            <strong>Contract-backed today</strong> —
+            <a href="DATA_CONTRACTS.md">DATA_CONTRACTS.md</a> documents two
+            cross-server contracts: Echoes audit NDJSON and Seeds snapshots.
+          </li>
+          <li>
+            <strong>Phase 4 intent</strong> — GRID-main Mycelium and
+            <code>glimpse-artifact</code> are the visual hosts; dashboard,
+            experiment views, focus timer, live updates, and GATE viz build
+            on server outputs and contracts.
+          </li>
+        </ul>
+      </section>
+
+      <!-- ─── 4. Data contracts ──────────────────────────────────── -->
+      <section aria-labelledby="contracts-heading">
+        <h2 id="contracts-heading">Data contracts</h2>
+        <p>
+          Two workspace-level contracts define how servers share data.
+          Both are local-first file-based shortcuts; see
+          <a href="DATA_CONTRACTS.md">DATA_CONTRACTS.md</a> for the full spec.
+        </p>
+        <table>
+          <thead>
+            <tr>
+              <th>Contract</th>
+              <th>Format</th>
+              <th>Producers</th>
+              <th>Consumers</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Echoes audit</strong></td>
+              <td>NDJSON (one AuditEvent per line)</td>
+              <td>lots-server, maintain-server, echoes-server</td>
+              <td>echoes-server (query/stats), pulse-server (briefing, alerts)</td>
+            </tr>
+            <tr>
+              <td><strong>Seeds snapshots</strong></td>
+              <td>JSON (overallScore + repos array)</td>
+              <td>seeds-server (ecosystem_scan)</td>
+              <td>pulse-server (check_alerts, what_should_i_work_on)</td>
+            </tr>
+          </tbody>
+        </table>
+        <p style="font-size: 0.9rem; color: var(--mute);">
+          Both contracts are temporary local-first shortcuts — servers write
+          directly to shared files. The long-term path may be protocol-level
+          forwarding through echoes-server.
+        </p>
+      </section>
+
+      <!-- ─── 5. Vision (Phase 4) ────────────────────────────────── -->
+      <section aria-labelledby="vision-heading">
+        <h2 id="vision-heading">Vision (Phase 4)</h2>
+        <p>
+          <strong>Goal:</strong> Give the ecosystem a visual interface that
+          makes it tangible and shareable. Effort: High. Risk: Low (purely
+          additive).
+        </p>
+        <p>
+          <strong>Experience lens:</strong> Keep the visual system calm enough
+          for artists, authors, and other creative workers who may prefer
+          traditional tools and low-tech workflows. The design should reduce
+          context drift, surface the next meaningful view quickly, and make
+          scenario exploration feel closer to a guided canvas than a busy
+          control room.
+        </p>
+        <ul>
+          <li>
+            <strong>Attention-safe</strong> — One clear path per surface; keep
+            labels, state, and next steps easy to re-enter after interruption.
+          </li>
+          <li>
+            <strong>Low-tech friendly</strong> — Prefer plain language, stable
+            layout, and gentle hierarchy over tool-heavy control panels.
+          </li>
+          <li>
+            <strong>Scenario canvas</strong> — Help an author play out a seed
+            situation across health, audit, experiments, and flow views without
+            holding every branch in memory.
+          </li>
+        </ul>
+        <h3>Beyond 4.4 — future considerations</h3>
+        <p>
+          Not in current Phase 4 scope. Track these as candidates for a
+          future phase once 4.1–4.4 are delivered.
+        </p>
+        <ul>
+          <li>
+            <strong>Generative glimpses</strong> — Use text-to-image models
+            to visualize scenario descriptions. An author inputs a seed
+            situation; the tool generates visual variations (mood, lighting,
+            perspective). Requires API integration (e.g. Hugging Face,
+            Replicate) or a local model for offline use.
+          </li>
+          <li>
+            <strong>Offline-first design</strong> — The target audience may
+            not have reliable connectivity. Core canvas, annotation, and
+            scenario branching should work without a network. Sync when
+            online.
+          </li>
+          <li>
+            <strong>Touch and gesture support</strong> — Pinch-to-zoom,
+            swipe to navigate, tap to annotate. The canvas has pan/zoom via
+            mouse; extend to touch for tablet-aspected devices.
+          </li>
+          <li>
+            <strong>Progressive disclosure</strong> — Show advanced features
+            (experiment charts, audit timeline, GATE viz) only when the user
+            explicitly opens them. Keep the default canvas surface minimal.
+          </li>
+        </ul>
+        <p>
+          For handoff rules, audience-fit constraints, and vision-agent task
+          curation, see
+          <a href="VISION_AGENTS_AND_UI_UX_OWNERSHIP.md"
+            >VISION_AGENTS_AND_UI_UX_OWNERSHIP.md</a
+          >.
+        </p>
+      </section>
+
+      <!-- ─── 6. Cross-cutting track ─────────────────────────────── -->
+      <section aria-labelledby="crosscut-heading">
+        <h2 id="crosscut-heading">Cross-cutting track</h2>
+        <p>
+          Items that span multiple phases and should be tracked alongside
+          Phase 4. See
+          <a href="plans/2026-03-08-iteration-phases.md#cross-cutting-track"
+            >iteration-phases</a
+          > for full details.
+        </p>
+        <ul>
+          <li>
+            <strong>A. GRID-main branch hygiene</strong> — Inventory active
+            branches, decide which are live/mergeable/disposable, establish
+            rebase or merge cadence.
+          </li>
+          <li>
+            <strong>B. Backup and disaster recovery</strong> — Define which
+            operational directories (~/.echoes, ~/.pulse, ~/.seeds-server,
+            ~/.afloat, GATE/) are backup-worthy. Add a scheduled backup job
+            and document restore steps.
+          </li>
+          <li>
+            <strong>C. Dependency currency</strong> — Monthly review of
+            MCP SDK pins and local-package overrides. Test upgrades on one
+            server first before rolling across the workspace.
+          </li>
+          <li>
+            <strong>D. mcp-tool-experiment role</strong> — Clarify that it
+            is the main safety-first workspace analysis server, not a
+            mandatory proxy. Other servers remain independently callable peers.
+          </li>
+        </ul>
+      </section>
+
+      <!-- ─── 7. Quality gate ────────────────────────────────────── -->
+      <section aria-labelledby="quality-heading">
+        <h2 id="quality-heading">Quality gate</h2>
+        <p>
+          Phase 4 is fully delivered only when all acceptance criteria are met
+          and a quality-gate report validates against the
+          <a href="schemas/phase4-quality-gates.schema.json">JSON schema</a>.
+          See <a href="PHASE4_QUALITY_CONTRACT.md">PHASE4_QUALITY_CONTRACT.md</a>
+          for the full contract.
+        </p>
+        <table>
+          <thead>
+            <tr>
+              <th>Metric</th>
+              <th>Threshold</th>
+              <th>Current</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>4.1 Mycelium Dashboard</strong></td>
+              <td>5 criteria (health grid, audit stream, experiments, focus timer, layout)</td>
+              <td>0 / 5</td>
+            </tr>
+            <tr>
+              <td><strong>4.2 Glimpse components</strong></td>
+              <td>5 criteria (gauges, timeline, charts, cards, reuse)</td>
+              <td>4 / 5 (reuse pending integration)</td>
+            </tr>
+            <tr>
+              <td><strong>4.3 Real-time stream</strong></td>
+              <td>3 criteria (design doc, WebSocket, UX states)</td>
+              <td>0 / 3</td>
+            </tr>
+            <tr>
+              <td><strong>4.4 GATE visualization</strong></td>
+              <td>3 criteria (envelope flow, nonce registry, deployment history)</td>
+              <td>1 / 3 (envelope flow with mock data)</td>
+            </tr>
+            <tr>
+              <td><strong>Overall checklist</strong></td>
+              <td>16 / 16 for fully delivered</td>
+              <td>5 / 16</td>
+            </tr>
+          </tbody>
+        </table>
+        <p style="font-size: 0.9rem; color: var(--mute);">
+          Fully delivered threshold: all initiatives at 100%, checklist
+          coverage 100%, probability of full delivery &ge; 0.95. Design doc
+          sign-off required for 4.3.
+        </p>
+      </section>
+
+      <!-- ─── 8. Key docs and next steps ─────────────────────────── -->
+      <section aria-labelledby="links-heading">
+        <h2 id="links-heading">Key docs and next steps</h2>
+        <ul>
+          <li>
+            <a href="../README.md">README</a> — Workspace overview and project
+            table.
+          </li>
+          <li>
+            <a href="README.md">Docs index</a> — GIT_REPO, SUBMODULES,
+            DATA_CONTRACTS, plans.
+          </li>
+          <li>
+            <a href="GIT_REPO.md">GIT_REPO.md</a> — Git conventions,
+            staging/push, remotes, nested repos.
+          </li>
+          <li>
+            <a href="SUBMODULES.md">SUBMODULES.md</a> — Dirty submodule
+            remediation.
+          </li>
+          <li>
+            <a href="DATA_CONTRACTS.md">DATA_CONTRACTS.md</a> — Echoes audit
+            NDJSON and Seeds snapshot contracts.
+          </li>
+          <li>
+            <a href="plans/2026-03-08-iteration-phases.md">Iteration phases</a>
+            — Full phase spec, including Phase 4 initiatives 4.1–4.4 and
+            cross-cutting track A–D.
+          </li>
+          <li>
+            <a href="plans/2026-03-08-phase3-next-steps.md">Phase 3 next steps</a>
+            — Confirms Phase 3 is closed and points to Phase 4.
+          </li>
+          <li>
+            <a href="../CONTRIBUTING.md">CONTRIBUTING.md</a> — How to contribute.
+          </li>
+          <li>
+            <a href="VISION_AGENTS_AND_UI_UX_OWNERSHIP.md"
+              >VISION_AGENTS_AND_UI_UX_OWNERSHIP.md</a
+            >
+            — Ownership anchors, handoff rules, and audience-fit guidance.
+          </li>
+          <li>
+            <a href="PHASE4_QUALITY_CONTRACT.md">PHASE4_QUALITY_CONTRACT.md</a>
+            — Acceptance criteria for 4.1–4.4 and quality gates.
+          </li>
+          <li>
+            <a href="schemas/phase4-quality-gates.schema.json"
+              >phase4-quality-gates.schema.json</a
+            >
+            — Quality-gate JSON schema.
+          </li>
+          <li>
+            <a href="PROGRESS_SUMMARY.md">PROGRESS_SUMMARY.md</a> — Gist,
+            contract pointers, key doc index.
+          </li>
+        </ul>
+      </section>
+    </div>
+
+    <p class="about">
+      <strong>About this page:</strong> Static, human-maintained summary for
+      session start, onboarding, and planning. Keeps current state, Phase 4
+      intent, and the creative-user lens visible without replacing the source
+      docs. Update when closing phases, changing the project map, updating
+      quality-gate scores, or revising Phase 4 ownership.
+    </p>
+
+    <script>
+      mermaid.initialize({
+        startOnLoad: true,
+        theme: "base",
+        themeVariables: {
+          primaryColor: "#f6f7f9",
+          primaryTextColor: "#111827",
+          primaryBorderColor: "#e5e7eb",
+          lineColor: "#9ca3af",
+          secondaryColor: "#f0fdfa",
+          tertiaryColor: "#fff",
+        },
+      });
+
+      (function () {
+        var btnLayout = document.getElementById("btn-layout");
+        var btnZoomReset = document.getElementById("btn-zoom-reset");
+        var body = document.body;
+        var wraps = document.querySelectorAll(".diagram-wrap.zoomable");
+
+        if (btnLayout) {
+          btnLayout.addEventListener("click", function () {
+            var on = body.classList.toggle("layout-grid");
+            btnLayout.classList.toggle("active", on);
+            btnLayout.setAttribute("aria-pressed", on);
+            btnLayout.textContent = on ? "Single column" : "Grid layout";
+          });
+        }
+
+        function toggleZoom(wrap) {
+          if (!wrap || !wrap.classList.contains("zoomable")) return;
+          wrap.classList.toggle("zoomed");
+          wrap.setAttribute(
+            "aria-label",
+            wrap.classList.contains("zoomed")
+              ? "Diagram, activate to zoom out"
+              : "Diagram, activate to zoom in",
+          );
+        }
+
+        wraps.forEach(function (wrap) {
+          wrap.addEventListener("click", function () {
+            toggleZoom(wrap);
+          });
+          wrap.addEventListener("keydown", function (e) {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              toggleZoom(wrap);
+            }
+          });
+        });
+
+        if (btnZoomReset) {
+          btnZoomReset.addEventListener("click", function () {
+            wraps.forEach(function (w) {
+              w.classList.remove("zoomed");
+            });
+          });
+        }
+      })();
+    </script>
+  </body>
+</html>

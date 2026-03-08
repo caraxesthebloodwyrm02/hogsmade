@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/your-org/cascade-projects/docs/schemas/memo.schema.json",
+  "title": "Memo",
+  "description": "Concise schema for memos (session notes, decisions, status).",
+  "type": "object",
+  "required": ["date", "body"],
+  "properties": {
+    "date": { "type": "string", "format": "date" },
+    "title": { "type": "string", "maxLength": 120 },
+    "body": { "type": "string" },
+    "tags": { "type": "array", "items": { "type": "string" } },
+    "actions": { "type": "array", "items": { "type": "string" } }
+  }
+}
