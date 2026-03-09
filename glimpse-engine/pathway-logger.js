@@ -41,7 +41,7 @@ export function buildPathwayEntry(pipelineResult, fileName) {
 
   // Root signals: which rules fired and what they found
   const roots = (ruleTraces || [])
-    .filter(t => t.fired)
+    .filter(t => t.status === "fired")
     .map(t => ({
       rule: t.ruleId,
       score: t.score ?? null,

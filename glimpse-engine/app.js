@@ -38,6 +38,33 @@ const G = {
 };
 
 let chartInstance = null;
+let delegationBound = false;
+
+function debounce(fn, ms) {
+  let timer;
+  return (...args) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn(...args), ms);
+  };
+}
+
+function saveFocus() {
+  const el = document.activeElement;
+  if (!el || el === document.body) return null;
+  return { id: el.id, selStart: el.selectionStart, selEnd: el.selectionEnd, scrollY: window.scrollY };
+}
+
+function restoreFocus(saved) {
+  if (!saved) return;
+  const el = saved.id ? document.getElementById(saved.id) : null;
+  if (el) {
+    el.focus();
+    if (typeof el.selectionStart === "number" && saved.selStart != null) {
+      try { el.setSelectionRange(saved.selStart, saved.selEnd); } catch {}
+    }
+  }
+  window.scrollTo(0, saved.scrollY);
+}
 
 function esc(value) {
   return String(value ?? "")
@@ -106,6 +133,7 @@ function runPipeline() {
 }
 
 function render() {
+  const focus = saveFocus();
   const app = document.getElementById("app");
   app.innerHTML = [
     renderHeader(),
@@ -116,7 +144,11 @@ function render() {
     G.phase >= 4 ? renderResults() : "",
     renderRuleAuthoring(),
   ].join("");
-  bindEvents();
+  if (!delegationBound) {
+    bindDelegatedEvents();
+    delegationBound = true;
+  }
+  restoreFocus(focus);
   if (G.phase >= 4) renderChart();
 }
 
@@ -137,7 +169,7 @@ function renderMasterPanel() {
   const configLabel = G.masterConfigSource === "external-file" ? "Loaded `glimpse.master.yaml`" : G.masterConfigSource === "embedded-default" ? "Fallback config (use load/save for the master YAML)" : "Loading...";
   const functionCount = Object.keys(G.masterConfig?.function_registry || {}).length;
   const diagnostics = G.masterConfig?.diagnostics || {};
-  return `<div class="context-panel fade-in"><div class="context-header"><h3>Master Config</h3><span class="config-status">${esc(configLabel)}</span></div><div class="context-body"><div class="master-grid"><div class="master-card"><div class="master-kicker">Preset</div><select class="cluster-select" id="presetSelect">${presetOptions}</select><div class="master-help">Presets change lens and view weighting without changing the raw evidence.</div></div><div class="master-card"><div class="master-kicker">Semantic Hints</div><div class="hint-list">${buildSemanticHints(G.masterConfig || { taxonomy: { domains: [] } }).slice(0, 5).map((hint) => `<span class="hint-chip">${esc(hint.label)}: ${esc(hint.sampleTerms.join(", "))}</span>`).join("")}</div></div><div class="master-card"><div class="master-kicker">Logic Surface</div><div class="master-help">${functionCount} safe functions exposed. Trace ${diagnostics.trace_output === false ? "off" : "on"}. Fail-closed ${diagnostics.fail_closed === false ? "off" : "on"}.</div></div><div class="master-card"><div class="master-kicker">Control</div><div class="button-row"><button class="btn btn-ghost btn-sm" id="loadMasterBtn">Load master YAML</button><button class="btn btn-ghost btn-sm" id="saveMasterBtn">Save master YAML</button></div><div class="master-help">${esc(G.saveStatus || "Rules, function metadata, and semantic packs persist through the master YAML file.")}</div></div></div></div></div>`;
+  return `<div class="context-panel fade-in"><div class="context-header"><h3>Master Config</h3><span class="config-status">${esc(configLabel)}</span></div><div class="context-body"><div class="master-grid"><div class="master-card"><div class="master-kicker">Preset</div><select class="cluster-select" id="presetSelect">${presetOptions}</select><div class="master-help">Presets change lens and view weighting without changing the raw evidence.</div></div><div class="master-card"><div class="master-kicker">Semantic Hints</div><div class="hint-list">${buildSemanticHints(G.masterConfig || { taxonomy: { domains: [] } }).slice(0, 5).map((hint) => `<span class="hint-chip">${esc(hint.label)}: ${esc(hint.sampleTerms.join(", "))}</span>`).join("")}</div></div><div class="master-card"><div class="master-kicker">Logic Surface</div><div class="master-help">${functionCount} safe functions exposed. Trace ${diagnostics.trace_output === false ? "off" : "on"}. Fail-closed ${diagnostics.fail_closed === false ? "off" : "on"}.</div></div><div class="master-card"><div class="master-kicker">Control</div><div class="button-row"><button class="btn btn-ghost btn-sm" data-action="loadMaster" aria-label="Load master YAML configuration">Load master YAML</button><button class="btn btn-ghost btn-sm" data-action="saveMaster" aria-label="Save master YAML configuration">Save master YAML</button></div><div class="master-help">${esc(G.saveStatus || "Rules, function metadata, and semantic packs persist through the master YAML file.")}</div></div></div></div></div>`;
 }
 
 function renderUpload() {
@@ -183,7 +215,7 @@ function generateLensReason(lens) {
 }
 
 function renderQueryBar() {
-  return `<div class="query-bar fade-in"><input class="query-input" id="queryInput" placeholder="Ask about the data... e.g. 'best views', 'cluster by region', 'show map', 'explain relation between Telegraph and Telephone'" value="${esc(G.query)}"><button class="btn btn-primary" id="queryBtn">Query</button><button class="btn btn-ghost" id="resetBtn" title="Start over" style="padding:0.75rem">Reset</button></div>`;
+  return `<div class="query-bar fade-in"><input class="query-input" id="queryInput" placeholder="Ask about the data... e.g. 'best views', 'cluster by region', 'show map', 'explain relation between Telegraph and Telephone'" value="${esc(G.query)}"><button class="btn btn-primary" data-action="query" aria-label="Run query">Query</button><button class="btn btn-ghost" data-action="reset" title="Start over" aria-label="Reset application" style="padding:0.75rem">Reset</button></div>`;
 }
 
 function renderStats() {
@@ -244,13 +276,13 @@ function renderChartPanel() {
 }
 
 function renderExportBar() {
-  return `<div class="export-bar"><button class="btn btn-ghost btn-sm" id="exportSvgBtn">Export SVG</button><button class="btn btn-ghost btn-sm" id="exportJsonBtn">Export Context</button><button class="btn btn-ghost btn-sm" id="exportHtmlBtn">Export Report</button></div>`;
+  return `<div class="export-bar"><button class="btn btn-ghost btn-sm" data-action="exportSvg" aria-label="Export visualization as SVG">Export SVG</button><button class="btn btn-ghost btn-sm" data-action="exportJson" aria-label="Export context data as JSON">Export Context</button><button class="btn btn-ghost btn-sm" data-action="exportHtml" aria-label="Export full report as HTML">Export Report</button></div>`;
 }
 
 function renderRuleAuthoring() {
   const preview = G.ruleDraftResult?.preview;
   const canSave = G.ruleDraftResult && !G.ruleDraftResult.ambiguous;
-  return `<div class="context-panel fade-in"><div class="context-header"><h3>Rule Authoring</h3><span class="config-status">Describe a law in natural language; the engine compiles it into YAML.</span></div><div class="context-body"><div class="author-grid"><div><textarea class="rule-textarea" id="ruleDraftInput" placeholder="Example: When records share the same country, favor the map view and treat geography as a supporting context.">${esc(G.ruleDraft)}</textarea><div class="button-row" style="margin-top:0.75rem"><select class="cluster-select" id="rulePromotionSelect"><option value="experimental"${G.rulePromotion === "experimental" ? " selected" : ""}>Experimental</option><option value="active"${G.rulePromotion === "active" ? " selected" : ""}>Active</option></select><button class="btn btn-primary btn-sm" id="compileRuleBtn">Compile rule</button><button class="btn btn-ghost btn-sm" id="saveRuleBtn"${canSave ? "" : " disabled"}>Save to master YAML</button></div></div><div class="rule-preview">${preview ? `<div class="master-kicker">Preview</div><strong>${esc(preview.title)}</strong><p><strong>Rule type:</strong> ${esc(preview.ruleType)}</p><p><strong>Checks:</strong> ${esc(preview.checks.join("; "))}</p><p><strong>Guards:</strong> ${esc((preview.guardChecks || ["none"]).join("; "))}</p><p><strong>Changes:</strong> ${esc(preview.changes.join("; "))}</p><p><strong>Scope:</strong> ${esc(preview.scope)}</p><p><strong>Function:</strong> ${esc(preview.functionName || "n/a")}</p><p><strong>Args:</strong> ${esc(JSON.stringify(preview.args || {}))}</p><p><strong>Returns:</strong> ${esc(preview.returns || "n/a")} &middot; <strong>Weight:</strong> ${esc(preview.weightStrategy || "priority")}</p><p><strong>Promotion:</strong> ${esc(preview.promotion || "active")}</p><p><strong>Why:</strong> ${esc(preview.because)}</p><p><strong>Validation:</strong> ${G.ruleDraftResult?.validationErrors?.length ? esc(G.ruleDraftResult.validationErrors.join(" ")) : "No validation issues in preview."}</p>` : '<div class="empty-state">Compile a rule draft to preview what the engine understood before it is saved.</div>'}</div></div></div></div>`;
+  return `<div class="context-panel fade-in"><div class="context-header"><h3>Rule Authoring</h3><span class="config-status">Describe a law in natural language; the engine compiles it into YAML.</span></div><div class="context-body"><div class="author-grid"><div><textarea class="rule-textarea" id="ruleDraftInput" placeholder="Example: When records share the same country, favor the map view and treat geography as a supporting context.">${esc(G.ruleDraft)}</textarea><div class="button-row" style="margin-top:0.75rem"><select class="cluster-select" id="rulePromotionSelect"><option value="experimental"${G.rulePromotion === "experimental" ? " selected" : ""}>Experimental</option><option value="active"${G.rulePromotion === "active" ? " selected" : ""}>Active</option></select><button class="btn btn-primary btn-sm" data-action="compileRule">Compile rule</button><button class="btn btn-ghost btn-sm" data-action="saveRule"${canSave ? "" : " disabled"}>Save to master YAML</button></div></div><div class="rule-preview">${preview ? `<div class="master-kicker">Preview</div><strong>${esc(preview.title)}</strong><p><strong>Rule type:</strong> ${esc(preview.ruleType)}</p><p><strong>Checks:</strong> ${esc(preview.checks.join("; "))}</p><p><strong>Guards:</strong> ${esc((preview.guardChecks || ["none"]).join("; "))}</p><p><strong>Changes:</strong> ${esc(preview.changes.join("; "))}</p><p><strong>Scope:</strong> ${esc(preview.scope)}</p><p><strong>Function:</strong> ${esc(preview.functionName || "n/a")}</p><p><strong>Args:</strong> ${esc(JSON.stringify(preview.args || {}))}</p><p><strong>Returns:</strong> ${esc(preview.returns || "n/a")} &middot; <strong>Weight:</strong> ${esc(preview.weightStrategy || "priority")}</p><p><strong>Promotion:</strong> ${esc(preview.promotion || "active")}</p><p><strong>Why:</strong> ${esc(preview.because)}</p><p><strong>Validation:</strong> ${G.ruleDraftResult?.validationErrors?.length ? esc(G.ruleDraftResult.validationErrors.join(" ")) : "No validation issues in preview."}</p>` : '<div class="empty-state">Compile a rule draft to preview what the engine understood before it is saved.</div>'}</div></div></div></div>`;
 }
 
 function generateNarrative() {
@@ -338,179 +370,208 @@ function renderChart() {
   });
 }
 
-function bindEvents() {
-  const dropZone = document.getElementById("dropZone");
-  const fileInput = document.getElementById("fileInput");
-  if (dropZone && fileInput) {
-    dropZone.addEventListener("click", () => fileInput.click());
-    dropZone.addEventListener("dragover", (event) => {
+const debouncedTableSearch = debounce((value) => {
+  G.tableFilter = value;
+  render();
+}, 150);
+
+function bindDelegatedEvents() {
+  const app = document.getElementById("app");
+
+  app.addEventListener("click", (event) => {
+    const target = event.target.closest("[data-action], [data-mode], [data-type], [data-eid], [data-col], #dropZone, #fileInput");
+    if (!target) return;
+
+    if (target.id === "dropZone" || target.closest("#dropZone")) {
+      document.getElementById("fileInput")?.click();
+      return;
+    }
+
+    if (target.dataset.action === "loadMaster") {
+      handleLoadMaster();
+      return;
+    }
+    if (target.dataset.action === "saveMaster") {
+      handleSaveMaster();
+      return;
+    }
+    if (target.dataset.action === "query") { processQuery(); return; }
+    if (target.dataset.action === "reset") { resetApp(); return; }
+    if (target.dataset.action === "compileRule") { handleCompileRule(); return; }
+    if (target.dataset.action === "saveRule") { handleSaveRule(); return; }
+    if (target.dataset.action === "exportSvg") { exportSVG(); return; }
+    if (target.dataset.action === "exportJson") { exportJSON(); return; }
+    if (target.dataset.action === "exportHtml") { exportHTML(); return; }
+
+    if (target.dataset.mode) {
+      G.mode = target.dataset.mode;
+      render();
+      return;
+    }
+
+    if (target.classList.contains("chart-type-btn") && target.dataset.type) {
+      G.chartType = target.dataset.type;
+      renderChart();
+      return;
+    }
+
+    if (target.dataset.col) {
+      const column = target.dataset.col;
+      if (G.sortCol === column) G.sortDir *= -1;
+      else { G.sortCol = column; G.sortDir = 1; }
+      render();
+      return;
+    }
+
+    const entityNode = target.closest("[data-eid]");
+    if (entityNode) {
+      const entityId = entityNode.dataset.eid;
+      G.focus = G.focus === entityId ? null : entityId;
+      G.query = G.focus ? `focus ${entityNode.dataset.name}` : "";
+      render();
+      return;
+    }
+  });
+
+  app.addEventListener("change", (event) => {
+    const target = event.target;
+    if (target.id === "fileInput" && target.files[0]) {
+      handleFile(target.files[0]);
+      return;
+    }
+    if (target.id === "presetSelect") {
+      G.activePreset = target.value;
+      G.saveStatus = `Preset switched to ${G.masterConfig.presets[G.activePreset]?.label || G.activePreset}.`;
+      if (G.rawData) runPipeline();
+      else render();
+      return;
+    }
+    if (target.id === "clusterSelect") {
+      G.clusterBy = target.value;
+      G.ctx.clusters = computeClusters(G.ctx, G.clusterBy);
+      render();
+      return;
+    }
+    if (target.id === "rulePromotionSelect") {
+      G.rulePromotion = target.value;
+      if (G.ruleDraftResult?.rule) {
+        G.ruleDraftResult.rule.promotion = G.rulePromotion;
+        G.ruleDraftResult.preview = createRulePreview(G.ruleDraftResult.rule);
+      }
+      return;
+    }
+  });
+
+  app.addEventListener("input", (event) => {
+    const target = event.target;
+    if (target.id === "queryInput") { G.query = target.value; return; }
+    if (target.id === "tableSearch") { debouncedTableSearch(target.value); return; }
+  });
+
+  app.addEventListener("keydown", (event) => {
+    if (event.target.id === "queryInput" && event.key === "Enter") processQuery();
+  });
+
+  app.addEventListener("dragover", (event) => {
+    if (event.target.closest("#dropZone")) {
       event.preventDefault();
-      dropZone.classList.add("drag-over");
-    });
-    dropZone.addEventListener("dragleave", () => dropZone.classList.remove("drag-over"));
-    dropZone.addEventListener("drop", (event) => {
+      event.target.closest("#dropZone").classList.add("drag-over");
+    }
+  });
+  app.addEventListener("dragleave", (event) => {
+    const dropZone = event.target.closest("#dropZone");
+    if (dropZone) dropZone.classList.remove("drag-over");
+  });
+  app.addEventListener("drop", (event) => {
+    const dropZone = event.target.closest("#dropZone");
+    if (dropZone) {
       event.preventDefault();
       dropZone.classList.remove("drag-over");
       if (event.dataTransfer.files[0]) handleFile(event.dataTransfer.files[0]);
-    });
-    fileInput.addEventListener("change", (event) => {
-      if (event.target.files[0]) handleFile(event.target.files[0]);
-    });
+    }
+  });
+}
+
+async function handleLoadMaster() {
+  try {
+    if ("showOpenFilePicker" in window) {
+      const [handle] = await window.showOpenFilePicker({
+        types: [{ description: "YAML", accept: { "application/yaml": [".yaml", ".yml"] } }],
+        excludeAcceptAllOption: false,
+        multiple: false,
+      });
+      if (!handle) return;
+      const file = await handle.getFile();
+      const yamlText = await file.text();
+      G.masterConfig = parseMasterConfig(yamlText);
+      G.masterConfigSource = "external-file";
+      G.masterYamlText = yamlText;
+      G.masterHandle = handle;
+      G.activePreset = G.masterConfig.defaults?.active_preset || G.activePreset;
+      G.saveStatus = `Loaded ${file.name}.`;
+      if (G.rawData) runPipeline();
+      else render();
+      return;
+    }
+    alert("This browser does not support direct file loading. Serve the folder over HTTP or use a Chromium-based browser.");
+  } catch (error) {
+    G.saveStatus = `Failed to load YAML: ${error.message}`;
+    render();
   }
+}
 
-  document.getElementById("presetSelect")?.addEventListener("change", (event) => {
-    G.activePreset = event.target.value;
-    G.saveStatus = `Preset switched to ${G.masterConfig.presets[G.activePreset]?.label || G.activePreset}.`;
-    if (G.rawData) runPipeline();
-    else render();
-  });
-
-  document.getElementById("loadMasterBtn")?.addEventListener("click", async () => {
-    try {
-      if ("showOpenFilePicker" in window) {
-        const [handle] = await window.showOpenFilePicker({
-          types: [{ description: "YAML", accept: { "application/yaml": [".yaml", ".yml"] } }],
-          excludeAcceptAllOption: false,
-          multiple: false,
-        });
-        if (!handle) return;
-        const file = await handle.getFile();
-        const yamlText = await file.text();
-        G.masterConfig = parseMasterConfig(yamlText);
-        G.masterConfigSource = "external-file";
-        G.masterYamlText = yamlText;
-        G.masterHandle = handle;
-        G.activePreset = G.masterConfig.defaults?.active_preset || G.activePreset;
-        G.saveStatus = `Loaded ${file.name}.`;
-        if (G.rawData) runPipeline();
-        else render();
-        return;
-      }
-      alert("This browser does not support direct file loading. Serve the folder over HTTP or use a Chromium-based browser.");
-    } catch (error) {
-      G.saveStatus = `Failed to load YAML: ${error.message}`;
-      render();
-    }
-  });
-
-  document.getElementById("saveMasterBtn")?.addEventListener("click", async () => {
-    try {
-      if (G.masterHandle) {
-        await saveMasterConfigToHandle(G.masterHandle, G.masterConfig);
-        G.saveStatus = "Master YAML saved to disk.";
-      } else {
-        downloadMasterConfig(G.masterConfig);
-        G.saveStatus = "Master YAML downloaded. If you want direct saves, load the file first.";
-      }
-      render();
-    } catch (error) {
-      G.saveStatus = `Failed to save YAML: ${error.message}`;
-      render();
-    }
-  });
-
-  const queryInput = document.getElementById("queryInput");
-  if (queryInput) {
-    queryInput.addEventListener("input", (event) => { G.query = event.target.value; });
-    queryInput.addEventListener("keydown", (event) => { if (event.key === "Enter") processQuery(); });
-  }
-  document.getElementById("rulePromotionSelect")?.addEventListener("change", (event) => {
-    G.rulePromotion = event.target.value;
-    if (G.ruleDraftResult?.rule) {
-      G.ruleDraftResult.rule.promotion = G.rulePromotion;
-      G.ruleDraftResult.preview = createRulePreview(G.ruleDraftResult.rule);
-    }
-  });
-  document.getElementById("queryBtn")?.addEventListener("click", processQuery);
-  document.getElementById("resetBtn")?.addEventListener("click", resetApp);
-
-  document.querySelectorAll(".mode-btn").forEach((button) => {
-    button.addEventListener("click", () => {
-      G.mode = button.dataset.mode;
-      render();
-    });
-  });
-
-  document.querySelectorAll(".chart-type-btn").forEach((button) => {
-    button.addEventListener("click", () => {
-      G.chartType = button.dataset.type;
-      renderChart();
-    });
-  });
-
-  document.getElementById("clusterSelect")?.addEventListener("change", (event) => {
-    G.clusterBy = event.target.value;
-    G.ctx.clusters = computeClusters(G.ctx, G.clusterBy);
-    render();
-  });
-
-  document.getElementById("tableSearch")?.addEventListener("input", (event) => {
-    G.tableFilter = event.target.value;
-    render();
-  });
-
-  document.querySelectorAll(".data-table th").forEach((header) => {
-    header.addEventListener("click", () => {
-      const column = header.dataset.col;
-      if (G.sortCol === column) G.sortDir *= -1;
-      else {
-        G.sortCol = column;
-        G.sortDir = 1;
-      }
-      render();
-    });
-  });
-
-  document.querySelectorAll("[data-eid]").forEach((node) => {
-    node.addEventListener("click", () => {
-      const entityId = node.dataset.eid;
-      G.focus = G.focus === entityId ? null : entityId;
-      G.query = G.focus ? `focus ${node.dataset.name}` : "";
-      render();
-    });
-  });
-
-  document.getElementById("compileRuleBtn")?.addEventListener("click", () => {
-    G.ruleDraft = document.getElementById("ruleDraftInput")?.value || "";
-    const result = compileRuleFromConversation(G.ruleDraft, G.masterConfig);
-    if (!result) return;
-    result.rule.promotion = G.rulePromotion;
-    const previewConfig = JSON.parse(JSON.stringify(G.masterConfig));
-    previewConfig.rules = [result.rule];
-    const validation = validateConfigWithRegistry(previewConfig);
-    G.ruleDraftResult = {
-      ...result,
-      preview: createRulePreview(result.rule),
-      validationErrors: [...(validation.invalidArgs || []), ...(validation.missingFunctions || [])],
-    };
-    render();
-  });
-
-  document.getElementById("saveRuleBtn")?.addEventListener("click", async () => {
-    if (!G.ruleDraftResult || G.ruleDraftResult.ambiguous) return;
-    G.masterConfig.rules = [...(G.masterConfig.rules || []).filter((rule) => rule.id !== G.ruleDraftResult.rule.id), G.ruleDraftResult.rule].sort((a, b) => b.priority - a.priority);
-    const packId = G.ruleDraftResult.rule.promotion === "experimental" ? "experimental" : "base";
-    G.masterConfig.rule_sets ||= {};
-    G.masterConfig.rule_sets[packId] ||= { label: packId === "experimental" ? "Experimental" : "Base Logic", rules: [] };
-    if (!G.masterConfig.rule_sets[packId].rules.includes(G.ruleDraftResult.rule.id)) {
-      G.masterConfig.rule_sets[packId].rules.push(G.ruleDraftResult.rule.id);
-    }
-    G.masterYamlText = serializeMasterConfig(G.masterConfig);
-    G.saveStatus = `Saved rule ${G.ruleDraftResult.rule.id} into the master config state.`;
-    G.ruleDraft = "";
-    G.ruleDraftResult = null;
-    G.rulePromotion = "experimental";
+async function handleSaveMaster() {
+  try {
     if (G.masterHandle) {
       await saveMasterConfigToHandle(G.masterHandle, G.masterConfig);
-      G.saveStatus = "Saved the new rule directly into the loaded master YAML.";
+      G.saveStatus = "Master YAML saved to disk.";
+    } else {
+      downloadMasterConfig(G.masterConfig);
+      G.saveStatus = "Master YAML downloaded. If you want direct saves, load the file first.";
     }
-    if (G.rawData) runPipeline();
-    else render();
-  });
+    render();
+  } catch (error) {
+    G.saveStatus = `Failed to save YAML: ${error.message}`;
+    render();
+  }
+}
 
-  document.getElementById("exportSvgBtn")?.addEventListener("click", exportSVG);
-  document.getElementById("exportJsonBtn")?.addEventListener("click", exportJSON);
-  document.getElementById("exportHtmlBtn")?.addEventListener("click", exportHTML);
+function handleCompileRule() {
+  G.ruleDraft = document.getElementById("ruleDraftInput")?.value || "";
+  const result = compileRuleFromConversation(G.ruleDraft, G.masterConfig);
+  if (!result) return;
+  result.rule.promotion = G.rulePromotion;
+  const previewConfig = JSON.parse(JSON.stringify(G.masterConfig));
+  previewConfig.rules = [result.rule];
+  const validation = validateConfigWithRegistry(previewConfig);
+  G.ruleDraftResult = {
+    ...result,
+    preview: createRulePreview(result.rule),
+    validationErrors: [...(validation.invalidArgs || []), ...(validation.missingFunctions || [])],
+  };
+  render();
+}
+
+async function handleSaveRule() {
+  if (!G.ruleDraftResult || G.ruleDraftResult.ambiguous) return;
+  G.masterConfig.rules = [...(G.masterConfig.rules || []).filter((rule) => rule.id !== G.ruleDraftResult.rule.id), G.ruleDraftResult.rule].sort((a, b) => b.priority - a.priority);
+  const packId = G.ruleDraftResult.rule.promotion === "experimental" ? "experimental" : "base";
+  G.masterConfig.rule_sets ||= {};
+  G.masterConfig.rule_sets[packId] ||= { label: packId === "experimental" ? "Experimental" : "Base Logic", rules: [] };
+  if (!G.masterConfig.rule_sets[packId].rules.includes(G.ruleDraftResult.rule.id)) {
+    G.masterConfig.rule_sets[packId].rules.push(G.ruleDraftResult.rule.id);
+  }
+  G.masterYamlText = serializeMasterConfig(G.masterConfig);
+  G.saveStatus = `Saved rule ${G.ruleDraftResult.rule.id} into the master config state.`;
+  G.ruleDraft = "";
+  G.ruleDraftResult = null;
+  G.rulePromotion = "experimental";
+  if (G.masterHandle) {
+    await saveMasterConfigToHandle(G.masterHandle, G.masterConfig);
+    G.saveStatus = "Saved the new rule directly into the loaded master YAML.";
+  }
+  if (G.rawData) runPipeline();
+  else render();
 }
 
 function processQuery() {

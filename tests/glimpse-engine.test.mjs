@@ -142,6 +142,30 @@ test("no-match datasets fall back safely to a general lens and explorer-friendly
   assert.notEqual(views[0]?.id, "timeline");
 });
 
+test("signal_signature detects acoustic field names after d.name fix", () => {
+  const data = [
+    { frequency: 440, amplitude: 0.8, phase: 90, delay: 12, label: "tone A" },
+    { frequency: 880, amplitude: 0.6, phase: 180, delay: 24, label: "tone B" },
+  ];
+  const ctx = runContextPipeline(data, "json", config, { presetId: "signature" });
+  const trace = ctx.ruleTraces.find(t => t.ruleId === "signal-signature-detection");
+  assert.ok(trace, "signal-signature-detection should have a trace");
+  assert.equal(trace.status, "fired", "should fire when acoustic fields present");
+  assert.ok(trace.output.value >= 2, "should match at least 2 signal fields");
+});
+
+test("growth_pattern detects branching field names after d.name fix", () => {
+  const data = [
+    { parent: "root", child: "leaf-1", depth: 0, label: "node A" },
+    { parent: "root", child: "leaf-2", depth: 1, label: "node B" },
+  ];
+  const ctx = runContextPipeline(data, "json", config, { presetId: "signature" });
+  const trace = ctx.ruleTraces.find(t => t.ruleId === "growth-pattern-detection");
+  assert.ok(trace, "growth-pattern-detection should have a trace");
+  assert.equal(trace.status, "fired", "should fire when branch fields present");
+  assert.ok(trace.output.value >= 2, "should match at least 2 branching signals");
+});
+
 test("bootstrap validation report catches missing registry entries before runtime use", async () => {
   const reportPath = "/mnt/c/Users/USER/CascadeProjects/tmp/jupyter-notebook/test-validation-report.json";
   await execFileAsync("node", [

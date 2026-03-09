@@ -1101,7 +1101,7 @@ const BUILTIN_FUNCTIONS = [
     handler(context, args) {
       const profile = context.profile || {};
       const descriptors = profile.descriptors || [];
-      const fieldNames = descriptors.map(d => (d.key || "").toLowerCase());
+      const fieldNames = descriptors.map(d => (d.name || "").toLowerCase());
       const signalTerms = ["frequency", "amplitude", "phase", "delay", "decay", "feedback", "density", "reverb", "signal", "attenuation", "resonance", "waveform", "pitch", "gain", "spectrum"];
       const matched = fieldNames.filter(f => signalTerms.some(t => f.includes(t)));
       const min = Number(args.min_signal_fields || 2);
@@ -1132,7 +1132,7 @@ const BUILTIN_FUNCTIONS = [
     handler(context, args) {
       const profile = context.profile || {};
       const descriptors = profile.descriptors || [];
-      const fieldNames = descriptors.map(d => (d.key || "").toLowerCase());
+      const fieldNames = descriptors.map(d => (d.name || "").toLowerCase());
       const branchTerms = ["parent", "child", "root", "leaf", "branch", "depth", "level", "nested", "trunk", "stem", "node", "ancestor", "descendant", "subtree", "hierarchy"];
       const matched = fieldNames.filter(f => branchTerms.some(t => f.includes(t)));
       const min = Number(args.min_branch_signals || 2);

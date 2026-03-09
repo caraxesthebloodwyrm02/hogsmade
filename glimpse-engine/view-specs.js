@@ -23,6 +23,7 @@ function forceLayout(nodes, edges, width, height) {
 
   const k = Math.sqrt((width * height) / Math.max(count, 1));
   const iterations = Math.min(170, Math.max(40, 240 - count * 2));
+  const nodeMap = new Map(nodes.map((node) => [node.id, node]));
   for (let iter = 0; iter < iterations; iter += 1) {
     const cool = 1 - iter / iterations;
     for (let i = 0; i < count; i += 1) {
@@ -40,8 +41,8 @@ function forceLayout(nodes, edges, width, height) {
       }
     }
     edges.forEach((edge) => {
-      const source = nodes.find((node) => node.id === edge.source);
-      const target = nodes.find((node) => node.id === edge.target);
+      const source = nodeMap.get(edge.source);
+      const target = nodeMap.get(edge.target);
       if (!source || !target) return;
       const dx = target.x - source.x;
       const dy = target.y - source.y;
@@ -117,12 +118,13 @@ function renderConstellation(context, state) {
   }));
   forceLayout(nodes, edges, width, height);
 
+  const nodeMap = new Map(nodes.map((n) => [n.id, n]));
   const svg = [];
-  svg.push(`<svg viewBox="0 0 ${width} ${height}">`);
+  svg.push(`<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Constellation view of ${nodes.length} entities and ${edges.length} relations">`);
   svg.push('<defs><marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="var(--teal-500)" opacity="0.7"/></marker></defs>');
   edges.forEach((edge) => {
-    const source = nodes.find((node) => node.id === edge.source);
-    const target = nodes.find((node) => node.id === edge.target);
+    const source = nodeMap.get(edge.source);
+    const target = nodeMap.get(edge.target);
     if (!source || !target) return;
     const cls = edge.type === "influenced" ? "edge-line edge-influenced" : edge.type === "shared-space" ? "edge-line edge-shared-space" : edge.type === "shared-domain" ? "edge-line edge-shared-domain" : "edge-line edge-shared-era";
     if (edge.type === "influenced") {
@@ -163,7 +165,7 @@ function renderTimeline(context) {
   const maxYear = Math.ceil(Math.max(...years) / 10) * 10 + 10;
   const scale = (year) => pad.l + ((year - minYear) / (maxYear - minYear)) * (width - pad.l - pad.r);
 
-  const svg = [`<svg viewBox="0 0 ${width} ${height}">`, '<defs><marker id="timelineArrow" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto"><polygon points="0 0, 7 2.5, 0 5" fill="var(--teal-500)" opacity="0.7"/></marker></defs>'];
+  const svg = [`<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Timeline view of ${timeEntities.length} entities">`, '<defs><marker id="timelineArrow" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto"><polygon points="0 0, 7 2.5, 0 5" fill="var(--teal-500)" opacity="0.7"/></marker></defs>'];
   for (let decade = minYear; decade < maxYear; decade += 10) {
     const x = scale(decade);
     const w = scale(decade + 10) - x;
