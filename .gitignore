@@ -46,6 +46,12 @@ Desktop.ini
 ownership-map-out/
 .tmp-ownership-venv/
 
+# Orphan submodule path (no .gitmodules entry); keep local copy untracked
+Atmosphere/
+
 # Optional: local hook stubs (if re-added, keep empty or use .cursor/hooks.json)
 hooks/
 scripts/hooks/
+
+# Local Netlify folder
+.netlify
