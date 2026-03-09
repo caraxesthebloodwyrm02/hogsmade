@@ -6,6 +6,39 @@ function slugify(value) {
     .slice(0, 48) || "item";
 }
 
+function normalizeName(name) {
+  return String(name || "").toLowerCase().trim().replace(/\s+/g, " ");
+}
+
+function findBestEntityMatch(name, entities, byName) {
+  const normalized = normalizeName(name);
+  if (!normalized) return null;
+  
+  // Exact match first
+  const exact = byName.get(normalized);
+  if (exact) return exact;
+  
+  // Try slug match
+  const slug = slugify(name);
+  for (const entity of entities) {
+    if (slugify(entity.name) === slug) return entity;
+  }
+  
+  // Partial match: input contains entity name
+  for (const entity of entities) {
+    const entityNorm = normalizeName(entity.name);
+    if (normalized.includes(entityNorm)) return entity;
+  }
+  
+  // Partial match: entity name contains input
+  for (const entity of entities) {
+    const entityNorm = normalizeName(entity.name);
+    if (entityNorm.includes(normalized)) return entity;
+  }
+  
+  return null;
+}
+
 function escRegExp(value) {
   return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
@@ -258,6 +291,9 @@ export function buildEntities(records, profile, config) {
   const domainColumn = profile.dimensionMap.domain?.[0] || null;
   const catalystColumn = profile.dimensionMap.catalyst?.[0] || null;
 
+  // Track seen names to handle duplicates
+  const seenNames = new Map();
+
   return records.map((record, index) => {
     const recordText = flattenRecord(record);
     const domainKeywordHits = scoreTaxonomy(recordText, config);
@@ -267,9 +303,24 @@ export function buildEntities(records, profile, config) {
       const value = normalizeScalar(record[descriptor.name]);
       if (typeof value === "number") metrics[descriptor.name] = value;
     });
+    
+    const rawName = String(record[entityColumn] || `Record ${index + 1}`);
+    const normalizedName = normalizeName(rawName);
+    
+    // Handle duplicate names by appending a counter
+    let uniqueName = rawName;
+    const nameCount = seenNames.get(normalizedName) || 0;
+    if (nameCount > 0) {
+      uniqueName = `${rawName} (${nameCount + 1})`;
+    }
+    seenNames.set(normalizedName, nameCount + 1);
+    
+    // Generate stable ID based on normalized unique name
+    const stableId = `e-${slugify(uniqueName)}`;
+    
     return {
-      id: `e-${index}`,
-      name: String(record[entityColumn] || `Record ${index + 1}`),
+      id: stableId,
+      name: uniqueName,
       type: typeColumn ? String(record[typeColumn] || "object").toLowerCase() : inferEntityType(recordText),
       dimensions: {
         time: normalizeScalar(record[timeColumn]),
@@ -304,7 +355,8 @@ function createEvidence(base) {
 function buildBaseRelations(entities) {
   const relations = [];
   const evidences = [];
-  const byName = new Map(entities.map((entity) => [entity.name.toLowerCase(), entity]));
+  // Use normalized names as keys for better matching
+  const byName = new Map(entities.map((entity) => [normalizeName(entity.name), entity]));
 
   const influenceColumns = ["influenced_by", "inspired_by", "based_on", "derived", "source"];
   entities.forEach((entity) => {
@@ -318,8 +370,8 @@ function buildBaseRelations(entities) {
       return false;
     });
     if (explicitInfluence) {
-      const target = byName.get(explicitInfluence.toLowerCase())
-        || entities.find((candidate) => explicitInfluence.toLowerCase().includes(candidate.name.toLowerCase()));
+      // Use fuzzy matching to find the best entity match
+      const target = findBestEntityMatch(explicitInfluence, entities, byName);
       if (target) {
         const evidence = createEvidence({
           id: `ev-rel-influence-${entity.id}-${target.id}`,
