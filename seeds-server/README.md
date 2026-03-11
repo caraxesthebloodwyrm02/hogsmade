@@ -23,6 +23,7 @@ npm run start
 
 - `SEEDS_ROOT` is required and intentionally fails fast when missing.
 - Alerting and trend analysis depend on real snapshots created by `ecosystem_scan` with `saveSnapshot: true`.
+- Repo path alias: a directory named `grid` under `SEEDS_ROOT` is reported using the health of `GRID-main` (so "grid" maps to `GRID-main`). Directories listed in the skip list (e.g. `scratch`) are not included in the scan.
 
 ## Snapshot contract
 

@@ -43,6 +43,14 @@ const KNOWN_REPOS: Record<string, { description: string; stack: string }> = {
   "assistive-tool-contract": { description: "Contract specification", stack: "JSON, Markdown" },
 };
 
+// Alias repo names to actual directory names under SEEDS_ROOT (e.g. "grid" -> "GRID-main" for health checks)
+const REPO_PATH_ALIASES: Record<string, string> = {
+  grid: "GRID-main",
+};
+
+// Skip these discovered directory names in ecosystem_scan (no git or not tracked)
+const REPO_SKIP_LIST = new Set(["scratch"]);
+
 // ── Types ──
 
 interface RepoHealth {
@@ -111,7 +119,8 @@ async function runGitCommand(
 }
 
 async function checkRepoHealth(repoName: string): Promise<RepoHealth> {
-  const repoPath = path.join(SEEDS_ROOT, repoName);
+  const resolvedDir = REPO_PATH_ALIASES[repoName] ?? repoName;
+  const repoPath = path.join(SEEDS_ROOT, resolvedDir);
   const health: RepoHealth = {
     name: repoName,
     path: repoPath,
@@ -343,11 +352,16 @@ server.registerTool(
       repos.push(await checkRepoHealth(repoName));
     }
 
-    // Also discover unknown repos
+    // Also discover unknown repos (skip REPO_SKIP_LIST so e.g. "scratch" without git is not reported)
     try {
       const entries = await fs.readdir(SEEDS_ROOT, { withFileTypes: true });
       for (const entry of entries as { isDirectory(): boolean; name: string }[]) {
-        if (entry.isDirectory() && !KNOWN_REPOS[entry.name] && !entry.name.startsWith(".")) {
+        if (
+          entry.isDirectory() &&
+          !KNOWN_REPOS[entry.name] &&
+          !entry.name.startsWith(".") &&
+          !REPO_SKIP_LIST.has(entry.name)
+        ) {
           repos.push(await checkRepoHealth(entry.name));
         }
       }

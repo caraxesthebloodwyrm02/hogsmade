@@ -29,7 +29,8 @@ export interface UseGateDataResult {
   debugContext: ReturnType<typeof createDebugLogContext> | null;
 }
 
-const GATE_STEPS = [
+// Export GATE_STEPS for potential future use
+export const GATE_STEPS = [
   "envelope_exists",
   "payload_integrity",
   "fingerprint_match",
