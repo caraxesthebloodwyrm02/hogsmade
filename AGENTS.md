@@ -11,9 +11,11 @@ This is a multi-project workspace. Each subdirectory is an independent project w
 | `GRID-main/` | Full-stack AI framework | Python 3.13+, FastAPI, ChromaDB, Ollama | Production (v2.6.1) |
 | `mcp-tool-experiment/typescript-sdk/` | MCP TypeScript SDK v2 | TypeScript 5.2, pnpm, Vitest, Zod v4 | Pre-alpha |
 | `glimpse-artifact/` | React component library | React 18, TypeScript, Vite, TailwindCSS | Complete |
+| `glimpse-engine/` | Visualization engine | JavaScript (ES modules) | Working |
 | `afloat-server/` | Workflow orchestration MCP server | TypeScript, MCP SDK | Working |
 | `shared-types/` | Shared types and audit client | TypeScript | Build before dependent servers |
 | Other MCP servers | `echoes-server/`, `grid-server/`, `lots-server/`, `maintain-server/`, `pulse-server/`, `seeds-server/` | TypeScript, MCP SDK | See root [README](README.md) |
+| Nested repos | `GRID-main/`, `mcp-tool-experiment/`, `projects/web/ai-web-demo/` | — | Managed in their own git roots |
 
 ## Per-Project Guidance
 
@@ -70,6 +72,20 @@ npm run lint
 ```
 
 Components follow shadcn-style: CVA + clsx + tailwind-merge for variants. Icons: lucide-react only.
+
+### glimpse-engine
+
+Standalone visualization engine at the root. No package.json — runs directly in browser via `glimpse-engine.html`.
+
+```bash
+node scripts/sync-default-master.mjs    # Sync YAML config → embedded JS
+# Open glimpse-engine.html in browser to run
+```
+
+- **Config**: `glimpse.master.yaml` — all domains, rules, presets, view specs
+- **Core**: `glimpse-engine/engine.js` — pipeline runtime (ingest → profile → rules → articulate)
+- **Views**: `glimpse-engine/view-specs.js` — constellation, timeline, clusters, matrix, flow, map, explorer
+- **Docs**: `GLIMPSE-GUIDE.md` for plain-language rule authoring
 
 ### afloat-server
 

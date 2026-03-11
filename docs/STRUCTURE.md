@@ -32,6 +32,7 @@ Grouped by **scope** so you know where to look and what to touch.
 | `pulse-server/` | MCP server | Briefings, focus, journal, prioritization |
 | `seeds-server/` | MCP server | Ecosystem snapshots and scans |
 | `glimpse-artifact/` | App/library | React UI and components |
+| `glimpse-engine/` | Visualization | Data viz engine, runs in browser |
 | `shared-types/` | Shared package | Types and audit client; build before dependent servers |
 
 Each has its own README, lockfile, and toolchain. Use [CLAUDE.md](../CLAUDE.md) / [AGENTS.md](../AGENTS.md) for build and test commands.
@@ -42,6 +43,7 @@ Each has its own README, lockfile, and toolchain. Use [CLAUDE.md](../CLAUDE.md) 
 |---------|------------|--------|
 | `GRID-main/` | Its own git root | Python, FastAPI, uv; see `GRID-main/docs/project/`. |
 | `mcp-tool-experiment/` | Its own git root | TypeScript, pnpm; includes MCP SDK and safety pipeline. |
+| `projects/web/ai-web-demo/` | Its own git root | AI web demo frontend/backend; local submodule. |
 
 Root repo only records their commit refs. See [GIT_REPO.md](GIT_REPO.md) and [SUBMODULES.md](SUBMODULES.md).
 

@@ -6,6 +6,12 @@ Root-level scripts for the CascadeProjects workspace. Run from repo root or adju
 
 | Script | Purpose |
 |--------|--------|
+| [sync-default-master.mjs](sync-default-master.mjs) | Sync `glimpse.master.yaml` → `glimpse-engine/default-master.js` (embedded fallback). |
+| [bootstrap_glimpse_logic.mjs](bootstrap_glimpse_logic.mjs) | Bootstrap and validate Glimpse logic; run context pipeline on sample datasets. |
+| [sync-default-master.mjs](sync-default-master.mjs) | Sync `glimpse.master.yaml` → `glimpse-engine/default-master.js` (embedded fallback). |
+| [bootstrap_glimpse_logic.mjs](bootstrap_glimpse_logic.mjs) | Bootstrap and validate Glimpse logic; run context pipeline on sample datasets. |
+| [sync-default-master.mjs](sync-default-master.mjs) | Sync `glimpse.master.yaml` → `glimpse-engine/default-master.js` (embedded fallback). |
+| [bootstrap_glimpse_logic.mjs](bootstrap_glimpse_logic.mjs) | Bootstrap and validate Glimpse logic; run context pipeline on sample datasets. |
 | [emit_phase2_audit_events.ts](emit_phase2_audit_events.ts) | Emit Phase 2 audit events (TypeScript). |
 | **gate/** | GATE envelope and verification helpers (Python). |
 | [gate/create_test_envelope.py](gate/create_test_envelope.py) | Create a test envelope and write to `GATE/incoming/`. |
