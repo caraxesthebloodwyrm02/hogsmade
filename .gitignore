@@ -10,6 +10,13 @@ dist/
 build/
 *.tsbuildinfo
 
+# Generated or local-only outputs (keep status clean)
+output/
+tmp/
+chart.csv
+metadata.txt
+snapshot.json
+
 # Editor state (track .cursor/agents, .cursor/skills, .cursor/rules for sharing)
 .claude/
 .cursor/*
@@ -55,3 +62,7 @@ scripts/hooks/
 
 # Local Netlify folder
 .netlify
+
+# Generated audit reports (local-only)
+HARDCODED_AUDIT_REPORT.md
+Audit Results and Todo Items.md
