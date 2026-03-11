@@ -58,11 +58,16 @@ Root repo only records their commit refs. See [GIT_REPO.md](GIT_REPO.md) and [SU
 |------------------|-----------|
 | Understand the workspace | `README.md`, this file, `docs/README.md` |
 | Configure AI/agents | `CLAUDE.md`, `AGENTS.md`, `.cursor/`, `.claude/` |
-| Git and branches | `docs/GIT_REPO.md`, `docs/SUBMODULES.md` |
+| Git and branches | `docs/GIT_REPO.md`, `docs/git-audit-guide.md`, `docs/SUBMODULES.md` |
 | Data contracts and APIs | `docs/DATA_CONTRACTS.md`, per-project READMEs |
 | Security and compliance | `SECURITY.md`, `docs/SECURITY_STATUS.md` |
 | Run or add scripts | `scripts/`, `scripts/README.md` |
 | Phase 4 and quality | `docs/PHASE4_QUALITY_CONTRACT.md`, `docs/PROGRESS_SUMMARY.md` |
+
+## Tool and CI health
+
+- **Build order**: `shared-types` first (`npm run build`), then any server that depends on it (afloat, maintain, pulse, etc.).
+- **Per project**: See each project README for `npm run build`, `npm test`, or `uv run pytest` / `uv run ruff check` (GRID-main). Run builds and tests after changes to confirm nothing is broken.
 
 ## Agency (who does what)
 

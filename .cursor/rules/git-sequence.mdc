@@ -8,6 +8,7 @@ alwaysApply: false
 
 - **Session start**: Run `git status -sb`; optionally `git fetch origin` and `git pull --ff-only`. Report branch and clean/dirty.
 - **Session end**: Stage selectively → commit (one change, conventional message) → `git push origin <branch>`.
+- **Weekly**: Review untracked files, run `git submodule status`, and consider committing or ignoring; see docs/git-audit-guide.md.
 - **Commits**: `type(scope): description` (e.g. `docs: add X`, `chore: update Y`). One logical change per commit.
 - **Submodules**: Root only tracks refs; see docs/SUBMODULES.md. Do not auto-commit inside GRID-main or mcp-tool-experiment unless asked.
 - **Destructive**: No `git reset --hard` or `git clean -fdx` without explicit user confirmation.

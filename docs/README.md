@@ -20,6 +20,7 @@ Root-level documentation for the CascadeProjects workspace.
 | [schemas/memo.schema.json](schemas/memo.schema.json) | **Memo schema** — Concise schema for memos (session notes, decisions, status). |
 | [CONTEXT_MEMO_PROMPT.md](CONTEXT_MEMO_PROMPT.md) | **Context memo prompt** — Structured prompt for agents at session start; audit→plan→interview→build. |
 | [GIT_REPO.md](GIT_REPO.md) | Git conventions, branching, staging/push workflow, remotes, nested repos. |
+| [git-audit-guide.md](git-audit-guide.md) | Git vs non-git comparison, when to run git sequence (session start/end, weekly). |
 | [SUBMODULES.md](SUBMODULES.md) | Dirty submodules: remediation, best practices, and organizing the submodule-dirty branch. |
 | [DATA_CONTRACTS.md](DATA_CONTRACTS.md) | Cross-server data contracts (audit, snapshots, etc.). |
 | [DEBUGGING.md](DEBUGGING.md) | Reproduce steps, key logs, Cursor debug session, timestamp rules (UTC / +06:00). |
@@ -30,6 +31,8 @@ Root-level documentation for the CascadeProjects workspace.
 
 | Document | Description |
 |----------|-------------|
+| [SUBTRACTIVE_ANALYSIS_Afloat_SharedTypes.md](SUBTRACTIVE_ANALYSIS_Afloat_SharedTypes.md) | Subtractive analysis: afloat-server & shared-types removals, MCP config merge, inventory optimization. |
+| [SUBTRACTIVE_ANALYSIS_TODOS.md](SUBTRACTIVE_ANALYSIS_TODOS.md) | Todo list ingested from subtractive analysis (afloat, shared-types, MCP, GRID-main). |
 | [MCP_SETUP_GUIDE.md](MCP_SETUP_GUIDE.md) | MCP server registration, architecture, usage demos, CLI validation. |
 | [YOUR_MCP_ECOSYSTEM_GUIDE.md](YOUR_MCP_ECOSYSTEM_GUIDE.md) | Plain-English guide to all 7 MCP servers, daily workflow, privacy and safety. |
 | [SECURITY_STATUS.md](SECURITY_STATUS.md) | Security implementation status: implemented vs referenced-but-not-implemented, recommendations. |
@@ -54,5 +57,10 @@ flowchart LR
   P1 -->|Done| P2 -->|Done| P3 -->|Done| P4
   P4 -->|Next| Vision[Vision: Dashboard, data viz, real-time, GATE]
 ```
+
+## Schedule reminder and tool health
+
+- **Git**: At session start run `git status -sb` (and optionally `git submodule status`). Weekly: review untracked files and submodule status; see [git-audit-guide.md](git-audit-guide.md).
+- **Tool and CI health**: Each project has its own build/test; see [STRUCTURE.md](STRUCTURE.md#tool-and-ci-health). Root: `shared-types` → build first; then afloat, maintain, pulse, seeds; GRID-main: `uv run pytest`, `uv run ruff check`.
 
 For per-project docs, see each project’s README and any `docs/` folder inside that project.

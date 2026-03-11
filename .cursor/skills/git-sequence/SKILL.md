@@ -1,6 +1,6 @@
 ---
 name: git-sequence
-description: Runs the root-repo git workflow (status, stage, commit, push) with situational scope. Use at session start to verify and sync, at session end to finalize and push, or when the user asks to check git, commit and push, or clean up branches.
+description: Runs the root-repo git workflow (status, stage, commit, push) with situational scope. Use at session start to verify and sync, at session end to finalize and push, or when the user asks to check git, commit and push, clean up branches, run a git audit, repo health, what to commit, submodule status, or untracked review.
 ---
 
 # Git sequence
@@ -18,6 +18,15 @@ Snap to one of these; run only the actions for that situation.
 | **After merge** | User says "pure state" / "clean up branch" | `git branch -d <merged-branch>`. Confirm one active branch, clean tree. | Do not delete unmerged branches. |
 | **Verify only** | User says "check git" / "verify tracking" | `git status -sb`, `git remote -v`, `git branch -vv`. Report only. | No writes. |
 | **Submodule dirty** | User explicitly asks about submodules | Point to docs/SUBMODULES.md; run only Option 1/2/3 if user chooses. | Do not auto-commit inside submodules. |
+| **Git audit** | User asks for "git audit", "repo health", "what should I commit" | Run checklist below; suggest add/ignore/commit per docs/GIT_REPO.md. | No destructive commands without confirmation. |
+
+## Git audit checklist
+
+When the user asks for a git audit, repo health, or what to commit:
+
+1. Run `git status -sb` and `git submodule status`.
+2. List notable untracked directories or files (e.g. `output/`, `tmp/`, new project dirs).
+3. Suggest: add to .gitignore (if local-only), stage and commit (if intentional change), or leave unstaged; point to [docs/GIT_REPO.md](../../docs/GIT_REPO.md) and [docs/git-audit-guide.md](../../docs/git-audit-guide.md).
 
 ## Routine (simplified)
 
@@ -41,3 +50,4 @@ Conventional: `type(scope): description`. Types: `feat`, `fix`, `docs`, `chore`,
 - [reference.md](reference.md) — Conventional commits and repo-specific notes.
 - [docs/GIT_REPO.md](../../docs/GIT_REPO.md) — Full repo conventions.
 - [docs/SUBMODULES.md](../../docs/SUBMODULES.md) — Submodule remediation.
+- [docs/git-audit-guide.md](../../docs/git-audit-guide.md) — Git vs non-git, when to run sequence.

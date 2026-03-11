@@ -45,6 +45,10 @@ If you use multiple remotes (e.g. backup, mirror), name them explicitly and push
 
 Root repo tip: Nested repos (e.g. `GRID-main`, `mcp-tool-experiment`) show as “modified” when their checked-out commit or working tree differs. To record updated refs only, stage those paths and commit; to ignore their state, leave them unstaged.
 
+## Git audit (what’s in git vs not)
+
+See [docs/git-audit-guide.md](git-audit-guide.md) for a short comparison table and when to run the git sequence (session start, session end, weekly).
+
 ## Ignored paths
 
 See root `.gitignore`. It excludes dependencies (`node_modules/`, `.venv/`, etc.), build output, editor/IDE folders, secrets (`.env*`), and operational data (e.g. `*.ndjson` audit logs). Also ignored: Cursor hook config and local hook dirs (`.cursor/hooks.json`, `.cursor/hooks/`), debug session logs (`debug-*.log`), and session state (`.session-state.json`). Per-project ignores may exist inside subdirectories.
