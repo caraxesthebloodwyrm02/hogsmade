@@ -1,0 +1,112 @@
+name: Boundary & Safety Gate
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Triggers: any PR that touches the safety, security, or boundaries modules,
+# or the safety rules file that governs them.
+# Philosophy: routine pattern-matching (lint, tests) runs automatically;
+# this gate runs a second pass — structural reasoning about invariants.
+# ─────────────────────────────────────────────────────────────────────────────
+
+on:
+  pull_request:
+    paths:
+      - 'GRID-main/**/safety/**'
+      - 'GRID-main/**/security/**'
+      - 'GRID-main/**/boundaries/**'
+      - 'GRID-main/.claude/rules/safety.md'
+      - 'GRID-main/.claude/rules/behavioral-shield.md'
+
+permissions:
+  pull-requests: write
+  contents: read
+
+jobs:
+  boundary-review:
+    name: Boundary Invariant Review
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout with full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install uv and test dependencies
+        run: |
+          pip install uv
+          cd GRID-main && uv sync --group dev --group test
+
+      - name: Run existing safety/boundary tests
+        working-directory: GRID-main
+        run: |
+          PYTHONPATH=src \
+          MOTHERSHIP_ENVIRONMENT=test \
+          MOTHERSHIP_DATABASE_URL=sqlite:///:memory: \
+          MOTHERSHIP_USE_DATABRICKS=false \
+          uv run pytest safety/tests/ boundaries/ -q --tb=short 2>&1 | tee ../test_results.txt || true
+        continue-on-error: true
+
+      - name: Extract diff for changed boundary files
+        run: |
+          git diff origin/${{ github.base_ref }}...HEAD \
+            -- \
+            'GRID-main/**/safety/**' \
+            'GRID-main/**/security/**' \
+            'GRID-main/**/boundaries/**' \
+            'GRID-main/.claude/rules/safety.md' \
+          > boundary_diff.txt
+          wc -l boundary_diff.txt
+
+      - name: Run boundary invariant review
+        id: boundary_review
+        env:
+          DIFF_PATH: boundary_diff.txt
+          TEST_RESULTS_PATH: test_results.txt
+          BASE_REF: ${{ github.base_ref }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          python scripts/boundary_review.py
+
+      - name: Post PR review
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+
+            let review;
+            try {
+              review = JSON.parse(fs.readFileSync('review_output.json', 'utf8'));
+            } catch (e) {
+              review = {
+                event: 'COMMENT',
+                body: '⚠️ **Boundary Gate**: Review script failed to produce output. Manual review of safety/security/boundaries changes required.\n\nCheck the `boundary-review` job logs for details.',
+                comments: []
+              };
+            }
+
+            await github.rest.pulls.createReview({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+              event: review.event,
+              body: review.body
+            });
+
+      - name: Fail if blocking findings exist
+        run: |
+          python -c "
+          import json, sys
+          r = json.load(open('review_output.json'))
+          if r.get('blocking'):
+              print('Blocking findings detected. See PR review for details.')
+              sys.exit(1)
+          print('No blocking findings. Gate passed.')
+          "

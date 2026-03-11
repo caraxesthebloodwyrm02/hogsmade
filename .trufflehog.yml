@@ -1,0 +1,53 @@
+# TruffleHog v3 configuration
+# Scoped for CascadeProjects workspace.
+#
+# Policy: --only-verified is enforced at the action level (secrets-gate.yml).
+# This config handles path exclusions and detector scope so the first live
+# run does not generate noise against known-safe locations.
+#
+# Exclusion rationale is documented inline for each entry.
+
+exclude_paths:
+  # ── Dependency trees — third-party code, not workspace code ─────────────
+  - '\.venv/'
+  - 'node_modules/'
+  - '\.npm/'
+
+  # ── Build and type-checking caches ──────────────────────────────────────
+  - '\.mypy_cache/'
+  - '__pycache__/'
+  - '\.cache/'
+  - 'dist/'
+  - 'build/'
+  - '\.next/'
+
+  # ── AI-generated draft worktrees (not production branches) ──────────────
+  # .claude/worktrees/ contains experiment branches; not deployed code.
+  - '\.claude/worktrees/'
+  - '\.claude/projects/'
+
+  # ── GATE contract JSON ───────────────────────────────────────────────────
+  # References "user_secret" as a conceptual label in contract spec prose,
+  # not as an assigned credential value. The never-rule itself reads:
+  # "never store user_secret in any file" — these files define the rule,
+  # they do not violate it.
+  - 'GATE/.*\.json$'
+  - 'GATE/.*\.ndjson$'
+
+  # ── Test fixtures with deliberately placeholder values ───────────────────
+  - 'tests/fixtures/'
+  - 'tests/unit/'
+  - '\.claude/worktrees/.*/tests/'
+
+  # ── Documentation and reports ────────────────────────────────────────────
+  # Markdown and text files reference credential *formats* for documentation
+  # purposes (e.g. HMAC-SHA256 algorithm descriptions, API reference examples).
+  - '.*\.md$'
+  - '.*\.txt$'
+  - 'docs/'
+  - 'archival/'
+
+  # ── Lock files ───────────────────────────────────────────────────────────
+  - 'pnpm-lock\.yaml$'
+  - 'package-lock\.json$'
+  - 'uv\.lock$'

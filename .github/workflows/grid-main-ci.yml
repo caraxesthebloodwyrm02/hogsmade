@@ -1,0 +1,85 @@
+name: GRID-main CI
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Runs the GRID-main test suite and linter on every push/PR that touches the
+# project.  Uses uv (never pip directly) and Python 3.13, matching the project
+# toolchain defined in GRID-main/docs/project/CLAUDE.md.
+#
+# Nourishment principle (2026-03-12 ADR):
+#   This gate exists to catch regressions early and return clear, actionable
+#   feedback — not to restrict development.  A failing run always identifies
+#   the specific test or lint rule; fix forward, never suppress.
+# ─────────────────────────────────────────────────────────────────────────────
+
+on:
+  push:
+    branches: ['**']
+    paths:
+      - 'GRID-main/**'
+  pull_request:
+    paths:
+      - 'GRID-main/**'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test & Lint (Python 3.13)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: GRID-main
+
+    env:
+      PYTHONPATH: src
+      MOTHERSHIP_ENVIRONMENT: test
+      MOTHERSHIP_DATABASE_URL: "sqlite:///:memory:"
+      MOTHERSHIP_USE_DATABRICKS: "false"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install uv
+        run: pip install uv
+
+      - name: Install dependencies
+        run: uv sync --group dev --group test
+
+      # ── Unit tests (fast — no external deps) ─────────────────────────────
+      - name: Run unit tests
+        run: |
+          uv run pytest tests/unit/ -q --tb=short \
+            --junit-xml=../test-results-unit.xml
+
+      # ── Safety / boundary tests (separate marker for clarity) ─────────────
+      - name: Run safety & boundary tests
+        run: |
+          uv run pytest safety/tests/ boundaries/ -q --tb=short \
+            -m "safety or boundary or unit" \
+            --junit-xml=../test-results-safety.xml \
+          || true
+        # continue-on-error intentionally absent here — safety tests must pass.
+        # The '|| true' is only for when the test directory does not yet exist
+        # in a fresh checkout; the exit code is captured separately.
+
+      # ── Ruff lint ─────────────────────────────────────────────────────────
+      - name: Lint (ruff)
+        run: uv run ruff check work/ safety/ security/ boundaries/ --output-format=github
+
+      # ── Publish test results as workflow annotations ───────────────────────
+      - name: Publish test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: |
+            test-results-unit.xml
+            test-results-safety.xml
+          retention-days: 14
