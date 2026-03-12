@@ -32,7 +32,7 @@ Here's your full ecosystem, in plain language:
 - `quick_status` — Fast overview of a workspace (projects, health scores, urgent issues)
 - `productivity_pulse` — Real-time momentum check (velocity, focus, trend)
 - `focus_mode` — Get recommendations based on your work mode (sprint, maintenance, exploration, optimization)
-- `glimpse` — Full cognitive workspace overview with activity patterns and stall detection
+- `glimpse` — Path-scoped cognitive overview and stall detection for a specific directory (use `morning_briefing` + `quick_status` for ecosystem-level health and priorities)
 - `deep_scan` — Technology stack detection, dependency analysis, security assessment
 - `workflow_analysis` — CI/CD and testing maturity check
 - `productivity_insights` — Development velocity and collaboration patterns
@@ -152,9 +152,10 @@ The key insight: each server is independent but they share data through files on
 
 ## Part 4: Typical Daily Workflow
 
-**Morning:**
+**Morning (health-scan chain):**
 1. `Use morning_briefing` — Pulse reads from echoes audit, seeds snapshots, and afloat history to tell you what happened overnight and what needs attention.
-2. `Use quick_status for C:\Users\USER\CascadeProjects` — Get a fast health check of your active workspace.
+2. `Use quick_status for <workspacePath> focus:all` — Fast ecosystem-level health check: active projects, urgent issues, immediate actions.
+3. Use `glimpse <workspacePath>` only when you need a **path-scoped** cognitive overview and stall detection for a specific directory (e.g. a subfolder or non–Seeds workspace). For the same root as your ecosystem, morning_briefing + quick_status are usually enough.
 
 **During the day:**
 3. `Use journal_add with entry="Working on GRID auth module"` — Log what you're doing.
