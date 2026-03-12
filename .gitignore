@@ -71,3 +71,4 @@ Audit Results and Todo Items.md
 .gitconfig
 zed_config.jsonc
 config/
+.vscode/settings.json
