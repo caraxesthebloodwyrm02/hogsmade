@@ -66,3 +66,8 @@ scripts/hooks/
 # Generated audit reports (local-only)
 HARDCODED_AUDIT_REPORT.md
 Audit Results and Todo Items.md
+
+# Local configs
+.gitconfig
+zed_config.jsonc
+config/
