@@ -1,0 +1,136 @@
+{
+  "simulation_results": [
+    {
+      "month": 1,
+      "phase": "Foundation Phase",
+      "tutoring_income": 816.0,
+      "prompt_income": 0.0,
+      "tool_costs": 50.0,
+      "total_income": 816.0,
+      "net_income": 766.0,
+      "net_income_bdt": 93452.0
+    },
+    {
+      "month": 2,
+      "phase": "Foundation Phase",
+      "tutoring_income": 816.0,
+      "prompt_income": 0.0,
+      "tool_costs": 50.0,
+      "total_income": 816.0,
+      "net_income": 766.0,
+      "net_income_bdt": 93452.0
+    },
+    {
+      "month": 3,
+      "phase": "Foundation Phase",
+      "tutoring_income": 816.0,
+      "prompt_income": 0.0,
+      "tool_costs": 50.0,
+      "total_income": 816.0,
+      "net_income": 766.0,
+      "net_income_bdt": 93452.0
+    },
+    {
+      "month": 4,
+      "phase": "Growth Phase",
+      "tutoring_income": 816.0,
+      "prompt_income": 400.0,
+      "tool_costs": 50.0,
+      "total_income": 1216.0,
+      "net_income": 1166.0,
+      "net_income_bdt": 142252.0
+    },
+    {
+      "month": 5,
+      "phase": "Growth Phase",
+      "tutoring_income": 816.0,
+      "prompt_income": 400.0,
+      "tool_costs": 50.0,
+      "total_income": 1216.0,
+      "net_income": 1166.0,
+      "net_income_bdt": 142252.0
+    },
+    {
+      "month": 6,
+      "phase": "Growth Phase",
+      "tutoring_income": 816.0,
+      "prompt_income": 400.0,
+      "tool_costs": 50.0,
+      "total_income": 1216.0,
+      "net_income": 1166.0,
+      "net_income_bdt": 142252.0
+    },
+    {
+      "month": 7,
+      "phase": "Scale Phase",
+      "tutoring_income": 612.0,
+      "prompt_income": 1200.0,
+      "tool_costs": 70.0,
+      "total_income": 1812.0,
+      "net_income": 1742.0,
+      "net_income_bdt": 212524.0
+    },
+    {
+      "month": 8,
+      "phase": "Scale Phase",
+      "tutoring_income": 612.0,
+      "prompt_income": 1200.0,
+      "tool_costs": 70.0,
+      "total_income": 1812.0,
+      "net_income": 1742.0,
+      "net_income_bdt": 212524.0
+    },
+    {
+      "month": 9,
+      "phase": "Scale Phase",
+      "tutoring_income": 612.0,
+      "prompt_income": 1200.0,
+      "tool_costs": 70.0,
+      "total_income": 1812.0,
+      "net_income": 1742.0,
+      "net_income_bdt": 212524.0
+    },
+    {
+      "month": 10,
+      "phase": "Scale Phase",
+      "tutoring_income": 612.0,
+      "prompt_income": 1200.0,
+      "tool_costs": 70.0,
+      "total_income": 1812.0,
+      "net_income": 1742.0,
+      "net_income_bdt": 212524.0
+    },
+    {
+      "month": 11,
+      "phase": "Scale Phase",
+      "tutoring_income": 612.0,
+      "prompt_income": 1200.0,
+      "tool_costs": 70.0,
+      "total_income": 1812.0,
+      "net_income": 1742.0,
+      "net_income_bdt": 212524.0
+    },
+    {
+      "month": 12,
+      "phase": "Scale Phase",
+      "tutoring_income": 612.0,
+      "prompt_income": 1200.0,
+      "tool_costs": 70.0,
+      "total_income": 1812.0,
+      "net_income": 1742.0,
+      "net_income_bdt": 212524.0
+    }
+  ],
+  "roi_metrics": {
+    "total_investment": 720.0,
+    "total_earnings": 16248.0,
+    "net_profit": 15528.0,
+    "roi_percentage": 2156.6666666666665,
+    "break_even_month": 1,
+    "average_monthly_income": 1354.0
+  },
+  "strategy_parameters": {
+    "exchange_rate": 122,
+    "target_monthly_bdt": 34000
+  }
+}

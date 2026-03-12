@@ -1,0 +1,52 @@
+
+UNICODE, ASCII & EMOJI ANALYSIS REPORT
+Generated: 2026-03-12 14:21:08
+
+=== OVERVIEW ===
+Files Analyzed: 7
+Files with Issues: 0
+Files ASCII Only: 4
+Files with Emoji: 3
+Files with Unicode: 3
+Files with Encoding Errors: 0
+
+=== CHARACTER STATISTICS ===
+Total Characters: 68289
+ASCII Characters: 68272 (100.0%)
+Unicode Characters: 6 (0.0%)
+Emoji Characters: 11
+Problematic Characters: 0
+
+=== EMOJI USAGE ===
+- test_hybrid_income.py line 325: ` (GRAVE ACCENT)
+- test_hybrid_income.py line 325: ` (GRAVE ACCENT)
+- test_hybrid_income.py line 325: ` (GRAVE ACCENT)
+- test_hybrid_income.py line 330: ` (GRAVE ACCENT)
+- test_hybrid_income.py line 330: ` (GRAVE ACCENT)
+- test_hybrid_income.py line 330: ` (GRAVE ACCENT)
+- fstring_debug_guide.py line 114: ^ (CIRCUMFLEX ACCENT)
+- debug_log.py line 139: ^ (CIRCUMFLEX ACCENT)
+- debug_log.py line 140: ^ (CIRCUMFLEX ACCENT)
+- debug_log.py line 141: ^ (CIRCUMFLEX ACCENT)
+- debug_log.py line 142: ^ (CIRCUMFLEX ACCENT)
+
+=== UNICODE CHARACTERS (Non-Problematic) ===
+- hybrid_income_model.py line 163: ৳ (BENGALI RUPEE SIGN)
+- fstring_debug_guide.py line 226: ️ (VARIATION SELECTOR-16)
+- fstring_fixes_for_hybrid_income.py line 105: → (RIGHTWARDS ARROW)
+- fstring_fixes_for_hybrid_income.py line 147: → (RIGHTWARDS ARROW)
+- fstring_fixes_for_hybrid_income.py line 148: → (RIGHTWARDS ARROW)
+- fstring_fixes_for_hybrid_income.py line 149: → (RIGHTWARDS ARROW)
+
+=== FILE-BY-FILE ANALYSIS ===
+hybrid_income_model.py: OK [5970 chars]
+test_hybrid_income.py: INFO (Contains emoji) [12770 chars]
+fastapi_hybrid_income.py: OK [10428 chars]
+fstring_debug_guide.py: INFO (Contains emoji) [14342 chars]
+fstring_fixes_for_hybrid_income.py: OK [5975 chars]
+trim_whitespace.py: OK [4613 chars]
+debug_log.py: INFO (Contains emoji) [14191 chars]
+
+=== RECOMMENDATIONS ===
+ℹ️ Consider if emoji usage is appropriate for production code
+ℹ️ Unicode characters detected - ensure UTF-8 encoding throughout

@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Freelance Income Streams Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .card-gradient-1 { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .card-gradient-2 { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .card-gradient-3 { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+        .card-gradient-4 { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
+        .card-gradient-5 { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
+        .chart-container { position: relative; height: 300px; }
+        .metric-card { transition: all 0.3s ease; }
+        .metric-card:hover { transform: translateY(-5px); box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <!-- Header -->
+    <div class="bg-white shadow-lg">
+        <div class="container mx-auto px-6 py-8">
+            <h1 class="text-4xl font-bold text-gray-800">Freelance Income Streams Dashboard</h1>
+            <p class="text-gray-600 mt-2">Target: BDT 34,000/month ($280 USD) | Exchange Rate: 122 BDT/USD</p>
+        </div>
+    </div>
+
+    <!-- Overview Stats -->
+    <div class="container mx-auto px-6 py-8">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div class="bg-white rounded-lg shadow-md p-6 metric-card">
+                <div class="text-3xl font-bold text-purple-600">$500-$7,000</div>
+                <div class="text-gray-600">Monthly Earning Range</div>
+            </div>
+            <div class="bg-white rounded-lg shadow-md p-6 metric-card">
+                <div class="text-3xl font-bold text-blue-600">180%</div>
+                <div class="text-gray-600">AI Sector Growth (YoY)</div>
+            </div>
+            <div class="bg-white rounded-lg shadow-md p-6 metric-card">
+                <div class="text-3xl font-bold text-green-600">650,000+</div>
+                <div class="text-gray-600">Active Freelancers in BD</div>
+            </div>
+            <div class="bg-white rounded-lg shadow-md p-6 metric-card">
+                <div class="text-3xl font-bold text-orange-600">#2</div>
+                <div class="text-gray-600">Global Freelancing Rank</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cards Grid -->
+    <div class="container mx-auto px-6 py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
+            
+            <!-- Card 1: Web Development -->
+            <div class="bg-white rounded-xl shadow-xl overflow-hidden metric-card">
+                <div class="card-gradient-1 p-6 text-white">
+                    <h2 class="text-2xl font-bold">Web Development & Programming</h2>
+                    <p class="text-sm opacity-90 mt-2">Top 5 globally • #2 workforce worldwide</p>
+                </div>
+                <div class="p-6">
+                    <div class="mb-6">
+                        <h3 class="font-semibold text-gray-700 mb-3">Earnings Potential</h3>
+                        <div class="chart-container">
+                            <canvas id="webDevChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="mb-6">
+                        <h3 class="font-semibold text-gray-700 mb-3">Growth Rates</h3>
+                        <div class="space-y-2">
+                            <div class="flex justify-between">
+                                <span>Blockchain Development</span>
+                                <span class="text-green-600 font-bold">95% YoY</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Mobile App Development</span>
+                                <span class="text-green-600 font-bold">62% YoY</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="border-t pt-4">
+                        <h3 class="font-semibold text-gray-700 mb-2">Entry Requirements</h3>
+                        <ul class="text-sm text-gray-600 space-y-1">
+                            <li>• 3-18 months skill development</li>
+                            <li>• ETIN + NID for banking incentives</li>
+                            <li>• Formal banking (MTB Freelancer Bundle)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 2: Graphic Design -->
+            <div class="bg-white rounded-xl shadow-xl overflow-hidden metric-card">
+                <div class="card-gradient-2 p-6 text-white">
+                    <h2 class="text-2xl font-bold">Graphic Design & Creative Services</h2>
+                    <p class="text-sm opacity-90 mt-2">3D modeling • Motion graphics • Video editing</p>
+                </div>
+                <div class="p-6">
+                    <div class="mb-6">
+                        <h3 class="font-semibold text-gray-700 mb-3">Earnings Potential</h3>
+                        <div class="chart-container">
+                            <canvas id="designChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="mb-6">
+                        <h3 class="font-semibold text-gray-700 mb-3">Market Trends</h3>
+                        <div class="space-y-2">
+                            <div class="flex justify-between">
+                                <span>Video Editing & Motion Graphics</span>
+                                <span class="text-green-600 font-bold">70% YoY</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Platform Commissions</span>
+                                <span class="text-red-600 font-bold">15-25%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="border-t pt-4">
+                        <h3 class="font-semibold text-gray-700 mb-2">Entry Requirements</h3>
+                        <ul class="text-sm text-gray-600 space-y-1">
+                            <li>• Adobe Creative Suite/Figma proficiency</li>
+                            <li>• Strong portfolio (Behance/Dribbble)</li>
+                            <li>• Platform reputation building</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 3: Digital Marketing -->
+            <div class="bg-white rounded-xl shadow-xl overflow-hidden metric-card">
+                <div class="card-gradient-3 p-6 text-white">
+                    <h2 class="text-2xl font-bold">Digital Marketing, SEO & VA</h2>
+                    <p class="text-sm opacity-90 mt-2">Time zone advantage • English premium</p>
+                </div>
+                <div class="p-6">
+                    <div class="mb-6">
+                        <h3 class="font-semibold text-gray-700 mb-3">Earnings Potential</h3>
+                        <div class="chart-container">
+                            <canvas id="marketingChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="mb-6">
+                        <h3 class="font-semibold text-gray-700 mb-3">Role Comparison</h3>
+                        <div class="space-y-2">
+                            <div class="flex justify-between">
+                                <span>Digital Marketing</span>
+                                <span class="text-blue-600 font-bold">$600-$4,000/mo</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Virtual Assistance</span>
+                                <span class="text-blue-600 font-bold">$300-$2,000/mo</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="border-t pt-4">
+                        <h3 class="font-semibold text-gray-700 mb-2">Entry Requirements</h3>
+                        <ul class="text-sm text-gray-600 space-y-1">
+                            <li>• High-tier English proficiency</li>
+                            <li>• Google Ads/Facebook Blueprint certs</li>
+                            <li>• Time zone advantage utilization</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 4: AI & Emerging Tech -->
+            <div class="bg-white rounded-xl shadow-xl overflow-hidden metric-card">
+                <div class="card-gradient-4 p-6 text-white">
+                    <h2 class="text-2xl font-bold">AI & Emerging Technologies</h2>
+                    <p class="text-sm opacity-90 mt-2">Prompt engineering • ML development • Data analysis</p>
+                </div>
+                <div class="p-6">
+                    <div class="mb-6">
+                        <h3 class="font-semibold text-gray-700 mb-3">Earnings Potential</h3>
+                        <div class="chart-container">
+                            <canvas id="aiChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="mb-6">
+                        <h3 class="font-semibold text-gray-700 mb-3">Market Explosion</h3>
+                        <div class="space-y-2">
+                            <div class="flex justify-between">
+                                <span>AI Prompt Engineering</span>
+                                <span class="text-green-600 font-bold">180% YoY</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Tool Investment</span>
+                                <span class="text-orange-600 font-bold">$20-100/mo</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="border-t pt-4">
+                        <h3 class="font-semibold text-gray-700 mb-2">Entry Requirements</h3>
+                        <ul class="text-sm text-gray-600 space-y-1">
+                            <li>• Advanced AI tool access</li>
+                            <li>• High digital literacy</li>
+                            <li>• Top-tier English accuracy</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 5: BPO & Tutoring -->
+            <div class="bg-white rounded-xl shadow-xl overflow-hidden metric-card">
+                <div class="card-gradient-5 p-6 text-white">
+                    <h2 class="text-2xl font-bold">Local BPO & English Tutoring</h2>
+                    <p class="text-sm opacity-90 mt-2">$900M H1 2025 • 40,000+ specialists</p>
+                </div>
+                <div class="p-6">
+                    <div class="mb-6">
+                        <h3 class="font-semibold text-gray-700 mb-3">Sector Performance</h3>
+                        <div class="chart-container">
+                            <canvas id="bpoChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="mb-6">
+                        <h3 class="font-semibold text-gray-700 mb-3">Opportunities</h3>
+                        <div class="space-y-2">
+                            <div class="flex justify-between">
+                                <span>Cambly Tutoring</span>
+                                <span class="text-purple-600 font-bold">$10.20/hour</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>BPO Growth H1 2025</span>
+                                <span class="text-green-600 font-bold">$900M</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="border-t pt-4">
+                        <h3 class="font-semibold text-gray-700 mb-2">Entry Requirements</h3>
+                        <ul class="text-sm text-gray-600 space-y-1">
+                            <li>• Native English passport (tutoring)</li>
+                            <li>• Language advantage (BPO)</li>
+                            <li>• Skills gap bridging capability</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Comparative Analysis -->
+    <div class="container mx-auto px-6 py-8">
+        <div class="bg-white rounded-xl shadow-xl p-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">Comparative Analysis</h2>
+            <div class="chart-container" style="height: 400px;">
+                <canvas id="comparisonChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Target Achievement Analysis -->
+    <div class="container mx-auto px-6 py-8">
+        <div class="bg-white rounded-xl shadow-xl p-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">Target Achievement: BDT 34,000/month ($280)</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div>
+                    <h3 class="font-semibold text-gray-700 mb-4">Minimum Hours Required by Sector</h3>
+                    <div class="chart-container">
+                        <canvas id="hoursChart"></canvas>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-gray-700 mb-4">Entry Barrier Assessment</h3>
+                    <div class="chart-container">
+                        <canvas id="barrierChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Chart.js configuration
+        Chart.defaults.font.family = 'system-ui, -apple-system, sans-serif';
+        
+        // Web Development Chart
+        const webDevCtx = document.getElementById('webDevChart').getContext('2d');
+        new Chart(webDevCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Beginner', 'Intermediate', 'Advanced'],
+                datasets: [{
+                    label: 'Monthly Earnings ($)',
+                    data: [500, 2000, 5000],
+                    backgroundColor: ['rgba(102, 126, 234, 0.8)', 'rgba(118, 75, 162, 0.8)', 'rgba(102, 126, 234, 0.8)'],
+                    borderColor: ['rgba(102, 126, 234, 1)', 'rgba(118, 75, 162, 1)', 'rgba(102, 126, 234, 1)'],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true, max: 6000 }
+                }
+            }
+        });
+
+        // Design Chart
+        const designCtx = document.getElementById('designChart').getContext('2d');
+        new Chart(designCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Basic Design', 'Advanced Creative', '3D/Motion'],
+                datasets: [{
+                    label: 'Monthly Earnings ($)',
+                    data: [300, 1500, 3500],
+                    backgroundColor: ['rgba(240, 147, 251, 0.8)', 'rgba(245, 87, 108, 0.8)', 'rgba(240, 147, 251, 0.8)'],
+                    borderColor: ['rgba(240, 147, 251, 1)', 'rgba(245, 87, 108, 1)', 'rgba(240, 147, 251, 1)'],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true, max: 4000 }
+                }
+            }
+        });
+
+        // Marketing Chart
+        const marketingCtx = document.getElementById('marketingChart').getContext('2d');
+        new Chart(marketingCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Virtual Assistant', 'SEO Specialist', 'PPC Manager'],
+                datasets: [{
+                    label: 'Monthly Earnings ($)',
+                    data: [800, 2000, 4000],
+                    backgroundColor: ['rgba(79, 172, 254, 0.8)', 'rgba(0, 242, 254, 0.8)', 'rgba(79, 172, 254, 0.8)'],
+                    borderColor: ['rgba(79, 172, 254, 1)', 'rgba(0, 242, 254, 1)', 'rgba(79, 172, 254, 1)'],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true, max: 5000 }
+                }
+            }
+        });
+
+        // AI Chart
+        const aiCtx = document.getElementById('aiChart').getContext('2d');
+        new Chart(aiCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Prompt Engineering', 'Data Analysis', 'ML Development'],
+                datasets: [{
+                    label: 'Monthly Earnings ($)',
+                    data: [2000, 4000, 7000],
+                    backgroundColor: ['rgba(67, 233, 123, 0.8)', 'rgba(56, 249, 215, 0.8)', 'rgba(67, 233, 123, 0.8)'],
+                    borderColor: ['rgba(67, 233, 123, 1)', 'rgba(56, 249, 215, 1)', 'rgba(67, 233, 123, 1)'],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true, max: 8000 }
+                }
+            }
+        });
+
+        // BPO Chart
+        const bpoCtx = document.getElementById('bpoChart').getContext('2d');
+        new Chart(bpoCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Medical Transcription', 'Customer Support', 'English Tutoring'],
+                datasets: [{
+                    label: 'Monthly Earnings ($)',
+                    data: [600, 800, 1600],
+                    backgroundColor: ['rgba(250, 112, 154, 0.8)', 'rgba(254, 225, 64, 0.8)', 'rgba(250, 112, 154, 0.8)'],
+                    borderColor: ['rgba(250, 112, 154, 1)', 'rgba(254, 225, 64, 1)', 'rgba(250, 112, 154, 1)'],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true, max: 2000 }
+                }
+            }
+        });
+
+        // Comparison Chart
+        const comparisonCtx = document.getElementById('comparisonChart').getContext('2d');
+        new Chart(comparisonCtx, {
+            type: 'radar',
+            data: {
+                labels: ['Earning Potential', 'Market Growth', 'Entry Barriers', 'Skill Development Time', 'Language Premium'],
+                datasets: [
+                    {
+                        label: 'Web Development',
+                        data: [90, 85, 70, 80, 60],
+                        backgroundColor: 'rgba(102, 126, 234, 0.2)',
+                        borderColor: 'rgba(102, 126, 234, 1)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'AI & Emerging Tech',
+                        data: [95, 95, 85, 90, 85],
+                        backgroundColor: 'rgba(67, 233, 123, 0.2)',
+                        borderColor: 'rgba(67, 233, 123, 1)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Digital Marketing',
+                        data: [75, 70, 50, 60, 95],
+                        backgroundColor: 'rgba(79, 172, 254, 0.2)',
+                        borderColor: 'rgba(79, 172, 254, 1)',
+                        borderWidth: 2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100
+                    }
+                }
+            }
+        });
+
+        // Hours Required Chart
+        const hoursCtx = document.getElementById('hoursChart').getContext('2d');
+        new Chart(hoursCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Web Dev', 'Design', 'Marketing', 'AI', 'BPO'],
+                datasets: [{
+                    label: 'Weekly Hours to Reach Target',
+                    data: [14, 20, 12, 8, 25],
+                    backgroundColor: [
+                        'rgba(102, 126, 234, 0.8)',
+                        'rgba(240, 147, 251, 0.8)',
+                        'rgba(79, 172, 254, 0.8)',
+                        'rgba(67, 233, 123, 0.8)',
+                        'rgba(250, 112, 154, 0.8)'
+                    ],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true, title: { display: true, text: 'Hours per Week' } }
+                }
+            }
+        });
+
+        // Entry Barrier Chart
+        const barrierCtx = document.getElementById('barrierChart').getContext('2d');
+        new Chart(barrierCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Web Dev', 'Design', 'Marketing', 'AI', 'BPO'],
+                datasets: [
+                    {
+                        label: 'Technical Skills',
+                        data: [85, 70, 40, 90, 30],
+                        backgroundColor: 'rgba(239, 68, 68, 0.8)'
+                    },
+                    {
+                        label: 'Language Requirements',
+                        data: [60, 50, 85, 80, 95],
+                        backgroundColor: 'rgba(59, 130, 246, 0.8)'
+                    },
+                    {
+                        label: 'Financial Investment',
+                        data: [40, 60, 30, 70, 20],
+                        backgroundColor: 'rgba(34, 197, 94, 0.8)'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true, max: 100, title: { display: true, text: 'Barrier Level (0-100)' } }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
