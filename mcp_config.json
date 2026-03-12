@@ -92,34 +92,27 @@
     },
 
     "grid-rag": {
-      "command": "e:\\grid\\.venv\\Scripts\\python.exe",
-      "args": ["e:\\grid\\mcp-setup\\server\\grid_rag_mcp_server.py"],
+      "command": "C:\\Users\\USER\\CascadeProjects\\GRID-main\\.venv\\Scripts\\python.exe",
+      "args": ["C:\\Users\\USER\\CascadeProjects\\GRID-main\\mcp-setup\\server\\grid_rag_mcp_server.py"],
       "env": {
-        "PYTHONPATH": "e:\\grid\\src;e:\\grid",
-        "RAG_EMBEDDING_PROVIDER": "ollama",
+        "OLLAMA_BASE_URL": "http://localhost:11434",
+        "PYTHONPATH": "C:\\Users\\USER\\CascadeProjects\\GRID-main\\src;C:\\Users\\USER\\CascadeProjects\\GRID-main",
         "RAG_EMBEDDING_MODEL": "nomic-embed-text-v2-moe:latest",
-        "RAG_LLM_MODE": "ollama",
-        "RAG_LLM_MODEL_OLLAMA": "ministral:latest",
+        "RAG_EMBEDDING_PROVIDER": "ollama",
+        "RAG_LLM_MODE": "local",
+        "RAG_LLM_MODEL_LOCAL": "ministral:latest",
         "RAG_VECTOR_STORE_PROVIDER": "chromadb",
-        "RAG_VECTOR_STORE_PATH": ".rag_db",
-        "OLLAMA_BASE_URL": "http://localhost:11434"
+        "RAG_VECTOR_STORE_PATH": "C:\\Users\\USER\\CascadeProjects\\GRID-main\\.rag_db",
+        "RAG_MAX_CONTEXT_LENGTH": "4000",
+        "RAG_RETRIEVAL_K": "5",
+        "RAG_CHUNK_SIZE": "1000",
+        "RAG_CHUNK_OVERLAP": "200",
+        "MCP_WORKSPACE_BOUNDARY": "C:\\Users\\USER\\CascadeProjects",
+        "MCP_RATE_LIMIT": "15",
+        "MCP_TIMEOUT": "90"
       }
     },
 
-    "grid-rag-enhanced": {
-      "command": "e:\\grid\\.venv\\Scripts\\python.exe",
-      "args": ["-m", "grid.mcp.enhanced_rag_server"],
-      "env": {
-        "PYTHONPATH": "e:\\grid\\src;e:\\grid",
-        "RAG_EMBEDDING_PROVIDER": "ollama",
-        "RAG_EMBEDDING_MODEL": "nomic-embed-text-v2-moe:latest",
-        "RAG_LLM_MODE": "ollama",
-        "RAG_LLM_MODEL_OLLAMA": "ministral:latest",
-        "RAG_VECTOR_STORE_PROVIDER": "chromadb",
-        "RAG_VECTOR_STORE_PATH": ".rag_db",
-        "OLLAMA_BASE_URL": "http://localhost:11434"
-      }
-    },
 
     "grid-enhanced-tools": {
       "command": "e:\\grid\\.venv\\Scripts\\python.exe",
