@@ -1,6 +1,52 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Claude when working with code in this repository.
+
+---
+
+## Memory (Hot Cache)
+
+> Full glossary → `memory/glossary.md` · Project details → `memory/projects/` · Workspace context → `memory/context/`
+
+### Quick Decode
+| Shorthand | Meaning |
+|-----------|---------|
+| GRID | GRID-main — Python AI framework (190k+ LOC, v2.6.1) |
+| APIGuard | apiguard — resilience lib on PyPI (100% cov, 106 tests) |
+| Glimpse | glimpse-artifact + glimpse-engine (React + cognitive engine) |
+| Symphony | symphony-execution-performance (WebSocket dashboard) |
+| Echoes/Pulse/Afloat/Lots/Seeds/Maintain | Custom MCP servers — see CONFIG_SNAPSHOT.md |
+| GATE | Workspace governance/verification system (grid-server) |
+| cb | Circuit breaker (APIGuard) |
+| tb | Token bucket / rate limiter (APIGuard) |
+| T1/T2/T3 | Portfolio tier 1 (flagship) / 2 (strong) / 3 (supporting) |
+| 34k | BDT 34,000 — monthly income floor target |
+| BDT | Bangladeshi Taka (1 USD ≈ 122 BDT) |
+| turbo | `// turbo` in workflows = safe to autorun |
+| UW | Upwork · FVR = Fiverr · direct = no platform |
+| CascadeProjects | C:\Users\USER\CascadeProjects |
+| Seeds | E:\Seeds |
+
+### Active Projects
+| Project | Status | Portfolio Tier |
+|---------|--------|---------------|
+| GRID-main | Production v2.6.1 | T1 Flagship |
+| APIGuard | Published PyPI | T1 Flagship |
+| MCP ecosystem (9 servers) | Working | T2 Strong |
+| GRID×APIGuard integration | Complete | T2 Strong |
+| glimpse-artifact | Complete | T3 Supporting |
+| symphony-execution-performance | Active | T3 Supporting |
+| mcp-tool-experiment | Pre-alpha | T3 Supporting |
+
+### Preferences
+- Package managers: `uv` for Python (GRID-main), `pnpm` for mcp-tool-experiment, `npm` elsewhere
+- Shell: PowerShell on Windows — use `;` not `&&`, quote paths with spaces
+- Tests: always run full suite before commit, 0 regressions target
+- Commits: conventional (`feat(scope):`, `fix(scope):`, `refactor(scope):`)
+- Local-first: Ollama + ChromaDB, not cloud APIs, unless asked
+- Rate floor: $15/hr absolute minimum. Target: $45–70/hr specialist rate
+
+---
 
 ## Workspace Layout
 
@@ -13,6 +59,7 @@ This is a multi-project workspace. Each subdirectory is an independent project w
 | `glimpse-artifact/` | React component library | React 18, TypeScript, Vite, TailwindCSS | Complete |
 | `afloat-server/` | Workflow orchestration MCP server | TypeScript, MCP SDK | Working |
 | `shared-types/` | Shared types and audit client | TypeScript | Build before dependent servers |
+| `symphony-execution-performance/` | Real-time performance dashboard | TypeScript 5.2, Express, WebSocket, chokidar | Active |
 | Other MCP servers | `echoes-server/`, `grid-server/`, `lots-server/`, `maintain-server/`, `pulse-server/`, `seeds-server/` | TypeScript, MCP SDK | See root [README](README.md) |
 
 ## Per-Project Guidance
@@ -71,6 +118,34 @@ npm run lint
 
 Components follow shadcn-style: CVA + clsx + tailwind-merge for variants. Icons: lucide-react only.
 
+### symphony-execution-performance
+
+Real-time system monitoring dashboard with WebSocket streaming, file system watching, pattern detection (X-Factor engine), and a canvas-rendered performance chart.
+
+```bash
+cd symphony-execution-performance
+npm install
+npm run dev      # tsx watch (hot reload) — serves on http://localhost:8080
+npm run build    # tsc → dist/
+npm run start    # node dist/index.js (production)
+npm test         # vitest
+npm run lint     # eslint src --ext .ts
+```
+
+**Architecture** (`src/`):
+- `index.ts` — entrypoint, instantiates `SymphonyDashboard` on port 8080
+- `dashboard.ts` — Express + WebSocketServer; broadcasts `activity`, `metrics`, `context`, `xFactorResult` message types every `refreshRate` ms
+- `interceptor.ts` — `ActivityInterceptor` (EventEmitter): chokidar file watcher + mock process/network/system polling via `setInterval`
+- `context-analyzer.ts` — `RuntimeContextAnalyzer`: maintains rolling 100-point history, calculates system health score, trends (5% threshold), pattern detection (high-CPU, memory-intensive, file churn, unusual activity), and alert queue
+- `x-factor.ts` — `XFactorEngine`: 8 weighted pattern matchers; 30s result cache keyed by 10-second CPU/memory/health buckets; selects highest-weight matched pattern as primary insight
+- `types.ts` — shared interfaces (`ActivityEvent`, `RuntimeContext`, `DashboardConfig`, `XFactorResult`, etc.)
+
+**Frontend** (`public/index.html`): single-page vanilla JS; draws CPU+memory time-series on `<canvas>` via `drawPerformanceChart()`. WebSocket auto-reconnects on close. X-Factor triggered by button click (`callXFactor()`).
+
+**Data flow**: `ActivityInterceptor` emits `'activity'` events → `dashboard.ts` broadcasts to WebSocket clients + feeds `RuntimeContextAnalyzer` → on each `refreshRate` tick, `broadcastMetrics()` serializes `system`/`network` state → client updates canvas chart and metric cards.
+
+**Important**: `interceptor.ts` uses **mock data** for processes, network bandwidth, and system stats (random values). Only file system events via chokidar are real. The `performanceChart` canvas draws CPU (green `#00ff88`) and memory (blue `#00ccff`) lines.
+
 ### afloat-server
 
 Depends on `shared-types` (local path). Build shared-types first when working from workspace root: `cd shared-types && npm run build`.
@@ -89,3 +164,69 @@ npm run start
 - Each project uses its own lockfile (`uv.lock`, `pnpm-lock.yaml`, `package-lock.json`) — do not mix package managers across projects.
 - When working across projects, always `cd` into the project root before running commands.
 - **Build order**: Servers that depend on `shared-types` (e.g. `afloat-server`) require `shared-types` to be built first (`cd shared-types && npm run build`).
+
+---
+
+## Freelance Engineering Context
+
+This workspace doubles as the operator's freelance portfolio and delivery infrastructure. The skills, rules, and workflows below are the operating system for contract work.
+
+### Operator Profile
+- **Location**: Dhaka, Bangladesh (UTC+06)
+- **Primary stack**: Python (FastAPI, httpx, asyncio, pytest), TypeScript (React, MCP SDK, Vitest)
+- **Specialties**: API integration, resilience engineering (circuit breaking, rate limiting, retry), AI/ML tooling, protocol design (MCP)
+- **Income target**: BDT 34,000/month (~$279 USD), stretch BDT 50,000-80,000
+
+### Velocity Benchmarks (Demonstrated)
+| Metric | Value | Source |
+|--------|-------|--------|
+| Code velocity | 771 lines/hr | APIGuard × GRID integration |
+| Test velocity | 10.7 tests/hr | APIGuard × GRID integration |
+| Provider velocity | 5.3 providers/hr | 8 providers in 1.5hrs |
+| Speed factor | 53-107x marketplace avg | Vs 2-4 week estimates |
+
+### Rate Card
+| Tier | Rate | When |
+|------|------|------|
+| Portfolio-building | $15-25/hr | Filling a specific portfolio gap |
+| Standard delivery | $25-45/hr | Routine integrations, scripts, modules |
+| Specialist work | $45-70/hr | Resilience engineering, architecture |
+| Premium/urgent | $70-120/hr | Production emergencies, <24hr turnaround |
+
+### Portfolio Tiers
+| Tier | Projects | Evidence |
+|------|----------|----------|
+| Flagship (T1) | GRID (190k+ LOC, 438+ tests), APIGuard (100% coverage, PyPI) | Architecture, testing, publishing |
+| Strong (T2) | MCP ecosystem (9 servers), GRID×APIGuard integration | Protocol design, resilience |
+| Supporting (T3) | Glimpse, Symphony, glimpse-artifact | React, real-time, breadth |
+
+### Custom Skills System (`.windsurf/skills/`)
+| Skill | Purpose | Invoke When |
+|-------|---------|-------------|
+| `contract-delivery` | End-to-end freelance contract execution (5 phases, 30 steps) | Starting any paid engagement |
+| `portfolio-lens` | Portfolio analysis and proposal evidence generation | Monthly scan or per-proposal |
+| `session-tracker` | Real-time session metrics and velocity tracking | Every work session start/end |
+
+### Rules (`.windsurf/rules/`)
+| Rule Set | Covers |
+|----------|--------|
+| `freelance-engineering` | Rate protection, estimation, delivery, architecture, session hygiene |
+| `contract-discipline` | Intake gates, pricing, scope management, time tracking, income tracking |
+| `testing-standards` | Coverage requirements, test structure, isolation, regression prevention |
+| `resilience-engineering` | Import safety, architecture boundaries, HTTP standards (from APIGuard) |
+| `mcp` | MCP implementation standards (transport, naming, security, testing) |
+
+### Workflows (`.windsurf/workflows/`)
+| Workflow | Purpose | Duration |
+|----------|---------|----------|
+| `contract-intake` | Qualify → scope → price → propose → kickoff | ~60 min |
+| `weekly-review` | Velocity analysis, income gap, portfolio check, pipeline review | ~55 min |
+| `proposal-writing` | Generate client-ready proposals with portfolio evidence | ~55 min |
+| `resilience-integration` | Wire APIGuard into target codebases (21 steps) | Varies |
+
+### Subagents (`.windsurf/workflows/subagent-*`)
+| Subagent | Purpose |
+|----------|---------|
+| `subagent-portfolio-scanner` | Inventory all projects, classify maturity, map capabilities |
+| `subagent-codebase-audit` | Audit target codebase for integration points and delivery scope |
+| `subagent-resilience-audit` | Scan for unprotected HTTP call sites (APIGuard-specific) |

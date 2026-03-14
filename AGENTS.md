@@ -6,16 +6,16 @@ This file provides guidance to Codex (Codex.ai/code) when working with code in t
 
 This is a multi-project workspace. Each subdirectory is an independent project with its own toolchain.
 
-| Project | Type | Language / Stack | Status |
-|---|---|---|---|
-| `GRID-main/` | Full-stack AI framework | Python 3.13+, FastAPI, ChromaDB, Ollama | Production (v2.6.1) |
-| `mcp-tool-experiment/typescript-sdk/` | MCP TypeScript SDK v2 | TypeScript 5.2, pnpm, Vitest, Zod v4 | Pre-alpha |
-| `glimpse-artifact/` | React component library | React 18, TypeScript, Vite, TailwindCSS | Complete |
-| `glimpse-engine/` | Visualization engine | JavaScript (ES modules) | Working |
-| `afloat-server/` | Workflow orchestration MCP server | TypeScript, MCP SDK | Working |
-| `shared-types/` | Shared types and audit client | TypeScript | Build before dependent servers |
-| Other MCP servers | `echoes-server/`, `grid-server/`, `lots-server/`, `maintain-server/`, `pulse-server/`, `seeds-server/` | TypeScript, MCP SDK | See root [README](README.md) |
-| Nested repos | `GRID-main/`, `mcp-tool-experiment/`, `projects/web/ai-web-demo/` | — | Managed in their own git roots |
+| Project                               | Type                                                                                                   | Language / Stack                        | Status                         |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------ | --------------------------------------- | ------------------------------ |
+| `GRID-main/`                          | Full-stack AI framework                                                                                | Python 3.13+, FastAPI, ChromaDB, Ollama | Production (v2.6.1)            |
+| `mcp-tool-experiment/typescript-sdk/` | MCP TypeScript SDK v2                                                                                  | TypeScript 5.2, pnpm, Vitest, Zod v4    | Pre-alpha                      |
+| `glimpse-artifact/`                   | React component library                                                                                | React 18, TypeScript, Vite, TailwindCSS | Complete                       |
+| `glimpse-engine/`                     | Visualization engine                                                                                   | JavaScript (ES modules)                 | Working                        |
+| `afloat-server/`                      | Workflow orchestration MCP server                                                                      | TypeScript, MCP SDK                     | Working                        |
+| `shared-types/`                       | Shared types and audit client                                                                          | TypeScript                              | Build before dependent servers |
+| Other MCP servers                     | `echoes-server/`, `grid-server/`, `lots-server/`, `maintain-server/`, `pulse-server/`, `seeds-server/` | TypeScript, MCP SDK                     | See root [README](README.md)   |
+| Nested repos                          | `GRID-main/`, `mcp-tool-experiment/`, `projects/web/ai-web-demo/`                                      | —                                       | Managed in their own git roots |
 
 ## Per-Project Guidance
 
@@ -105,3 +105,56 @@ npm run start
 - Each project uses its own lockfile (`uv.lock`, `pnpm-lock.yaml`, `package-lock.json`) — do not mix package managers across projects.
 - When working across projects, always `cd` into the project root before running commands.
 - **Build order**: Servers that depend on `shared-types` (e.g. `afloat-server`) require `shared-types` to be built first (`cd shared-types && npm run build`).
+
+## HomeGuard Scope Guardrails
+
+The workspace uses runtime scope guardrails to prevent accidental processing of stalled projects.
+
+**Active Profile**: `default` — Active development mode
+
+- **Accessible**: `GRID-main/`, `mcp-tool-experiment/`, `.git/`
+- **Guardrailed**: 25 stalled projects (no git history, empty shells)
+
+**Commands**:
+
+```bash
+# Check scope status
+python Tools/scripts/scope_persistence.py --status
+
+# Validate current scope
+python Tools/scripts/runtime_guard.py --validate C:\Users\USER\CascadeProjects
+
+# Switch to legacy audit mode (for investigating .claude/)
+python Tools/scripts/scope_persistence.py --activate legacy_audit
+```
+
+**Recently Cleaned** (2026-03-12):
+
+- Removed stale virtual environments (`.venv/`, `.tmp-ownership-venv/`)
+- Cleaned problematic IDE extensions (Copilot Chat, Jupyter tools)
+- Freed ~570MB via cache cleanup
+- Updated telemetry baseline
+
+## HomeGuard Success Metrics
+
+| Metric                    | Target            | Measurement Command                                |
+| ------------------------- | ----------------- | -------------------------------------------------- |
+| Scope check response time | <1ms              | `python Tools/scripts/test_runtime_guard.py`       |
+| Cache hit rate            | >90%              | Runtime metrics in preferences.json                |
+| Stalled project detection | 100%              | `python Tools/scripts/runtime_guard.py --validate` |
+| Extension health          | 0 critical errors | IDE problem panel                                  |
+| COMPAS confidence         | ≥85%              | `python Tools/scripts/compas.py --trend`           |
+| Telemetry baseline age    | <7 days           | Last scan timestamp                                |
+
+**Verification Commands**:
+
+```bash
+# Verify scope guardrails operational
+python Tools/scripts/runtime_guard.py --validate C:\Users\USER\CascadeProjects
+
+# Check COMPAS trend analysis
+python Tools/scripts/compas.py --trend
+
+# View cleanup status
+python Tools/scripts/cleanup_executor.py --status
+```

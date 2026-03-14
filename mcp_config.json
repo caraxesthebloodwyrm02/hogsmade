@@ -1,6 +1,6 @@
 {
   "_README": "Canonical MCP config — single source of truth for all editors",
-  "_updated": "2026-03-07",
+  "_updated": "2026-03-14",
   "_usage": {
     "windsurf": "Copy mcpServers block to C:\\Users\\USER\\.codeium\\windsurf-next\\mcp_config.json",
     "cursor": "Copy mcpServers block to .cursor/mcp.json in your project root (cwd IS supported)",
@@ -113,38 +113,6 @@
       }
     },
 
-
-    "grid-enhanced-tools": {
-      "command": "e:\\grid\\.venv\\Scripts\\python.exe",
-      "args": ["e:\\grid\\mcp-setup\\server\\enhanced_tools_mcp_server.py"],
-      "env": {
-        "PYTHONPATH": "e:\\grid\\src;e:\\grid"
-      }
-    },
-
-    "portfolio-safety-lens": {
-      "command": "e:\\grid\\.venv\\Scripts\\python.exe",
-      "args": ["e:\\grid\\mcp-setup\\server\\portfolio_safety_mcp_server.py"],
-      "env": {
-        "PYTHONPATH": "e:\\grid\\src;e:\\grid;e:\\Coinbase"
-      }
-    },
-
-    "code-analysis": {
-      "command": "e:\\grid\\.venv\\Scripts\\python.exe",
-      "args": ["e:\\grid\\mcp-setup\\server\\code_analysis_mcp_server.py"],
-      "env": {
-        "PYTHONPATH": "e:\\grid\\src;e:\\grid"
-      }
-    },
-
-    "test-runner": {
-      "command": "e:\\grid\\.venv\\Scripts\\python.exe",
-      "args": ["e:\\grid\\mcp-setup\\server\\test_runner_mcp_server.py"],
-      "env": {
-        "PYTHONPATH": "e:\\grid\\src;e:\\grid"
-      }
-    },
 
     "maintain-server": {
       "command": "npx",

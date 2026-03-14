@@ -10,6 +10,7 @@ import {
   normalizeName,
 } from "../utils/utils.js";
 import { scoreTaxonomy } from "./profiling.js";
+import { computeDimensionSimilarity } from "./similarity.js";
 
 export function createEvidence(base) {
   return {
@@ -21,6 +22,7 @@ export function createEvidence(base) {
     reason: base.reason || "",
     affects: base.affects || [],
     payload: base.payload || {},
+    basis: base.basis || null,
   };
 }
 
@@ -80,90 +82,115 @@ export function buildBaseRelations(entities) {
     }
   });
 
+  // Similarity threshold: configurable, default 0.6
+  const simThreshold = 0.6;
+
   for (let index = 0; index < entities.length; index += 1) {
     for (let next = index + 1; next < entities.length; next += 1) {
       const a = entities[index];
       const b = entities[next];
-      if (
-        a.dimensions.space &&
-        b.dimensions.space &&
-        String(a.dimensions.space).toLowerCase() ===
-        String(b.dimensions.space).toLowerCase()
-      ) {
-        const evidence = createEvidence({
-          id: `ev-rel-space-${a.id}-${b.id}`,
-          sourceRuleId: "system-shared-space",
-          scope: "relation",
-          targetId: `${a.id}:${b.id}`,
-          confidence: 0.62,
-          affects: ["relation", "cluster"],
-          reason: `${a.name} and ${b.name} share the same place: ${a.dimensions.space}.`,
-          payload: { relationType: "shared-space", source: a.id, target: b.id },
-        });
-        evidences.push(evidence);
-        relations.push({
-          id: `rel-${a.id}-${b.id}-space`,
-          source: a.id,
-          target: b.id,
-          type: "shared-space",
-          weight: 0.3,
-          evidenceIds: [evidence.id],
-        });
-      }
 
-      const bucketA = bucketYear(a.dimensions.time);
-      const bucketB = bucketYear(b.dimensions.time);
-      if (bucketA && bucketB && bucketA === bucketB) {
-        const evidence = createEvidence({
-          id: `ev-rel-time-${a.id}-${b.id}`,
-          sourceRuleId: "system-shared-era",
-          scope: "relation",
-          targetId: `${a.id}:${b.id}`,
-          confidence: 0.58,
-          affects: ["relation", "cluster"],
-          reason: `${a.name} and ${b.name} land in the same time bucket: ${bucketA}.`,
-          payload: { relationType: "shared-era", source: a.id, target: b.id },
-        });
-        evidences.push(evidence);
-        relations.push({
-          id: `rel-${a.id}-${b.id}-time`,
-          source: a.id,
-          target: b.id,
-          type: "shared-era",
-          weight: 0.28,
-          evidenceIds: [evidence.id],
-        });
-      }
-
-      if (
-        a.dimensions.domain &&
-        b.dimensions.domain &&
-        String(a.dimensions.domain).toLowerCase() ===
-        String(b.dimensions.domain).toLowerCase()
-      ) {
-        const evidence = createEvidence({
-          id: `ev-rel-domain-${a.id}-${b.id}`,
-          sourceRuleId: "system-shared-domain",
-          scope: "relation",
-          targetId: `${a.id}:${b.id}`,
-          confidence: 0.67,
-          affects: ["relation", "cluster"],
-          reason: `${a.name} and ${b.name} share the same declared domain: ${a.dimensions.domain}.`,
-          payload: {
-            relationType: "shared-domain",
+      // Space similarity (fuzzy)
+      if (a.dimensions.space && b.dimensions.space) {
+        const sim = computeDimensionSimilarity(
+          a.dimensions.space, b.dimensions.space, "space"
+        );
+        if (sim.matched || sim.score >= simThreshold) {
+          const scaledConfidence = 0.42 + 0.2 * sim.score; // 0.42..0.62
+          const evidence = createEvidence({
+            id: `ev-rel-space-${a.id}-${b.id}`,
+            sourceRuleId: "system-shared-space",
+            scope: "relation",
+            targetId: `${a.id}:${b.id}`,
+            confidence: Math.round(scaledConfidence * 100) / 100,
+            affects: ["relation", "cluster"],
+            reason: `${a.name} and ${b.name} share place proximity: ${a.dimensions.space} ~ ${b.dimensions.space} (${sim.method}, ${Math.round(sim.score * 100)}%).`,
+            payload: { relationType: "shared-space", source: a.id, target: b.id },
+            basis: sim.method,
+          });
+          evidences.push(evidence);
+          relations.push({
+            id: `rel-${a.id}-${b.id}-space`,
             source: a.id,
             target: b.id,
-          },
-        });
-        evidences.push(evidence);
-        relations.push({
-          id: `rel-${a.id}-${b.id}-domain`,
-          source: a.id,
-          target: b.id,
-          type: "shared-domain",
-          weight: 0.4,
-          evidenceIds: [evidence.id],
-        });
+            type: "shared-space",
+            weight: 0.3 * sim.score,
+            similarity: sim.score,
+            evidenceIds: [evidence.id],
+          });
+        }
+      }
+
+      // Temporal similarity (continuous distance, replaces decade-only buckets)
+      if (a.dimensions.time != null && b.dimensions.time != null) {
+        const sim = computeDimensionSimilarity(
+          a.dimensions.time, b.dimensions.time, "time"
+        );
+        // Also keep backward compat: decade bucket match always qualifies
+        const bucketA = bucketYear(a.dimensions.time);
+        const bucketB = bucketYear(b.dimensions.time);
+        const bucketMatch = bucketA && bucketB && bucketA === bucketB;
+
+        if (sim.score >= simThreshold || bucketMatch) {
+          const effectiveScore = Math.max(sim.score, bucketMatch ? 0.6 : 0);
+          const scaledConfidence = 0.38 + 0.2 * effectiveScore; // 0.38..0.58
+          const evidence = createEvidence({
+            id: `ev-rel-time-${a.id}-${b.id}`,
+            sourceRuleId: "system-shared-era",
+            scope: "relation",
+            targetId: `${a.id}:${b.id}`,
+            confidence: Math.round(scaledConfidence * 100) / 100,
+            affects: ["relation", "cluster"],
+            reason: `${a.name} and ${b.name} are temporally close: ${a.dimensions.time} ~ ${b.dimensions.time} (${Math.round(effectiveScore * 100)}% proximity).`,
+            payload: { relationType: "shared-era", source: a.id, target: b.id, gap: sim.gap },
+            basis: sim.method,
+          });
+          evidences.push(evidence);
+          relations.push({
+            id: `rel-${a.id}-${b.id}-time`,
+            source: a.id,
+            target: b.id,
+            type: "shared-era",
+            weight: 0.28 * effectiveScore,
+            similarity: effectiveScore,
+            evidenceIds: [evidence.id],
+          });
+        }
+      }
+
+      // Domain similarity (fuzzy)
+      if (a.dimensions.domain && b.dimensions.domain) {
+        const sim = computeDimensionSimilarity(
+          a.dimensions.domain, b.dimensions.domain, "domain"
+        );
+        if (sim.matched || sim.score >= simThreshold) {
+          const scaledConfidence = 0.47 + 0.2 * sim.score; // 0.47..0.67
+          const evidence = createEvidence({
+            id: `ev-rel-domain-${a.id}-${b.id}`,
+            sourceRuleId: "system-shared-domain",
+            scope: "relation",
+            targetId: `${a.id}:${b.id}`,
+            confidence: Math.round(scaledConfidence * 100) / 100,
+            affects: ["relation", "cluster"],
+            reason: `${a.name} and ${b.name} share domain proximity: ${a.dimensions.domain} ~ ${b.dimensions.domain} (${sim.method}, ${Math.round(sim.score * 100)}%).`,
+            payload: {
+              relationType: "shared-domain",
+              source: a.id,
+              target: b.id,
+            },
+            basis: sim.method,
+          });
+          evidences.push(evidence);
+          relations.push({
+            id: `rel-${a.id}-${b.id}-domain`,
+            source: a.id,
+            target: b.id,
+            type: "shared-domain",
+            weight: 0.4 * sim.score,
+            similarity: sim.score,
+            evidenceIds: [evidence.id],
+          });
+        }
       }
     }
   }
