@@ -24,7 +24,7 @@ async function invokeTool(
 ): Promise<unknown> {
   const tool = server._registeredTools[name];
   if (!tool) throw new Error(`Tool not found: ${name}`);
-  return tool.inputSchema ? await tool.handler(args, {}) : await tool.handler({});
+  return tool.inputSchema ? await tool.handler(args, {}) : await tool.handler({}, {});
 }
 
 function getTextContent(result: unknown): string | undefined {
@@ -55,7 +55,7 @@ function main() {
     try {
       // Lots: create + run one experiment → one audit line
       const { buildServer: buildLotsServer } = await import("../lots-server/src/server.ts");
-      const lotsServer = buildLotsServer() as Parameters<typeof invokeTool>[0];
+      const lotsServer = buildLotsServer() as unknown as Parameters<typeof invokeTool>[0];
 
       const createResult = await invokeTool(lotsServer, "experiment_create", {
         name: "Phase2 audit emit",
@@ -79,7 +79,7 @@ function main() {
 
       // Maintain: one cleanup dry-run → one audit line
       const { buildServer: buildMaintainServer } = await import("../maintain-server/src/server.ts");
-      const maintainServer = buildMaintainServer() as Parameters<typeof invokeTool>[0];
+      const maintainServer = buildMaintainServer() as unknown as Parameters<typeof invokeTool>[0];
       await invokeTool(maintainServer, "cleanup_execute", {
         actions: [{ type: "temp_clean" }],
         dryRun: true,

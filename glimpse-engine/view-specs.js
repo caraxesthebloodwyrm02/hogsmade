@@ -1,4 +1,4 @@
-import { computeClusters } from "./engine.js";
+import { computeClusters } from "./core/engine.js";
 
 function esc(value) {
   return String(value ?? "")

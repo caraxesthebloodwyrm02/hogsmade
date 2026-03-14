@@ -5,7 +5,7 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { parseMasterConfig } from "../glimpse-engine/master-config.js";
 import { DEFAULT_MASTER_YAML } from "../glimpse-engine/default-master.js";
-import { runContextPipeline, compileRuleFromConversation, parseQueryIntent, validateConfigWithRegistry } from "../glimpse-engine/engine.js";
+import { runContextPipeline, compileRuleFromConversation, parseQueryIntent, validateConfigWithRegistry } from "../glimpse-engine/core/engine.js";
 import { rankViews } from "../glimpse-engine/view-specs.js";
 
 const config = parseMasterConfig(DEFAULT_MASTER_YAML);

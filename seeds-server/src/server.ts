@@ -20,6 +20,7 @@ import os from "os";
 import { execFile } from "child_process";
 import { pathToFileURL } from "url";
 import { promisify } from "util";
+import { emitAudit } from "@cascade/shared-types/audit-client";
 import { getConfig } from "./config.js";
 
 const execFileAsync = promisify(execFile);
@@ -392,6 +393,21 @@ server.registerTool(
       savedPath = await saveSnapshot(snapshot);
     }
 
+    emitAudit({
+      source: SERVER_NAME,
+      tool: "ecosystem_scan",
+      status: overallScore >= 50 ? "success" : "failure",
+      durationMs: Date.now() - Date.parse(snapshot.timestamp),
+      metadata: {
+        overallScore,
+        totalRepos: repos.length,
+        active: activeCount,
+        stale: staleCount,
+        totalIssues: issueCount,
+        snapshotSaved: !!args.saveSnapshot,
+      },
+    });
+
     return {
       content: [
         {
@@ -441,6 +457,13 @@ server.registerTool(
   async (args: { repoName: string }) => {
     const health = await checkRepoHealth(args.repoName);
     const knownInfo = KNOWN_REPOS[args.repoName];
+
+    emitAudit({
+      source: SERVER_NAME,
+      tool: "repo_detail",
+      status: health.exists ? "success" : "failure",
+      metadata: { repo: args.repoName, healthScore: health.healthScore },
+    });
 
     return {
       content: [

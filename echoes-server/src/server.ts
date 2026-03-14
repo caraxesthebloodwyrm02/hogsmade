@@ -62,11 +62,8 @@ async function appendAuditEntry(entry: AuditEntry): Promise<void> {
   await fs.appendFile(AUDIT_LOG_PATH, line, 'utf-8');
 }
 
-function normalizeAuditStatus(status: unknown): Exclude<AuditEntry['status'], 'error'> | null {
-  if (status === 'error') {
-    return 'failure';
-  }
-  if (status === 'success' || status === 'blocked' || status === 'failure' || status === 'dry_run') {
+function normalizeAuditStatus(status: unknown): AuditEntry['status'] | null {
+  if (status === 'success' || status === 'blocked' || status === 'failure' || status === 'dry_run' || status === 'error') {
     return status;
   }
   return null;
@@ -103,7 +100,16 @@ async function readAuditLog(limit: number, filter?: { tool?: string; status?: st
   if (filter?.status) {
     const normalizedStatus = normalizeAuditStatus(filter.status);
     if (normalizedStatus) {
-      entries = entries.filter(e => e.status === normalizedStatus);
+      entries = entries.filter(entry => {
+        if (entry.status === normalizedStatus) {
+          return true;
+        }
+        // Also match legacy entries where 'error' was stored but normalized on read
+        if (filter.status === 'error' && (entry.status === 'error' || entry.status === 'failure')) {
+          return true;
+        }
+        return false;
+      });
     }
   }
   if (filter?.since) {

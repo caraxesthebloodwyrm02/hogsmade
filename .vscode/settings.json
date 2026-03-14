@@ -1,3 +1,15 @@
 {
-  "css.lint.unknownAtRules": "ignore"
+  "css.lint.unknownAtRules": "ignore",
+  "files.autoSave": "afterDelay",
+  "workbench.experimental.cloudChanges.autoStore": "onShutdown",
+  "workbench.experimental.cloudChanges.partialMatches.enabled": true,
+  "git.autofetch": false,
+  "json.schemaDownload.enable": false,
+  "typescript.disableAutomaticTypeAcquisition": true,
+  "python.testing.pytestArgs": [
+    "."
+  ],
+  "python.testing.unittestEnabled": false,
+  "python.testing.pytestEnabled": true,
+  "python.createEnvironment.contentButton": "show"
 }

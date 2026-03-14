@@ -1,21 +1,36 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "fs";
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "fs";
 import crypto from "crypto";
 import os from "os";
 import path from "path";
 
 type TestServer = {
-  _registeredTools: Record<string, { inputSchema?: unknown; handler: (...args: any[]) => unknown }>;
+  _registeredTools: Record<
+    string,
+    { inputSchema?: unknown; handler: (...args: any[]) => unknown }
+  >;
 };
 
 function getToolNames(server: TestServer): string[] {
   return Object.keys(server._registeredTools);
 }
 
-async function invokeTool(server: TestServer, name: string, args: Record<string, unknown> = {}) {
+async function invokeTool(
+  server: TestServer,
+  name: string,
+  args: Record<string, unknown> = {},
+) {
   const tool = server._registeredTools[name];
   expect(tool).toBeDefined();
-  return tool.inputSchema ? await tool.handler(args, {} as any) : await tool.handler({} as any);
+  return tool.inputSchema
+    ? await tool.handler(args, {} as any)
+    : await tool.handler({} as any);
 }
 
 describe("grid-server smoke", () => {
@@ -28,7 +43,8 @@ describe("grid-server smoke", () => {
     process.env.GATE_DIR = path.join(tempRoot, "GATE");
     process.env.GATE_TRUSTED_SOURCE_PARTITIONS = "test-agent";
     mkdirSync(process.env.GATE_DIR, { recursive: true });
-    ({ buildServer } = await import("../src/server.ts"));
+    const serverModule = await import("../src/server.ts") as unknown as { buildServer: () => TestServer };
+    ({ buildServer } = serverModule);
     ({ getConfig } = await import("../src/config.ts"));
   });
 
@@ -48,17 +64,23 @@ describe("grid-server smoke", () => {
 
   it("registers expected tools and runs list_targets", async () => {
     const server = buildServer();
-    expect(getToolNames(server)).toEqual(expect.arrayContaining([
-      "health_check",
-      "list_targets",
-      "validate_envelope",
-      "gate_audit",
-      "nonce_status",
-      "check_permission",
-    ]));
+    expect(getToolNames(server)).toEqual(
+      expect.arrayContaining([
+        "health_check",
+        "list_targets",
+        "validate_envelope",
+        "gate_audit",
+        "nonce_status",
+        "check_permission",
+      ]),
+    );
 
-    const health = await invokeTool(server, "health_check");
-    const targets = await invokeTool(server, "list_targets", {});
+    const health = (await invokeTool(server, "health_check")) as {
+      isError?: boolean;
+    };
+    const targets = (await invokeTool(server, "list_targets", {})) as {
+      isError?: boolean;
+    };
     expect(health.isError).not.toBe(true);
     expect(targets.isError).not.toBe(true);
   });
@@ -74,9 +96,13 @@ describe("grid-server smoke", () => {
     writeFileSync(
       nonceRegistryPath,
       JSON.stringify({
-        "test-nonce-1": { issued_at: new Date().toISOString(), burned: false, burned_at: null },
+        "test-nonce-1": {
+          issued_at: new Date().toISOString(),
+          burned: false,
+          burned_at: null,
+        },
       }),
-      "utf-8"
+      "utf-8",
     );
     const payload = {};
     const payloadHash = crypto.createHash("sha256").update("{}").digest("hex");
@@ -98,15 +124,25 @@ describe("grid-server smoke", () => {
     writeFileSync(envelopePath, JSON.stringify(envelope), "utf-8");
 
     const server = buildServer();
-    const result = await invokeTool(server, "validate_envelope", { envelopePath });
+    const result = await invokeTool(server, "validate_envelope", { envelopePath }) as { isError?: boolean; content?: Array<{ type: string; text?: string }> };
     expect(result.isError).not.toBe(true);
-    const text = (result as { content?: Array<{ type: string; text?: string }> }).content?.[0]?.text;
+    const text = result.content?.[0]?.text;
     expect(text).toBeDefined();
     const parsed = JSON.parse(text as string);
     expect(parsed.valid).toBe(true);
     expect(parsed.enhancedValidation).toBeNull();
-    expect(parsed.checks.some((c: { check: string }) => c.check === "nonce_registered" && c.passed)).toBe(true);
-    expect(parsed.checks.some((c: { check: string }) => c.check === "nonce_not_reused" && c.passed)).toBe(true);
+    expect(
+      parsed.checks.some(
+        (c: { check: string; passed: boolean }) =>
+          c.check === "nonce_registered" && c.passed,
+      ),
+    ).toBe(true);
+    expect(
+      parsed.checks.some(
+        (c: { check: string; passed: boolean }) =>
+          c.check === "nonce_not_reused" && c.passed,
+      ),
+    ).toBe(true);
     // Nonce should be burned after success
     const registryAfter = JSON.parse(readFileSync(nonceRegistryPath, "utf-8"));
     expect(registryAfter["test-nonce-1"].burned).toBe(true);
@@ -124,9 +160,13 @@ describe("grid-server smoke", () => {
     writeFileSync(
       nonceRegistryPath,
       JSON.stringify({
-        "test-nonce-2": { issued_at: new Date().toISOString(), burned: false, burned_at: null },
+        "test-nonce-2": {
+          issued_at: new Date().toISOString(),
+          burned: false,
+          burned_at: null,
+        },
       }),
-      "utf-8"
+      "utf-8",
     );
     const payload = {};
     const payloadHash = crypto.createHash("sha256").update("{}").digest("hex");
@@ -148,9 +188,9 @@ describe("grid-server smoke", () => {
     writeFileSync(envelopePath, JSON.stringify(envelope), "utf-8");
 
     const server = buildServer();
-    const result = await invokeTool(server, "validate_envelope", { envelopePath });
+    const result = await invokeTool(server, "validate_envelope", { envelopePath }) as { isError?: boolean; content?: Array<{ type: string; text?: string }> };
     expect(result.isError).not.toBe(true);
-    const text = (result as { content?: Array<{ type: string; text?: string }> }).content?.[0]?.text;
+    const text = result.content?.[0]?.text;
     const parsed = JSON.parse(text as string);
     expect(parsed.valid).toBe(false);
     expect(parsed.enhancedValidation?.flags).toContain("grid_unavailable");

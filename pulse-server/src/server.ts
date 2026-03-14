@@ -31,6 +31,7 @@ import { promises as fs } from "fs";
 import path from "path";
 import { pathToFileURL } from "url";
 import * as z from "zod";
+import { emitAudit } from "@cascade/shared-types/audit-client";
 import { getConfig } from "./config.js";
 
 // ── Constants ──
@@ -975,6 +976,19 @@ export function buildServer(): McpServer {
         }
       }
 
+      emitAudit({
+        source: SERVER_NAME,
+        tool: "morning_briefing",
+        status: "success",
+        metadata: {
+          overnightEvents: overnightEvents.length,
+          failures: recentFailures.length,
+          warningCount: orderedWarnings.length,
+          priorityCount: orderedPriorities.length,
+          ecosystemScore: ecosystemScore ?? null,
+        },
+      });
+
       return {
         content: [
           {
@@ -1236,6 +1250,13 @@ export function buildServer(): McpServer {
       };
       journal.push(newEntry);
       await saveTodayJournal(journal);
+
+      emitAudit({
+        source: SERVER_NAME,
+        tool: "journal_add",
+        status: "success",
+        metadata: { entryId: newEntry.id, tags: newEntry.tags, mood: newEntry.mood },
+      });
 
       return {
         content: [

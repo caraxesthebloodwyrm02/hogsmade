@@ -37,7 +37,7 @@ async function loadEngine(): Promise<Record<string, any>> {
   if (engine) return engine;
   const enginePath = pathToFileURL(path.join(ENGINE_ROOT, 'core', 'engine.js')).href;
   engine = await import(enginePath);
-  return engine;
+  return engine || {};
 }
 
 // ── Server Setup ──

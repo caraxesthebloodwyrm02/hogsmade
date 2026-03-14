@@ -11,6 +11,8 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@cascade/shared-resilience": "file:../shared-resilience",
+    "@cascade/shared-types": "file:../shared-types",
     "@modelcontextprotocol/sdk": "^1.27.1",
     "zod": "^3.22.0"
   },

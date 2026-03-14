@@ -18,6 +18,8 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import { pathToFileURL } from 'url';
+import { ResiliencePolicy } from '@cascade/shared-resilience';
+import { emitAudit } from '@cascade/shared-types/audit-client';
 import { getConfig } from './config.js';
 
 // ── Constants ──
@@ -34,6 +36,23 @@ const TRUSTED_SOURCES = config.trustedSourcePartitions;
 
 // Deployment targets from GATE/agent_schema.json
 const DEPLOYMENT_TARGETS: Record<string, { path: string; port: number | null; permissions: string[] }> = config.deploymentTargets;
+
+// ── Resilience ──
+
+const gridApiPolicy = new ResiliencePolicy('grid-api', {
+  circuitBreaker: {
+    failureThreshold: 3,
+    successThreshold: 2,
+    timeoutMs: 30_000,
+    halfOpenMaxCalls: 1,
+  },
+  retry: {
+    maxAttempts: 2,
+    initialDelayMs: 200,
+    maxDelayMs: 2000,
+    backoffMultiplier: 2,
+  },
+});
 
 // ── Helpers ──
 
@@ -62,6 +81,17 @@ function computeHash(data: string): string {
   return crypto.createHash('sha256').update(data).digest('hex');
 }
 
+/** Recursively sort all object keys for deterministic JSON serialization. */
+function canonicalize(value: unknown): unknown {
+  if (value === null || typeof value !== 'object') return value;
+  if (Array.isArray(value)) return value.map(canonicalize);
+  const sorted: Record<string, unknown> = {};
+  for (const key of Object.keys(value as Record<string, unknown>).sort()) {
+    sorted[key] = canonicalize((value as Record<string, unknown>)[key]);
+  }
+  return sorted;
+}
+
 /** HMAC-SHA256 of message with secret; matches create_test_envelope.py / debug_fingerprint.py. */
 function computeUserFingerprint(secret: string, payloadHash: string, machineFingerprint: string, nonce: string): string {
   const message = `${payloadHash}:${machineFingerprint}:${nonce}`;
@@ -86,23 +116,29 @@ async function getEnhancedValidation(envelope: Record<string, unknown>): Promise
   }
 
   try {
-    const response = await fetch(`${gridApiUrl.replace(/\/$/, '')}/api/v1/gate/validate`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        source_agent: envelope['source_partition'],
-        target: envelope['target_partition'],
-        action: envelope['scope'],
-        payload_hash: envelope['payload_hash'],
-        test_status: envelope['tests_passed'] === true ? 'passing' : 'failing',
-      }),
-    });
+    const payload = await gridApiPolicy.execute<Record<string, unknown>>(
+      'validate',
+      async () => {
+        const response = await fetch(`${gridApiUrl.replace(/\/$/, '')}/api/v1/gate/validate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            source_agent: envelope['source_partition'],
+            target: envelope['target_partition'],
+            action: envelope['scope'],
+            payload_hash: envelope['payload_hash'],
+            test_status: envelope['tests_passed'] === true ? 'passing' : 'failing',
+          }),
+        });
 
-    if (!response.ok) {
-      throw new Error(`GRID-main responded with ${response.status}`);
-    }
+        if (!response.ok) {
+          throw new Error(`GRID-main responded with ${response.status}`);
+        }
 
-    const payload = await response.json() as Record<string, unknown>;
+        return await response.json() as Record<string, unknown>;
+      }
+    );
+
     return {
       consulted: true,
       ...payload,
@@ -249,7 +285,7 @@ server.registerTool(
 
     // Payload hash integrity
     if (envelope['payload'] && envelope['payload_hash']) {
-      const canonical = JSON.stringify(envelope['payload'], Object.keys(envelope['payload'] as object).sort());
+      const canonical = JSON.stringify(canonicalize(envelope['payload']));
       const computed = computeHash(canonical);
       const declared = envelope['payload_hash'] as string;
       checks.push({
@@ -322,6 +358,18 @@ server.registerTool(
       || enhancedValidation['approved'] !== false;
 
     const valid = allPassed && enhancedApproved;
+
+    emitAudit({
+      source: SERVER_NAME,
+      tool: 'validate_envelope',
+      status: valid ? 'success' : 'failure',
+      metadata: {
+        envelopePath,
+        checksRun: checks.length,
+        checksFailed: checks.filter(c => !c.passed).map(c => c.check),
+        enhancedConsulted: enhancedValidation != null,
+      },
+    });
 
     // On success, burn the nonce so it cannot be reused (replay protection).
     if (valid && nonceVal != null && nonceRegistry[nonceVal]) {

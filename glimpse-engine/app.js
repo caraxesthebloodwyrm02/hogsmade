@@ -1,5 +1,5 @@
 import { loadMasterConfig, parseMasterConfig, serializeMasterConfig, saveMasterConfigToHandle, downloadMasterConfig, createRulePreview } from "./master-config.js";
-import { parseCSV, runContextPipeline, buildSemanticHints, parseQueryIntent, compileRuleFromConversation, computeClusters, validateConfigWithRegistry } from "./engine.js";
+import { parseCSV, runContextPipeline, buildSemanticHints, parseQueryIntent, compileRuleFromConversation, computeClusters, validateConfigWithRegistry } from "./core/engine.js";
 import { rankViews, renderView, VIEW_SPECS } from "./view-specs.js";
 import { buildPathwayEntry, logPathway } from "./pathway-logger.js";
 
