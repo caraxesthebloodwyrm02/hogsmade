@@ -1,0 +1,30 @@
+{
+  "name": "glimpse-engine",
+  "version": "0.5.0",
+  "type": "module",
+  "description": "Decision support tool with visualization — fast, synthetic, glanceable",
+  "main": "core/engine.js",
+  "bin": {
+    "glimpse": "./cli.js"
+  },
+  "exports": {
+    ".": "./core/engine.js",
+    "./runner": "./core/runner.js",
+    "./display": "./core/display.js",
+    "./scenarios": "./core/scenarios.js",
+    "./pipeline": "./core/pipeline.js",
+    "./analysis/*": "./analysis/*.js",
+    "./functions/*": "./functions/*.js"
+  },
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "glimpse": "node cli.js",
+    "demo": "node examples/simplify-demo.mjs",
+    "demo:standup": "node cli.js standup",
+    "demo:energy": "node cli.js energy",
+    "demo:portfolio": "node cli.js portfolio",
+    "demo:lending": "node cli.js lending",
+    "demo:recommend": "node cli.js recommend",
+    "demo:sales": "node examples/sales-lead-intelligence.mjs"
+  }
+}

@@ -83,3 +83,23 @@ export {
   installCustomDefinition, serializeDefinitions, loadDefinitions
 } from "./definitions.js";
 
+// Phase 6: Continuous Learning
+export {
+  buildTrace, appendTrace,
+  loadHistory, saveHistory, collectTrace,
+  refineRun, suggestImprovements, applyOverrides,
+  learnFromRun, buildSessionRecap, compareToRecent
+} from "./learning.js";
+
+// Phase 7: PATH System — condition-driven weighted accumulation
+export {
+  evaluatePath, evaluateAllPaths,
+  getBuiltinPaths, loadPaths, savePaths, mergePaths,
+  buildPathContext, runPaths, getSignalInventory
+} from "./paths.js";
+
+// Phase 8: Decisional Interview — calibration through domain-displaced questions
+export {
+  POSTURES, assessCalibrationNeed, selectQuestions,
+  scoreInterview, prepareInterview, applyInterviewModulation
+} from "./interview.js";
