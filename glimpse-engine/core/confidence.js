@@ -42,6 +42,7 @@ export function recordInference(frame, entry) {
     claimed: entry.claimed || "",
     basis: entry.basis || "unspecified",
     confidence: entry.confidence ?? 0.5,
+    confidence_source: entry.confidence_source || (entry.confidence != null ? "measured" : "default"),
     timestamp: Date.now(),
   });
 }
@@ -81,11 +82,15 @@ export function detectGaps(frame, ctx) {
     ).length;
     const ratio = entities.length > 0 ? coverage / entities.length : 0;
 
-    if (ratio > 0 && ratio < 0.3) {
+    if (ratio < 0.3) {
+      const severity = ratio === 0 ? 0.8 : 0.6;
+      const description = ratio === 0
+        ? `Complete absence of the ${dim} dimension across all entities.`
+        : `Only ${Math.round(ratio * 100)}% of entities have the ${dim} dimension.`;
       recordGap(frame, {
         type: GAP_TYPES.LOW_COVERAGE,
-        description: `Only ${Math.round(ratio * 100)}% of entities have the ${dim} dimension.`,
-        severity: 0.6,
+        description,
+        severity,
         affectedIds: entities
           .filter((e) => e.dimensions?.[dim] == null)
           .map((e) => e.id),
@@ -139,7 +144,7 @@ export function calibrateConfidence(raw, factors = {}) {
   const crossRefBonus = Math.min(0.1, crossRefHits * 0.05);
 
   // Completeness penalty: incomplete data reduces confidence
-  const completenessFactor = 0.7 + 0.3 * Math.min(1, completeness);
+  const completenessFactor = Math.min(1, completeness);
 
   const calibrated = (raw + evidenceBonus + crossRefBonus) * completenessFactor;
   return Math.min(1, Math.max(0, Math.round(calibrated * 1000) / 1000));
@@ -182,4 +187,39 @@ export function summarizeConfidence(frame) {
 
   frame.summary = summary;
   return summary;
+}
+
+/**
+ * Record a validated outcome for an inference entry.
+ *
+ * @param {ConfidenceFrame} frame
+ * @param {string} ruleId
+ * @param {boolean} confirmed - Whether the claim was confirmed
+ */
+export function recordOutcome(frame, ruleId, confirmed) {
+  if (!frame.outcomes) frame.outcomes = [];
+  const entry = frame.entries.find((e) => e.ruleId === ruleId);
+  frame.outcomes.push({
+    ruleId,
+    predicted: entry ? entry.confidence : 0.5,
+    actual: confirmed ? 1 : 0,
+    timestamp: Date.now(),
+  });
+}
+
+/**
+ * Compute Brier score from recorded outcomes.
+ * Returns null if fewer than 5 outcomes exist.
+ *
+ * @param {ConfidenceFrame} frame
+ * @returns {number|null}
+ */
+export function calibrationScore(frame) {
+  const outcomes = frame.outcomes || [];
+  if (outcomes.length < 5) return null;
+  const total = outcomes.reduce(
+    (sum, o) => sum + (o.predicted - o.actual) ** 2,
+    0
+  );
+  return Math.round((total / outcomes.length) * 10000) / 10000;
 }

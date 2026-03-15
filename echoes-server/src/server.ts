@@ -69,7 +69,7 @@ function normalizeAuditStatus(status: unknown): AuditEntry['status'] | null {
   return null;
 }
 
-async function readAuditLog(limit: number, filter?: { tool?: string; status?: string; since?: string }): Promise<AuditEntry[]> {
+async function readAuditLog(limit: number, filter?: { tool?: string; status?: string; since?: string }, metadata?: { parseErrors?: number }): Promise<AuditEntry[]> {
   let content: string;
   try {
     content = await fs.readFile(AUDIT_LOG_PATH, 'utf-8');
@@ -78,11 +78,13 @@ async function readAuditLog(limit: number, filter?: { tool?: string; status?: st
   }
 
   const lines = content.trim().split('\n').filter(Boolean);
+  let parseErrors = 0;
   let entries: AuditEntry[] = lines.map(line => {
     try {
       const parsed = JSON.parse(line) as Partial<AuditEntry>;
       const status = normalizeAuditStatus(parsed.status);
       if (!status || !parsed.id || !parsed.timestamp || !parsed.source || !parsed.tool) {
+        parseErrors++;
         return null;
       }
       return {
@@ -90,6 +92,7 @@ async function readAuditLog(limit: number, filter?: { tool?: string; status?: st
         status,
       } as AuditEntry;
     } catch {
+      parseErrors++;
       return null;
     }
   }).filter(Boolean) as AuditEntry[];
@@ -117,6 +120,7 @@ async function readAuditLog(limit: number, filter?: { tool?: string; status?: st
     entries = entries.filter(e => new Date(e.timestamp).getTime() >= since);
   }
 
+  if (metadata) metadata.parseErrors = parseErrors;
   return entries.slice(-limit).reverse();
 }
 
@@ -264,13 +268,14 @@ server.registerTool(
   },
   async (args) => {
     await ensureDataDir();
+    const metadata: { parseErrors?: number } = {};
     const entries = await readAuditLog(args.limit ?? 20, {
       tool: args.tool,
       status: args.status,
       since: args.since,
-    });
+    }, metadata);
     return {
-      content: [{ type: 'text' as const, text: JSON.stringify({ count: entries.length, entries }, null, 2) }],
+      content: [{ type: 'text' as const, text: JSON.stringify({ count: entries.length, entries, parseErrors: metadata.parseErrors ?? 0 }, null, 2) }],
     };
   }
 );

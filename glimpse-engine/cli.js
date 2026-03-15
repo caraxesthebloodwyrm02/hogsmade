@@ -17,6 +17,8 @@ import { runGlimpse, autoConfig } from './core/runner.js';
 import { getScenario, listScenarios } from './core/scenarios.js';
 import { parseCSV } from './core/engine.js';
 import * as display from './core/display.js';
+import { activityTracker } from './core/activity-tracker.js';
+import { visualFeedback } from './core/visual-feedback.js';
 
 // ============================================================================
 // ARGUMENT PARSING
@@ -29,6 +31,7 @@ const flags = {
   quiet: args.includes('--quiet'),
   brief: args.includes('--brief'),
   help: args.includes('--help') || args.includes('-h'),
+  realtime: args.includes('--realtime'),
 };
 const positional = args.filter(a => !a.startsWith('--') && !a.startsWith('-'));
 const command = positional[0] || 'help';
@@ -46,6 +49,9 @@ function showHelp() {
     glimpse <scenario>           Run a built-in scenario
     glimpse run <file.json|csv>  Analyze your own data
     glimpse list                 List available scenarios
+    glimpse monitor              Activity monitoring dashboard
+    glimpse traffic              Real-time traffic visualizer
+    glimpse analytics            Detailed analytics view
     glimpse help                 Show this help
 
   Scenarios:
@@ -55,17 +61,26 @@ function showHelp() {
     lending      Personal financial decision
     recommend    What to work on next
 
+  Monitoring:
+    monitor      Main dashboard with key metrics
+    traffic      Real-time activity stream
+    analytics    Detailed analytics and trends
+
   Flags:
     --interview  Trigger calibration interview
     --json       Output raw JSON instead of formatted
     --quiet      Minimal output
     --brief      Skip deep engine details
+    --realtime   Enable real-time updates (monitor/traffic)
 
   Examples:
     glimpse standup
     glimpse lending --interview
     glimpse run my-tasks.json
     glimpse run data.csv --brief
+    glimpse monitor --realtime
+    glimpse traffic
+    glimpse analytics
 `);
 }
 
@@ -78,6 +93,52 @@ function showList() {
   display.close();
 }
 
+function showMonitor() {
+  if (flags.realtime) {
+    visualFeedback.startRealtime();
+  } else {
+    visualFeedback.renderDashboard();
+  }
+}
+
+function showTraffic() {
+  if (flags.realtime) {
+    visualFeedback.currentView = 'traffic';
+    visualFeedback.startRealtime();
+  } else {
+    visualFeedback.currentView = 'traffic';
+    visualFeedback.renderCurrentView();
+  }
+}
+
+function showAnalytics() {
+  visualFeedback.currentView = 'analytics';
+  visualFeedback.renderCurrentView();
+}
+
+// Track activity for all sessions
+function trackSession(sessionData, scenario = 'custom') {
+  const startTime = Date.now();
+  
+  return {
+    ...sessionData,
+    onComplete: (result) => {
+      const endTime = Date.now();
+      const duration = endTime - startTime;
+      
+      activityTracker.recordSession({
+        scenario,
+        duration,
+        recordCount: sessionData.records?.length || 0,
+        complexity: result.result?.complexity?.level || 'unknown',
+        confidence: result.result?.confidenceReport?.overallScore || 0,
+        status: result.error ? 'error' : 'success',
+        error: result.error || null
+      });
+    }
+  };
+}
+
 async function runScenario(id) {
   const scenario = getScenario(id);
   if (!scenario) {
@@ -85,18 +146,44 @@ async function runScenario(id) {
     process.exit(1);
   }
 
-  const session = runGlimpse({
-    data: scenario.data,
-    format: 'json',
-    config: scenario.config,
-    meta: scenario.meta,
-    opts: {
-      interview: flags.interview
-    }
+  const startTime = Date.now();
+  let session;
+  let error = null;
+
+  try {
+    session = runGlimpse({
+      data: scenario.data,
+      format: 'json',
+      config: scenario.config,
+      meta: scenario.meta,
+      opts: {
+        interview: flags.interview
+      }
+    });
+  } catch (e) {
+    error = e;
+    session = { error };
+  }
+
+  // Track activity
+  const duration = Date.now() - startTime;
+  activityTracker.recordSession({
+    scenario: id,
+    duration,
+    recordCount: scenario.data?.length || 0,
+    complexity: session.result?.complexity?.level || 'unknown',
+    confidence: session.result?.confidenceReport?.overallScore || 0,
+    status: error ? 'error' : 'success',
+    error: error?.message || null
   });
 
   if (flags.json) {
     console.log(JSON.stringify(session, null, 2));
+    return;
+  }
+
+  if (error) {
+    console.error(`  Error: ${error.message}`);
     return;
   }
 
@@ -205,6 +292,12 @@ async function main() {
     showHelp();
   } else if (command === 'list') {
     showList();
+  } else if (command === 'monitor') {
+    showMonitor();
+  } else if (command === 'traffic') {
+    showTraffic();
+  } else if (command === 'analytics') {
+    showAnalytics();
   } else if (command === 'run') {
     await runFile(target);
   } else {

@@ -66,33 +66,53 @@ export class LocalGroundingProvider extends GroundingProvider {
       : [];
     const wellConnected = entityRelations.length >= 2;
 
+    // Detect contradictions: evidence with conflicting relation types
+    const contradictions = (claim.evidenceIds || [])
+        .map((id) => context.evidences.find((e) => e.id === id))
+        .filter(Boolean)
+        .filter((e) => e.payload?.relationType &&
+            supportingEvidence.some((se) => se.payload?.relationType &&
+                se.payload.relationType !== e.payload.relationType));
+
     // Compute grounding confidence
     let confidence = 0.3; // base
     let basis = "local-baseline";
 
-    if (multiSourced) {
-      confidence += 0.25;
-      basis = "multi-source-agreement";
-    }
-    if (wellConnected) {
-      confidence += 0.15;
-      basis = multiSourced ? "multi-source+connected" : "topology-connected";
-    }
-    if (fillsGap) {
-      confidence += 0.1;
-      basis += "+gap-filling";
+    // When NO supporting evidence AND NO entity relations → cap at 0.25
+    if (supportingEvidence.length === 0 && entityRelations.length === 0) {
+        confidence = 0.25;
+        basis = "no-evidence";
+    } else {
+        if (multiSourced) {
+            confidence += 0.25;
+            basis = "multi-source-agreement";
+        }
+        if (wellConnected) {
+            confidence += 0.15;
+            basis = multiSourced ? "multi-source+connected" : "topology-connected";
+        }
+        if (fillsGap) {
+            confidence += 0.1;
+            basis += "+gap-filling";
+        }
+
+        // Contradiction penalty
+        if (contradictions.length > 0) {
+            confidence -= 0.15 * contradictions.length;
+            basis += "+contradictions";
+        }
     }
 
     const avgEvConfidence = supportingEvidence.length > 0
-      ? supportingEvidence.reduce((s, e) => s + e.confidence, 0) / supportingEvidence.length
-      : 0;
-    confidence = Math.min(0.95, confidence + avgEvConfidence * 0.2);
+        ? supportingEvidence.reduce((s, e) => s + e.confidence, 0) / supportingEvidence.length
+        : 0;
+    confidence = Math.max(0, Math.min(0.95, confidence + avgEvConfidence * 0.2));
 
     return {
       confirmed: confidence >= 0.5,
       confidence: Math.round(confidence * 1000) / 1000,
       basis,
-      details: `${uniqueRules.size} sources, ${entityRelations.length} relations, gap-fill: ${fillsGap}`,
+      details: `${uniqueRules.size} sources, ${entityRelations.length} relations, gap-fill: ${fillsGap}, contradictions: ${contradictions.length}`,
     };
   }
 }

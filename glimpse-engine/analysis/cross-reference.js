@@ -42,6 +42,7 @@ export function crossReferenceEntities(entities, relations, evidences) {
         createEvidence({
           sourceRuleId: "cross-ref-multi-agreement",
           confidence: Math.min(0.9, avgConfidence + 0.1),
+          confidence_source: "system-generated",
           scope: "entity",
           targetId: entityId,
           affects: ["context_lens"],
@@ -87,6 +88,7 @@ export function crossReferenceRelations(entities, relations, evidences) {
           createEvidence({
             sourceRuleId: "cross-ref-space-validation",
             confidence: 0.35,
+            confidence_source: "system-generated",
             scope: "relation",
             targetId: rel.id,
             affects: ["relation", "diagnostics"],
@@ -112,6 +114,7 @@ export function crossReferenceRelations(entities, relations, evidences) {
           createEvidence({
             sourceRuleId: "cross-ref-temporal-inconsistency",
             confidence: 0.4,
+            confidence_source: "system-generated",
             scope: "relation",
             targetId: rel.id,
             affects: ["relation", "diagnostics"],
@@ -135,6 +138,7 @@ export function crossReferenceRelations(entities, relations, evidences) {
           createEvidence({
             sourceRuleId: "cross-ref-temporal-confirmation",
             confidence: 0.78,
+            confidence_source: "system-generated",
             scope: "relation",
             targetId: rel.id,
             affects: ["relation"],

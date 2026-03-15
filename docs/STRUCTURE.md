@@ -8,7 +8,7 @@ This document is the **single map** for where things live and who owns what. Use
 |--------|----------|------|
 | **Entry points** | `README.md`, `CLAUDE.md`, `AGENTS.md` | Start here for orientation and AI/agent rules. |
 | **Conventions** | `CONTRIBUTING.md`, `CHANGELOG.md`, `LICENSE`, `SECURITY.md` | Contributing, history, license, security policy. |
-| **Scratch / notes** | `prompt.md` | Session scratch; not config. |
+| **Scratch / notes** | `archive/session-artifacts/` | Session scratch files; not config. |
 | **Config (root)** | `.editorconfig`, `.env.example`, `.gitattributes`, `.gitignore`, `.gitmodules` | Editor, env template, git. Ignored: `.cursor/hooks*`, `debug-*.log`, `.session-state.json` — see [GIT_REPO.md](GIT_REPO.md#ignored-paths). |
 | **Tool config** | `mcp_config.json`, `claude_code_config.json` | MCP and editor tooling; do not commit secrets. |
 | **Docs** | `docs/` | All shared documentation; index in [docs/README.md](README.md). |
@@ -32,8 +32,10 @@ Grouped by **scope** so you know where to look and what to touch.
 | `pulse-server/` | MCP server | Briefings, focus, journal, prioritization |
 | `seeds-server/` | MCP server | Ecosystem snapshots and scans |
 | `glimpse-artifact/` | App/library | React UI and components |
-| `glimpse-engine/` | Visualization | Data viz engine, runs in browser |
+| `glimpse-engine/` | Visualization | Data viz engine, runs in browser; includes HTML demos and tests |
+| `glimpse-server/` | MCP server | Glimpse MCP tools (analyze, compress, similarity, confidence) |
 | `shared-types/` | Shared package | Types and audit client; build before dependent servers |
+| `shared-resilience/` | Shared package | Circuit breaker, rate limit, retry patterns |
 
 Each has its own README, lockfile, and toolchain. Use [CLAUDE.md](../CLAUDE.md) / [AGENTS.md](../AGENTS.md) for build and test commands.
 
@@ -44,6 +46,8 @@ Each has its own README, lockfile, and toolchain. Use [CLAUDE.md](../CLAUDE.md) 
 | `GRID-main/` | Its own git root | Python, FastAPI, uv; see `GRID-main/docs/project/`. |
 | `mcp-tool-experiment/` | Its own git root | TypeScript, pnpm; includes MCP SDK and safety pipeline. |
 | `projects/web/ai-web-demo/` | Its own git root | AI web demo frontend/backend; local submodule. |
+| `projects/apiguard/` | Its own git root | API security guard project. |
+| `projects/symphony-execution-performance/` | Standalone | Performance testing/analysis project. |
 
 Root repo only records their commit refs. See [GIT_REPO.md](GIT_REPO.md) and [SUBMODULES.md](SUBMODULES.md).
 

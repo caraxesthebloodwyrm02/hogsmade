@@ -17,6 +17,7 @@ export function createEvidence(base) {
     id: base.id || `ev-${Math.random().toString(36).slice(2, 10)}`,
     sourceRuleId: base.sourceRuleId || "system",
     confidence: base.confidence ?? 0.6,
+    confidence_source: base.confidence_source || (base.confidence != null ? "measured" : "default"),
     scope: base.scope || "dataset",
     targetId: base.targetId || null,
     reason: base.reason || "",
@@ -68,6 +69,7 @@ export function buildBaseRelations(entities) {
             source: target.id,
             target: entity.id,
           },
+          basis: "explicit-influence",
         });
         evidences.push(evidence);
         relations.push({

@@ -48,6 +48,7 @@ import {
   createConfidenceFrame,
   detectGaps,
   summarizeConfidence,
+  recordOutcome,
 } from "./confidence.js";
 
 export function computeClusters(context, dimension) {
@@ -120,6 +121,7 @@ export function runContextPipeline(rawData, fileType, config, options = {}) {
         affects: ["relation", "context_lens"],
         reason: "This relation bridges two different context lenses.",
         payload: { sourceLens, targetLens },
+        basis: "system-generated",
       });
       relation.evidenceIds.push(evidence.id);
       allEvidences.push(evidence);
@@ -156,6 +158,13 @@ export function runContextPipeline(rawData, fileType, config, options = {}) {
       evidences: allEvidences,
       inferenceGaps: confidenceFrame.gaps,
     });
+
+    // Wire grounding results back as outcomes for calibration
+    for (const insight of groundedInsights) {
+      if (insight.grounding) {
+        recordOutcome(confidenceFrame, "grounding", insight.grounding.confirmed);
+      }
+    }
   }
 
   return {

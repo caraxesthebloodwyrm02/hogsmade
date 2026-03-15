@@ -112,11 +112,13 @@ function crossReferencePass(state, entities, relations) {
       newEvidences.push(createEvidence({
         sourceRuleId: "system-cross-reference-agreement",
         confidence: 0.75,
+        confidence_source: "system-generated",
         scope: "entity",
         targetId: entityId,
         affects: ["context_lens"],
         reason: `Multiple rules converge on ${primaryLens} for ${entity?.name || entityId}.`,
         payload: { lens: primaryLens, entityId, agreement: "strong" },
+        basis: "cross-reference",
       }));
     }
 
@@ -126,11 +128,13 @@ function crossReferencePass(state, entities, relations) {
       newEvidences.push(createEvidence({
         sourceRuleId: "system-cross-reference-ambiguity",
         confidence: 0.45,
+        confidence_source: "system-generated",
         scope: "entity",
         targetId: entityId,
         affects: ["context_lens", "diagnostics"],
         reason: `${entity?.name || entityId} has competing lens assignments: ${primaryLens} vs ${secondaryLens}.`,
         payload: { lens: primaryLens, entityId, competing: secondaryLens, agreement: "ambiguous" },
+        basis: "cross-reference",
       }));
     }
   }
@@ -150,11 +154,13 @@ function crossReferencePass(state, entities, relations) {
       newEvidences.push(createEvidence({
         sourceRuleId: "system-temporal-consistency",
         confidence: 0.72,
+        confidence_source: "system-generated",
         scope: "relation",
         targetId: rel.id,
         affects: ["relation"],
         reason: `${source.name} (${sourceTime}) precedes ${target.name} (${targetTime}), confirming influence direction.`,
         payload: { source: rel.source, target: rel.target },
+        basis: "temporal-validation",
       }));
     }
   }

@@ -23,13 +23,20 @@ This root repo is the dedicated local repository for the workspace. It tracks sh
 | `maintain-server/`     | MCP server        | TypeScript, MCP SDK    | Diagnostics, cleanup, maintenance flows       |
 | `pulse-server/`        | MCP server        | TypeScript, MCP SDK    | Briefings, focus, journal, prioritization     |
 | `seeds-server/`        | MCP server        | TypeScript, MCP SDK    | Ecosystem snapshots and scans                 |
+| `glimpse-server/`      | MCP server        | TypeScript, MCP SDK    | Glimpse MCP tools (analyze, compress, etc.)   |
 | `shared-types/`        | Shared package    | TypeScript             | Shared types and audit client                 |
-| `scripts/`             | Workspace scripts | PowerShell, TypeScript | Root-level utility scripts                    |
-| `docs/`                | Documentation     | Markdown               | Plans, contracts, repo conventions            |
-| `GRID-main/`           | Nested repo       | Python, FastAPI, uv    | Independent repo; manage in its own git root  |
-| `mcp-tool-experiment/` | Nested repo       | TypeScript, pnpm       | Independent repo; manage in its own git root  |
-| `projects/web/ai-web-demo/` | Nested repo  | TypeScript, Vite       | AI web demo; local submodule                   |
+| `shared-resilience/`   | Shared package    | TypeScript             | Circuit breaker, rate limit, retry patterns   |
 | `glimpse-artifact/`    | App/library       | React, Vite, Tailwind  | UI/component project                          |
 | `glimpse-engine/`      | Visualization     | JavaScript (ES modules)| Data viz engine, runs in browser               |
+| `scripts/`             | Workspace scripts | PowerShell, TypeScript| Root-level utility scripts                    |
+| `docs/`                | Documentation     | Markdown               | Plans, contracts, repo conventions            |
+| `archive/`             | Archive           | Mixed                  | Session artifacts, scratch files              |
+| `data/`                | Data              | Mixed                  | Memory, skills intelligence DB                |
+| `GATE/`                | Operational       | JSON                   | Envelopes, contracts, nonce registry          |
+| `GRID-main/`           | Nested repo       | Python, FastAPI, uv    | Independent repo; manage in its own git root  |
+| `mcp-tool-experiment/` | Nested repo       | TypeScript, pnpm       | Independent repo; manage in its own git root  |
+| `projects/web/ai-web-demo/` | Nested repo | TypeScript, Vite       | AI web demo; local submodule                  |
+| `projects/apiguard/`   | Nested repo       | Python                 | API security guard project                    |
+| `projects/symphony-execution-performance/` | Standalone | Node.js        | Performance testing/analysis                  |
 
 Use each project's README plus [CLAUDE.md](CLAUDE.md) and [AGENTS.md](AGENTS.md) for build, test, and run instructions.

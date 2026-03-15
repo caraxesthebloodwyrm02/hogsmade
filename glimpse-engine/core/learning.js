@@ -15,6 +15,7 @@
  */
 
 import { readFileSync, writeFileSync, appendFileSync, existsSync } from "node:fs";
+import { calibrationScore } from "./confidence.js";
 
 // ============================================================================
 // Constants
@@ -33,6 +34,7 @@ function emptyHistory() {
     confidenceTrend: [], // [{ ts, overall, avg, gaps }] — last 50 entries
     lensHistory: {},     // lensId -> { appearances, totalScore }
     improvements: [],    // [{ ts, field, from, to, reason }] — audit trail
+    outcomes: [],       // [{ ts, ruleId, predicted, actual }] — validated outcome data
     thresholds: {},      // auto-tuned overrides: { secondary_lens_threshold, evidence_confidence_floor, ... }
   };
 }
@@ -280,6 +282,11 @@ export function suggestImprovements(history, refinement, currentDefaults = {}) {
   // Only improve after enough data (5+ runs)
   if (history.runs < 5) return { overrides, applied };
 
+  // Gate tightening on calibration quality — don't tighten if poorly calibrated
+  // Build a minimal frame from history outcomes for scoring
+  const calFrame = { outcomes: history.outcomes || [] };
+  const calScore = calibrationScore(calFrame);
+
   const trend = history.confidenceTrend;
 
   // 4a. Confidence floor — if consistently high, we can tighten
@@ -287,7 +294,7 @@ export function suggestImprovements(history, refinement, currentDefaults = {}) {
     const recentAvg = avg(trend.slice(-5).map(t => t.avg));
     const currentFloor = overrides.evidence_confidence_floor ?? currentDefaults.evidence_confidence_floor ?? 0.35;
 
-    if (recentAvg > 0.85 && currentFloor < 0.45) {
+    if (recentAvg > 0.85 && currentFloor < 0.45 && (calScore === null || calScore <= 0.25)) {
       const newFloor = +(currentFloor + 0.05).toFixed(2);
       overrides.evidence_confidence_floor = newFloor;
       applied.push({ field: "evidence_confidence_floor", from: currentFloor, to: newFloor, reason: `Avg confidence ${(recentAvg * 100).toFixed(0)}% over last 5 runs — tightening floor` });
