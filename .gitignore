@@ -116,3 +116,14 @@ glimpse-server/dist/
 archive/
 data/
 patience/
+
+# Session progress and audit reports (local-only, not source)
+.claude-progress.md
+audit-reports/
+SESSION_MEMO.md
+
+# Audit/session JSON artifacts (generated, not source)
+*-action-items.json
+*-audit*.json
+*-inventory.json
+claude-progress.txt

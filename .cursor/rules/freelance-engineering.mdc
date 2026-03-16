@@ -1,0 +1,63 @@
+---
+description: Rate protection, estimation, delivery, architecture, session hygiene for freelance work
+globs: 
+alwaysApply: false
+---
+
+# Rules: Freelance Engineering Discipline
+
+## Rate Protection
+- **NEVER** accept work below $15/hr unless explicitly marked as portfolio-building.
+- **ALWAYS** track effective rate (gross earnings / actual hours) — if it drops below $15/hr mid-session, flag it.
+- **ALWAYS** include scope boundaries in proposals — unbounded scope kills effective rate.
+
+## Estimation Discipline
+- **ALWAYS** estimate in phases, not total hours — phase-level estimates are 2-3x more accurate.
+- **NEVER** give a single-number estimate — use range (optimistic / expected / pessimistic).
+- **ALWAYS** include a reconnaissance phase (15-30 min) before committing to a fixed-price estimate.
+- **ALWAYS** log estimate vs actual for every session — this builds calibration data.
+
+## Delivery Standards
+- **ALWAYS** deliver working code — no "almost done" commits.
+- **NEVER** deliver without running the full test suite.
+- **ALWAYS** include a README or usage section with deliverables.
+- **ALWAYS** use conventional commits: `feat(scope):`, `fix(scope):`, `refactor(scope):`.
+
+## Client Communication
+- **ALWAYS** confirm scope in writing before starting implementation.
+- **NEVER** assume requirements — ask once, document the answer, reference it.
+- **ALWAYS** send a brief status update at session midpoint for engagements > 2 hours.
+- **ALWAYS** include "what was delivered" + "what's next" in every handoff message.
+
+## Architecture Boundaries
+- **NEVER** import from client's production infrastructure in proof-of-concept deliverables.
+- **ALWAYS** use dependency injection and interface patterns so deliverables are portable.
+- **ALWAYS** create standalone modules that can be dropped into any project.
+
+## Testing Standards
+- **ALWAYS** write ≥1 test per public function/method.
+- **ALWAYS** test both happy path and error/edge cases.
+- **NEVER** commit without running tests and confirming zero new regressions.
+- **ALWAYS** test graceful degradation paths (missing deps, network failures, bad input).
+
+## Session Hygiene
+- **ALWAYS** start sessions with the session-tracker protocol (timestamp, rate, scope).
+- **ALWAYS** end sessions with metrics capture (duration, deliverables, velocity).
+- **NEVER** let a session exceed 4 hours without a break checkpoint.
+- **ALWAYS** log blockers honestly — debugging spirals count as real time.
+
+## Portfolio Building
+- **ALWAYS** save reusable patterns as skills/templates for future engagements.
+- **ALWAYS** anonymize client code before using in portfolio case studies.
+- **NEVER** publish client code without explicit written permission.
+- **ALWAYS** track which deliverables demonstrate which capabilities for proposal evidence.
+
+## PowerShell Compatibility
+- **NEVER** use `&&` as command separator in PowerShell — use `;` instead.
+- **ALWAYS** use `Select-Object -Last N` to tail command output.
+- **ALWAYS** quote paths with spaces in both bash and PowerShell.
+
+## Trust Layer Compliance
+- **ALWAYS** include a `LIMITATIONS` header in safety-critical files.
+- **ALWAYS** distinguish between verified facts and estimates in reports.
+- **NEVER** fabricate metrics — if data is missing, say so explicitly.
