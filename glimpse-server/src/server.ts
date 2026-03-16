@@ -7,6 +7,9 @@
  * - glimpse_compress: Score insight density for a text + evidence set
  * - glimpse_confidence: Summarize confidence from a pipeline result
  * - glimpse_similarity: Compute dimension similarity between two values
+ * - glimpse_session: Run full pipeline session on GRID event data
+ * - glimpse_track: Track incremental session state across calls
+ * - glimpse_paths: Evaluate PATH system on session data
  *
  * Runs via stdio transport. Register in mcp_config.json.
  */
@@ -260,6 +263,245 @@ server.tool(
 
       return {
         content: [{ type: 'text' as const, text: JSON.stringify(summary, null, 2) }],
+      };
+    } catch (err: any) {
+      return {
+        content: [{ type: 'text' as const, text: `Error: ${err.message}` }],
+        isError: true,
+      };
+    }
+  }
+);
+
+// ── Session State ──
+
+const sessionState = new Map<string, { records: any[]; history: any; config: any }>();
+
+// ── Tool: glimpse_session ──
+
+server.tool(
+  'glimpse_session',
+  'Run a full Glimpse pipeline session on GRID event data. Returns complete analysis including context lenses, confidence report, invariant patterns, grounded insights, and complexity assessment.',
+  {
+    records: z.array(z.record(z.string(), z.any())).describe('Array of event records (from GRID /api/v1/glimpse/feed or inline)'),
+    config: z.record(z.string(), z.any()).optional().describe('Master config override'),
+    options: z.object({
+      multiPass: z.boolean().default(false).describe('Enable multi-pass inference'),
+      grounding: z.boolean().default(false).describe('Enable local-first grounding'),
+      presetId: z.string().default('analyst').describe('Preset personality'),
+    }).optional().describe('Pipeline options'),
+  },
+  async ({ records, config: userConfig, options }) => {
+    try {
+      const eng = await loadEngine();
+
+      const config = {
+        ...(userConfig || {}),
+        inference: {
+          ...(userConfig?.inference || {}),
+          multi_pass: options?.multiPass || false,
+        },
+        taxonomy: userConfig?.taxonomy || { domains: [] },
+        defaults: userConfig?.defaults || { active_preset: options?.presetId || 'analyst' },
+        function_registry: userConfig?.function_registry || {
+          field_exists: { scope: ['dataset', 'entity'], args: { path: 'field_selector' } },
+          taxonomy_score: { scope: ['entity'], args: { path: 'field_selector', domain: 'lens_id', min_score: 'numeric_threshold' } },
+          data_shape: { scope: ['dataset'], args: { min_records: 'numeric_threshold' } },
+          dimension_count: { scope: ['dataset'], args: { dimension: 'dimension_name', min_count: 'numeric_threshold' } },
+          record_range: { scope: ['dataset'], args: { min: 'numeric_threshold', max: 'numeric_threshold' } },
+        },
+        rules: userConfig?.rules || [],
+      };
+
+      const result = eng.runContextPipeline(records, 'json', config, {
+        grounding: options?.grounding,
+        presetId: options?.presetId,
+      });
+
+      if (!result) {
+        return { content: [{ type: 'text' as const, text: 'Pipeline returned null — empty or invalid data.' }] };
+      }
+
+      const output = {
+        contextLenses: result.contextLenses,
+        confidenceReport: result.confidenceReport,
+        invariantPatterns: result.invariantPatterns,
+        groundedInsights: result.groundedInsights,
+        complexity: result.complexity,
+        modeSettings: result.modeSettings,
+        viewPreferences: result.viewPreferences,
+        ruleTraces: result.ruleTraces,
+      };
+
+      return {
+        content: [{ type: 'text' as const, text: JSON.stringify(output, null, 2) }],
+      };
+    } catch (err: any) {
+      return {
+        content: [{ type: 'text' as const, text: `Error: ${err.message}` }],
+        isError: true,
+      };
+    }
+  }
+);
+
+// ── Tool: glimpse_track ──
+
+server.tool(
+  'glimpse_track',
+  'Track incremental session state across multiple calls. Maintains running analysis using Glimpse learning system. Returns session recap and incremental delta.',
+  {
+    events: z.array(z.record(z.string(), z.any())).describe('New event records to add to tracking'),
+    sessionId: z.string().describe('Session identifier for state continuity'),
+  },
+  async ({ events, sessionId }) => {
+    try {
+      const eng = await loadEngine();
+
+      // Initialize or retrieve session state
+      if (!sessionState.has(sessionId)) {
+        sessionState.set(sessionId, {
+          records: [],
+          history: null,
+          config: {
+            inference: { multi_pass: false },
+            taxonomy: { domains: [] },
+            defaults: { active_preset: 'analyst' },
+            function_registry: {
+              field_exists: { scope: ['dataset', 'entity'], args: { path: 'field_selector' } },
+              taxonomy_score: { scope: ['entity'], args: { path: 'field_selector', domain: 'lens_id', min_score: 'numeric_threshold' } },
+              data_shape: { scope: ['dataset'], args: { min_records: 'numeric_threshold' } },
+              dimension_count: { scope: ['dataset'], args: { dimension: 'dimension_name', min_count: 'numeric_threshold' } },
+              record_range: { scope: ['dataset'], args: { min: 'numeric_threshold', max: 'numeric_threshold' } },
+            },
+            rules: [],
+          },
+        });
+      }
+
+      const session = sessionState.get(sessionId)!;
+      const previousCount = session.records.length;
+
+      // Accumulate new events
+      session.records.push(...events);
+
+      // Run pipeline on full accumulated buffer
+      const result = eng.runContextPipeline(session.records, 'json', session.config, {});
+
+      if (!result) {
+        return { content: [{ type: 'text' as const, text: 'Pipeline returned null — insufficient accumulated data.' }] };
+      }
+
+      // Learn from run (file I/O may fail in some environments)
+      let refinement: any = null;
+      try {
+        refinement = eng.learnFromRun(
+          session.records,
+          result,
+          session.config,
+          { source: sessionId, elapsed: 0 }
+        );
+      } catch (_learnErr: any) {
+        refinement = { error: 'Learning unavailable in this environment' };
+      }
+
+      // Build session recap
+      let recap: string[] = [];
+      try {
+        recap = eng.buildSessionRecap(session.records, result, refinement, { source: sessionId });
+      } catch (_recapErr: any) {
+        recap = [`Session ${sessionId}: ${session.records.length} records accumulated`];
+      }
+
+      session.history = result;
+
+      const output = {
+        recap,
+        delta: {
+          newRecords: events.length,
+          totalRecords: session.records.length,
+        },
+        learning: {
+          trace: refinement?.trace || null,
+          refinement: refinement?.refinement || refinement,
+          improvements: refinement?.improvements || null,
+        },
+      };
+
+      return {
+        content: [{ type: 'text' as const, text: JSON.stringify(output, null, 2) }],
+      };
+    } catch (err: any) {
+      return {
+        content: [{ type: 'text' as const, text: `Error: ${err.message}` }],
+        isError: true,
+      };
+    }
+  }
+);
+
+// ── Tool: glimpse_paths ──
+
+server.tool(
+  'glimpse_paths',
+  'Evaluate PATH system (condition-driven weighted accumulation) on session data. Returns scored paths with signal inventory.',
+  {
+    data: z.array(z.record(z.string(), z.any())).describe('Data records to evaluate paths against'),
+    pathIds: z.array(z.string()).optional().describe('Specific path IDs to evaluate (default: all builtin)'),
+  },
+  async ({ data, pathIds }) => {
+    try {
+      const eng = await loadEngine();
+
+      const config = {
+        inference: { multi_pass: false },
+        taxonomy: { domains: [] },
+        defaults: { active_preset: 'analyst' },
+        function_registry: {
+          field_exists: { scope: ['dataset', 'entity'], args: { path: 'field_selector' } },
+          taxonomy_score: { scope: ['entity'], args: { path: 'field_selector', domain: 'lens_id', min_score: 'numeric_threshold' } },
+          data_shape: { scope: ['dataset'], args: { min_records: 'numeric_threshold' } },
+          dimension_count: { scope: ['dataset'], args: { dimension: 'dimension_name', min_count: 'numeric_threshold' } },
+          record_range: { scope: ['dataset'], args: { min: 'numeric_threshold', max: 'numeric_threshold' } },
+        },
+        rules: [],
+      };
+
+      // Run pipeline to get result
+      const result = eng.runContextPipeline(data, 'json', config, {});
+
+      if (!result) {
+        return { content: [{ type: 'text' as const, text: 'Pipeline returned null — empty or invalid data.' }] };
+      }
+
+      // Build trace and path context
+      const trace = eng.buildTrace(data, result, {});
+      const ctx = eng.buildPathContext(data, result, trace, {}, {}, {});
+
+      // Get paths and optionally filter
+      let paths = eng.getBuiltinPaths();
+      if (pathIds && pathIds.length > 0) {
+        paths = paths.filter((p: any) => pathIds.includes(p.id));
+      }
+
+      // Evaluate all paths
+      const evaluated = eng.evaluateAllPaths(paths, ctx);
+
+      // Get signal inventory
+      const signalInventory = eng.getSignalInventory();
+
+      // Find winner (highest score)
+      const sorted = [...evaluated].sort((a: any, b: any) => (b.score || 0) - (a.score || 0));
+      const winner = sorted.length > 0 ? sorted[0] : null;
+
+      const output = {
+        winner: winner ? { id: winner.id, label: winner.label, score: winner.score } : null,
+        all: sorted.map((p: any) => ({ id: p.id, label: p.label, score: p.score, matched: p.matched })),
+        signalInventory,
+      };
+
+      return {
+        content: [{ type: 'text' as const, text: JSON.stringify(output, null, 2) }],
       };
     } catch (err: any) {
       return {
