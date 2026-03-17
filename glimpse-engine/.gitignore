@@ -51,3 +51,6 @@ Thumbs.db
 data/
 *.local.json
 .glimpse-activity.json
+
+# Duplicate docs (canonical copies live in docs/)
+GLIMPSE_BENCH.md

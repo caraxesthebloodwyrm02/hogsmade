@@ -158,3 +158,17 @@ python Tools/scripts/compas.py --trend
 # View cleanup status
 python Tools/scripts/cleanup_executor.py --status
 ```
+
+## Glimpse Bench (Model Benchmarking)
+
+Structured 7-step prompt system for evaluating AI models. Use for warmups, model evaluation, onboarding, and budget planning.
+
+```bash
+python scripts/glimpse-bench.py list      # 7 benchmark tasks (B1-B7)
+python scripts/glimpse-bench.py tools     # All tools + model aliases + credit costs
+python scripts/glimpse-bench.py run B1-read-only --tool claude-code --model sonnet  # safe mode
+python scripts/glimpse-bench.py leaderboard  # ranked results
+python scripts/glimpse-bench.py warnings     # NOT RECOMMENDED combos
+```
+
+Full docs: `docs/GLIMPSE_BENCH.md` · Results: `memory/context/model-benchmark-log.md`

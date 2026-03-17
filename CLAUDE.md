@@ -11,6 +11,7 @@ This file provides guidance to Claude when working with code in this repository.
 - [Per-Project Guidance](#per-project-guidance)
 - [Cross-Project Notes](#cross-project-notes)
 - [Operational Standards](#operational-standards)
+- [Glimpse Bench](#glimpse-bench)
 - [Freelance Engineering Context](#freelance-engineering-context)
 
 ---
@@ -23,7 +24,7 @@ This file provides guidance to Claude when working with code in this repository.
 
 | Shorthand                               | Meaning                                                      |
 | --------------------------------------- | ------------------------------------------------------------ |
-| GRID                                    | GRID-main — Python AI framework (190k+ LOC, v2.6.1)          |
+| GRID                                    | GRID-main — Python AI framework (190k+ LOC, v2.7.0)          |
 | APIGuard                                | apiguard — resilience lib on PyPI (100% cov, 106 tests)      |
 | Glimpse                                 | glimpse-artifact + glimpse-engine (React + cognitive engine) |
 | Symphony                                | symphony-execution-performance (WebSocket dashboard)         |
@@ -43,9 +44,9 @@ This file provides guidance to Claude when working with code in this repository.
 
 | Project                        | Status            | Portfolio Tier |
 | ------------------------------ | ----------------- | -------------- |
-| GRID-main                      | Production v2.6.1 | T1 Flagship    |
+| GRID-main                      | Production v2.7.0 | T1 Flagship    |
 | APIGuard                       | Published PyPI    | T1 Flagship    |
-| MCP ecosystem (9 servers)      | Working           | T2 Strong      |
+| MCP ecosystem (10 servers)      | Working           | T2 Strong      |
 | GRID×APIGuard integration      | Complete          | T2 Strong      |
 | glimpse-artifact               | Complete          | T3 Supporting  |
 | symphony-execution-performance | Active            | T3 Supporting  |
@@ -68,12 +69,14 @@ This is a multi-project workspace. Each subdirectory is an independent project w
 
 | Project                               | Type                                                                                                   | Language / Stack                             | Status                         |
 | ------------------------------------- | ------------------------------------------------------------------------------------------------------ | -------------------------------------------- | ------------------------------ |
-| `GRID-main/`                          | Full-stack AI framework                                                                                | Python 3.13+, FastAPI, ChromaDB, Ollama      | Production (v2.6.1)            |
+| `GRID-main/`                          | Full-stack AI framework                                                                                | Python 3.13+, FastAPI, ChromaDB, Ollama      | Production (v2.7.0)            |
 | `mcp-tool-experiment/typescript-sdk/` | MCP TypeScript SDK v2                                                                                  | TypeScript 5.2, pnpm, Vitest, Zod v4         | Pre-alpha                      |
 | `glimpse-artifact/`                   | React component library                                                                                | React 18, TypeScript, Vite, TailwindCSS      | Complete                       |
 | `afloat-server/`                      | Workflow orchestration MCP server                                                                      | TypeScript, MCP SDK                          | Working                        |
 | `shared-types/`                       | Shared types and audit client                                                                          | TypeScript                                   | Build before dependent servers |
-| `symphony-execution-performance/`     | Real-time performance dashboard                                                                        | TypeScript 5.2, Express, WebSocket, chokidar | Active                         |
+| `shared-resilience/`                  | Resilience patterns (circuit breakers, retries, rate limiting)                                         | TypeScript, Vitest                           | Build dep for grid-server      |
+| `glimpse-server/`                     | MCP server exposing Glimpse cognitive engine                                                           | TypeScript, MCP SDK                          | Working                        |
+| `symphony-execution-performance/`     | Real-time performance dashboard (in `projects/`)                                                       | TypeScript 5.2, Express, WebSocket, chokidar | Active                         |
 | Other MCP servers                     | `echoes-server/`, `grid-server/`, `lots-server/`, `maintain-server/`, `pulse-server/`, `seeds-server/` | TypeScript, MCP SDK                          | See root [README](README.md)   |
 
 ## Per-Project Guidance
@@ -182,6 +185,25 @@ npm run start
 
 ---
 
+## Glimpse Bench
+
+Model benchmarking routine for evaluating AI coding models across tools. Structured 7-step prompt system ("glimpse" pattern) that forces models to read → audit → assess risks → define acceptance → execute. Results build a data-driven suitability map.
+
+**Full docs**: [`docs/GLIMPSE_BENCH.md`](docs/GLIMPSE_BENCH.md) · **Script**: `python scripts/glimpse-bench.py`
+
+```bash
+python scripts/glimpse-bench.py list                                                # 7 tasks (easy→hard)
+python scripts/glimpse-bench.py run B1-read-only --tool claude-code --model sonnet  # safe mode (dry-run)
+python scripts/glimpse-bench.py run B5-architecture --tool windsurf --model swe-1.5 --dangerous  # worktree sandbox
+python scripts/glimpse-bench.py score B1-read-only --tool claude-code --model sonnet  # interactive scoring
+python scripts/glimpse-bench.py leaderboard                                           # ranked results
+```
+
+**When to use**: session warmup (B1), new model evaluation (B1+B4+B5), onboarding, budget planning, tool selection.
+**Results**: `memory/context/model-benchmark-log.md` · **Catalog**: `memory/context/model-catalog.md`
+
+---
+
 ## Freelance Engineering Context
 
 This workspace doubles as the operator's freelance portfolio and delivery infrastructure. The skills, rules, and workflows below are the operating system for contract work.
@@ -216,7 +238,7 @@ This workspace doubles as the operator's freelance portfolio and delivery infras
 | Tier            | Projects                                                     | Evidence                          |
 | --------------- | ------------------------------------------------------------ | --------------------------------- |
 | Flagship (T1)   | GRID (190k+ LOC, 438+ tests), APIGuard (100% coverage, PyPI) | Architecture, testing, publishing |
-| Strong (T2)     | MCP ecosystem (9 servers), GRID×APIGuard integration         | Protocol design, resilience       |
+| Strong (T2)     | MCP ecosystem (10 servers), GRID×APIGuard integration         | Protocol design, resilience       |
 | Supporting (T3) | Glimpse, Symphony, glimpse-artifact                          | React, real-time, breadth         |
 
 ### Custom Skills System (`.windsurf/skills/`)
@@ -235,6 +257,7 @@ This workspace doubles as the operator's freelance portfolio and delivery infras
 | `contract-discipline`    | Intake gates, pricing, scope management, time tracking, income tracking |
 | `testing-standards`      | Coverage requirements, test structure, isolation, regression prevention |
 | `resilience-engineering` | Import safety, architecture boundaries, HTTP standards (from APIGuard)  |
+| `response-discipline`    | Output budget, request-type routing, anti-patterns, credit conservation |
 | `mcp`                    | MCP implementation standards (transport, naming, security, testing)     |
 
 ### Workflows (`.windsurf/workflows/`)
@@ -267,6 +290,44 @@ This workspace doubles as the operator's freelance portfolio and delivery infras
 - Use uv run pytest not pytest directly; use npx vitest not global installs
 - For GRID-main: always set PYTHONPATH=src, MOTHERSHIP_ENVIRONMENT=test, MOTHERSHIP_DATABASE_URL=sqlite:///:memory:, MOTHERSHIP_USE_DATABRICKS=false before running tests
 
+### Response Discipline (MANDATORY — applies to every response)
+
+**Output budget**: One screen (~3000 chars) by default. Deep-dive only when explicitly requested.
+
+**Before generating any response, classify the request type and follow the matching protocol:**
+
+#### IF recommendation/evaluation ("what should I use", "what do you recommend"):
+1. STOP — do not generate recommendations yet
+2. Audit: read relevant configs, check git history for prior attempts and scars
+3. Cite evidence: file paths, git commits, measurements. Never fabricate metrics — say "unknown" if not measured
+4. Never keyword-map: matching user vocabulary to product marketing is not a recommendation
+
+#### IF debugging/fixing ("fix errors", "why is this broken", "resolve"):
+1. STOP — do not fix the first instance found
+2. Enumerate: scan ALL locations, ALL directories, ALL naming conventions
+3. Present inventory to user (table format)
+4. Batch-fix all instances in one pass — never fix→check→discover→fix→check loops
+
+#### IF structured prompt (numbered steps, sequential methodology):
+1. Recognize as an execution plan — execute it, don't elaborate on it
+2. Match output structure to input structure (7 steps in = 7 sections out)
+3. Do NOT add unrequested steps, "bonus" suggestions, or "also consider" tangents
+
+#### IF research/explanation:
+1. One screen: headline → key facts (bullets) → sources → offer to go deeper
+2. Cite sources with URLs, file paths, or commit hashes. Mark uncertain claims "(estimated)"
+
+**Semantic recognition** — treat these as HARD CONSTRAINTS when detected:
+- Scar language ("already tried", "suffered", "didn't work") → do not recommend the same approach
+- Preference signals ("local-first", "minimal", "simple") → constrain solution space accordingly
+- Budget signals ("500 credits", "rate limit", "burning credits") → maximum compression mode
+
+**Anti-patterns (DENY)**:
+- Decorative filler ("robust", "comprehensive", "powerful") → cut
+- Metric fabrication ("saves 30 min", "40% reduction") → say "unknown"
+- Scope inflation ("also consider", "while we're at it") → only if user asked
+- Context window stuffing (500+ lines when 50 suffice) → compress or paginate
+
 ### Error Handling
 
 - Never retry the same failing command more than 2 times with the same arguments
@@ -280,6 +341,14 @@ This workspace doubles as the operator's freelance portfolio and delivery infras
 - One session = one project, one primary goal — do not attempt full ecosystem audits in a single session
 - On session start, read .claude-progress.md if it exists and resume from where the last session left off
 - After completing each phase of multi-step work, update .claude-progress.md with: (1) what was done, (2) what's next, (3) any blockers encountered
+
+### Credit Conservation
+
+- **Measure twice, cut once**: 1 credit on a read-only audit beats 5 credits on trial-and-error
+- **Batch tool calls**: check 3 files in one response, not 3 separate responses
+- **Checkpoint on complexity**: if a task needs >5 exchanges, write a plan first (1 credit) rather than discovering through conversation (10+ credits)
+- **No speculative generation**: generate only what was asked for, not "in case it's useful"
+- **Prefer reading over asking**: if the answer is in a file, read it — don't ask the user what's in the file
 
 ### Session Scope
 

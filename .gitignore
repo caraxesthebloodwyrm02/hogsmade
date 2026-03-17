@@ -27,6 +27,9 @@ snapshot.json
 .cursor/hooks/
 .cursor/hooks.json
 .windsurf/
+.windsurf-next/
+.antigravity/
+.opencode/
 
 # Debug and session state (IDE / agent logs)
 debug-*.log
