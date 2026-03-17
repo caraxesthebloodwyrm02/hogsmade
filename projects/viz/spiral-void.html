@@ -1,0 +1,857 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>The Void</title>
+    <style>
+      :root {
+        --void: #06060e;
+        --rezz-magenta: #ff00ff;
+        --rezz-violet: #8b00ff;
+        --mau5-green: #00ff88;
+        --mau5-cyan: #00ccff;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace;
+        background: var(--void);
+        color: rgba(255, 255, 255, 0.7);
+        overflow: hidden;
+        height: 100vh;
+        width: 100vw;
+        cursor: crosshair;
+      }
+      #canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+        position: fixed;
+        top: 0;
+        left: 0;
+      }
+      .title-bar {
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        text-align: center;
+        z-index: 10;
+        pointer-events: none;
+      }
+      .title-bar h1 {
+        font-size: 14px;
+        font-weight: 400;
+        letter-spacing: 6px;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.15);
+      }
+      .title-bar .sub {
+        font-size: 10px;
+        letter-spacing: 3px;
+        color: rgba(255, 255, 255, 0.08);
+        margin-top: 4px;
+      }
+      .portal {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        z-index: 10;
+      }
+      .portal a {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 10px;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: var(--mau5-cyan);
+        text-decoration: none;
+        opacity: 0.3;
+        transition: opacity 0.3s;
+      }
+      .portal a:hover {
+        opacity: 0.8;
+      }
+      .portal .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--mau5-cyan);
+        box-shadow: 0 0 12px var(--mau5-cyan);
+        animation: portalPulse 2s ease-in-out infinite;
+      }
+      @keyframes portalPulse {
+        0%,
+        100% {
+          box-shadow: 0 0 8px var(--mau5-cyan);
+        }
+        50% {
+          box-shadow:
+            0 0 20px var(--mau5-cyan),
+            0 0 40px rgba(0, 204, 255, 0.3);
+        }
+      }
+      .hint {
+        position: fixed;
+        bottom: 50px;
+        left: 24px;
+        font-size: 9px;
+        letter-spacing: 1px;
+        color: rgba(255, 255, 255, 0.08);
+        z-index: 10;
+        pointer-events: none;
+      }
+
+      /* --- BRIGHT THEME --- */
+      [data-theme="bright"] body {
+        background: #f8f6f3;
+      }
+      [data-theme="bright"] .title-bar h1 {
+        color: rgba(0, 0, 0, 0.2);
+      }
+      [data-theme="bright"] .title-bar .sub {
+        color: rgba(0, 0, 0, 0.12);
+      }
+      [data-theme="bright"] .hint {
+        color: rgba(0, 0, 0, 0.1);
+      }
+      [data-theme="bright"] .portal a {
+        color: #0284c7;
+      }
+      [data-theme="bright"] .portal .dot {
+        background: #0284c7;
+        box-shadow: 0 0 8px #0284c7;
+      }
+
+      .theme-toggle {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 15;
+        padding: 5px 12px;
+        font-size: 10px;
+        font-family: inherit;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        cursor: pointer;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 4px;
+        background: rgba(255, 255, 255, 0.03);
+        color: rgba(255, 255, 255, 0.4);
+        transition: all 0.3s ease;
+      }
+      [data-theme="bright"] .theme-toggle {
+        border-color: rgba(0, 0, 0, 0.12);
+        background: rgba(0, 0, 0, 0.03);
+        color: rgba(0, 0, 0, 0.5);
+      }
+
+      .ctrl-bar {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 15;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 10px 20px;
+        background: rgba(6, 6, 14, 0.85);
+        backdrop-filter: blur(10px);
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
+        font-size: 11px;
+      }
+      [data-theme="bright"] .ctrl-bar {
+        background: rgba(255, 255, 255, 0.9);
+        border-top-color: rgba(0, 0, 0, 0.08);
+      }
+      .ctrl-bar .stat {
+        color: rgba(255, 255, 255, 0.5);
+      }
+      .ctrl-bar .stat b {
+        color: rgba(255, 255, 255, 0.9);
+        font-weight: 600;
+      }
+      [data-theme="bright"] .ctrl-bar .stat {
+        color: rgba(0, 0, 0, 0.5);
+      }
+      [data-theme="bright"] .ctrl-bar .stat b {
+        color: rgba(0, 0, 0, 0.85);
+      }
+      .ctrl-bar input[type="range"] {
+        width: 80px;
+        height: 3px;
+        -webkit-appearance: none;
+        appearance: none;
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 2px;
+        cursor: pointer;
+      }
+      [data-theme="bright"] .ctrl-bar input[type="range"] {
+        background: rgba(0, 0, 0, 0.12);
+      }
+      .ctrl-bar input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #ff00ff;
+        cursor: pointer;
+      }
+      [data-theme="bright"]
+        .ctrl-bar
+        input[type="range"]::-webkit-slider-thumb {
+        background: #db2777;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="canvas"></canvas>
+
+    <div class="title-bar">
+      <h1>The Void</h1>
+      <div class="sub">33-degree phase drift / fibonacci field</div>
+    </div>
+
+    <div class="hint">click to ripple / move to influence</div>
+
+    <div class="portal">
+      <a href="cluster-field.html">
+        <span class="dot"></span>
+        See the System
+      </a>
+    </div>
+
+    <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">
+      Bright
+    </button>
+
+    <div class="ctrl-bar">
+      <label class="stat" style="display: flex; align-items: center; gap: 6px"
+        >Speed
+        <input
+          type="range"
+          id="speedCtrl"
+          min="10"
+          max="200"
+          value="100"
+          oninput="spiralSpeed = this.value / 100"
+        />
+      </label>
+      <label class="stat" style="display: flex; align-items: center; gap: 6px"
+        >Density
+        <input
+          type="range"
+          id="densityCtrl"
+          min="50"
+          max="600"
+          value="400"
+          oninput="setDensity(+this.value)"
+        />
+      </label>
+      <span style="flex: 1"></span>
+      <span class="stat" id="voidStats">—</span>
+    </div>
+
+    <script src="cluster-manifest.js" onerror=""></script>
+    <script>
+      const canvas = document.getElementById("canvas");
+      const ctx = canvas.getContext("2d");
+
+      let W,
+        H,
+        cx,
+        cy,
+        time = 0;
+      let mouseX = 0,
+        mouseY = 0,
+        mouseVX = 0,
+        mouseVY = 0,
+        prevMX = 0,
+        prevMY = 0;
+      let ripples = [];
+      let zoomLevel = 1;
+
+      // --- KEYWORDS ---
+      // When live manifest exists, outer words become project names (healthy),
+      // inner words become projects needing attention + ecosystem verdicts.
+      // Original words are preserved as fallback.
+      const _STATIC_OUTER = [
+        "Precision",
+        "Aim",
+        "Clean Boundaries",
+        "Voice",
+        "Groundedness",
+        "Timing",
+        "Human",
+        "Bow and Arrow",
+        "Conditional Recognition",
+        "Setting the Record",
+        "Exclusive",
+        "Distinct",
+      ];
+      const _STATIC_INNER = [
+        "Hypnocurrency",
+        "Infraliminal",
+        "Darkness",
+        "Spiral",
+        "Seeds",
+        "Loneliness",
+        "Existentialism",
+        "Vulnerability",
+        "Authenticity",
+        "Emotional Depth",
+        "Undercurrents",
+        "Hypnosis",
+      ];
+
+      function buildVoidKeywords(m) {
+        const outer = [],
+          inner = [];
+        for (const ns of Object.values(m.namespaces)) {
+          for (const p of ns.pods) {
+            const tag = `${p.name} ${p.health}%`;
+            if (p.health >= 60) outer.push(tag);
+            else inner.push(tag);
+          }
+        }
+        if (m.evalSummary) {
+          inner.push(`Ecosystem ${m.evalSummary.ecosystemScore}%`);
+          inner.push(m.evalSummary.ecosystemVerdict);
+        }
+        // Pad with originals if needed
+        while (outer.length < 8)
+          outer.push(_STATIC_OUTER[outer.length % _STATIC_OUTER.length]);
+        while (inner.length < 8)
+          inner.push(_STATIC_INNER[inner.length % _STATIC_INNER.length]);
+        return { outer, inner };
+      }
+
+      const _kw = window.LIVE_MANIFEST
+        ? buildVoidKeywords(window.LIVE_MANIFEST)
+        : null;
+      const OUTER_WORDS = _kw ? _kw.outer : _STATIC_OUTER;
+      const INNER_WORDS = _kw ? _kw.inner : _STATIC_INNER;
+
+      // Fibonacci radii
+      const FIB_RADII = [21, 34, 55, 89, 144, 233, 377];
+      const GOLDEN_ANGLE = 137.508; // degrees
+      const PHASE_INCREMENT = 33; // degrees per conceptual lap
+
+      // --- PARTICLES ---
+      const MAX_PARTICLES = 400;
+      let particles = [];
+
+      class Particle {
+        constructor() {
+          this.reset();
+        }
+        reset() {
+          this.angle = Math.random() * Math.PI * 2;
+          this.radius = 30 + Math.random() * Math.min(W, H) * 0.4;
+          this.speed = 0.001 + Math.random() * 0.003;
+          this.size = 1 + Math.random() * 2.5;
+          this.drift = (Math.random() - 0.5) * 0.1;
+          // Color: magenta to violet based on distance from center
+          const t = (this.radius - 30) / (Math.min(W, H) * 0.4);
+          this.r = 255 - t * 116; // 255 -> 139
+          this.g = 0;
+          this.b = 255;
+          this.baseAlpha = 0.2 + Math.random() * 0.5;
+        }
+        update() {
+          this.angle += this.speed + mouseVX * 0.00002;
+          this.radius += this.drift + mouseVY * 0.005;
+          this.drift *= 0.999;
+
+          // Keep in bounds
+          const maxR = Math.min(W, H) * 0.48;
+          if (this.radius > maxR) {
+            this.radius = maxR;
+            this.drift = -Math.abs(this.drift);
+          }
+          if (this.radius < 15) {
+            this.radius = 15;
+            this.drift = Math.abs(this.drift);
+          }
+
+          // Ripple influence
+          ripples.forEach((rip) => {
+            const px = cx + Math.cos(this.angle) * this.radius;
+            const py = cy + Math.sin(this.angle) * this.radius;
+            const dx = px - rip.x,
+              dy = py - rip.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < rip.radius + 30 && dist > rip.radius - 30) {
+              const force = rip.strength * (1 - rip.life) * 0.5;
+              this.radius += force * 0.3;
+            }
+          });
+        }
+        draw() {
+          const x = cx + Math.cos(this.angle) * this.radius * zoomLevel;
+          const y = cy + Math.sin(this.angle) * this.radius * zoomLevel;
+          const pulse = Math.sin(time * 0.01 + this.angle * 3) * 0.3 + 0.7;
+          const alpha = this.baseAlpha * pulse;
+
+          ctx.globalAlpha = alpha;
+          ctx.fillStyle = `rgb(${this.r},${this.g},${this.b})`;
+          ctx.beginPath();
+          ctx.arc(x, y, this.size, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Tiny glow
+          ctx.globalAlpha = alpha * 0.3;
+          ctx.beginPath();
+          ctx.arc(x, y, this.size * 3, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      // --- KEYWORD PARTICLES ---
+      let keywords = [];
+
+      function initKeywords() {
+        keywords = [];
+        OUTER_WORDS.forEach((word, i) => {
+          keywords.push({
+            text: word,
+            baseAngle: (i / OUTER_WORDS.length) * Math.PI * 2,
+            baseRadius: FIB_RADII[5] + i * 12, // outer
+            speedMult: 0.8 + Math.random() * 0.4,
+            size: 10 + Math.random() * 3,
+            phaseOffset: Math.random() * Math.PI * 2,
+            opacity: 0.15 + Math.random() * 0.2,
+            pushX: 0,
+            pushY: 0,
+          });
+        });
+        INNER_WORDS.forEach((word, i) => {
+          keywords.push({
+            text: word,
+            baseAngle: (i / INNER_WORDS.length) * Math.PI * 2 + 0.3,
+            baseRadius: FIB_RADII[2] + i * 8, // inner
+            speedMult: 0.5 + Math.random() * 0.3,
+            size: 11 + Math.random() * 4,
+            phaseOffset: Math.random() * Math.PI * 2,
+            opacity: 0.08 + Math.random() * 0.15,
+            pushX: 0,
+            pushY: 0,
+          });
+        });
+      }
+
+      function drawKeywords() {
+        const rotSpeed = 0.0003;
+        keywords.forEach((kw) => {
+          const angle = kw.baseAngle + time * rotSpeed * kw.speedMult;
+          const r = kw.baseRadius * zoomLevel;
+          let x = cx + Math.cos(angle) * r + kw.pushX;
+          let y = cy + Math.sin(angle) * r + kw.pushY;
+
+          // Spring back
+          kw.pushX *= 0.96;
+          kw.pushY *= 0.96;
+
+          // Ripple push
+          ripples.forEach((rip) => {
+            const dx = x - rip.x,
+              dy = y - rip.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < rip.radius + 50 && dist > 0) {
+              const force =
+                (rip.strength * (1 - rip.life) * 20) / Math.max(dist, 1);
+              kw.pushX += (dx / dist) * force;
+              kw.pushY += (dy / dist) * force;
+            }
+          });
+
+          const pulse = Math.sin(time * 0.005 + kw.phaseOffset) * 0.5 + 0.5;
+          const alpha = kw.opacity * (0.5 + pulse * 0.5);
+
+          ctx.save();
+          ctx.globalAlpha = alpha;
+          ctx.font = `300 ${kw.size}px monospace`;
+          ctx.fillStyle = kw.baseRadius > FIB_RADII[4] ? "#ff00ff" : "#8b00ff";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText(kw.text, x, y);
+          ctx.restore();
+        });
+      }
+
+      // --- SPIRAL RENDERING ---
+      function drawSpiral() {
+        const phaseRad = (PHASE_INCREMENT * Math.PI) / 180;
+        const goldenRad = (GOLDEN_ANGLE * Math.PI) / 180;
+        const rotation = time * 0.0004;
+        const armCount = 5;
+        const maxR = Math.min(W, H) * 0.45 * zoomLevel;
+
+        for (let arm = 0; arm < armCount; arm++) {
+          const armOffset = arm * goldenRad;
+
+          ctx.beginPath();
+          let started = false;
+
+          for (let i = 0; i < 300; i++) {
+            const t = i / 300;
+            const r = t * maxR;
+            const angle =
+              t * Math.PI * 8 +
+              armOffset +
+              rotation +
+              phaseRad * Math.floor(t * 16);
+            const x = cx + Math.cos(angle) * r;
+            const y = cy + Math.sin(angle) * r;
+
+            if (!started) {
+              ctx.moveTo(x, y);
+              started = true;
+            } else ctx.lineTo(x, y);
+          }
+
+          const armAlpha = 0.06 + (arm === 0 ? 0.04 : 0);
+          ctx.strokeStyle = arm % 2 === 0 ? "#ff00ff" : "#8b00ff";
+          ctx.globalAlpha = armAlpha;
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        }
+      }
+
+      // --- BLOOM / GLOW EFFECTS ---
+      function drawBloom() {
+        // Central radial bloom
+        const grad = ctx.createRadialGradient(
+          cx,
+          cy,
+          0,
+          cx,
+          cy,
+          Math.min(W, H) * 0.35,
+        );
+        grad.addColorStop(0, "rgba(139, 0, 255, 0.08)");
+        grad.addColorStop(0.3, "rgba(255, 0, 255, 0.03)");
+        grad.addColorStop(1, "rgba(0, 0, 0, 0)");
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, W, H);
+
+        // Fibonacci bloom rings
+        ctx.globalAlpha = 0.03 + Math.sin(time * 0.005) * 0.01;
+        FIB_RADII.forEach((r, i) => {
+          const scaledR = r * zoomLevel;
+          ctx.strokeStyle = i % 2 === 0 ? "#ff00ff" : "#8b00ff";
+          ctx.lineWidth = 0.5;
+          ctx.beginPath();
+          ctx.arc(cx, cy, scaledR, 0, Math.PI * 2);
+          ctx.stroke();
+        });
+      }
+
+      function drawScanlines() {
+        ctx.fillStyle = "rgba(0, 0, 0, 0.03)";
+        for (let y = 0; y < H; y += 3) {
+          ctx.fillRect(0, y, W, 1);
+        }
+      }
+
+      // --- RIPPLES ---
+      function spawnRipple(x, y) {
+        ripples.push({
+          x,
+          y,
+          radius: 0,
+          maxRadius: 250 + Math.random() * 100,
+          speed: 3 + Math.random() * 2,
+          life: 0,
+          strength: 1,
+        });
+      }
+
+      function drawRipples() {
+        ripples = ripples.filter((r) => r.life < 1);
+        ripples.forEach((rip) => {
+          rip.radius += rip.speed;
+          rip.life = rip.radius / rip.maxRadius;
+          const alpha = (1 - rip.life) * 0.25;
+
+          // Gradient ring: magenta to violet
+          ctx.save();
+          ctx.globalAlpha = alpha;
+          ctx.strokeStyle = `rgba(255, 0, 255, ${1 - rip.life})`;
+          ctx.lineWidth = 2 * (1 - rip.life);
+          ctx.beginPath();
+          ctx.arc(rip.x, rip.y, rip.radius, 0, Math.PI * 2);
+          ctx.stroke();
+
+          // Inner echo
+          if (rip.radius > 30) {
+            ctx.globalAlpha = alpha * 0.4;
+            ctx.strokeStyle = "#8b00ff";
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.arc(rip.x, rip.y, rip.radius * 0.6, 0, Math.PI * 2);
+            ctx.stroke();
+          }
+          ctx.restore();
+        });
+      }
+
+      // --- EVENTS ---
+      canvas.addEventListener("mousemove", (e) => {
+        prevMX = mouseX;
+        prevMY = mouseY;
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+        mouseVX = mouseX - prevMX;
+        mouseVY = mouseY - prevMY;
+      });
+
+      canvas.addEventListener("click", (e) => {
+        spawnRipple(e.clientX, e.clientY);
+      });
+
+      canvas.addEventListener(
+        "wheel",
+        (e) => {
+          e.preventDefault();
+          zoomLevel = Math.max(
+            0.4,
+            Math.min(2.5, zoomLevel - e.deltaY * 0.001),
+          );
+        },
+        { passive: false },
+      );
+
+      // --- RESIZE ---
+      function resize() {
+        W = canvas.width = window.innerWidth;
+        H = canvas.height = window.innerHeight;
+        cx = W / 2;
+        cy = H / 2;
+
+        // Init particles
+        if (particles.length === 0) {
+          for (let i = 0; i < MAX_PARTICLES; i++) {
+            particles.push(new Particle());
+          }
+        }
+        if (keywords.length === 0) initKeywords();
+      }
+
+      // --- THEME, CONTROLS, STATS ---
+      let currentTheme = "dark";
+      let spiralSpeed = 1;
+
+      function isBright() {
+        return currentTheme === "bright";
+      }
+
+      function toggleTheme() {
+        currentTheme = currentTheme === "dark" ? "bright" : "dark";
+        document.documentElement.setAttribute("data-theme", currentTheme);
+        document.getElementById("themeToggle").textContent =
+          currentTheme === "dark" ? "Bright" : "Dark";
+      }
+
+      function setDensity(n) {
+        const target = Math.max(50, Math.min(600, n));
+        while (particles.length < target) particles.push(new Particle());
+        while (particles.length > target) particles.pop();
+      }
+
+      function updateVoidStats() {
+        if (window.LIVE_MANIFEST) {
+          const ev = window.LIVE_MANIFEST.evalSummary;
+          document.getElementById("voidStats").innerHTML =
+            "Ecosystem <b>" +
+            ev.ecosystemScore +
+            "% " +
+            ev.ecosystemVerdict +
+            "</b> | <b>" +
+            ev.projectCount +
+            "</b> pods | " +
+            "<b>" +
+            ev.recommended +
+            "</b> recommended";
+        }
+      }
+
+      // --- MAIN LOOP ---
+      function animate() {
+        time += spiralSpeed;
+
+        // Background — theme-aware
+        if (isBright()) {
+          const grad = ctx.createRadialGradient(
+            cx,
+            cy,
+            0,
+            cx,
+            cy,
+            Math.max(W, H) * 0.6,
+          );
+          grad.addColorStop(0, "#faf8f5");
+          grad.addColorStop(1, "#f0ece7");
+          ctx.fillStyle = grad;
+          ctx.fillRect(0, 0, W, H);
+          // Light grid (from angle_automation_phase_drift.html)
+          ctx.strokeStyle = "rgba(0,0,0,0.03)";
+          ctx.lineWidth = 0.5;
+          for (let gx = 0; gx < W; gx += 30) {
+            ctx.beginPath();
+            ctx.moveTo(gx, 0);
+            ctx.lineTo(gx, H);
+            ctx.stroke();
+          }
+          for (let gy = 0; gy < H; gy += 30) {
+            ctx.beginPath();
+            ctx.moveTo(0, gy);
+            ctx.lineTo(W, gy);
+            ctx.stroke();
+          }
+        } else {
+          ctx.fillStyle = "#06060e";
+          ctx.fillRect(0, 0, W, H);
+        }
+
+        // Bloom — warm in bright mode
+        if (isBright()) {
+          const grad = ctx.createRadialGradient(
+            cx,
+            cy,
+            0,
+            cx,
+            cy,
+            Math.min(W, H) * 0.35,
+          );
+          grad.addColorStop(0, "rgba(219, 39, 119, 0.06)");
+          grad.addColorStop(0.3, "rgba(124, 58, 237, 0.02)");
+          grad.addColorStop(1, "rgba(0, 0, 0, 0)");
+          ctx.fillStyle = grad;
+          ctx.fillRect(0, 0, W, H);
+          ctx.globalAlpha = 0.06 + Math.sin(time * 0.005) * 0.02;
+          FIB_RADII.forEach((r, i) => {
+            ctx.strokeStyle = i % 2 === 0 ? "#db2777" : "#7c3aed";
+            ctx.lineWidth = 0.5;
+            ctx.beginPath();
+            ctx.arc(cx, cy, r * zoomLevel, 0, Math.PI * 2);
+            ctx.stroke();
+          });
+          ctx.globalAlpha = 1;
+        } else {
+          drawBloom();
+        }
+
+        // Spiral — warm colors in bright mode
+        if (isBright()) {
+          const phaseRad = (PHASE_INCREMENT * Math.PI) / 180;
+          const goldenRad = (GOLDEN_ANGLE * Math.PI) / 180;
+          const rotation = time * 0.0004;
+          const maxR = Math.min(W, H) * 0.45 * zoomLevel;
+          for (let arm = 0; arm < 5; arm++) {
+            ctx.beginPath();
+            let started = false;
+            for (let i = 0; i < 300; i++) {
+              const t = i / 300;
+              const r = t * maxR;
+              const angle =
+                t * Math.PI * 8 +
+                arm * goldenRad +
+                rotation +
+                phaseRad * Math.floor(t * 16);
+              const x = cx + Math.cos(angle) * r,
+                y = cy + Math.sin(angle) * r;
+              if (!started) {
+                ctx.moveTo(x, y);
+                started = true;
+              } else ctx.lineTo(x, y);
+            }
+            ctx.strokeStyle = arm % 2 === 0 ? "#db2777" : "#7c3aed";
+            ctx.globalAlpha = 0.1 + (arm === 0 ? 0.06 : 0);
+            ctx.lineWidth = 1;
+            ctx.stroke();
+          }
+          ctx.globalAlpha = 1;
+        } else {
+          drawSpiral();
+        }
+
+        drawRipples();
+
+        // Particles — warm in bright mode
+        particles.forEach((p) => {
+          p.update();
+          if (isBright()) {
+            const x = cx + Math.cos(p.angle) * p.radius * zoomLevel;
+            const y = cy + Math.sin(p.angle) * p.radius * zoomLevel;
+            const pulse = Math.sin(time * 0.01 + p.angle * 3) * 0.3 + 0.7;
+            ctx.globalAlpha = p.baseAlpha * pulse * 0.7;
+            const t = (p.radius - 30) / (Math.min(W, H) * 0.4);
+            ctx.fillStyle = t > 0.5 ? "#db2777" : "#7c3aed";
+            ctx.beginPath();
+            ctx.arc(x, y, p.size, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.globalAlpha = p.baseAlpha * pulse * 0.2;
+            ctx.beginPath();
+            ctx.arc(x, y, p.size * 3, 0, Math.PI * 2);
+            ctx.fill();
+          } else {
+            p.draw();
+          }
+        });
+        ctx.globalAlpha = 1;
+
+        // Keywords — warm text in bright mode
+        if (isBright()) {
+          const rotSpeed = 0.0003;
+          keywords.forEach((kw) => {
+            const angle = kw.baseAngle + time * rotSpeed * kw.speedMult;
+            const r = kw.baseRadius * zoomLevel;
+            let x = cx + Math.cos(angle) * r + kw.pushX;
+            let y = cy + Math.sin(angle) * r + kw.pushY;
+            kw.pushX *= 0.96;
+            kw.pushY *= 0.96;
+            ripples.forEach((rip) => {
+              const dx = x - rip.x,
+                dy = y - rip.y;
+              const dist = Math.sqrt(dx * dx + dy * dy);
+              if (dist < rip.radius + 50 && dist > 0) {
+                const force =
+                  (rip.strength * (1 - rip.life) * 20) / Math.max(dist, 1);
+                kw.pushX += (dx / dist) * force;
+                kw.pushY += (dy / dist) * force;
+              }
+            });
+            const pulse = Math.sin(time * 0.005 + kw.phaseOffset) * 0.5 + 0.5;
+            ctx.save();
+            ctx.globalAlpha = kw.opacity * (0.5 + pulse * 0.5) * 1.5;
+            ctx.font = `400 ${kw.size}px monospace`;
+            ctx.fillStyle =
+              kw.baseRadius > FIB_RADII[4] ? "#db2777" : "#7c3aed";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText(kw.text, x, y);
+            ctx.restore();
+          });
+        } else {
+          drawKeywords();
+        }
+
+        if (!isBright()) drawScanlines();
+
+        requestAnimationFrame(animate);
+      }
+
+      window.addEventListener("resize", resize);
+      resize();
+      updateVoidStats();
+      animate();
+    </script>
+  </body>
+</html>

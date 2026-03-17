@@ -1,0 +1,232 @@
+<style>
+#container { display: flex; flex-direction: column; gap: 20px; }
+#visualizer { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+canvas { background: linear-gradient(135deg, #f5f5f5 0%, #fafafa 100%); border-radius: 8px; display: block; width: 100%; }
+.curve-canvas { grid-column: 1; }
+.orbit-canvas { grid-column: 2; }
+@media (max-width: 800px) {
+  #visualizer { grid-template-columns: 1fr; }
+  .orbit-canvas { grid-column: 1; }
+}
+.controls { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; background: var(--color-background-secondary); padding: 16px; border-radius: 8px; }
+.control-group { display: flex; flex-direction: column; gap: 6px; }
+.label { font-size: 12px; font-weight: 500; color: var(--color-text-secondary); }
+.value { font-size: 14px; font-weight: 600; color: var(--color-text-primary); }
+input[type="range"] { width: 100%; }
+.legend { display: flex; gap: 20px; font-size: 12px; padding: 12px; background: var(--color-background-secondary); border-radius: 8px; }
+.legend-item { display: flex; align-items: center; gap: 6px; }
+.legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+</style>
+
+<div id="container">
+  <div id="visualizer">
+    <canvas id="curveCanvas" class="curve-canvas" width="300" height="300"></canvas>
+    <canvas id="orbitCanvas" class="orbit-canvas" width="300" height="300"></canvas>
+  </div>
+  
+  <div class="controls">
+    <div class="control-group">
+      <label class="label">Loop speed</label>
+      <input type="range" id="speed" min="10" max="100" value="50">
+      <span class="value" id="speedVal">50%</span>
+    </div>
+    <div class="control-group">
+      <label class="label">Phase increment per lap</label>
+      <input type="range" id="phaseInc" min="1" max="90" value="33">
+      <span class="value" id="phaseIncVal">33° (3/8 ≈ 135°)</span>
+    </div>
+    <div class="control-group">
+      <label class="label">Current angle</label>
+      <span class="value" id="angleVal">0°</span>
+    </div>
+    <div class="control-group">
+      <label class="label">Cumulative phase drift</label>
+      <span class="value" id="driftVal">0°</span>
+    </div>
+  </div>
+  
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background: #ff006e;"></div>Automation curve</div>
+    <div class="legend-item"><div class="legend-dot" style="background: #00d9ff;"></div>Orbital path (active loop)</div>
+    <div class="legend-item"><div class="legend-dot" style="background: #ddd;"></div>Previous loops (phase history)</div>
+  </div>
+</div>
+
+<script>
+const curveCanvas = document.getElementById('curveCanvas');
+const orbitCanvas = document.getElementById('orbitCanvas');
+const curveCtx = curveCanvas.getContext('2d');
+const orbitCtx = orbitCanvas.getContext('2d');
+
+const speedSlider = document.getElementById('speed');
+const phaseIncSlider = document.getElementById('phaseInc');
+const angleValSpan = document.getElementById('angleVal');
+const driftValSpan = document.getElementById('driftVal');
+const speedValSpan = document.getElementById('speedVal');
+const phaseIncValSpan = document.getElementById('phaseIncVal');
+
+let time = 0;
+let cumulativePhase = 0;
+let history = [];
+
+function drawGrid(ctx, width, height, color = '#e0e0e0') {
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 0.5;
+  const gridSize = 30;
+  for (let x = 0; x < width; x += gridSize) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, height);
+    ctx.stroke();
+  }
+  for (let y = 0; y < height; y += gridSize) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(width, y);
+    ctx.stroke();
+  }
+}
+
+function drawAutomationCurve() {
+  const w = curveCanvas.width;
+  const h = curveCanvas.height;
+  const cx = w / 2;
+  const cy = h / 2;
+  const radius = 80;
+  
+  curveCtx.clearRect(0, 0, w, h);
+  drawGrid(curveCtx, w, h);
+  
+  const speed = parseInt(speedSlider.value);
+  const phaseInc = parseInt(phaseIncSlider.value);
+  const loopTime = 100 - speed + 20;
+  const normalizedTime = (time % loopTime) / loopTime;
+  const angle = normalizedTime * Math.PI * 2;
+  
+  curveCtx.strokeStyle = '#ff006e';
+  curveCtx.lineWidth = 2;
+  curveCtx.beginPath();
+  for (let i = 0; i <= 1; i += 0.01) {
+    const a = i * Math.PI * 2;
+    const off = Math.sin(a * 3) * 8;
+    const x = cx + Math.cos(a) * (radius + off);
+    const y = cy + Math.sin(a) * (radius + off);
+    if (i === 0) curveCtx.moveTo(x, y);
+    else curveCtx.lineTo(x, y);
+  }
+  curveCtx.stroke();
+  
+  const x = cx + Math.cos(angle) * (radius + Math.sin(angle * 3) * 8);
+  const y = cy + Math.sin(angle) * (radius + Math.sin(angle * 3) * 8);
+  curveCtx.fillStyle = '#ff006e';
+  curveCtx.beginPath();
+  curveCtx.arc(x, y, 5, 0, Math.PI * 2);
+  curveCtx.fill();
+  
+  curveCtx.strokeStyle = '#999';
+  curveCtx.lineWidth = 0.5;
+  curveCtx.setLineDash([3, 3]);
+  curveCtx.beginPath();
+  curveCtx.arc(cx, cy, radius, 0, Math.PI * 2);
+  curveCtx.stroke();
+  curveCtx.setLineDash([]);
+  
+  curveCtx.fillStyle = '#999';
+  curveCtx.font = '12px sans-serif';
+  curveCtx.textAlign = 'center';
+  curveCtx.fillText('Automation loop', cx, h - 10);
+}
+
+function drawOrbit() {
+  const w = orbitCanvas.width;
+  const h = orbitCanvas.height;
+  const cx = w / 2;
+  const cy = h / 2;
+  const radius = 60;
+  
+  orbitCtx.clearRect(0, 0, w, h);
+  drawGrid(orbitCtx, w, h);
+  
+  const speed = parseInt(speedSlider.value);
+  const phaseInc = parseInt(phaseIncSlider.value);
+  const loopTime = 100 - speed + 20;
+  const normalizedTime = (time % loopTime) / loopTime;
+  const currentAngle = normalizedTime * Math.PI * 2;
+  
+  const lap = Math.floor(time / loopTime);
+  const totalPhase = lap * phaseInc + normalizedTime * 360;
+  
+  orbitCtx.strokeStyle = '#ddd';
+  orbitCtx.lineWidth = 1;
+  orbitCtx.setLineDash([2, 2]);
+  orbitCtx.beginPath();
+  orbitCtx.arc(cx, cy, radius, 0, Math.PI * 2);
+  orbitCtx.stroke();
+  orbitCtx.setLineDash([]);
+  
+  for (let h = 0; h < lap; h++) {
+    const phaseOffset = h * phaseInc * Math.PI / 180;
+    orbitCtx.strokeStyle = 'rgba(200, 200, 200, 0.3)';
+    orbitCtx.lineWidth = 1;
+    orbitCtx.beginPath();
+    for (let i = 0; i <= 1; i += 0.02) {
+      const a = i * Math.PI * 2 + phaseOffset;
+      const x = cx + Math.cos(a) * radius;
+      const y = cy + Math.sin(a) * radius;
+      if (i === 0) orbitCtx.moveTo(x, y);
+      else orbitCtx.lineTo(x, y);
+    }
+    orbitCtx.stroke();
+  }
+  
+  const phaseOffset = lap * phaseInc * Math.PI / 180;
+  orbitCtx.strokeStyle = '#00d9ff';
+  orbitCtx.lineWidth = 2;
+  orbitCtx.beginPath();
+  for (let i = 0; i <= normalizedTime; i += 0.02) {
+    const a = i * Math.PI * 2 + phaseOffset;
+    const x = cx + Math.cos(a) * radius;
+    const y = cy + Math.sin(a) * radius;
+    if (i === 0) orbitCtx.moveTo(x, y);
+    else orbitCtx.lineTo(x, y);
+  }
+  orbitCtx.stroke();
+  
+  const finalAngle = currentAngle + phaseOffset;
+  const px = cx + Math.cos(finalAngle) * radius;
+  const py = cy + Math.sin(finalAngle) * radius;
+  orbitCtx.fillStyle = '#00d9ff';
+  orbitCtx.beginPath();
+  orbitCtx.arc(px, py, 4, 0, Math.PI * 2);
+  orbitCtx.fill();
+  
+  orbitCtx.fillStyle = '#999';
+  orbitCtx.font = '12px sans-serif';
+  orbitCtx.textAlign = 'center';
+  orbitCtx.fillText('Orbital phase history', cx, h - 10);
+  
+  angleValSpan.textContent = Math.round(finalAngle * 180 / Math.PI) % 360 + '°';
+  driftValSpan.textContent = Math.round(lap * phaseInc) + '°';
+}
+
+function updateLabels() {
+  speedValSpan.textContent = speedSlider.value + '%';
+  const phaseVal = parseInt(phaseIncSlider.value);
+  const cyclesTo360 = Math.round(360 / phaseVal);
+  phaseIncValSpan.textContent = phaseVal + '° (' + cyclesTo360 + ' laps to full rotation)';
+}
+
+function animate() {
+  time++;
+  drawAutomationCurve();
+  drawOrbit();
+  updateLabels();
+  requestAnimationFrame(animate);
+}
+
+speedSlider.addEventListener('input', updateLabels);
+phaseIncSlider.addEventListener('input', updateLabels);
+
+updateLabels();
+animate();
+</script>
