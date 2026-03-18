@@ -18,6 +18,7 @@ metadata.txt
 snapshot.json
 
 # Editor state (track .cursor/agents, .cursor/skills, .cursor/rules for sharing)
+.agents/skills/
 .claude/
 .cursor/*
 !.cursor/agents/
