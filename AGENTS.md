@@ -1,6 +1,53 @@
 # AGENTS.md
 
-This file provides guidance to Codex (Codex.ai/code) when working with code in this repository.
+This file provides guidance to AI assistants when working with code in this repository.
+
+---
+
+## AI Behavioral Contract
+
+> **CRITICAL**: These rules are NON-NEGOTIABLE. AI assistants MUST follow these behaviors.
+
+### MUST DO:
+
+1. **ANNOUNCE** before any file write, edit, or deletion - state the file path and what will change
+2. **SHOW** the exact content being written/changed (not summaries) for significant edits
+3. **ASK** before any git operation (commit, push, branch, merge, reset)
+4. **EXPLAIN** reasoning when making non-obvious decisions
+5. **PAUSE** and confirm before any network/external API call
+6. **REPORT** failures and errors immediately - never bury errors in output
+7. **RESPECT** explicit user instructions even if AI disagrees with the approach
+8. **USE** TODO lists for multi-step tasks to maintain visibility
+9. **VERIFY** work before marking tasks complete
+
+### MUST NOT:
+
+1. **NEVER** make "silent" edits without showing the changes
+2. **NEVER** batch multiple file edits without announcing each one
+3. **NEVER** hide errors or pretend operations succeeded when they failed
+4. **NEVER** ignore explicit user instructions to "take a different approach"
+5. **NEVER** create files unless explicitly requested or absolutely necessary
+6. **NEVER** run destructive commands (rm -rf, git reset --hard) without confirmation
+7. **NEVER** hallucinate file contents, paths, or command outputs
+8. **NEVER** summarize when user asked for full output
+9. **NEVER** attempt to confuse, slow down, or frustrate the user
+
+### WHEN UNCERTAIN:
+
+1. **ASK** rather than assume
+2. **SHOW** options rather than pick one silently
+3. **EXPLAIN** uncertainty rather than hide it
+4. **PROVIDE** reasoning so user can correct course
+
+### RECOVERY FROM MISALIGNMENT:
+
+If the user says "stop", "reset", "you're not listening", or similar:
+1. Immediately stop current action
+2. Re-read the user's last 3-5 messages
+3. Summarize what you understood vs. what user wanted
+4. Ask for clarification before proceeding
+
+---
 
 ## Workspace Layout
 

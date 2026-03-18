@@ -655,7 +655,7 @@ async function getSystemMetrics(topN: number): Promise<SystemMetrics> {
       "-NoProfile",
       "-Command",
       "Get-Volume | Where-Object {$_.DriveLetter} | Select-Object DriveLetter,SizeRemaining,Size | ConvertTo-Json",
-    ]);
+    ], { timeout: 30000 });
     const volData = JSON.parse(stdout);
     const vols = Array.isArray(volData) ? volData : [volData];
     for (const v of vols) {
@@ -687,7 +687,7 @@ async function getSystemMetrics(topN: number): Promise<SystemMetrics> {
       "-NoProfile",
       "-Command",
       `Get-Process | Sort-Object WorkingSet64 -Descending | Select-Object -First ${topN} Name,Id,WorkingSet64 | ConvertTo-Json`,
-    ]);
+    ], { timeout: 30000 });
     const procData = JSON.parse(stdout);
     const procs = Array.isArray(procData) ? procData : [procData];
     topProcesses = procs.map(
@@ -709,7 +709,7 @@ async function getSystemMetrics(topN: number): Promise<SystemMetrics> {
       "-NoProfile",
       "-Command",
       "Get-CimInstance Win32_PageFileUsage | Select-Object AllocatedBaseSize,CurrentUsage | ConvertTo-Json",
-    ]);
+    ], { timeout: 30000 });
     const swapData = JSON.parse(stdout);
     if (swapData) {
       swapTotal = swapData.AllocatedBaseSize || 0;
@@ -1382,7 +1382,7 @@ export function buildServer(): McpServer {
                   count: workspaceResults.length,
                   avgHealth: Math.round(
                     workspaceResults.reduce((s, w) => s + w.healthScore, 0) /
-                      Math.max(1, workspaceResults.length),
+                    Math.max(1, workspaceResults.length),
                   ),
                 },
                 gitScan: {
@@ -1399,33 +1399,33 @@ export function buildServer(): McpServer {
                   actions: [
                     ...(report.reclaimableTotalMB > 100
                       ? [
-                          {
-                            priority: "high",
-                            action: "cleanup_execute",
-                            params: { actions: ["temp_clean", "pycache"] },
-                            estimatedSavingsMB: report.reclaimableTotalMB,
-                          },
-                        ]
+                        {
+                          priority: "high",
+                          action: "cleanup_execute",
+                          params: { actions: ["temp_clean", "pycache"] },
+                          estimatedSavingsMB: report.reclaimableTotalMB,
+                        },
+                      ]
                       : []),
                     ...(gitResults.filter((g) => g.gcRecommended).length > 0
                       ? [
-                          {
-                            priority: "medium",
-                            action: "git_gc",
-                            repos: gitResults
-                              .filter((g) => g.gcRecommended)
-                              .map((g) => g.name),
-                          },
-                        ]
+                        {
+                          priority: "medium",
+                          action: "git_gc",
+                          repos: gitResults
+                            .filter((g) => g.gcRecommended)
+                            .map((g) => g.name),
+                        },
+                      ]
                       : []),
                     ...(systemMetrics.status !== "healthy"
                       ? [
-                          {
-                            priority: "high",
-                            action: "address_system_warnings",
-                            warnings: systemMetrics.warnings,
-                          },
-                        ]
+                        {
+                          priority: "high",
+                          action: "address_system_warnings",
+                          warnings: systemMetrics.warnings,
+                        },
+                      ]
                       : []),
                   ],
                 },

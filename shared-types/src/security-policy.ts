@@ -13,8 +13,8 @@
  *   import { ExecutionPolicyEngine, AuditIntegrityGuard, ... } from '@cascade/shared-types/security-policy';
  */
 
-import path from "path";
 import crypto from "crypto";
+import path from "path";
 
 // =============================================================================
 // Types
@@ -658,6 +658,14 @@ export class ReadScopePolicy {
     const key = `${sessionId}:${toolName}`;
     const now = Date.now();
     const entry = this.callCounts.get(key);
+
+    if (this.callCounts.size > 1000) {
+      for (const [k, v] of this.callCounts) {
+        if (now - v.windowStart > this.windowMs) {
+          this.callCounts.delete(k);
+        }
+      }
+    }
 
     if (!entry || now - entry.windowStart > this.windowMs) {
       this.callCounts.set(key, { count: 1, windowStart: now });

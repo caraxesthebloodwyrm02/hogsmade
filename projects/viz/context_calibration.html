@@ -1,0 +1,1243 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Context Calibration</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #1a1a1e;
+      color: #e0e0e0;
+      font-family: 'Segoe UI', -apple-system, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+      padding: 20px 0;
+    }
+
+    #cal-unit {
+      width: 960px;
+      background: #222228;
+      border-radius: 12px;
+      border: 1px solid #333;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+      overflow: hidden;
+    }
+
+    /* --- Header --- */
+    .cal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 20px;
+      background: #1c1c20;
+      border-bottom: 1px solid #2a2a2e;
+    }
+
+    .cal-title {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      color: #888;
+    }
+
+    .cal-badge {
+      font-size: 10px;
+      color: #555;
+      letter-spacing: 0.8px;
+    }
+
+    /* --- Spectrum --- */
+    #spectrumWrap {
+      position: relative;
+      width: 100%;
+      height: 300px;
+      cursor: crosshair;
+    }
+
+    #spectrumCanvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* --- Phase meter strip --- */
+    .phase-strip {
+      display: flex;
+      gap: 24px;
+      padding: 8px 20px;
+      background: #1a1a1e;
+      border-top: 1px solid #2a2a2e;
+      border-bottom: 1px solid #2a2a2e;
+      font-size: 11px;
+      align-items: center;
+    }
+
+    .phase-metric {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .phase-metric .label {
+      color: #555;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+    }
+
+    .phase-metric .value {
+      color: #ccc;
+      font-variant-numeric: tabular-nums;
+      font-weight: 600;
+    }
+
+    .phase-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    /* --- Band selector tabs --- */
+    .band-tabs {
+      display: flex;
+      gap: 4px;
+      padding: 8px 20px;
+      background: #1c1c20;
+      border-bottom: 1px solid #2a2a2e;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .band-tab {
+      font-size: 10px;
+      padding: 4px 10px;
+      border: 1px solid #333;
+      border-radius: 4px;
+      background: transparent;
+      color: #666;
+      cursor: pointer;
+      font-weight: 500;
+    }
+
+    .band-tab.active {
+      border-color: #555;
+      color: #e0e0e0;
+      background: #333;
+    }
+
+    .band-tab.has-data {
+      border-color: #444;
+    }
+
+    .band-tab .dot {
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      margin-right: 4px;
+      vertical-align: middle;
+    }
+
+    .add-band-btn {
+      font-size: 11px;
+      padding: 4px 10px;
+      border: 1px dashed #444;
+      border-radius: 4px;
+      background: transparent;
+      color: #555;
+      cursor: pointer;
+      margin-left: 8px;
+    }
+
+    .add-band-btn:hover {
+      color: #888;
+      border-color: #666;
+    }
+
+    .remove-band-btn {
+      font-size: 10px;
+      padding: 4px 8px;
+      border: 1px solid #442222;
+      border-radius: 4px;
+      background: transparent;
+      color: #884444;
+      cursor: pointer;
+      margin-left: auto;
+    }
+
+    .remove-band-btn:hover {
+      color: #cc6666;
+      border-color: #663333;
+    }
+
+    /* --- Knob strip --- */
+    .knob-strip {
+      display: flex;
+      justify-content: center;
+      gap: 36px;
+      padding: 20px 20px 24px;
+      background: #1c1c20;
+      border-top: 1px solid #2a2a2e;
+    }
+
+    .knob-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      min-width: 72px;
+    }
+
+    .knob-label {
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: #555;
+    }
+
+    .knob-value {
+      font-size: 12px;
+      font-weight: 500;
+      color: #ccc;
+      font-variant-numeric: tabular-nums;
+      min-width: 68px;
+      text-align: center;
+    }
+
+    .knob-outer {
+      position: relative;
+      width: 48px;
+      height: 48px;
+      cursor: grab;
+    }
+
+    .knob-outer:active {
+      cursor: grabbing;
+    }
+
+    .knob-ring {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 40% 35%, #3a3a42, #28282e);
+      border: 2px solid #444;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    }
+
+    .knob-indicator {
+      position: absolute;
+      top: 5px;
+      left: 50%;
+      width: 2px;
+      height: 12px;
+      margin-left: -1px;
+      background: #00ccff;
+      border-radius: 1px;
+      transform-origin: center 19px;
+      pointer-events: none;
+    }
+
+    /* Filter type selector */
+    .filter-selector {
+      display: flex;
+      gap: 3px;
+      padding: 3px;
+      background: #1a1a1e;
+      border-radius: 5px;
+      margin-top: 2px;
+    }
+
+    .filter-btn {
+      font-size: 9px;
+      padding: 3px 6px;
+      border: none;
+      border-radius: 3px;
+      background: transparent;
+      color: #555;
+      cursor: pointer;
+      font-weight: 500;
+    }
+
+    .filter-btn.active {
+      background: #333;
+      color: #e0e0e0;
+    }
+
+    .filter-btn:hover:not(.active) {
+      color: #888;
+    }
+
+    /* Dimension selector */
+    .dim-selector {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      align-items: center;
+    }
+
+    .dim-select {
+      font-size: 10px;
+      padding: 4px 6px;
+      background: #1a1a1e;
+      color: #ccc;
+      border: 1px solid #333;
+      border-radius: 4px;
+      width: 100px;
+      text-align: center;
+    }
+
+    /* --- Delay correction panel --- */
+    .delay-panel {
+      padding: 12px 20px;
+      background: #1a1a1e;
+      border-top: 1px solid #2a2a2e;
+      max-height: 180px;
+      overflow-y: auto;
+    }
+
+    .delay-header {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      color: #555;
+      margin-bottom: 8px;
+    }
+
+    .delay-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 6px 0;
+      border-bottom: 1px solid #222228;
+      font-size: 11px;
+    }
+
+    .delay-item:last-child {
+      border-bottom: none;
+    }
+
+    .delay-dim {
+      color: #888;
+      font-weight: 600;
+      min-width: 90px;
+    }
+
+    .delay-metric {
+      color: #666;
+      min-width: 120px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .delay-action {
+      color: #aaa;
+      flex: 1;
+    }
+
+    .delay-empty {
+      color: #444;
+      font-size: 11px;
+      font-style: italic;
+    }
+
+    /* --- Footer --- */
+    .info-strip {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 20px;
+      font-size: 10px;
+      color: #444;
+      border-top: 1px solid #2a2a2e;
+      background: #1a1a1e;
+    }
+
+    .export-btn {
+      font-size: 10px;
+      padding: 2px 8px;
+      border: 1px solid #333;
+      border-radius: 3px;
+      background: transparent;
+      color: #555;
+      cursor: pointer;
+    }
+
+    .export-btn:hover {
+      color: #888;
+      border-color: #555;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="cal-unit">
+    <div class="cal-header">
+      <span class="cal-title">Context Calibration</span>
+      <span class="cal-badge" id="badgeText">0 bands &middot; 8 dimensions</span>
+    </div>
+
+    <div id="spectrumWrap">
+      <canvas id="spectrumCanvas"></canvas>
+    </div>
+
+    <div class="phase-strip">
+      <div class="phase-metric">
+        <div class="phase-dot" style="background:#7b68ee"></div>
+        <span class="label">Phase</span>
+        <span class="value" id="phaseVal">0°</span>
+      </div>
+      <div class="phase-metric">
+        <div class="phase-dot" style="background:#ff6b6b"></div>
+        <span class="label">Gap</span>
+        <span class="value" id="gapVal">0 dim</span>
+      </div>
+      <div class="phase-metric">
+        <div class="phase-dot" style="background:#ffd93d"></div>
+        <span class="label">Drift</span>
+        <span class="value" id="driftVal">0°</span>
+      </div>
+      <div class="phase-metric">
+        <div class="phase-dot" style="background:#00ff88"></div>
+        <span class="label">Alignment</span>
+        <span class="value" id="alignVal">--</span>
+      </div>
+    </div>
+
+    <div class="band-tabs" id="bandTabs">
+      <button class="add-band-btn" id="addBandBtn">+ Add Band</button>
+    </div>
+
+    <div class="knob-strip" id="knobStrip">
+      <div class="knob-group">
+        <span class="knob-label">Dimension</span>
+        <div class="dim-selector">
+          <select class="dim-select" id="dimSelect"></select>
+        </div>
+        <span class="knob-value" id="dimVal">--</span>
+      </div>
+      <div class="knob-group">
+        <span class="knob-label">Gain / dB</span>
+        <div class="knob-outer" data-param="gain">
+          <div class="knob-ring"></div>
+          <div class="knob-indicator"></div>
+        </div>
+        <span class="knob-value" id="gainVal">0.0 dB</span>
+      </div>
+      <div class="knob-group">
+        <span class="knob-label">Q / Width</span>
+        <div class="knob-outer" data-param="q">
+          <div class="knob-ring"></div>
+          <div class="knob-indicator"></div>
+        </div>
+        <span class="knob-value" id="qVal">1.00</span>
+      </div>
+      <div class="knob-group">
+        <span class="knob-label">Phase / °</span>
+        <div class="knob-outer" data-param="phase">
+          <div class="knob-ring"></div>
+          <div class="knob-indicator"></div>
+        </div>
+        <span class="knob-value" id="phaseKnobVal">0°</span>
+      </div>
+      <div class="knob-group">
+        <span class="knob-label">Type</span>
+        <div class="filter-selector">
+          <button class="filter-btn active" data-type="bell">Bell</button>
+          <button class="filter-btn" data-type="lowshelf">Lo Sh</button>
+          <button class="filter-btn" data-type="highshelf">Hi Sh</button>
+          <button class="filter-btn" data-type="notch">Notch</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="delay-panel" id="delayPanel">
+      <div class="delay-header">Delay Correction</div>
+      <div class="delay-empty" id="delayEmpty">No bands — click + Add Band to begin calibration</div>
+      <div id="delayItems"></div>
+    </div>
+
+    <div class="info-strip">
+      <span>Click spectrum to place band &middot; Drag vertically for gain &middot; Scroll for Q</span>
+      <span>
+        <button class="export-btn" id="exportBtn">Export JSON</button>
+        <button class="export-btn" id="importBtn">Import</button>
+      </span>
+    </div>
+  </div>
+
+  <input type="file" id="importFile" accept=".json" style="display:none">
+
+  <script>
+    // ================================================================
+    // Context Calibration Tool
+    // EQ + Phase + Delay — diagnostic instrument for AI context gaps
+    //
+    // Math: Biquad transfer function (Bristow-Johnson Audio EQ Cookbook)
+    // Methodology: Room acoustic calibration → context engineering
+    // ================================================================
+
+    const canvas = document.getElementById('spectrumCanvas');
+    const ctx = canvas.getContext('2d');
+    const wrap = document.getElementById('spectrumWrap');
+
+    // --- Hi-DPI ---
+    function sizeCanvas() {
+      const dpr = window.devicePixelRatio || 1;
+      const rect = wrap.getBoundingClientRect();
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      return { w: rect.width, h: rect.height };
+    }
+    let dims = sizeCanvas();
+    window.addEventListener('resize', () => { dims = sizeCanvas(); draw(); });
+
+    // ================================================================
+    // Dimensions — the X-axis
+    // ================================================================
+    const DIMENSIONS = [
+      { id: 'specificity', name: 'Specificity', color: '#ff6b6b', desc: 'How precisely scoped is the context?' },
+      { id: 'clarity', name: 'Clarity', color: '#ffd93d', desc: 'How clearly does the prompt communicate intent?' },
+      { id: 'constraints', name: 'Constraints', color: '#00ff88', desc: 'Are boundaries and limitations stated?' },
+      { id: 'domain', name: 'Domain', color: '#00ccff', desc: 'Is vocabulary and domain context sufficient?' },
+      { id: 'assumptions', name: 'Assumptions', color: '#7b68ee', desc: 'What unstated assumptions exist?' },
+      { id: 'evidence', name: 'Evidence', color: '#ff8c42', desc: 'Are claims grounded with examples?' },
+      { id: 'confidence', name: 'Confidence', color: '#e84393', desc: 'Model certainty — over-confident = false assumptions' },
+      { id: 'tension', name: 'Tension', color: '#a29bfe', desc: 'Attention strain across competing signals' },
+    ];
+
+    const DIM_COUNT = DIMENSIONS.length;
+
+    // Map dimension index to X position (evenly spaced, labeled)
+    function dimToX(dimIdx) {
+      const pad = 60;
+      const usable = dims.w - 2 * pad;
+      return pad + (dimIdx / (DIM_COUNT - 1)) * usable;
+    }
+    function xToDimIdx(x) {
+      const pad = 60;
+      const usable = dims.w - 2 * pad;
+      const raw = (x - pad) / usable * (DIM_COUNT - 1);
+      return Math.max(0, Math.min(DIM_COUNT - 1, Math.round(raw)));
+    }
+
+    // ================================================================
+    // EQ Parameters
+    // ================================================================
+    const GAIN_MIN = -24;
+    const GAIN_MAX = 24;
+    const Q_MIN = 0.1;
+    const Q_MAX = 18.0;
+    const SAMPLE_RATE = 44100;
+    const DB_MARKERS = [-24, -18, -12, -6, 0, 6, 12, 18, 24];
+
+    // Map dimension index to a pseudo-frequency for biquad math
+    // Spread across 80–8000 Hz range (log spaced) so the biquad curves look natural
+    function dimToFreq(dimIdx) {
+      const fMin = 80, fMax = 8000;
+      return fMin * Math.pow(fMax / fMin, dimIdx / (DIM_COUNT - 1));
+    }
+    // Continuous frequency to X (for smooth curve rendering)
+    const F_MIN = 80, F_MAX = 8000;
+    function freqToX(f) {
+      const pad = 60;
+      const usable = dims.w - 2 * pad;
+      return pad + (Math.log(f / F_MIN) / Math.log(F_MAX / F_MIN)) * usable;
+    }
+
+    function dbToY(db) {
+      const pad = 24;
+      const usable = dims.h - 2 * pad;
+      return pad + usable * (1 - (db - GAIN_MIN) / (GAIN_MAX - GAIN_MIN));
+    }
+
+    function gainToNorm(g) { return (g - GAIN_MIN) / (GAIN_MAX - GAIN_MIN); }
+    function normToGain(n) { return GAIN_MIN + n * (GAIN_MAX - GAIN_MIN); }
+    function qToNorm(q) { return Math.log(q / Q_MIN) / Math.log(Q_MAX / Q_MIN); }
+    function normToQ(n) { return Q_MIN * Math.pow(Q_MAX / Q_MIN, n); }
+    function phaseToNorm(p) { return p / 360; }
+    function normToPhase(n) { return n * 360; }
+
+    // ================================================================
+    // Biquad coefficients (from parametric_eq.html — Bristow-Johnson)
+    // ================================================================
+    function calcBiquadCoeffs(freq, q, gainDb, type) {
+      const A = Math.pow(10, gainDb / 40);
+      const w0 = 2 * Math.PI * freq / SAMPLE_RATE;
+      const sinW0 = Math.sin(w0);
+      const cosW0 = Math.cos(w0);
+      const alpha = sinW0 / (2 * q);
+      let b0, b1, b2, a0, a1, a2;
+
+      switch (type) {
+        case 'bell':
+          b0 = 1 + alpha * A; b1 = -2 * cosW0; b2 = 1 - alpha * A;
+          a0 = 1 + alpha / A; a1 = -2 * cosW0; a2 = 1 - alpha / A;
+          break;
+        case 'lowshelf': {
+          const sq = 2 * Math.sqrt(A) * alpha;
+          b0 = A * ((A + 1) - (A - 1) * cosW0 + sq); b1 = 2 * A * ((A - 1) - (A + 1) * cosW0);
+          b2 = A * ((A + 1) - (A - 1) * cosW0 - sq); a0 = (A + 1) + (A - 1) * cosW0 + sq;
+          a1 = -2 * ((A - 1) + (A + 1) * cosW0); a2 = (A + 1) + (A - 1) * cosW0 - sq;
+          break;
+        }
+        case 'highshelf': {
+          const sq = 2 * Math.sqrt(A) * alpha;
+          b0 = A * ((A + 1) + (A - 1) * cosW0 + sq); b1 = -2 * A * ((A - 1) + (A + 1) * cosW0);
+          b2 = A * ((A + 1) + (A - 1) * cosW0 - sq); a0 = (A + 1) - (A - 1) * cosW0 + sq;
+          a1 = 2 * ((A - 1) - (A + 1) * cosW0); a2 = (A + 1) - (A - 1) * cosW0 - sq;
+          break;
+        }
+        case 'notch':
+          b0 = 1; b1 = -2 * cosW0; b2 = 1;
+          a0 = 1 + alpha; a1 = -2 * cosW0; a2 = 1 - alpha;
+          break;
+      }
+      return { b0: b0 / a0, b1: b1 / a0, b2: b2 / a0, a1: a1 / a0, a2: a2 / a0 };
+    }
+
+    function evalMagnitudeDb(coeffs, freq) {
+      const w = 2 * Math.PI * freq / SAMPLE_RATE;
+      const cosw = Math.cos(w); const cos2w = Math.cos(2 * w);
+      const sinw = Math.sin(w); const sin2w = Math.sin(2 * w);
+      const numRe = coeffs.b0 + coeffs.b1 * cosw + coeffs.b2 * cos2w;
+      const numIm = -(coeffs.b1 * sinw + coeffs.b2 * sin2w);
+      const denRe = 1 + coeffs.a1 * cosw + coeffs.a2 * cos2w;
+      const denIm = -(coeffs.a1 * sinw + coeffs.a2 * sin2w);
+      const numMag = numRe * numRe + numIm * numIm;
+      const denMag = denRe * denRe + denIm * denIm;
+      if (denMag === 0) return 0;
+      return 10 * Math.log10(numMag / denMag);
+    }
+
+    // ================================================================
+    // State
+    // ================================================================
+    let bands = [];      // { dimIdx, gain, q, phase, type, id }
+    let activeBandIdx = -1;
+    let nextBandId = 1;
+
+    const BAND_COLORS = ['#ff6b6b', '#ffd93d', '#00ff88', '#00ccff', '#7b68ee', '#ff8c42', '#e84393', '#a29bfe'];
+
+    function bandColor(idx) { return BAND_COLORS[idx % BAND_COLORS.length]; }
+
+    function activeBand() { return bands[activeBandIdx] || null; }
+
+    // ================================================================
+    // Composite curve — sum all band responses
+    // ================================================================
+    function compositeDb(freq) {
+      let total = 0;
+      for (const b of bands) {
+        const f = dimToFreq(b.dimIdx);
+        const coeffs = calcBiquadCoeffs(f, b.q, b.gain, b.type);
+        total += evalMagnitudeDb(coeffs, freq);
+      }
+      return total;
+    }
+
+    // ================================================================
+    // Phase metrics
+    // ================================================================
+    function calcPhaseMetrics() {
+      if (bands.length === 0) return { avgPhase: 0, gapCount: 0, drift: 0, aligned: false };
+      let totalPhase = 0;
+      let gapCount = 0;
+      for (const b of bands) {
+        totalPhase += b.phase;
+        if (Math.abs(b.gain) > 3) gapCount++;
+      }
+      const avgPhase = totalPhase / bands.length;
+      // Drift = variance in phase across bands
+      let variance = 0;
+      for (const b of bands) variance += (b.phase - avgPhase) ** 2;
+      const drift = Math.sqrt(variance / bands.length);
+      const aligned = avgPhase < 15 && drift < 10 && gapCount === 0;
+      return { avgPhase, gapCount, drift, aligned };
+    }
+
+    // ================================================================
+    // Delay correction — generate recommendations
+    // ================================================================
+    function calcDelayCorrections() {
+      const corrections = [];
+      for (const b of bands) {
+        const dim = DIMENSIONS[b.dimIdx];
+        let action = '';
+        const severity = Math.abs(b.gain);
+
+        if (b.gain > 3) {
+          // Over-indexing
+          if (b.q > 4) {
+            action = `Model over-assumes a specific point in ${dim.name.toLowerCase()}. Add explicit counter-statement or boundary.`;
+          } else {
+            action = `Broad over-confidence in ${dim.name.toLowerCase()}. Reduce emphasis or add qualifying context.`;
+          }
+        } else if (b.gain < -3) {
+          // Under-reading
+          if (b.q > 4) {
+            action = `Narrow blind spot in ${dim.name.toLowerCase()}. Add targeted example or explicit reference.`;
+          } else {
+            action = `Wide gap in ${dim.name.toLowerCase()}. Add foundational context — the model lacks baseline understanding here.`;
+          }
+        } else {
+          action = `${dim.name} within tolerance. No correction needed.`;
+        }
+
+        if (b.phase > 90) {
+          action += ` Phase ${Math.round(b.phase)}° — model interprets this dimension inversely. Reframe the prompt angle.`;
+        } else if (b.phase > 30) {
+          action += ` Phase ${Math.round(b.phase)}° — partial misalignment. Clarify intent direction.`;
+        }
+
+        corrections.push({
+          dim: dim.name,
+          gain: b.gain,
+          q: b.q,
+          phase: b.phase,
+          type: b.type,
+          severity,
+          action,
+          color: bandColor(bands.indexOf(b))
+        });
+      }
+      // Sort by severity descending
+      corrections.sort((a, b) => b.severity - a.severity);
+      return corrections;
+    }
+
+    // ================================================================
+    // Draw
+    // ================================================================
+    const STEPS = 256;
+
+    function draw() {
+      const { w, h } = dims;
+      ctx.clearRect(0, 0, w, h);
+
+      // Background
+      ctx.fillStyle = '#1e1e24';
+      ctx.fillRect(0, 0, w, h);
+
+      // --- dB grid ---
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'middle';
+      ctx.font = '10px "Segoe UI", sans-serif';
+
+      for (const db of DB_MARKERS) {
+        const y = dbToY(db);
+        ctx.strokeStyle = db === 0 ? '#444' : '#2a2a2e';
+        ctx.lineWidth = db === 0 ? 1 : 0.5;
+        ctx.beginPath();
+        ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+        ctx.fillStyle = db === 0 ? '#777' : '#444';
+        ctx.fillText((db > 0 ? '+' : '') + db, 35, y);
+      }
+
+      // --- Dimension zones ---
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+
+      for (let i = 0; i < DIM_COUNT; i++) {
+        const x = dimToX(i);
+        const dim = DIMENSIONS[i];
+
+        // Vertical zone line
+        ctx.strokeStyle = '#2a2a30';
+        ctx.lineWidth = 0.5;
+        ctx.beginPath();
+        ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+
+        // Dimension label
+        ctx.fillStyle = '#555';
+        ctx.font = '9px "Segoe UI", sans-serif';
+        ctx.fillText(dim.name, x, h - 14);
+
+        // Color marker
+        ctx.fillStyle = dim.color + '44';
+        ctx.fillRect(x - 1, h - 4, 2, 4);
+      }
+
+      // --- Individual band curves (faded) ---
+      for (let bi = 0; bi < bands.length; bi++) {
+        const b = bands[bi];
+        const freq = dimToFreq(b.dimIdx);
+        const coeffs = calcBiquadCoeffs(freq, b.q, b.gain, b.type);
+        const isActive = bi === activeBandIdx;
+
+        ctx.beginPath();
+        for (let i = 0; i <= STEPS; i++) {
+          const f = F_MIN * Math.pow(F_MAX / F_MIN, i / STEPS);
+          const db = evalMagnitudeDb(coeffs, f);
+          const clamped = Math.max(GAIN_MIN, Math.min(GAIN_MAX, db));
+          const x = freqToX(f);
+          const y = dbToY(clamped);
+          if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.strokeStyle = (isActive ? bandColor(bi) : bandColor(bi) + '55');
+        ctx.lineWidth = isActive ? 1.5 : 0.8;
+        ctx.stroke();
+      }
+
+      // --- Composite curve ---
+      if (bands.length > 0) {
+        // Fill
+        const zeroY = dbToY(0);
+        ctx.beginPath();
+        ctx.moveTo(freqToX(F_MIN), zeroY);
+        for (let i = 0; i <= STEPS; i++) {
+          const f = F_MIN * Math.pow(F_MAX / F_MIN, i / STEPS);
+          const db = compositeDb(f);
+          const clamped = Math.max(GAIN_MIN, Math.min(GAIN_MAX, db));
+          ctx.lineTo(freqToX(f), dbToY(clamped));
+        }
+        ctx.lineTo(freqToX(F_MAX), zeroY);
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(123, 104, 238, 0.08)';
+        ctx.fill();
+
+        // Stroke
+        ctx.beginPath();
+        for (let i = 0; i <= STEPS; i++) {
+          const f = F_MIN * Math.pow(F_MAX / F_MIN, i / STEPS);
+          const db = compositeDb(f);
+          const clamped = Math.max(GAIN_MIN, Math.min(GAIN_MAX, db));
+          const x = freqToX(f);
+          const y = dbToY(clamped);
+          if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.strokeStyle = '#7b68ee';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+
+      // --- Band handles ---
+      for (let bi = 0; bi < bands.length; bi++) {
+        const b = bands[bi];
+        const handleX = dimToX(b.dimIdx);
+        const freq = dimToFreq(b.dimIdx);
+        const coeffs = calcBiquadCoeffs(freq, b.q, b.gain, b.type);
+        const handleDb = evalMagnitudeDb(coeffs, freq);
+        const handleY = dbToY(Math.max(GAIN_MIN, Math.min(GAIN_MAX, handleDb)));
+        const isActive = bi === activeBandIdx;
+        const color = bandColor(bi);
+
+        // Glow
+        if (isActive) {
+          const glow = ctx.createRadialGradient(handleX, handleY, 0, handleX, handleY, 16);
+          glow.addColorStop(0, color + '44');
+          glow.addColorStop(1, color + '00');
+          ctx.fillStyle = glow;
+          ctx.beginPath();
+          ctx.arc(handleX, handleY, 16, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // Dot
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.arc(handleX, handleY, isActive ? 6 : 4, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Phase indicator (small arc showing displacement)
+        if (b.phase > 5) {
+          const phaseRad = (b.phase / 180) * Math.PI;
+          ctx.strokeStyle = color + '88';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(handleX, handleY, 10, -Math.PI / 2, -Math.PI / 2 + phaseRad);
+          ctx.stroke();
+        }
+
+        // Label
+        if (isActive) {
+          ctx.fillStyle = '#aaa';
+          ctx.font = '10px "Segoe UI", sans-serif';
+          ctx.textAlign = 'left';
+          ctx.textBaseline = 'bottom';
+          const lbl = DIMENSIONS[b.dimIdx].name + '  ' +
+            (b.gain >= 0 ? '+' : '') + b.gain.toFixed(1) + 'dB  ' +
+            'Q' + b.q.toFixed(1) + '  ' + Math.round(b.phase) + '°';
+          ctx.fillText(lbl, handleX + 12, handleY - 4);
+        }
+      }
+
+      // --- 0dB baseline label ---
+      ctx.fillStyle = '#555';
+      ctx.font = '9px "Segoe UI", sans-serif';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('ALIGNED', 42, dbToY(0));
+    }
+
+    // ================================================================
+    // UI updates
+    // ================================================================
+    function updateBadge() {
+      document.getElementById('badgeText').textContent =
+        bands.length + ' band' + (bands.length !== 1 ? 's' : '') + ' \u00B7 ' + DIM_COUNT + ' dimensions';
+    }
+
+    function updatePhaseDisplay() {
+      const m = calcPhaseMetrics();
+      document.getElementById('phaseVal').textContent = Math.round(m.avgPhase) + '°';
+      document.getElementById('gapVal').textContent = m.gapCount + ' dim';
+      document.getElementById('driftVal').textContent = Math.round(m.drift) + '°';
+      document.getElementById('alignVal').textContent = m.aligned ? 'LOCKED' : 'DRIFTING';
+      document.getElementById('alignVal').style.color = m.aligned ? '#00ff88' : '#ff6b6b';
+    }
+
+    function updateKnobIndicator(param, norm) {
+      const angle = -135 + norm * 270;
+      const el = document.querySelector(`[data-param="${param}"] .knob-indicator`);
+      if (el) el.style.transform = `rotate(${angle}deg)`;
+    }
+
+    function updateKnobs() {
+      const b = activeBand();
+      if (!b) {
+        document.getElementById('dimVal').textContent = '--';
+        document.getElementById('gainVal').textContent = '0.0 dB';
+        document.getElementById('qVal').textContent = '1.00';
+        document.getElementById('phaseKnobVal').textContent = '0°';
+        updateKnobIndicator('gain', 0.5);
+        updateKnobIndicator('q', 0.3);
+        updateKnobIndicator('phase', 0);
+        return;
+      }
+      const dim = DIMENSIONS[b.dimIdx];
+      document.getElementById('dimVal').textContent = dim.name;
+      document.getElementById('gainVal').textContent = (b.gain >= 0 ? '+' : '') + b.gain.toFixed(1) + ' dB';
+      document.getElementById('qVal').textContent = b.q.toFixed(2);
+      document.getElementById('phaseKnobVal').textContent = Math.round(b.phase) + '°';
+
+      document.getElementById('dimSelect').value = b.dimIdx;
+
+      updateKnobIndicator('gain', gainToNorm(b.gain));
+      updateKnobIndicator('q', qToNorm(b.q));
+      updateKnobIndicator('phase', phaseToNorm(b.phase));
+
+      // Filter type buttons
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.type === b.type);
+      });
+    }
+
+    function updateBandTabs() {
+      const container = document.getElementById('bandTabs');
+      container.innerHTML = '';
+
+      for (let i = 0; i < bands.length; i++) {
+        const b = bands[i];
+        const tab = document.createElement('button');
+        tab.className = 'band-tab' + (i === activeBandIdx ? ' active' : '') + (Math.abs(b.gain) > 0.5 ? ' has-data' : '');
+        tab.innerHTML = `<span class="dot" style="background:${bandColor(i)}"></span>${DIMENSIONS[b.dimIdx].name}`;
+        tab.addEventListener('click', () => { activeBandIdx = i; refresh(); });
+        container.appendChild(tab);
+      }
+
+      const addBtn = document.createElement('button');
+      addBtn.className = 'add-band-btn';
+      addBtn.textContent = '+ Add Band';
+      addBtn.addEventListener('click', addBand);
+      container.appendChild(addBtn);
+
+      if (bands.length > 0) {
+        const rmBtn = document.createElement('button');
+        rmBtn.className = 'remove-band-btn';
+        rmBtn.textContent = 'Remove';
+        rmBtn.addEventListener('click', removeActiveBand);
+        container.appendChild(rmBtn);
+      }
+    }
+
+    function updateDelayPanel() {
+      const empty = document.getElementById('delayEmpty');
+      const items = document.getElementById('delayItems');
+      items.innerHTML = '';
+
+      if (bands.length === 0) {
+        empty.style.display = 'block';
+        return;
+      }
+      empty.style.display = 'none';
+
+      const corrections = calcDelayCorrections();
+      for (const c of corrections) {
+        const div = document.createElement('div');
+        div.className = 'delay-item';
+        div.innerHTML =
+          `<span class="delay-dim" style="color:${c.color}">${c.dim}</span>` +
+          `<span class="delay-metric">${(c.gain >= 0 ? '+' : '') + c.gain.toFixed(1)}dB Q${c.q.toFixed(1)} ${Math.round(c.phase)}°</span>` +
+          `<span class="delay-action">${c.action}</span>`;
+        items.appendChild(div);
+      }
+    }
+
+    function refresh() {
+      updateBadge();
+      updatePhaseDisplay();
+      updateKnobs();
+      updateBandTabs();
+      updateDelayPanel();
+      draw();
+    }
+
+    // ================================================================
+    // Band management
+    // ================================================================
+    function addBand(dimIdx) {
+      if (typeof dimIdx !== 'number') {
+        // Find first unused dimension
+        const used = new Set(bands.map(b => b.dimIdx));
+        dimIdx = 0;
+        for (let i = 0; i < DIM_COUNT; i++) {
+          if (!used.has(i)) { dimIdx = i; break; }
+        }
+      }
+      bands.push({
+        dimIdx,
+        gain: 0,
+        q: 1.0,
+        phase: 0,
+        type: 'bell',
+        id: nextBandId++
+      });
+      activeBandIdx = bands.length - 1;
+      refresh();
+    }
+
+    function removeActiveBand() {
+      if (activeBandIdx < 0 || bands.length === 0) return;
+      bands.splice(activeBandIdx, 1);
+      activeBandIdx = Math.min(activeBandIdx, bands.length - 1);
+      refresh();
+    }
+
+    // ================================================================
+    // Dimension selector
+    // ================================================================
+    const dimSelect = document.getElementById('dimSelect');
+    for (let i = 0; i < DIM_COUNT; i++) {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = DIMENSIONS[i].name;
+      dimSelect.appendChild(opt);
+    }
+    dimSelect.addEventListener('change', () => {
+      const b = activeBand();
+      if (!b) return;
+      b.dimIdx = parseInt(dimSelect.value);
+      refresh();
+    });
+
+    // ================================================================
+    // Knob interaction
+    // ================================================================
+    let activeKnob = null;
+    let dragStartY = 0;
+    let dragStartValue = 0;
+
+    document.querySelectorAll('.knob-outer').forEach(knob => {
+      const param = knob.dataset.param;
+      if (!param) return;
+
+      knob.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        const b = activeBand();
+        if (!b) return;
+        activeKnob = param;
+        dragStartY = e.clientY;
+        if (param === 'gain') dragStartValue = gainToNorm(b.gain);
+        else if (param === 'q') dragStartValue = qToNorm(b.q);
+        else if (param === 'phase') dragStartValue = phaseToNorm(b.phase);
+      });
+
+      knob.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const b = activeBand();
+        if (!b) return;
+        const delta = -e.deltaY * 0.001;
+        if (param === 'gain') {
+          let n = gainToNorm(b.gain) + delta;
+          b.gain = normToGain(Math.max(0, Math.min(1, n)));
+        } else if (param === 'q') {
+          let n = qToNorm(b.q) + delta;
+          b.q = normToQ(Math.max(0, Math.min(1, n)));
+        } else if (param === 'phase') {
+          let n = phaseToNorm(b.phase) + delta;
+          b.phase = normToPhase(Math.max(0, Math.min(1, n)));
+        }
+        refresh();
+      });
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (!activeKnob) return;
+      const b = activeBand();
+      if (!b) return;
+      const dy = dragStartY - e.clientY;
+      let norm = dragStartValue + dy * 0.005;
+      norm = Math.max(0, Math.min(1, norm));
+
+      if (activeKnob === 'gain') b.gain = normToGain(norm);
+      else if (activeKnob === 'q') b.q = normToQ(norm);
+      else if (activeKnob === 'phase') b.phase = normToPhase(norm);
+      refresh();
+    });
+
+    window.addEventListener('mouseup', () => { activeKnob = null; });
+
+    // ================================================================
+    // Spectrum click — add or move band
+    // ================================================================
+    let spectrumDrag = false;
+
+    wrap.addEventListener('mousedown', (e) => {
+      if (e.target !== canvas) return;
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const dimIdx = xToDimIdx(x);
+
+      // Check if clicking near an existing band handle
+      let found = -1;
+      for (let i = 0; i < bands.length; i++) {
+        const bx = dimToX(bands[i].dimIdx);
+        if (Math.abs(x - bx) < 20) { found = i; break; }
+      }
+
+      if (found >= 0) {
+        activeBandIdx = found;
+        spectrumDrag = true;
+      } else {
+        // Add band at this dimension
+        addBand(dimIdx);
+        spectrumDrag = true;
+      }
+      refresh();
+    });
+
+    wrap.addEventListener('mousemove', (e) => {
+      if (!spectrumDrag) return;
+      const b = activeBand();
+      if (!b) return;
+      const rect = canvas.getBoundingClientRect();
+
+      // Vertical = gain
+      const pad = 24;
+      const usable = dims.h - 2 * pad;
+      const yNorm = 1 - (e.clientY - rect.top - pad) / usable;
+      b.gain = normToGain(Math.max(0, Math.min(1, yNorm)));
+      refresh();
+    });
+
+    wrap.addEventListener('mouseup', () => { spectrumDrag = false; });
+    wrap.addEventListener('mouseleave', () => { spectrumDrag = false; });
+
+    // Scroll on spectrum = Q adjust for active band
+    wrap.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const b = activeBand();
+      if (!b) return;
+      const delta = -e.deltaY * 0.002;
+      let n = qToNorm(b.q) + delta;
+      b.q = normToQ(Math.max(0, Math.min(1, n)));
+      refresh();
+    });
+
+    // ================================================================
+    // Filter type buttons
+    // ================================================================
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const b = activeBand();
+        if (!b) return;
+        b.type = btn.dataset.type;
+        refresh();
+      });
+    });
+
+    // ================================================================
+    // Export / Import
+    // ================================================================
+    document.getElementById('exportBtn').addEventListener('click', () => {
+      const data = {
+        version: 1,
+        timestamp: new Date().toISOString(),
+        bands: bands.map(b => ({
+          dimension: DIMENSIONS[b.dimIdx].id,
+          gain: Math.round(b.gain * 10) / 10,
+          q: Math.round(b.q * 100) / 100,
+          phase: Math.round(b.phase),
+          type: b.type
+        })),
+        metrics: calcPhaseMetrics(),
+        corrections: calcDelayCorrections().map(c => ({
+          dimension: c.dim,
+          gain: c.gain,
+          q: c.q,
+          phase: c.phase,
+          action: c.action
+        }))
+      };
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'context-calibration-' + new Date().toISOString().slice(0, 10) + '.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    document.getElementById('importBtn').addEventListener('click', () => {
+      document.getElementById('importFile').click();
+    });
+
+    document.getElementById('importFile').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        try {
+          const data = JSON.parse(ev.target.result);
+          if (!data.bands || !Array.isArray(data.bands)) return;
+          bands = [];
+          for (const b of data.bands) {
+            const dimIdx = DIMENSIONS.findIndex(d => d.id === b.dimension);
+            if (dimIdx < 0) continue;
+            bands.push({
+              dimIdx,
+              gain: b.gain || 0,
+              q: b.q || 1,
+              phase: b.phase || 0,
+              type: b.type || 'bell',
+              id: nextBandId++
+            });
+          }
+          activeBandIdx = bands.length > 0 ? 0 : -1;
+          refresh();
+        } catch (err) {
+          console.error('Import failed:', err);
+        }
+      };
+      reader.readAsText(file);
+      e.target.value = '';
+    });
+
+    // ================================================================
+    // Init
+    // ================================================================
+    refresh();
+  </script>
+</body>
+
+</html>

@@ -1,14 +1,14 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import {
-  mkdirSync,
-  mkdtempSync,
-  readFileSync,
-  rmSync,
-  writeFileSync,
-} from "fs";
 import crypto from "crypto";
+import {
+    mkdirSync,
+    mkdtempSync,
+    readFileSync,
+    rmSync,
+    writeFileSync,
+} from "fs";
 import os from "os";
 import path from "path";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 type TestServer = {
   _registeredTools: Record<
@@ -43,7 +43,9 @@ describe("grid-server smoke", () => {
     process.env.GATE_DIR = path.join(tempRoot, "GATE");
     process.env.GATE_TRUSTED_SOURCE_PARTITIONS = "test-agent";
     mkdirSync(process.env.GATE_DIR, { recursive: true });
-    const serverModule = await import("../src/server.ts") as unknown as { buildServer: () => TestServer };
+    const serverModule = (await import("../src/server.ts")) as unknown as {
+      buildServer: () => TestServer;
+    };
     ({ buildServer } = serverModule);
     ({ getConfig } = await import("../src/config.ts"));
   });
@@ -124,7 +126,12 @@ describe("grid-server smoke", () => {
     writeFileSync(envelopePath, JSON.stringify(envelope), "utf-8");
 
     const server = buildServer();
-    const result = await invokeTool(server, "validate_envelope", { envelopePath }) as { isError?: boolean; content?: Array<{ type: string; text?: string }> };
+    const result = (await invokeTool(server, "validate_envelope", {
+      envelopePath,
+    })) as {
+      isError?: boolean;
+      content?: Array<{ type: string; text?: string }>;
+    };
     expect(result.isError).not.toBe(true);
     const text = result.content?.[0]?.text;
     expect(text).toBeDefined();
@@ -188,12 +195,203 @@ describe("grid-server smoke", () => {
     writeFileSync(envelopePath, JSON.stringify(envelope), "utf-8");
 
     const server = buildServer();
-    const result = await invokeTool(server, "validate_envelope", { envelopePath }) as { isError?: boolean; content?: Array<{ type: string; text?: string }> };
+    const result = (await invokeTool(server, "validate_envelope", {
+      envelopePath,
+    })) as {
+      isError?: boolean;
+      content?: Array<{ type: string; text?: string }>;
+    };
     expect(result.isError).not.toBe(true);
     const text = result.content?.[0]?.text;
     const parsed = JSON.parse(text as string);
     expect(parsed.valid).toBe(false);
     expect(parsed.enhancedValidation?.flags).toContain("grid_unavailable");
     expect(parsed.enhancedValidation?.approved).toBe(false);
+  });
+
+  it("validate_envelope fails when trusted sources are not explicitly configured", async () => {
+    const isolatedRoot = mkdtempSync(
+      path.join(os.tmpdir(), "grid-server-untrusted-"),
+    );
+    const isolatedGate = path.join(isolatedRoot, "GATE");
+    mkdirSync(path.join(isolatedGate, "incoming"), { recursive: true });
+    writeFileSync(
+      path.join(isolatedGate, ".nonce_registry.json"),
+      JSON.stringify({
+        "test-nonce-3": {
+          issued_at: new Date().toISOString(),
+          burned: false,
+          burned_at: null,
+        },
+      }),
+      "utf-8",
+    );
+
+    process.env.CASCADE_WORKSPACE_ROOT = isolatedRoot;
+    process.env.GATE_DIR = isolatedGate;
+    delete process.env.GATE_TRUSTED_SOURCE_PARTITIONS;
+    delete process.env.GRID_API_URL;
+
+    const payloadHash = crypto.createHash("sha256").update("{}").digest("hex");
+    const envelopePath = path.join(
+      isolatedGate,
+      "incoming",
+      "envelope_no_trust.json",
+    );
+    writeFileSync(
+      envelopePath,
+      JSON.stringify({
+        envelope_id: "test-env-3",
+        payload: {},
+        payload_hash: payloadHash,
+        nonce: "test-nonce-3",
+        timestamp: new Date().toISOString(),
+        user_fingerprint: "any",
+        machine_fingerprint: "any",
+        scope: "deploy",
+        source_partition: "test-agent",
+        target_partition: "grid-server",
+        tests_passed: true,
+        lint_passed: true,
+      }),
+      "utf-8",
+    );
+
+    const isolatedModulePath = "../src/server.ts?trusted-sources-missing";
+    const { buildServer: isolatedBuildServer } = (await import(
+      isolatedModulePath
+    )) as unknown as { buildServer: () => TestServer };
+    const server = isolatedBuildServer() as TestServer;
+    const result = (await invokeTool(server, "validate_envelope", {
+      envelopePath,
+    })) as {
+      content?: Array<{ text?: string }>;
+    };
+    const parsed = JSON.parse(result.content?.[0]?.text as string);
+    expect(parsed.valid).toBe(false);
+    expect(
+      parsed.checks.some(
+        (c: { check: string; passed: boolean }) =>
+          c.check === "trusted_source" && !c.passed,
+      ),
+    ).toBe(true);
+
+    rmSync(isolatedRoot, { recursive: true, force: true });
+    process.env.CASCADE_WORKSPACE_ROOT = tempRoot;
+    process.env.GATE_DIR = path.join(tempRoot, "GATE");
+    process.env.GATE_TRUSTED_SOURCE_PARTITIONS = "test-agent";
+  });
+
+  it("validate_envelope accepts fresh numeric second timestamps", async () => {
+    delete process.env.GRID_API_URL;
+    process.env.GATE_TRUSTED_SOURCE_PARTITIONS = "test-agent";
+    const gateDir = process.env.GATE_DIR!;
+    const incomingDir = path.join(gateDir, "incoming");
+    mkdirSync(incomingDir, { recursive: true });
+    writeFileSync(
+      path.join(gateDir, ".nonce_registry.json"),
+      JSON.stringify({
+        "test-nonce-4": {
+          issued_at: new Date().toISOString(),
+          burned: false,
+          burned_at: null,
+        },
+      }),
+      "utf-8",
+    );
+
+    const payloadHash = crypto.createHash("sha256").update("{}").digest("hex");
+    const envelopePath = path.join(
+      incomingDir,
+      "envelope_numeric_timestamp.json",
+    );
+    writeFileSync(
+      envelopePath,
+      JSON.stringify({
+        envelope_id: "test-env-4",
+        payload: {},
+        payload_hash: payloadHash,
+        nonce: "test-nonce-4",
+        timestamp: Math.floor(Date.now() / 1000),
+        user_fingerprint: "any",
+        machine_fingerprint: "any",
+        scope: "deploy",
+        source_partition: "test-agent",
+        target_partition: "grid-server",
+        tests_passed: true,
+        lint_passed: true,
+      }),
+      "utf-8",
+    );
+
+    const server = buildServer();
+    const result = (await invokeTool(server, "validate_envelope", {
+      envelopePath,
+    })) as {
+      content?: Array<{ text?: string }>;
+    };
+    const parsed = JSON.parse(result.content?.[0]?.text as string);
+    expect(parsed.valid).toBe(true);
+    expect(
+      parsed.checks.some(
+        (c: { check: string; passed: boolean }) =>
+          c.check === "timestamp_fresh" && c.passed,
+      ),
+    ).toBe(true);
+  });
+
+  it("validate_envelope rejects unrecognized target partitions", async () => {
+    delete process.env.GRID_API_URL;
+    process.env.GATE_TRUSTED_SOURCE_PARTITIONS = "test-agent";
+    const gateDir = process.env.GATE_DIR!;
+    const incomingDir = path.join(gateDir, "incoming");
+    mkdirSync(incomingDir, { recursive: true });
+    writeFileSync(
+      path.join(gateDir, ".nonce_registry.json"),
+      JSON.stringify({
+        "test-nonce-5": {
+          issued_at: new Date().toISOString(),
+          burned: false,
+          burned_at: null,
+        },
+      }),
+      "utf-8",
+    );
+
+    const payloadHash = crypto.createHash("sha256").update("{}").digest("hex");
+    const envelopePath = path.join(incomingDir, "envelope_bad_target.json");
+    writeFileSync(
+      envelopePath,
+      JSON.stringify({
+        envelope_id: "test-env-5",
+        payload: {},
+        payload_hash: payloadHash,
+        nonce: "test-nonce-5",
+        timestamp: new Date().toISOString(),
+        user_fingerprint: "any",
+        machine_fingerprint: "any",
+        scope: "deploy",
+        source_partition: "test-agent",
+        target_partition: "Z:\\outside\\unknown-target",
+        tests_passed: true,
+        lint_passed: true,
+      }),
+      "utf-8",
+    );
+
+    const server = buildServer();
+    const result = (await invokeTool(server, "validate_envelope", {
+      envelopePath,
+    })) as {
+      content?: Array<{ text?: string }>;
+    };
+    const parsed = JSON.parse(result.content?.[0]?.text as string);
+    expect(parsed.valid).toBe(false);
+    expect(
+      parsed.checks.some(
+        (c: { check: string; passed: boolean }) =>
+          c.check === "target_partition_recognized" && !c.passed,
+      ),
+    ).toBe(true);
   });
 });
