@@ -1,0 +1,43 @@
+---
+description: IDE and coding standards for CascadeProjects
+globs: **/*.py,**/*.ts,**/*.json
+alwaysApply: false
+---
+
+# Coding Standards
+
+Canonical shared rules source: `/home/caraxes/.dev-rules.md`
+
+## Python
+- Python 3.13+ with modern syntax (match/case, `X | Y` unions)
+- **Formatter**: ruff only (not black, isort, pylint)
+- **Line length**: 120 characters
+- **Type hints**: required on all function signatures
+- **Logging**: structlog — no bare `print()` in production code
+- **Data models**: Pydantic v2 (`model_validator`, not `@validator`)
+- **Package manager**: `uv` exclusively — never bare `python` or `pip`
+- **Prohibited**: `eval()`, `exec()`, `pickle`
+
+## TypeScript
+- Strict mode, ESLint + Prettier
+- Named exports preferred over default exports
+
+## File Standards
+- **Line endings**: LF (`\n`), not CRLF
+- **Trailing whitespace**: trim on save
+- **Final newline**: insert on save
+
+## Commits
+- Conventional format: `feat(scope):`, `fix(scope):`, `test(scope):`, `docs(scope):`
+- One commit, one concern
+
+## Package Managers
+- Python → `uv`
+- CascadeProjects MCP servers → `npm`
+- mcp-tool-experiment → `pnpm`
+
+## Safety-Critical Code
+- Never weaken validation in `safety/`, `security/`, `boundaries/`
+- Never add bypass paths or dev-mode shortcuts
+- Always maintain audit trail integrity
+- Local-first AI: Ollama + ChromaDB (no external APIs unless asked)
