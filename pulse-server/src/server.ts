@@ -25,6 +25,7 @@
  * Follows the same patterns as echoes-server, grid-server, etc.
  */
 
+import { emitAudit } from "@cascade/shared-types/audit-client";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { promises as fs } from "fs";
@@ -155,9 +156,19 @@ async function getTodayJournal(): Promise<JournalEntry[]> {
   }
 }
 
+/** Atomic write: write to .tmp then rename to prevent corruption. */
+async function atomicWriteJson(filepath: string, data: unknown): Promise<void> {
+  const tmpPath = filepath + `.tmp.${process.pid}`;
+  await fs.writeFile(tmpPath, JSON.stringify(data, null, 2), "utf-8");
+  await fs.rename(tmpPath, filepath);
+}
+
+/** Max audit file size guard (100MB) */
+const MAX_AUDIT_FILE_BYTES = 100 * 1024 * 1024;
+
 async function saveTodayJournal(entries: JournalEntry[]): Promise<void> {
   const filepath = path.join(JOURNAL_DIR, `${todayKey()}.json`);
-  await fs.writeFile(filepath, JSON.stringify(entries, null, 2), "utf-8");
+  await atomicWriteJson(filepath, entries);
 }
 
 async function getActiveFocus(): Promise<FocusSession | null> {
@@ -179,7 +190,7 @@ async function saveActiveFocus(session: FocusSession | null): Promise<void> {
       /* no active session */
     }
   } else {
-    await fs.writeFile(filepath, JSON.stringify(session, null, 2), "utf-8");
+    await atomicWriteJson(filepath, session);
   }
 }
 
@@ -193,7 +204,7 @@ async function archiveFocusSession(session: FocusSession): Promise<void> {
     /* new file */
   }
   sessions.push(session);
-  await fs.writeFile(filepath, JSON.stringify(sessions, null, 2), "utf-8");
+  await atomicWriteJson(filepath, sessions);
 }
 
 async function loadPreferences(): Promise<Preferences> {
@@ -209,17 +220,19 @@ async function loadPreferences(): Promise<Preferences> {
 }
 
 async function savePreferences(preferences: Preferences): Promise<void> {
-  await fs.writeFile(
-    config.preferencesPath,
-    JSON.stringify(preferences, null, 2),
-    "utf-8",
-  );
+  await atomicWriteJson(config.preferencesPath, preferences);
 }
 
 // ── Cross-Server Aggregation (read-only) ──
 
 async function readRecentAuditEntries(limit: number): Promise<unknown[]> {
   try {
+    // File size guard — prevent loading huge audit files into memory
+    const stat = await fs.stat(ECHOES_AUDIT);
+    if (stat.size > MAX_AUDIT_FILE_BYTES) {
+      console.error(`[${SERVER_NAME}] Audit log too large (${Math.round(stat.size / (1024 * 1024))}MB) — skipping`);
+      return [];
+    }
     const content = await fs.readFile(ECHOES_AUDIT, "utf-8");
     const lines = content.trim().split("\n").filter(Boolean);
     return lines
@@ -1599,11 +1612,7 @@ export function buildServer(): McpServer {
 
       if (args.save !== false) {
         const digestPath = path.join(DIGESTS_DIR, `${dateKey}.json`);
-        await fs.writeFile(
-          digestPath,
-          JSON.stringify(digest, null, 2),
-          "utf-8",
-        );
+        await atomicWriteJson(digestPath, digest);
       }
 
       return {

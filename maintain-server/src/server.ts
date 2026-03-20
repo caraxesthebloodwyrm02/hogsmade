@@ -13,6 +13,7 @@
  */
 
 import { emitAudit } from "@cascade/shared-types/audit-client";
+import { ExecutionPolicyEngine } from "@cascade/shared-types/security-policy";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { execFile } from "child_process";
@@ -41,20 +42,50 @@ const CLEANUP_LOG_PATH = path.join(DATA_DIR, "cleanup-log.json");
 const PREVIEW_TOKEN_TTL_MS = 5 * 60 * 1000;
 let lastPreview: { token: string; expiresAt: number; actionHash: string } | null = null;
 
+// Rate limiting for expensive scans
+const SCAN_COOLDOWN_MS = 30_000; // 30 seconds between expensive scans
+const lastScanTimes = new Map<string, number>();
+
+function checkScanRateLimit(scanType: string): string | null {
+  const now = Date.now();
+  const last = lastScanTimes.get(scanType);
+  if (last && now - last < SCAN_COOLDOWN_MS) {
+    const waitSec = Math.ceil((SCAN_COOLDOWN_MS - (now - last)) / 1000);
+    return `Rate limited: ${scanType} was run ${Math.round((now - last) / 1000)}s ago. Wait ${waitSec}s.`;
+  }
+  lastScanTimes.set(scanType, now);
+  return null;
+}
+
+// Execution policy for path validation
+const executionPolicy = new ExecutionPolicyEngine(config.scanRoots);
+
 function actionHash(actions: Array<{ type: string; target?: string; maxAgeDays?: number }>): string {
   return crypto.createHash("sha256").update(JSON.stringify(actions)).digest("hex");
+}
+
+// Platform-aware temp targets
+function getPlatformTempTargets(): Record<string, string> {
+  if (os.platform() === "win32") {
+    return {
+      user_temp: process.env.TEMP || path.join(os.homedir(), "AppData", "Local", "Temp"),
+      npm_cache: path.join(os.homedir(), "AppData", "Local", "npm-cache"),
+      pip_cache: path.join(os.homedir(), "AppData", "Local", "pip", "Cache"),
+      prefetch: "C:\\Windows\\Prefetch",
+    };
+  }
+  // Linux / macOS
+  return {
+    user_temp: process.env.TMPDIR || "/tmp",
+    npm_cache: path.join(os.homedir(), ".npm", "_cacache"),
+    pip_cache: path.join(os.homedir(), ".cache", "pip"),
+  };
 }
 
 // Default config
 const DEFAULT_CONFIG = {
   scanRoots: config.scanRoots,
-  tempTargets: {
-    user_temp:
-      process.env.TEMP || path.join(os.homedir(), "AppData", "Local", "Temp"),
-    npm_cache: path.join(os.homedir(), "AppData", "Local", "npm-cache"),
-    pip_cache: path.join(os.homedir(), "AppData", "Local", "pip", "Cache"),
-    prefetch: "C:\\Windows\\Prefetch",
-  },
+  tempTargets: getPlatformTempTargets(),
   thresholds: {
     ramWarningPercent: 85,
     ramCriticalPercent: 95,
@@ -172,8 +203,15 @@ async function loadConfig(): Promise<Config> {
   }
 }
 
+/** Atomic write: write to .tmp then rename to prevent corruption. */
+async function atomicWriteJson(filepath: string, data: unknown): Promise<void> {
+  const tmpPath = filepath + `.tmp.${process.pid}`;
+  await fs.writeFile(tmpPath, JSON.stringify(data, null, 2), "utf-8");
+  await fs.rename(tmpPath, filepath);
+}
+
 async function saveConfig(config: Config): Promise<void> {
-  await fs.writeFile(CONFIG_PATH, JSON.stringify(config, null, 2), "utf-8");
+  await atomicWriteJson(CONFIG_PATH, config);
 }
 
 function getStableRootLabel(rootPath: string): string | undefined {
@@ -214,7 +252,7 @@ function getCleanupRelatedRepo(
 async function saveReport(report: DiagnosticReport): Promise<string> {
   const filename = `report-${Date.now()}.json`;
   const filepath = path.join(REPORTS_DIR, filename);
-  await fs.writeFile(filepath, JSON.stringify(report, null, 2), "utf-8");
+  await atomicWriteJson(filepath, report);
   return filepath;
 }
 
@@ -254,14 +292,20 @@ async function appendCleanupLog(entry: CleanupLogEntry): Promise<void> {
     /* empty */
   }
   logs.push(entry);
-  await fs.writeFile(CLEANUP_LOG_PATH, JSON.stringify(logs, null, 2), "utf-8");
+  await atomicWriteJson(CLEANUP_LOG_PATH, logs);
 }
 
 // ── Directory Size Calculation ──
 
+const MAX_DIR_WALK_DEPTH = 20;
+
 async function getDirSize(
   dirPath: string,
+  depth = 0,
+  visited?: Set<bigint>,
 ): Promise<{ size: number; count: number }> {
+  if (depth > MAX_DIR_WALK_DEPTH) return { size: 0, count: 0 };
+  const seen = visited ?? new Set<bigint>();
   let size = 0;
   let count = 0;
 
@@ -269,8 +313,20 @@ async function getDirSize(
     const entries = await fs.readdir(dirPath, { withFileTypes: true });
     for (const entry of entries) {
       const fullPath = path.join(dirPath, entry.name);
+      // Symlink guard: skip symlinks to prevent traversal and loop attacks
+      try {
+        const lst = await fs.lstat(fullPath);
+        if (lst.isSymbolicLink()) continue;
+        // Cycle detection via inode
+        if (lst.isDirectory()) {
+          const ino = BigInt(lst.ino);
+          if (seen.has(ino)) continue;
+          seen.add(ino);
+        }
+      } catch { continue; }
+
       if (entry.isDirectory()) {
-        const sub = await getDirSize(fullPath);
+        const sub = await getDirSize(fullPath, depth + 1, seen);
         size += sub.size;
         count += sub.count;
       } else if (entry.isFile()) {
@@ -298,13 +354,20 @@ async function getStaleFiles(
   let count = 0;
   let size = 0;
 
-  async function walk(dir: string): Promise<void> {
+  async function walk(dir: string, depth = 0): Promise<void> {
+    if (depth > MAX_DIR_WALK_DEPTH) return;
     try {
       const entries = await fs.readdir(dir, { withFileTypes: true });
       for (const entry of entries) {
         const fullPath = path.join(dir, entry.name);
+        // Symlink guard
+        try {
+          const lst = await fs.lstat(fullPath);
+          if (lst.isSymbolicLink()) continue;
+        } catch { continue; }
+
         if (entry.isDirectory()) {
-          await walk(fullPath);
+          await walk(fullPath, depth + 1);
         } else if (entry.isFile()) {
           try {
             const stat = await fs.stat(fullPath);
@@ -648,75 +711,118 @@ async function getSystemMetrics(topN: number): Promise<SystemMetrics> {
     warnings.push(`High RAM usage: ${usedPercent}%`);
   }
 
-  // Get volumes via PowerShell
+  // Get volumes — platform-aware
   let volumes: SystemMetrics["volumes"] = [];
-  try {
-    const { stdout } = await execFileAsync("powershell", [
-      "-NoProfile",
-      "-Command",
-      "Get-Volume | Where-Object {$_.DriveLetter} | Select-Object DriveLetter,SizeRemaining,Size | ConvertTo-Json",
-    ]);
-    const volData = JSON.parse(stdout);
-    const vols = Array.isArray(volData) ? volData : [volData];
-    for (const v of vols) {
-      const totalGB = Math.round((v.Size || 0) / 1024 ** 3);
-      const freeGB = Math.round((v.SizeRemaining || 0) / 1024 ** 3);
-      const freePercent =
-        totalGB > 0 ? Math.round((freeGB / totalGB) * 100) : 0;
-      volumes.push({ drive: v.DriveLetter, totalGB, freeGB, freePercent });
-      if (freePercent < 5) {
-        status = "critical";
-        warnings.push(
-          `Critical disk space on ${v.DriveLetter}:\\ (${freePercent}% free)`,
-        );
-      } else if (freePercent < 10) {
-        if (status !== "critical") status = "warning";
-        warnings.push(
-          `Low disk space on ${v.DriveLetter}:\\ (${freePercent}% free)`,
-        );
+  if (os.platform() === "win32") {
+    try {
+      const { stdout } = await execFileAsync("powershell", [
+        "-NoProfile",
+        "-Command",
+        "Get-Volume | Where-Object {$_.DriveLetter} | Select-Object DriveLetter,SizeRemaining,Size | ConvertTo-Json",
+      ]);
+      const volData = JSON.parse(stdout);
+      const vols = Array.isArray(volData) ? volData : [volData];
+      for (const v of vols) {
+        const totalGB = Math.round((v.Size || 0) / 1024 ** 3);
+        const freeGB = Math.round((v.SizeRemaining || 0) / 1024 ** 3);
+        const freePercent =
+          totalGB > 0 ? Math.round((freeGB / totalGB) * 100) : 0;
+        volumes.push({ drive: v.DriveLetter, totalGB, freeGB, freePercent });
+        if (freePercent < 5) {
+          status = "critical";
+          warnings.push(`Critical disk space on ${v.DriveLetter}:\\ (${freePercent}% free)`);
+        } else if (freePercent < 10) {
+          if (status !== "critical") status = "warning";
+          warnings.push(`Low disk space on ${v.DriveLetter}:\\ (${freePercent}% free)`);
+        }
       }
-    }
-  } catch {
-    /* PowerShell not available */
+    } catch { /* PowerShell not available */ }
+  } else {
+    // Linux/macOS: use df
+    try {
+      const { stdout } = await execFileAsync("df", ["-BG", "--output=target,size,avail"], { timeout: 10000 });
+      const lines = stdout.trim().split("\n").slice(1); // skip header
+      for (const line of lines) {
+        const parts = line.trim().split(/\s+/);
+        if (parts.length >= 3 && (parts[0] === "/" || parts[0]?.startsWith("/home"))) {
+          const totalGB = parseInt(parts[1]) || 0;
+          const freeGB = parseInt(parts[2]) || 0;
+          const freePercent = totalGB > 0 ? Math.round((freeGB / totalGB) * 100) : 0;
+          volumes.push({ drive: parts[0], totalGB, freeGB, freePercent });
+          if (freePercent < 5) {
+            status = "critical";
+            warnings.push(`Critical disk space on ${parts[0]} (${freePercent}% free)`);
+          } else if (freePercent < 10) {
+            if (status !== "critical") status = "warning";
+            warnings.push(`Low disk space on ${parts[0]} (${freePercent}% free)`);
+          }
+        }
+      }
+    } catch { /* df not available */ }
   }
 
-  // Top processes
+  // Top processes — platform-aware
   let topProcesses: SystemMetrics["topProcesses"] = [];
-  try {
-    const { stdout } = await execFileAsync("powershell", [
-      "-NoProfile",
-      "-Command",
-      `Get-Process | Sort-Object WorkingSet64 -Descending | Select-Object -First ${topN} Name,Id,WorkingSet64 | ConvertTo-Json`,
-    ]);
-    const procData = JSON.parse(stdout);
-    const procs = Array.isArray(procData) ? procData : [procData];
-    topProcesses = procs.map(
-      (p: { Name: string; Id: number; WorkingSet64: number }) => ({
-        name: p.Name,
-        pid: p.Id,
-        memoryMB: Math.round(p.WorkingSet64 / (1024 * 1024)),
-      }),
-    );
-  } catch {
-    /* PowerShell not available */
+  if (os.platform() === "win32") {
+    try {
+      const { stdout } = await execFileAsync("powershell", [
+        "-NoProfile",
+        "-Command",
+        `Get-Process | Sort-Object WorkingSet64 -Descending | Select-Object -First ${topN} Name,Id,WorkingSet64 | ConvertTo-Json`,
+      ]);
+      const procData = JSON.parse(stdout);
+      const procs = Array.isArray(procData) ? procData : [procData];
+      topProcesses = procs.map(
+        (p: { Name: string; Id: number; WorkingSet64: number }) => ({
+          name: p.Name, pid: p.Id, memoryMB: Math.round(p.WorkingSet64 / (1024 * 1024)),
+        }),
+      );
+    } catch { /* PowerShell not available */ }
+  } else {
+    // Linux: use ps
+    try {
+      const { stdout } = await execFileAsync("ps", [
+        "axo", "comm,pid,rss", "--sort=-rss", "--no-headers",
+      ], { timeout: 10000 });
+      const lines = stdout.trim().split("\n").slice(0, topN);
+      topProcesses = lines.map((line) => {
+        const parts = line.trim().split(/\s+/);
+        return {
+          name: parts[0] ?? "unknown",
+          pid: parseInt(parts[1]) || 0,
+          memoryMB: Math.round((parseInt(parts[2]) || 0) / 1024),
+        };
+      });
+    } catch { /* ps not available */ }
   }
 
-  // Swap
+  // Swap — platform-aware
   let swapTotal = 0;
   let swapUsed = 0;
-  try {
-    const { stdout } = await execFileAsync("powershell", [
-      "-NoProfile",
-      "-Command",
-      "Get-CimInstance Win32_PageFileUsage | Select-Object AllocatedBaseSize,CurrentUsage | ConvertTo-Json",
-    ]);
-    const swapData = JSON.parse(stdout);
-    if (swapData) {
-      swapTotal = swapData.AllocatedBaseSize || 0;
-      swapUsed = swapData.CurrentUsage || 0;
-    }
-  } catch {
-    /* No pagefile or PowerShell unavailable */
+  if (os.platform() === "win32") {
+    try {
+      const { stdout } = await execFileAsync("powershell", [
+        "-NoProfile",
+        "-Command",
+        "Get-CimInstance Win32_PageFileUsage | Select-Object AllocatedBaseSize,CurrentUsage | ConvertTo-Json",
+      ]);
+      const swapData = JSON.parse(stdout);
+      if (swapData) {
+        swapTotal = swapData.AllocatedBaseSize || 0;
+        swapUsed = swapData.CurrentUsage || 0;
+      }
+    } catch { /* No pagefile or PowerShell unavailable */ }
+  } else {
+    // Linux: parse /proc/meminfo
+    try {
+      const meminfo = await fs.readFile("/proc/meminfo", "utf-8");
+      const swapTotalMatch = meminfo.match(/SwapTotal:\s+(\d+)/);
+      const swapFreeMatch = meminfo.match(/SwapFree:\s+(\d+)/);
+      if (swapTotalMatch) swapTotal = Math.round(parseInt(swapTotalMatch[1]) / (1024 * 1024));
+      if (swapTotalMatch && swapFreeMatch) {
+        swapUsed = Math.round((parseInt(swapTotalMatch[1]) - parseInt(swapFreeMatch[1])) / (1024 * 1024));
+      }
+    } catch { /* /proc/meminfo not available */ }
   }
 
   // Uptime
@@ -752,13 +858,20 @@ async function cleanupTemp(
   let bytesFreed = 0;
   const errors: string[] = [];
 
-  async function walkAndClean(dir: string): Promise<void> {
+  async function walkAndClean(dir: string, depth = 0): Promise<void> {
+    if (depth > MAX_DIR_WALK_DEPTH) return;
     try {
       const entries = await fs.readdir(dir, { withFileTypes: true });
       for (const entry of entries) {
         const fullPath = path.join(dir, entry.name);
+        // Symlink guard: never follow or delete symlinks
+        try {
+          const lst = await fs.lstat(fullPath);
+          if (lst.isSymbolicLink()) continue;
+        } catch { continue; }
+
         if (entry.isDirectory()) {
-          await walkAndClean(fullPath);
+          await walkAndClean(fullPath, depth + 1);
           // Try to remove empty dir
           if (!dryRun) {
             try {
@@ -798,7 +911,9 @@ async function cleanupNpmCache(
   let bytesFreed = 0;
   let filesRemoved = 0;
 
-  const cachePath = path.join(os.homedir(), "AppData", "Local", "npm-cache");
+  const cachePath = os.platform() === "win32"
+    ? path.join(os.homedir(), "AppData", "Local", "npm-cache")
+    : path.join(os.homedir(), ".npm", "_cacache");
   if (!dryRun) {
     try {
       const before = await getDirSize(cachePath);
@@ -827,7 +942,9 @@ async function cleanupPipCache(
   let bytesFreed = 0;
   let filesRemoved = 0;
 
-  const cachePath = path.join(os.homedir(), "AppData", "Local", "pip", "Cache");
+  const cachePath = os.platform() === "win32"
+    ? path.join(os.homedir(), "AppData", "Local", "pip", "Cache")
+    : path.join(os.homedir(), ".cache", "pip");
   if (!dryRun) {
     try {
       const before = await getDirSize(cachePath);
@@ -856,11 +973,18 @@ async function cleanupPycache(
   let bytesFreed = 0;
   const errors: string[] = [];
 
-  async function walk(dir: string): Promise<void> {
+  async function walk(dir: string, depth = 0): Promise<void> {
+    if (depth > MAX_DIR_WALK_DEPTH) return;
     try {
       const entries = await fs.readdir(dir, { withFileTypes: true });
       for (const entry of entries) {
         const fullPath = path.join(dir, entry.name);
+        // Symlink guard
+        try {
+          const lst = await fs.lstat(fullPath);
+          if (lst.isSymbolicLink()) continue;
+        } catch { continue; }
+
         if (entry.name === "__pycache__" && entry.isDirectory()) {
           const { size, count } = await getDirSize(fullPath);
           bytesFreed += size;
@@ -873,7 +997,7 @@ async function cleanupPycache(
             }
           }
         } else if (entry.isDirectory() && !entry.name.startsWith(".")) {
-          await walk(fullPath);
+          await walk(fullPath, depth + 1);
         }
       }
     } catch {
@@ -987,6 +1111,10 @@ export function buildServer(): McpServer {
       }),
     },
     async (args: { maxAgeDays?: number }) => {
+      const rateLimitMsg = checkScanRateLimit("scan_temp");
+      if (rateLimitMsg) {
+        return { content: [{ type: "text" as const, text: JSON.stringify({ error: rateLimitMsg }) }] };
+      }
       await ensureDataDir();
       const config = await loadConfig();
       const maxAge = args.maxAgeDays ?? config.thresholds.tempStaleAgeDays;
@@ -1058,6 +1186,10 @@ export function buildServer(): McpServer {
       }),
     },
     async (args: { roots?: string[]; maxDepth?: number }) => {
+      const rateLimitMsg = checkScanRateLimit("scan_workspaces");
+      if (rateLimitMsg) {
+        return { content: [{ type: "text" as const, text: JSON.stringify({ error: rateLimitMsg }) }] };
+      }
       await ensureDataDir();
       const config = await loadConfig();
       const roots = args.roots ?? config.scanRoots;
@@ -1147,6 +1279,10 @@ export function buildServer(): McpServer {
       }),
     },
     async (args: { roots?: string[] }) => {
+      const rateLimitMsg = checkScanRateLimit("scan_git_repos");
+      if (rateLimitMsg) {
+        return { content: [{ type: "text" as const, text: JSON.stringify({ error: rateLimitMsg }) }] };
+      }
       await ensureDataDir();
       const config = await loadConfig();
       const roots = args.roots ?? config.scanRoots;
@@ -1272,6 +1408,10 @@ export function buildServer(): McpServer {
       }),
     },
     async (args: { saveReport?: boolean; roots?: string[] }) => {
+      const rateLimitMsg = checkScanRateLimit("full_diagnostic");
+      if (rateLimitMsg) {
+        return { content: [{ type: "text" as const, text: JSON.stringify({ error: rateLimitMsg }) }] };
+      }
       await ensureDataDir();
       const config = await loadConfig();
       const roots = args.roots ?? config.scanRoots;
@@ -1494,6 +1634,31 @@ export function buildServer(): McpServer {
 
       const isDryRun = args.dryRun !== false;
       const isConfirmed = args.confirmPhrase === "CONFIRM-CLEANUP";
+
+      // P-MCP-002: Policy engine approval check for destructive ops
+      const approvalPolicy = executionPolicy.requireApproval(
+        isDryRun,
+        args.previewToken,
+        args.confirmPhrase,
+      );
+
+      // P-MCP-005: Validate cleanup targets stay within workspace roots
+      for (const action of args.actions) {
+        if (action.target) {
+          const targetPolicy = executionPolicy.validateTargetPath(action.target);
+          if (targetPolicy.verdict === "deny") {
+            return {
+              content: [{
+                type: "text" as const,
+                text: JSON.stringify({
+                  error: `${targetPolicy.policyId}: ${targetPolicy.reason}`,
+                  blocked: true,
+                }, null, 2),
+              }],
+            };
+          }
+        }
+      }
 
       if (!isDryRun && !isConfirmed) {
         return {

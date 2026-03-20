@@ -135,12 +135,20 @@ export class ExecutionPolicyEngine {
     this.allowedRoots = allowedRoots.map((r) => path.resolve(r));
   }
 
+  private isWithinAllowedRoots(candidatePath: string): boolean {
+    const resolvedCandidate = path.resolve(candidatePath);
+    return this.allowedRoots.some((root) => {
+      const relative = path.relative(root, resolvedCandidate);
+      return relative === "" || (!relative.startsWith("..") && !path.isAbsolute(relative));
+    });
+  }
+
   /**
    * P-MCP-001: IF script path outside allowlist → THEN block.
    */
   validateScriptPath(scriptPath: string): PolicyResult {
     const resolved = path.resolve(scriptPath);
-    const withinAllowed = this.allowedRoots.some((root) => resolved.startsWith(root));
+    const withinAllowed = this.isWithinAllowedRoots(resolved);
 
     if (!withinAllowed) {
       return {
@@ -193,7 +201,7 @@ export class ExecutionPolicyEngine {
    */
   validateTargetPath(targetPath: string): PolicyResult {
     const resolved = path.resolve(targetPath);
-    const withinAllowed = this.allowedRoots.some((root) => resolved.startsWith(root));
+    const withinAllowed = this.isWithinAllowedRoots(resolved);
 
     if (!withinAllowed) {
       return {
@@ -255,6 +263,13 @@ export class ExecutionPolicyEngine {
 
   static getPolicyRules(allowedRoots: string[]): PolicyRule[] {
     const resolvedRoots = allowedRoots.map((r) => path.resolve(r));
+    const isWithinResolvedRoots = (candidatePath: string): boolean => {
+      const resolvedCandidate = path.resolve(candidatePath);
+      return resolvedRoots.some((root) => {
+        const relative = path.relative(root, resolvedCandidate);
+        return relative === "" || (!relative.startsWith("..") && !path.isAbsolute(relative));
+      });
+    };
     return [
       {
         policyId: "P-MCP-001",
@@ -263,7 +278,7 @@ export class ExecutionPolicyEngine {
         condition: (ctx) => {
           const sp = ctx["scriptPath"] as string | undefined;
           if (!sp) return false;
-          return !resolvedRoots.some((root) => path.resolve(sp).startsWith(root));
+          return !isWithinResolvedRoots(sp);
         },
         verdictOnMatch: "deny",
         reasonTemplate: "Script path outside allowed experiments directory",
@@ -283,7 +298,7 @@ export class ExecutionPolicyEngine {
         condition: (ctx) => {
           const tp = ctx["targetPath"] as string | undefined;
           if (!tp) return false;
-          return !resolvedRoots.some((root) => path.resolve(tp).startsWith(root));
+          return !isWithinResolvedRoots(tp);
         },
         verdictOnMatch: "deny",
         reasonTemplate: "Target path outside allowed workspace roots",

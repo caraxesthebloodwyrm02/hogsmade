@@ -10,10 +10,12 @@
  * Port: 8000 (per GATE/agent_schema.json)
  */
 
+import { AuditIntegrityGuard } from '@cascade/shared-types/security-policy';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import * as z from 'zod';
 import { promises as fs } from 'fs';
+import os from 'os';
 import path from 'path';
 import { pathToFileURL } from 'url';
 import { getConfig } from './config.js';
@@ -57,8 +59,31 @@ async function ensureDataDir(): Promise<void> {
   }
 }
 
+/**
+ * Sanitize values to prevent NDJSON injection — strips newlines from strings
+ * so each JSON.stringify produces exactly one line.
+ */
+function sanitizeForNdjson(value: unknown): unknown {
+  if (typeof value === 'string') return value.replace(/[\n\r]/g, ' ');
+  if (Array.isArray(value)) return value.map(sanitizeForNdjson);
+  if (value !== null && typeof value === 'object') {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      out[k.replace(/[\n\r]/g, ' ')] = sanitizeForNdjson(v);
+    }
+    return out;
+  }
+  return value;
+}
+
 async function appendAuditEntry(entry: AuditEntry): Promise<void> {
-  const line = JSON.stringify(entry) + '\n';
+  const sanitized = {
+    ...entry,
+    metadata: entry.metadata
+      ? sanitizeForNdjson(entry.metadata) as Record<string, unknown>
+      : undefined,
+  };
+  const line = JSON.stringify(sanitized) + '\n';
   await fs.appendFile(AUDIT_LOG_PATH, line, 'utf-8');
 }
 
@@ -72,20 +97,28 @@ function normalizeAuditStatus(status: unknown): Exclude<AuditEntry['status'], 'e
   return null;
 }
 
+const MAX_AUDIT_FILE_BYTES = 100 * 1024 * 1024; // 100 MB guard
+
 async function readAuditLog(limit: number, filter?: { tool?: string; status?: string; since?: string }): Promise<AuditEntry[]> {
   let content: string;
   try {
+    const stat = await fs.stat(AUDIT_LOG_PATH);
+    if (stat.size > MAX_AUDIT_FILE_BYTES) {
+      throw new Error(`Audit log too large (${Math.round(stat.size / (1024 * 1024))}MB) — refusing to load into memory`);
+    }
     content = await fs.readFile(AUDIT_LOG_PATH, 'utf-8');
   } catch {
     return [];
   }
 
   const lines = content.trim().split('\n').filter(Boolean);
+  let corruptLineCount = 0;
   let entries: AuditEntry[] = lines.map(line => {
     try {
       const parsed = JSON.parse(line) as Partial<AuditEntry>;
       const status = normalizeAuditStatus(parsed.status);
       if (!status || !parsed.id || !parsed.timestamp || !parsed.source || !parsed.tool) {
+        corruptLineCount++;
         return null;
       }
       return {
@@ -93,9 +126,13 @@ async function readAuditLog(limit: number, filter?: { tool?: string; status?: st
         status,
       } as AuditEntry;
     } catch {
+      corruptLineCount++;
       return null;
     }
   }).filter(Boolean) as AuditEntry[];
+  if (corruptLineCount > 0) {
+    console.error(`[${SERVER_NAME}] ${corruptLineCount} corrupt/malformed lines skipped in audit log`);
+  }
 
   if (filter?.tool) {
     entries = entries.filter(e => e.tool === filter.tool);
@@ -114,10 +151,17 @@ async function readAuditLog(limit: number, filter?: { tool?: string; status?: st
   return entries.slice(-limit).reverse();
 }
 
+/** Atomic write: write to .tmp then rename to prevent corruption on crash/concurrent access. */
+async function atomicWriteJson(filepath: string, data: unknown): Promise<void> {
+  const tmpPath = filepath + `.tmp.${process.pid}`;
+  await fs.writeFile(tmpPath, JSON.stringify(data, null, 2), 'utf-8');
+  await fs.rename(tmpPath, filepath);
+}
+
 async function saveTelemetrySnapshot(snapshot: TelemetrySnapshot): Promise<string> {
   const filename = `snapshot-${Date.now()}.json`;
   const filepath = path.join(TELEMETRY_DIR, filename);
-  await fs.writeFile(filepath, JSON.stringify(snapshot, null, 2), 'utf-8');
+  await atomicWriteJson(filepath, snapshot);
   return filepath;
 }
 
@@ -186,10 +230,21 @@ server.registerTool(
   { description: 'Check echoes-server health and data store status' },
   async () => {
     let auditSize = 0;
+    let auditLineCount = 0;
+    let auditCorruptLines = 0;
     let telemetryCount = 0;
     try {
       const stat = await fs.stat(AUDIT_LOG_PATH);
       auditSize = stat.size;
+      // Quick corruption check — count lines vs parseable entries
+      if (stat.size <= MAX_AUDIT_FILE_BYTES) {
+        const raw = await fs.readFile(AUDIT_LOG_PATH, 'utf-8');
+        const lines = raw.trim().split('\n').filter(Boolean);
+        auditLineCount = lines.length;
+        for (const line of lines) {
+          try { JSON.parse(line); } catch { auditCorruptLines++; }
+        }
+      }
     } catch { /* no file yet */ }
     try {
       const files = await fs.readdir(TELEMETRY_DIR);
@@ -205,6 +260,9 @@ server.registerTool(
           version: VERSION,
           dataDir: DATA_DIR,
           auditLogBytes: auditSize,
+          auditLogSizeMB: Math.round(auditSize / (1024 * 1024)),
+          auditLineCount,
+          auditCorruptLines,
           telemetrySnapshots: telemetryCount,
           timestamp: new Date().toISOString(),
         }, null, 2),
@@ -228,9 +286,23 @@ server.registerTool(
   },
   async (args) => {
     await ensureDataDir();
+    const now = new Date().toISOString();
+
+    // P-INT-001 + P-INT-002: Validate source and timestamp integrity
+    const integrityCheck = AuditIntegrityGuard.validateEntry(args.source, now);
+    if (integrityCheck.verdict === 'deny') {
+      return {
+        content: [{ type: 'text' as const, text: JSON.stringify({
+          recorded: false,
+          error: integrityCheck.reason,
+          policyId: integrityCheck.policyId,
+        }) }],
+      };
+    }
+
     const entry: AuditEntry = {
       id: `aud-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      timestamp: new Date().toISOString(),
+      timestamp: now,
       source: args.source,
       tool: args.tool,
       status: normalizeAuditStatus(args.status) ?? 'failure',

@@ -11,6 +11,7 @@
  * Follows the same patterns as echoes-server, grid-server, etc.
  */
 
+import { emitAudit } from "@cascade/shared-types/audit-client";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import * as z from "zod";
@@ -42,6 +43,21 @@ const KNOWN_REPOS: Record<string, { description: string; stack: string }> = {
   "light_of_the_seven": { description: "Educational computation framework", stack: "Python 3.10+, Rust" },
   "assistive-tool-contract": { description: "Contract specification", stack: "JSON, Markdown" },
 };
+
+// Rate limiting for expensive scans
+const SCAN_COOLDOWN_MS = 30_000;
+const lastScanTimes = new Map<string, number>();
+
+function checkScanRateLimit(scanType: string): string | null {
+  const now = Date.now();
+  const last = lastScanTimes.get(scanType);
+  if (last && now - last < SCAN_COOLDOWN_MS) {
+    const waitSec = Math.ceil((SCAN_COOLDOWN_MS - (now - last)) / 1000);
+    return `Rate limited: ${scanType} was run ${Math.round((now - last) / 1000)}s ago. Wait ${waitSec}s.`;
+  }
+  lastScanTimes.set(scanType, now);
+  return null;
+}
 
 // Alias repo names to actual directory names under SEEDS_ROOT (e.g. "grid" -> "GRID-main" for health checks)
 const REPO_PATH_ALIASES: Record<string, string> = {
@@ -234,14 +250,21 @@ async function loadBookmarks(): Promise<Bookmark[]> {
   }
 }
 
+/** Atomic write: write to .tmp then rename to prevent corruption. */
+async function atomicWriteJson(filepath: string, data: unknown): Promise<void> {
+  const tmpPath = filepath + `.tmp.${process.pid}`;
+  await fs.writeFile(tmpPath, JSON.stringify(data, null, 2), "utf-8");
+  await fs.rename(tmpPath, filepath);
+}
+
 async function saveBookmarks(bookmarks: Bookmark[]): Promise<void> {
-  await fs.writeFile(BOOKMARKS_PATH, JSON.stringify(bookmarks, null, 2), "utf-8");
+  await atomicWriteJson(BOOKMARKS_PATH, bookmarks);
 }
 
 async function saveSnapshot(snapshot: EcosystemSnapshot): Promise<string> {
   const filename = `snapshot-${Date.now()}.json`;
   const filepath = path.join(SNAPSHOTS_DIR, filename);
-  await fs.writeFile(filepath, JSON.stringify(snapshot, null, 2), "utf-8");
+  await atomicWriteJson(filepath, snapshot);
   return filepath;
 }
 
@@ -344,6 +367,10 @@ server.registerTool(
     }),
   },
   async (args: { saveSnapshot?: boolean }) => {
+    const rateLimitMsg = checkScanRateLimit("ecosystem_scan");
+    if (rateLimitMsg) {
+      return { content: [{ type: "text" as const, text: JSON.stringify({ error: rateLimitMsg }) }] };
+    }
     await ensureDataDir();
     const repos: RepoHealth[] = [];
 

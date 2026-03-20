@@ -11,6 +11,7 @@
  */
 
 import { emitAudit } from "@cascade/shared-types/audit-client";
+import { ExecutionPolicyEngine } from "@cascade/shared-types/security-policy";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { execFile } from "child_process";
@@ -71,9 +72,18 @@ async function loadCatalog(): Promise<Catalog> {
   }
 }
 
+/** Atomic write: write to .tmp then rename to prevent corruption. */
+async function atomicWriteJson(filepath: string, data: unknown): Promise<void> {
+  const tmpPath = filepath + `.tmp.${process.pid}`;
+  await fs.writeFile(tmpPath, JSON.stringify(data, null, 2), "utf-8");
+  await fs.rename(tmpPath, filepath);
+}
+
+const executionPolicy = new ExecutionPolicyEngine([path.resolve(EXPERIMENTS_DIR)]);
+
 async function saveCatalog(catalog: Catalog): Promise<void> {
   catalog.lastUpdated = new Date().toISOString();
-  await fs.writeFile(CATALOG_PATH, JSON.stringify(catalog, null, 2), "utf-8");
+  await atomicWriteJson(CATALOG_PATH, catalog);
 }
 
 function generateId(): string {
@@ -309,22 +319,42 @@ export function buildServer(): McpServer {
         };
       }
 
-      // Security: only allow scripts within experiments directory
-      const resolvedScript = path.resolve(exp.script);
-      if (!resolvedScript.startsWith(path.resolve(EXPERIMENTS_DIR))) {
+      // Security: reject symlinks, then validate path via ExecutionPolicyEngine
+      try {
+        const scriptStat = await fs.lstat(exp.script);
+        if (scriptStat.isSymbolicLink()) {
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: JSON.stringify({
+                  error:
+                    "Script is a symlink — blocked for security (symlink traversal prevention)",
+                }),
+              },
+            ],
+            isError: true,
+          };
+        }
+      } catch {
+        // File doesn't exist yet or not accessible — path check below will catch it
+      }
+      // P-MCP-001: Validate script path against allowed roots
+      const pathPolicy = executionPolicy.validateScriptPath(exp.script);
+      if (pathPolicy.verdict === "deny") {
         return {
           content: [
             {
               type: "text" as const,
               text: JSON.stringify({
-                error:
-                  "Script path outside experiments directory — blocked for security",
+                error: `${pathPolicy.policyId}: ${pathPolicy.reason}`,
               }),
             },
           ],
           isError: true,
         };
       }
+      const resolvedScript = path.resolve(exp.script);
 
       const commandMap: Record<string, string> = {
         python: "python",
