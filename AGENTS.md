@@ -1,107 +1,22 @@
-# AGENTS.md
+# Repository Guidelines
 
-This file provides guidance to Codex (Codex.ai/code) when working with code in this repository.
+## Project Structure & Module Organization
+CascadeProjects is a multi-project workspace, not a single app. First-party TypeScript MCP servers live in `afloat-server/`, `echoes-server/`, `grid-server/`, `lots-server/`, `maintain-server/`, `pulse-server/`, and `seeds-server/`. Shared contracts live in `shared-types/`. UI work is in `glimpse-artifact/`, while the browser-only visualization engine is in `glimpse-engine/`. Shared docs and repo conventions live in `docs/`, and root-level regression coverage lives in `tests/`. `GRID-main/` and `mcp-tool-experiment/` are nested repositories; manage them in their own git roots.
 
-## Workspace Layout
+## Build, Test, and Development Commands
+There is no root `npm` workspace, so run commands inside the project you are changing.
 
-This is a multi-project workspace. Each subdirectory is an independent project with its own toolchain.
+- `cd shared-types && npm run build` builds shared TypeScript contracts used by the servers.
+- `cd afloat-server && npm run dev` starts a server with `tsx --watch`; the same pattern applies to the other `*-server` packages.
+- `cd afloat-server && npm test` runs that server's Vitest suite.
+- `cd glimpse-artifact && npm run check` runs type-checking, tests, and a production build.
+- `node scripts/sync-default-master.mjs` refreshes the generated `glimpse-engine` config before opening `glimpse-engine.html`.
 
-| Project | Type | Language / Stack | Status |
-|---|---|---|---|
-| `GRID-main/` | Full-stack AI framework | Python 3.13+, FastAPI, ChromaDB, Ollama | Production (v2.6.1) |
-| `mcp-tool-experiment/typescript-sdk/` | MCP TypeScript SDK v2 | TypeScript 5.2, pnpm, Vitest, Zod v4 | Pre-alpha |
-| `glimpse-artifact/` | React component library | React 18, TypeScript, Vite, TailwindCSS | Complete |
-| `glimpse-engine/` | Visualization engine | JavaScript (ES modules) | Working |
-| `afloat-server/` | Workflow orchestration MCP server | TypeScript, MCP SDK | Working |
-| `shared-types/` | Shared types and audit client | TypeScript | Build before dependent servers |
-| Other MCP servers | `echoes-server/`, `grid-server/`, `lots-server/`, `maintain-server/`, `pulse-server/`, `seeds-server/` | TypeScript, MCP SDK | See root [README](README.md) |
-| Nested repos | `GRID-main/`, `mcp-tool-experiment/`, `projects/web/ai-web-demo/` | — | Managed in their own git roots |
+## Coding Style & Naming Conventions
+Follow `.editorconfig`: UTF-8, LF line endings, final newline, and trimmed trailing whitespace except in Markdown. Use 2-space indentation for JavaScript, TypeScript, JSON, YAML, and shell scripts; use 4 spaces for Python. Keep source under `src/`, tests under `tests/`, and treat `dist/` as generated output. Match existing descriptive names such as `smoke.test.ts`, `useGateData.test.ts`, and project-scoped package names like `pulse-server`.
 
-## Per-Project Guidance
+## Testing Guidelines
+Add tests in the same package you change. Servers use Vitest with files such as `tests/smoke.test.ts`; `glimpse-artifact` uses `tsx --test` over `tests/*.test.ts`; root `tests/glimpse-engine.test.mjs` covers the visualization engine. Run the narrowest relevant test command locally before opening a PR. No global coverage threshold is enforced, but bug fixes and new behavior should include regression coverage.
 
-### GRID-main
-
-Full AGENTS.md lives at `GRID-main/docs/project/AGENTS.md`. Additional rules in `GRID-main/.Codex/rules/`.
-
-**Package manager**: `uv` only — never use `pip` directly.
-
-```bash
-cd GRID-main
-uv sync --group dev --group test          # Install deps
-uv run pytest tests/unit/ -q --tb=short  # Unit tests (fast)
-uv run pytest tests/ --cov=src           # Full suite with coverage
-uv run ruff check .                      # Lint
-uv run python -m application.mothership.main  # API server (port 8080)
-```
-
-- Python path: `PYTHONPATH=src`
-- Test env vars: `MOTHERSHIP_ENVIRONMENT=test`, `MOTHERSHIP_DATABASE_URL=sqlite:///:memory:`, `MOTHERSHIP_USE_DATABRICKS=false`
-- Local-first: use Ollama/ChromaDB, not external AI APIs, unless explicitly asked
-- Architecture: `Application → Service → Database → Core` (strict one-way deps)
-- Safety modules (`safety/`, `security/`, `boundaries/`) have strict rules — read `GRID-main/.Codex/rules/safety.md` before touching them
-
-### mcp-tool-experiment/typescript-sdk
-
-Full AGENTS.md lives at `mcp-tool-experiment/typescript-sdk/AGENTS.md`.
-
-**Package manager**: `pnpm` (workspace monorepo).
-
-```bash
-cd mcp-tool-experiment/typescript-sdk
-pnpm install
-pnpm build:all
-pnpm test:all
-pnpm --filter @modelcontextprotocol/core test         # single package
-pnpm --filter @modelcontextprotocol/core test -- -t "test name"  # single test
-pnpm lint:fix:all
-pnpm sync:snippets   # sync JSDoc @example blocks from .examples.ts files
-```
-
-- JSDoc examples live in companion `.examples.ts` files, not inline
-- Middleware packages (`express`, `hono`, `node`) are thin adapters — don't add MCP logic there
-- Breaking changes go in both `docs/migration.md` and `docs/migration-SKILL.md`
-
-### glimpse-artifact
-
-```bash
-cd glimpse-artifact
-npm install
-npm run dev     # Vite dev server
-npm run build   # TypeScript + Vite build
-npm run lint
-```
-
-Components follow shadcn-style: CVA + clsx + tailwind-merge for variants. Icons: lucide-react only.
-
-### glimpse-engine
-
-Standalone visualization engine at the root. No package.json — runs directly in browser via `glimpse-engine.html`.
-
-```bash
-node scripts/sync-default-master.mjs    # Sync YAML config → embedded JS
-# Open glimpse-engine.html in browser to run
-```
-
-- **Config**: `glimpse.master.yaml` — all domains, rules, presets, view specs
-- **Core**: `glimpse-engine/engine.js` — pipeline runtime (ingest → profile → rules → articulate)
-- **Views**: `glimpse-engine/view-specs.js` — constellation, timeline, clusters, matrix, flow, map, explorer
-- **Docs**: `GLIMPSE-GUIDE.md` for plain-language rule authoring
-
-### afloat-server
-
-Depends on `shared-types` (local path). Build shared-types first when working from workspace root: `cd shared-types && npm run build`.
-
-```bash
-cd afloat-server
-npm install
-npm run build
-npm test
-npm run start
-```
-
-## Cross-Project Notes
-
-- `prompt.md` at the workspace root is a scratch/notes file, not configuration.
-- Each project uses its own lockfile (`uv.lock`, `pnpm-lock.yaml`, `package-lock.json`) — do not mix package managers across projects.
-- When working across projects, always `cd` into the project root before running commands.
-- **Build order**: Servers that depend on `shared-types` (e.g. `afloat-server`) require `shared-types` to be built first (`cd shared-types && npm run build`).
+## Commit & Pull Request Guidelines
+Recent history favors short imperative commits with a scope or project prefix, for example `docs: update workspace docs`, `feat(seeds-server): add repo aliases`, or `glimpse: fix instance recognition`. Keep one logical change per commit and avoid mixing unrelated projects. PRs should summarize the change, link issues when relevant, call out submodule or nested-repo updates, and include screenshots for `glimpse-artifact` UI changes. Never commit secrets or tokens; keep them in secret storage.
