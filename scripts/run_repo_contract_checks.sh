@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+
+echo "== verify_mcp_inventory =="
+python3 "${SCRIPT_DIR}/verify_mcp_inventory.py" --cascade-root "${REPO_ROOT}"
+
 run_npm_package() {
   local dir="$1"
   shift

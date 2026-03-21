@@ -1,5 +1,6 @@
 {
   "_README": "Canonical MCP config — single source of truth for all editors",
+  "_inventory": "mcp_inventory.manifest.json — bootstrap types and excluded servers; run scripts/verify_mcp_inventory.py",
   "_updated": "2026-03-21",
   "_usage": {
     "windsurf": "Configured at ~/.codeium/windsurf/windsurf/mcp_config.json (absolutized Python paths, no cwd)",

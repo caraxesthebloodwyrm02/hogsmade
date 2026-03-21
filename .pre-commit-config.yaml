@@ -32,6 +32,15 @@ repos:
         name: Fix mixed line endings
         args: [--fix=lf]
 
+  - repo: local
+    hooks:
+      - id: verify-mcp-inventory
+        name: Verify MCP manifest vs mcp_config.json
+        entry: python3 scripts/verify_mcp_inventory.py
+        language: system
+        pass_filenames: false
+        files: ^(mcp_config\.json|mcp_inventory\.manifest\.json|scripts/verify_mcp_inventory\.py)$
+
   # Detect-secrets: enterprise-grade secret scanner
   - repo: https://github.com/Yelp/detect-secrets
     rev: v1.4.0

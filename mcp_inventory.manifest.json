@@ -1,0 +1,115 @@
+{
+  "version": "1.0.0",
+  "description": "Supplements mcp_config.json with bootstrap contracts and explicit status for every GRID mcp-setup Python server (TUV-001 / .dev-rules.md). Editor canonical keys must match mcp_config.json mcpServers exactly.",
+  "paths": {
+    "gridRepoRelativeToCascade": "../roots/GRID"
+  },
+  "servers": [
+    {
+      "mcpServerKey": "echoes-server",
+      "runtime": "typescript",
+      "bootstrapType": "mcp_sdk_stdio_ts",
+      "entryRelative": "echoes-server/src/server.ts"
+    },
+    {
+      "mcpServerKey": "grid-server",
+      "runtime": "typescript",
+      "bootstrapType": "mcp_sdk_stdio_ts",
+      "entryRelative": "grid-server/src/server.ts"
+    },
+    {
+      "mcpServerKey": "afloat-server",
+      "runtime": "typescript",
+      "bootstrapType": "mcp_sdk_stdio_ts",
+      "entryRelative": "afloat-server/src/server.ts"
+    },
+    {
+      "mcpServerKey": "lots-server",
+      "runtime": "typescript",
+      "bootstrapType": "mcp_sdk_stdio_ts",
+      "entryRelative": "lots-server/src/server.ts"
+    },
+    {
+      "mcpServerKey": "seeds-server",
+      "runtime": "typescript",
+      "bootstrapType": "mcp_sdk_stdio_ts",
+      "entryRelative": "seeds-server/src/server.ts"
+    },
+    {
+      "mcpServerKey": "pulse-server",
+      "runtime": "typescript",
+      "bootstrapType": "mcp_sdk_stdio_ts",
+      "entryRelative": "pulse-server/src/server.ts"
+    },
+    {
+      "mcpServerKey": "maintain-server",
+      "runtime": "typescript",
+      "bootstrapType": "mcp_sdk_stdio_ts",
+      "entryRelative": "maintain-server/src/server.ts"
+    },
+    {
+      "mcpServerKey": "grid-rag",
+      "runtime": "python",
+      "bootstrapType": "mcp_sdk_stdio_python",
+      "gridPythonScript": "mcp-setup/server/grid_rag_mcp_server.py"
+    },
+    {
+      "mcpServerKey": "grid-rag-enhanced",
+      "runtime": "python",
+      "bootstrapType": "mcp_sdk_stdio_python",
+      "pythonModule": "grid.mcp.enhanced_rag_server",
+      "gridPythonScript": null
+    },
+    {
+      "mcpServerKey": "grid-enhanced-tools",
+      "runtime": "python",
+      "bootstrapType": "mcp_sdk_stdio_python",
+      "gridPythonScript": "mcp-setup/server/enhanced_tools_mcp_server.py"
+    },
+    {
+      "mcpServerKey": "portfolio-safety-lens",
+      "runtime": "python",
+      "bootstrapType": "mcp_sdk_stdio_python",
+      "gridPythonScript": "mcp-setup/server/portfolio_safety_mcp_server.py"
+    },
+    {
+      "mcpServerKey": "code-analysis",
+      "runtime": "python",
+      "bootstrapType": "custom_jsonrpc_stdio",
+      "gridPythonScript": "mcp-setup/server/code_analysis_mcp_server.py"
+    },
+    {
+      "mcpServerKey": "test-runner",
+      "runtime": "python",
+      "bootstrapType": "custom_jsonrpc_stdio",
+      "gridPythonScript": "mcp-setup/server/test_runner_mcp_server.py"
+    },
+    {
+      "id": "grid-agentic",
+      "mcpServerKey": null,
+      "status": "excluded_from_editor_canonical",
+      "reason": "Not enabled in mcp_config.json; optional agentic surface. GRID submodule uses alternate layout (workspace/mcp/servers/agentic); consolidate before enabling.",
+      "runtime": "python",
+      "bootstrapType": "mcp_sdk_stdio_python",
+      "gridPythonScript": "mcp-setup/server/agentic_mcp_server.py"
+    },
+    {
+      "id": "grid-memory",
+      "mcpServerKey": null,
+      "status": "excluded_from_editor_canonical",
+      "reason": "Not enabled in mcp_config.json; optional memory surface. Submodule lists a different memory server path; enable only after path and trust review.",
+      "runtime": "python",
+      "bootstrapType": "mcp_sdk_stdio_python",
+      "gridPythonScript": "mcp-setup/server/memory_mcp_server.py"
+    },
+    {
+      "id": "glimpse-server",
+      "mcpServerKey": null,
+      "status": "omitted_from_editor_canonical",
+      "reason": "Package exists under CascadeProjects/glimpse-server but is intentionally omitted from mcp_config.json; add only after governance sign-off.",
+      "runtime": "typescript",
+      "bootstrapType": "nonstandard_ts_exports",
+      "entryRelative": "glimpse-server/src/server.ts"
+    }
+  ]
+}
