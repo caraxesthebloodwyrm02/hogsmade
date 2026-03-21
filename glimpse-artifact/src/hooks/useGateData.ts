@@ -165,6 +165,90 @@ const MOCK_GATE_DATA: GateSnapshot = (() => {
   };
 })();
 
+// ── Deterministic snapshot factory (used by tests) ─────────────────
+
+export function createGateSnapshot(clock: number | string | Date = Date.now()): GateSnapshot {
+  const debugContext = createDebugLogContext("gate-flow", clock);
+
+  const verifications: WorkflowRun[] = [
+    {
+      id: "envelope_GRID-main_fec6aa7f",
+      workflowName: "GRID-main v2.6.1 — feature/search-service-guardrail",
+      status: "completed" as const,
+      startedAt: "2026-03-07T23:09:04.591Z",
+      elapsedMs: 5,
+      steps: GATE_STEPS.map((s) => ({
+        name: stepLabel(s),
+        status: "done" as const,
+        durationMs: 0.511,
+      })),
+    },
+    {
+      id: "envelope_echoes_b3c7d2e1",
+      workflowName: "echoes v1.3.0 — fix/audit-rotation",
+      status: "completed" as const,
+      startedAt: "2026-03-07T23:12:18.204Z",
+      elapsedMs: 4,
+      steps: GATE_STEPS.map((s) => ({
+        name: stepLabel(s),
+        status: "done" as const,
+        durationMs: 0.444,
+      })),
+    },
+  ];
+
+  const auditEvents: AuditEvent[] = [
+    {
+      id: "ga-snap-1",
+      timestamp: "2026-03-07T23:09:04.591Z",
+      tool: "validate_envelope",
+      source: "grid-server",
+      status: "success" as const,
+      durationMs: 5,
+      summary: `Envelope passed all 9 checks in 4.6ms trace=${debugContext.traceId}`,
+    },
+    {
+      id: "ga-snap-2",
+      timestamp: "2026-03-07T23:12:18.204Z",
+      tool: "validate_envelope",
+      source: "echoes-server",
+      status: "success" as const,
+      durationMs: 4,
+      summary: "Envelope passed all 9 checks in 3.8ms",
+    },
+    {
+      id: "ga-snap-3",
+      timestamp: "2026-03-07T23:15:00.000Z",
+      tool: "nonce_audit",
+      source: "grid-server",
+      status: "success" as const,
+      durationMs: 1,
+      summary: `Nonce rotation completed span=${debugContext.spanId}`,
+    },
+  ];
+
+  const nonces: NonceEntry[] = [
+    {
+      nonce: "c8409de9",
+      usedAt: "2026-03-07T23:09:04.591Z",
+      envelopeId: "edb45829-9ae6",
+      status: "consumed" as const,
+    },
+  ];
+
+  const deployments: Deployment[] = [
+    {
+      id: "dep-snap-1",
+      envelopeName: "GRID-main v2.6.1 (4ff0d47)",
+      deployedAt: "2026-03-07T23:09:04.591Z",
+      riskScore: 5,
+      result: "success" as const,
+    },
+  ];
+
+  return { verifications, auditEvents, nonces, deployments, debugContext };
+}
+
 // ── Hook ────────────────────────────────────────────────────────────
 
 export function useGateData(): UseGateDataResult {
