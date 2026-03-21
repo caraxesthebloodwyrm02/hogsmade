@@ -1,5 +1,13 @@
 # Copilot Instructions
 
+## Copilot Code Review Guardrails (TL;DR)
+
+- TypeScript strictness: do not introduce `any`; prefer `unknown` + runtime narrowing with Zod.
+- Shared-types: import only from the published export paths; keep dependent servers compiling after changes.
+- Zod schemas + tests: schema updates must preserve the runtime contract and TypeScript inference.
+- Audit emission: verify emitted fields match the shared audit contract.
+- Secrets: never add real tokens/keys to tracked files; use env/credential references only.
+
 This is a **multi-project workspace**. Each subdirectory is an independent project with its own toolchain and lockfile. Always `cd` into the project root before running any commands. Do not mix package managers across projects.
 
 ## Workspace layout
@@ -121,3 +129,12 @@ Follow shadcn-style conventions: CVA + clsx + tailwind-merge for variants. Icons
 - **`prompt.md`** at workspace root is a scratch/notes file — not configuration.
 - **Secrets**: Never commit `.env*` files. Use `.env.example` as template. `mcp_config.json` and `claude_code_config.json` at root must not contain secrets.
 - **GATE directory**: Runtime envelopes, contracts, and results live in `GATE/`. This is operational data — do not restructure it without checking `GATE/README.md`.
+
+## Copilot Code Review Guardrails
+
+- TypeScript strictness: do not introduce `any`; prefer `unknown` + runtime narrowing with Zod, and keep types aligned with validation.
+- Shared-types imports: use the published export paths (no deep/internal paths) and ensure dependent servers compile after changes.
+- Zod schemas: schema updates must come with tests and preserve the runtime contract/inference consistency.
+- Audit emission: if logic affects audit logging, verify the emitted fields match the shared contract.
+- Secrets in config: never add real credentials/tokens/keys to repo files; reference env/credential manager only.
+- Risk management: if a change expands scope, require a rollback plan and tests that cover the affected boundaries.

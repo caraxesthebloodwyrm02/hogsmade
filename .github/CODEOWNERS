@@ -1,0 +1,34 @@
+# CODEOWNERS — CascadeProjects (hogsmade)
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owner for everything
+* @caraxesthebloodwyrm02
+
+# CI/CD, governance, and security config
+/.github/ @caraxesthebloodwyrm02
+/GATE/ @caraxesthebloodwyrm02
+/mcp_config.json @caraxesthebloodwyrm02
+/claude_code_config.json @caraxesthebloodwyrm02
+/SECURITY.md @caraxesthebloodwyrm02
+
+# Shared types — API contract changes affect all servers
+/shared-types/ @caraxesthebloodwyrm02
+
+# MCP servers
+/afloat-server/ @caraxesthebloodwyrm02
+/echoes-server/ @caraxesthebloodwyrm02
+/grid-server/ @caraxesthebloodwyrm02
+/lots-server/ @caraxesthebloodwyrm02
+/maintain-server/ @caraxesthebloodwyrm02
+/pulse-server/ @caraxesthebloodwyrm02
+/seeds-server/ @caraxesthebloodwyrm02
+
+# GRID-main safety-critical paths — stricter review
+/GRID-main/**/safety/ @caraxesthebloodwyrm02
+/GRID-main/**/security/ @caraxesthebloodwyrm02
+/GRID-main/**/boundaries/ @caraxesthebloodwyrm02
+
+# Glimpse
+/glimpse-artifact/ @caraxesthebloodwyrm02
+/glimpse-engine/ @caraxesthebloodwyrm02
+/tests/ @caraxesthebloodwyrm02

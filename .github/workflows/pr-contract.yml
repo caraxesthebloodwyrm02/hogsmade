@@ -1,0 +1,54 @@
+name: pr-contract
+
+on:
+  pull_request_target:
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  pull-requests: read
+
+jobs:
+  validate:
+    name: pr-contract
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate required PR sections
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = (context.payload.pull_request?.body || "").replace(/\r/g, "");
+            const required = [
+              "Objective",
+              "Scope",
+              "Acceptance Criteria",
+              "Risk Tier",
+              "Affected Repos",
+              "Tests Run",
+              "Security Impact",
+              "Docs Impact",
+              "Rollback Plan",
+            ];
+            const lines = body.split("\n");
+            const sections = [];
+            for (let index = 0; index < lines.length; index += 1) {
+              const match = lines[index].match(/^#{2,3}\s+(.+?)\s*$/);
+              if (match) sections.push({ title: match[1].trim().toLowerCase(), start: index });
+            }
+            const missing = [];
+            for (const heading of required) {
+              const current = sections.find((section) => section.title === heading.toLowerCase());
+              if (!current) {
+                missing.push(heading);
+                continue;
+              }
+              const next = sections.find((section) => section.start > current.start)?.start ?? lines.length;
+              const content = lines.slice(current.start + 1, next)
+                .join("\n")
+                .replace(/<!--[\s\S]*?-->/g, "")
+                .replace(/^\s*[-*]\s*\[\s\]\s*$/gm, "")
+                .trim();
+              if (!content) missing.push(heading);
+            }
+            if (missing.length) {
+              core.setFailed(`Missing required PR sections: ${missing.join(", ")}`);
+            }

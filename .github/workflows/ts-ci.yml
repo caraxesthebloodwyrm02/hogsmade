@@ -1,0 +1,101 @@
+name: TypeScript CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'shared-types/**'
+      - 'afloat-server/**'
+      - 'echoes-server/**'
+      - 'grid-server/**'
+      - 'lots-server/**'
+      - 'maintain-server/**'
+      - 'pulse-server/**'
+      - 'seeds-server/**'
+      - 'glimpse-artifact/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'shared-types/**'
+      - 'afloat-server/**'
+      - 'echoes-server/**'
+      - 'grid-server/**'
+      - 'lots-server/**'
+      - 'maintain-server/**'
+      - 'pulse-server/**'
+      - 'seeds-server/**'
+      - 'glimpse-artifact/**'
+
+concurrency:
+  group: ts-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ── shared-types must build first — all MCP servers depend on it ──
+  shared-types:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: shared-types/package-lock.json
+      - run: npm ci
+        working-directory: shared-types
+      - run: npm run check
+        working-directory: shared-types
+      - run: npm run build
+        working-directory: shared-types
+
+  # ── MCP servers — build and test in parallel after shared-types ──
+  mcp-servers:
+    needs: shared-types
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        server:
+          - afloat-server
+          - echoes-server
+          - grid-server
+          - lots-server
+          - maintain-server
+          - pulse-server
+          - seeds-server
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: ${{ matrix.server }}/package-lock.json
+      # Build shared-types first (local dependency)
+      - run: npm ci
+        working-directory: shared-types
+      - run: npm run build
+        working-directory: shared-types
+      # Build and test the server
+      - run: npm ci
+        working-directory: ${{ matrix.server }}
+      - run: npm run build
+        working-directory: ${{ matrix.server }}
+      - run: npm test
+        working-directory: ${{ matrix.server }}
+
+  # ── glimpse-artifact — independent build and test ──
+  glimpse-artifact:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: glimpse-artifact/package-lock.json
+      - run: npm ci
+        working-directory: glimpse-artifact
+      - run: npm run build
+        working-directory: glimpse-artifact
+      - run: npm test
+        working-directory: glimpse-artifact

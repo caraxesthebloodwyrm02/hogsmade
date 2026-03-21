@@ -1,0 +1,160 @@
+name: Root TypeScript CI
+
+on:
+  push:
+    branches: ['**']
+    paths:
+      - '.github/workflows/root-typescript-ci.yml'
+      - 'glimpse-artifact/**'
+      - 'shared-types/**'
+      - 'afloat-server/**'
+      - 'echoes-server/**'
+      - 'grid-server/**'
+      - 'lots-server/**'
+      - 'maintain-server/**'
+      - 'pulse-server/**'
+      - 'seeds-server/**'
+      - 'glimpse-engine/**'
+      - 'tests/glimpse-engine.test.mjs'
+      - 'scripts/bootstrap_glimpse_logic.mjs'
+      - 'glimpse.master.yaml'
+      - 'sample-innovations.json'
+      - 'sample-scenario.json'
+      - 'sample-cross-context-demo.json'
+  pull_request:
+    paths:
+      - '.github/workflows/root-typescript-ci.yml'
+      - 'glimpse-artifact/**'
+      - 'shared-types/**'
+      - 'afloat-server/**'
+      - 'echoes-server/**'
+      - 'grid-server/**'
+      - 'lots-server/**'
+      - 'maintain-server/**'
+      - 'pulse-server/**'
+      - 'seeds-server/**'
+      - 'glimpse-engine/**'
+      - 'tests/glimpse-engine.test.mjs'
+      - 'scripts/bootstrap_glimpse_logic.mjs'
+      - 'glimpse.master.yaml'
+      - 'sample-innovations.json'
+      - 'sample-scenario.json'
+      - 'sample-cross-context-demo.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: root-typescript-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  shared-types:
+    name: Shared Types Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: shared-types
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: shared-types/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+  servers:
+    name: Server Build & Test (${{ matrix.project }})
+    needs: shared-types
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        project:
+          - afloat-server
+          - echoes-server
+          - grid-server
+          - lots-server
+          - maintain-server
+          - pulse-server
+          - seeds-server
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: |
+            shared-types/package-lock.json
+            ${{ matrix.project }}/package-lock.json
+
+      - name: Install shared-types dependencies
+        working-directory: shared-types
+        run: npm ci
+
+      - name: Build shared-types
+        working-directory: shared-types
+        run: npm run build
+
+      - name: Install server dependencies
+        working-directory: ${{ matrix.project }}
+        run: npm ci
+
+      - name: Build server
+        working-directory: ${{ matrix.project }}
+        run: npm run build
+
+      - name: Test server
+        working-directory: ${{ matrix.project }}
+        run: npm test
+
+  glimpse-artifact:
+    name: Glimpse Artifact Check
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: glimpse-artifact
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: glimpse-artifact/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check
+        run: npm run check
+
+  glimpse-engine:
+    name: Glimpse Engine Verification
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run root Glimpse tests
+        run: node --test tests/glimpse-engine.test.mjs

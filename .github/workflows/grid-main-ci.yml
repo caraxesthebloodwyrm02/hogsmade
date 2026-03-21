@@ -71,7 +71,12 @@ jobs:
 
       # ── Ruff lint ─────────────────────────────────────────────────────────
       - name: Lint (ruff)
-        run: uv run ruff check work/ safety/ security/ boundaries/ --output-format=github
+        run: |
+          lint_dirs=(safety security boundaries)
+          if [ -d work ]; then
+            lint_dirs=(work "${lint_dirs[@]}")
+          fi
+          uv run ruff check "${lint_dirs[@]}" --output-format=github
 
       # ── Publish test results as workflow annotations ───────────────────────
       - name: Publish test results
