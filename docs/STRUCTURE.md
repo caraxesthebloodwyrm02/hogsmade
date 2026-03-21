@@ -9,11 +9,12 @@ This document is the **single map** for where things live and who owns what. Use
 | **Entry points** | `README.md`, `CLAUDE.md`, `AGENTS.md` | Start here for orientation and AI/agent rules. |
 | **Conventions** | `CONTRIBUTING.md`, `CHANGELOG.md`, `LICENSE`, `SECURITY.md` | Contributing, history, license, security policy. |
 | **Scratch / notes** | `archive/session-artifacts/` | Session scratch files; not config. |
-| **Config (root)** | `.editorconfig`, `.env.example`, `.gitattributes`, `.gitignore`, `.gitmodules` | Editor, env template, git. Ignored: `.cursor/hooks*`, `debug-*.log`, `.session-state.json` — see [GIT_REPO.md](GIT_REPO.md#ignored-paths). |
+| **Config (root)** | `.env.example`, `.gitattributes`, `.gitignore`, `.gitmodules` | Env template, git config. See [GIT_REPO.md](GIT_REPO.md#ignored-paths) for ignored paths. |
 | **Tool config** | `mcp_config.json`, `claude_code_config.json` | MCP and editor tooling; do not commit secrets. |
 | **Docs** | `docs/` | All shared documentation; index in [docs/README.md](README.md). |
 | **Scripts** | `scripts/` | Workspace-level scripts; index in [scripts/README.md](../scripts/README.md). |
 | **Operational** | `GATE/` | GATE envelopes, contracts, results; runtime/ops data. |
+| **Root tests** | `tests/` | Cross-project integration tests (e.g. `glimpse-engine.test.mjs`). |
 | **Projects** | See below | Apps, servers, shared packages at root. |
 
 ## Projects (scope → ownership)
@@ -70,7 +71,7 @@ Root repo only records their commit refs. See [GIT_REPO.md](GIT_REPO.md) and [SU
 
 ## Tool and CI health
 
-- **Build order**: `shared-types` first (`npm run build`), then any server that depends on it (afloat, maintain, pulse, etc.).
+- **Build order**: `shared-types` first, then `shared-resilience`, then any dependent server. `grid-server` depends on both shared packages.
 - **Per project**: See each project README for `npm run build`, `npm test`, or `uv run pytest` / `uv run ruff check` (GRID-main). Run builds and tests after changes to confirm nothing is broken.
 
 ## Agency (who does what)

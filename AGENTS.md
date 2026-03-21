@@ -64,16 +64,18 @@ There is no root `npm` workspace, so run commands inside the project you are cha
 - `node scripts/sync-default-master.mjs` refreshes the generated `glimpse-engine` config before opening `glimpse-engine.html`.
 
 ## Coding Style & Naming Conventions
-Follow `.editorconfig`: UTF-8, LF line endings, final newline, and trimmed trailing whitespace except in Markdown. Use 2-space indentation for JavaScript, TypeScript, JSON, YAML, and shell scripts; use 4 spaces for Python. Keep source under `src/`, tests under `tests/`, and treat `dist/` as generated output. Match existing descriptive names such as `smoke.test.ts`, `useGateData.test.ts`, and project-scoped package names like `pulse-server`.
+Use UTF-8, LF line endings, final newline, and trimmed trailing whitespace except in Markdown. Use 2-space indentation for JavaScript, TypeScript, JSON, YAML, and shell scripts; use 4 spaces for Python. Keep source under `src/`, tests under `tests/`, and treat `dist/` as generated output. Match existing descriptive names such as `smoke.test.ts`, `useGateData.test.ts`, and project-scoped package names like `pulse-server`.
 
 | Project                               | Type                                                                                                   | Language / Stack                        | Status                         |
 | ------------------------------------- | ------------------------------------------------------------------------------------------------------ | --------------------------------------- | ------------------------------ |
-| `GRID-main/`                          | Full-stack AI framework                                                                                | Python 3.13+, FastAPI, ChromaDB, Ollama | Production (v2.6.1)            |
+| `GRID-main/`                          | Full-stack AI framework                                                                                | Python 3.13+, FastAPI, ChromaDB, Ollama | Production (v2.7.0)            |
 | `mcp-tool-experiment/typescript-sdk/` | MCP TypeScript SDK v2                                                                                  | TypeScript 5.2, pnpm, Vitest, Zod v4    | Pre-alpha                      |
 | `glimpse-artifact/`                   | React component library                                                                                | React 18, TypeScript, Vite, TailwindCSS | Complete                       |
 | `glimpse-engine/`                     | Visualization engine                                                                                   | JavaScript (ES modules)                 | Working                        |
 | `afloat-server/`                      | Workflow orchestration MCP server                                                                      | TypeScript, MCP SDK                     | Working                        |
 | `shared-types/`                       | Shared types and audit client                                                                          | TypeScript                              | Build before dependent servers |
+| `shared-resilience/`                  | Resilience patterns (circuit breakers, retries, rate limiting)                                         | TypeScript, Vitest                      | Build dep for grid-server      |
+| `glimpse-server/`                     | MCP server exposing Glimpse cognitive engine                                                           | TypeScript, MCP SDK                     | Working                        |
 | Other MCP servers                     | `echoes-server/`, `grid-server/`, `lots-server/`, `maintain-server/`, `pulse-server/`, `seeds-server/` | TypeScript, MCP SDK                     | See root [README](README.md)   |
 | Nested repos                          | `GRID-main/`, `mcp-tool-experiment/`                                                                   | —                                       | Managed in their own git roots |
 
@@ -136,16 +138,18 @@ Components follow shadcn-style: CVA + clsx + tailwind-merge for variants. Icons:
 
 ### glimpse-engine
 
-Standalone visualization engine at the root. No package.json — runs directly in browser via `glimpse-engine.html`.
+Cognitive data analysis engine with CLI, tests, and browser dashboards.
 
 ```bash
-node scripts/sync-default-master.mjs    # Sync YAML config → embedded JS
-# Open glimpse-engine.html in browser to run
+cd glimpse-engine
+node cli.js --help                      # CLI interface
+node --test tests/glimpse-engine.test.mjs  # Run from repo root (not glimpse-engine/)
 ```
 
 - **Config**: `glimpse.master.yaml` — all domains, rules, presets, view specs
-- **Core**: `glimpse-engine/engine.js` — pipeline runtime (ingest → profile → rules → articulate)
+- **Core**: `glimpse-engine/core/engine.js` — pipeline runtime (ingest → profile → rules → articulate)
 - **Views**: `glimpse-engine/view-specs.js` — constellation, timeline, clusters, matrix, flow, map, explorer
+- **Tests**: `tests/glimpse-engine.test.mjs` (repo root) — 13 integration tests covering the full pipeline
 - **Docs**: `GLIMPSE-GUIDE.md` for plain-language rule authoring
 
 ### afloat-server
@@ -162,63 +166,9 @@ npm run start
 
 ## Cross-Project Notes
 
-- `prompt.md` at the workspace root is a scratch/notes file, not configuration.
 - Each project uses its own lockfile (`uv.lock`, `pnpm-lock.yaml`, `package-lock.json`) — do not mix package managers across projects.
 - When working across projects, always `cd` into the project root before running commands.
-- **Build order**: Servers that depend on `shared-types` (e.g. `afloat-server`) require `shared-types` to be built first (`cd shared-types && npm run build`).
-
-## HomeGuard Scope Guardrails
-
-The workspace uses runtime scope guardrails to prevent accidental processing of stalled projects.
-
-**Active Profile**: `default` — Active development mode
-
-- **Accessible**: `GRID-main/`, `mcp-tool-experiment/`, `.git/`
-- **Guardrailed**: 25 stalled projects (no git history, empty shells)
-
-**Commands**:
-
-```bash
-# Check scope status
-python Tools/scripts/scope_persistence.py --status
-
-# Validate current scope
-python Tools/scripts/runtime_guard.py --validate C:\Users\USER\CascadeProjects
-
-# Switch to legacy audit mode (for investigating .claude/)
-python Tools/scripts/scope_persistence.py --activate legacy_audit
-```
-
-**Recently Cleaned** (2026-03-12):
-
-- Removed stale virtual environments (`.venv/`, `.tmp-ownership-venv/`)
-- Cleaned problematic IDE extensions (Copilot Chat, Jupyter tools)
-- Freed ~570MB via cache cleanup
-- Updated telemetry baseline
-
-## HomeGuard Success Metrics
-
-| Metric                    | Target            | Measurement Command                                |
-| ------------------------- | ----------------- | -------------------------------------------------- |
-| Scope check response time | <1ms              | `python Tools/scripts/test_runtime_guard.py`       |
-| Cache hit rate            | >90%              | Runtime metrics in preferences.json                |
-| Stalled project detection | 100%              | `python Tools/scripts/runtime_guard.py --validate` |
-| Extension health          | 0 critical errors | IDE problem panel                                  |
-| COMPAS confidence         | ≥85%              | `python Tools/scripts/compas.py --trend`           |
-| Telemetry baseline age    | <7 days           | Last scan timestamp                                |
-
-**Verification Commands**:
-
-```bash
-# Verify scope guardrails operational
-python Tools/scripts/runtime_guard.py --validate C:\Users\USER\CascadeProjects
-
-# Check COMPAS trend analysis
-python Tools/scripts/compas.py --trend
-
-# View cleanup status
-python Tools/scripts/cleanup_executor.py --status
-```
+- **Build order**: `shared-types` first, then `shared-resilience`, then any dependent server. `grid-server` depends on both shared packages.
 
 ## Glimpse Bench (Model Benchmarking)
 

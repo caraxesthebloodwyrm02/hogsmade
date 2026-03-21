@@ -37,8 +37,8 @@ This file provides guidance to Claude when working with code in this repository.
 | BDT                                     | Bangladeshi Taka (1 USD ≈ 122 BDT)                           |
 | turbo                                   | `// turbo` in workflows = safe to autorun                    |
 | UW                                      | Upwork · FVR = Fiverr · direct = no platform                 |
-| CascadeProjects                         | C:\Users\USER\CascadeProjects                                |
-| Seeds                                   | E:\Seeds                                                     |
+| CascadeProjects                         | /home/caraxes/CascadeProjects (hogsmade monorepo)            |
+| Seeds                                   | /home/caraxes/seed                                           |
 
 ### Active Projects
 
@@ -46,7 +46,7 @@ This file provides guidance to Claude when working with code in this repository.
 | ------------------------------ | ----------------- | -------------- |
 | GRID-main                      | Production v2.7.0 | T1 Flagship    |
 | APIGuard                       | Published PyPI    | T1 Flagship    |
-| MCP ecosystem (10 servers)      | Working           | T2 Strong      |
+| MCP ecosystem (8 servers)       | Working           | T2 Strong      |
 | GRID×APIGuard integration      | Complete          | T2 Strong      |
 | glimpse-artifact               | Complete          | T3 Supporting  |
 | symphony-execution-performance | Active            | T3 Supporting  |
@@ -55,7 +55,7 @@ This file provides guidance to Claude when working with code in this repository.
 ### Preferences
 
 - Package managers: `uv` for Python (GRID-main), `pnpm` for mcp-tool-experiment, `npm` elsewhere
-- Shell: PowerShell on Windows — use `;` not `&&`, quote paths with spaces
+- Shell: bash on Arch Linux — standard `&&` chaining
 - Tests: always run full suite before commit, 0 regressions target
 - Commits: conventional (`feat(scope):`, `fix(scope):`, `refactor(scope):`)
 - Local-first: Ollama + ChromaDB, not cloud APIs, unless asked
@@ -178,10 +178,10 @@ npm run start
 
 ## Cross-Project Notes
 
-- `prompt.md` at the workspace root is a scratch/notes file, not configuration.
 - Each project uses its own lockfile (`uv.lock`, `pnpm-lock.yaml`, `package-lock.json`) — do not mix package managers across projects.
 - When working across projects, always `cd` into the project root before running commands.
-- **Build order**: Servers that depend on `shared-types` (e.g. `afloat-server`) require `shared-types` to be built first (`cd shared-types && npm run build`).
+- **Build order**: `shared-types` first, then `shared-resilience`, then any dependent server. `grid-server` depends on both shared packages.
+- **Root tests**: `tests/glimpse-engine.test.mjs` runs from repo root (`node --test tests/glimpse-engine.test.mjs`) and covers the glimpse-engine pipeline.
 
 ---
 
@@ -285,7 +285,6 @@ This workspace doubles as the operator's freelance portfolio and delivery infras
 
 - Verify write access to all target directories before starting code changes
 - Check Python/Node version and binary availability (python3 --version, node --version)
-- If in WSL sandbox, test rollup/npm binary compatibility before running JS tests (npx rollup --version)
 - If any check fails, STOP and report the blocker before doing anything else
 - Use uv run pytest not pytest directly; use npx vitest not global installs
 - For GRID-main: always set PYTHONPATH=src, MOTHERSHIP_ENVIRONMENT=test, MOTHERSHIP_DATABASE_URL=sqlite:///:memory:, MOTHERSHIP_USE_DATABRICKS=false before running tests
