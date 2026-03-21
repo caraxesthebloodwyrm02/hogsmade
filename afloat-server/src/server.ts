@@ -10,6 +10,7 @@
  * Port: 3000 (per GATE/agent_schema.json)
  */
 
+import { emitAudit } from "@cascade/shared-types/audit-client";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { promises as fs } from "fs";
@@ -69,9 +70,16 @@ async function ensureDataDir(): Promise<void> {
   await fs.mkdir(HISTORY_DIR, { recursive: true });
 }
 
+/** Atomic write: write to .tmp then rename to prevent corruption. */
+async function atomicWriteJson(filepath: string, data: unknown): Promise<void> {
+  const tmpPath = filepath + `.tmp.${process.pid}`;
+  await fs.writeFile(tmpPath, JSON.stringify(data, null, 2), "utf-8");
+  await fs.rename(tmpPath, filepath);
+}
+
 async function saveWorkflow(wf: WorkflowDefinition): Promise<void> {
   const filepath = path.join(WORKFLOWS_DIR, `${wf.id}.json`);
-  await fs.writeFile(filepath, JSON.stringify(wf, null, 2), "utf-8");
+  await atomicWriteJson(filepath, wf);
 }
 
 async function loadWorkflow(id: string): Promise<WorkflowDefinition | null> {
@@ -107,7 +115,7 @@ async function listWorkflows(): Promise<WorkflowDefinition[]> {
 
 async function saveExecution(exec: WorkflowExecution): Promise<void> {
   const filepath = path.join(HISTORY_DIR, `${exec.executionId}.json`);
-  await fs.writeFile(filepath, JSON.stringify(exec, null, 2), "utf-8");
+  await atomicWriteJson(filepath, exec);
 }
 
 async function listExecutions(

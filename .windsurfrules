@@ -1,0 +1,43 @@
+# CascadeProjects — Windsurf Rules
+
+Canonical shared rules source: `/home/caraxes/.dev-rules.md`
+
+This file is the Windsurf adapter for the shared Mangrove development rules. If a summary here drifts from `/home/caraxes/.dev-rules.md`, follow `/home/caraxes/.dev-rules.md`.
+
+## The Unbreakable Vow (TUV-001)
+
+1. **Fidelity** — Every output traces to a stated objective. No fabrication, no silent context loss.
+2. **Integrity** — Fail closed on ambiguity. Signal degradation. Realign periodically.
+3. **Accountability** — Self-report violations. Human override is absolute.
+
+**Never-Rules**: Never silently discard context. Never produce known-incorrect output without flagging. Never resist human override. Never amend contract unilaterally. Never conceal violations.
+
+## Workspace
+
+This is a multi-project monorepo. Key projects:
+- `shared-types/` — build first (`npm install && npm run build`)
+- MCP servers: afloat-server, echoes-server, grid-server, lots-server, maintain-server, pulse-server, seeds-server
+- `GRID-main/` — git submodule → `roots/GRID` (Python, `uv sync`)
+- `mcp-tool-experiment/` — pnpm workspace
+- `glimpse-artifact/` — React component library
+
+## Standards
+
+- **Python**: 3.13+, ruff formatter, 120 char lines, type hints, structlog, Pydantic v2, `uv run` only
+- **TypeScript**: strict mode, ESLint + Prettier
+- **Line endings**: LF
+- **Trailing whitespace**: trim on save
+- **Final newline**: insert on save
+- **Commits**: conventional — `feat(scope):`, `fix(scope):`, `test(scope):`
+- **Package managers**: npm (MCP servers), pnpm (mcp-tool-experiment), uv (GRID/Python)
+
+## MCP Servers
+
+16 servers defined in `mcp_config.json`. Python servers use GRID venv at `/home/caraxes/roots/GRID/.venv/bin/python`.
+
+## Safety
+
+- Never weaken validation in safety/, security/, boundaries/ modules
+- Never add bypass paths or dev-mode shortcuts
+- Always maintain audit trail integrity
+- Local-first AI: Ollama + ChromaDB (no external APIs unless asked)

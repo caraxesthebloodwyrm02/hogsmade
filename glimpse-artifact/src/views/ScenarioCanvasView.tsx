@@ -12,33 +12,12 @@ import type {
   GlimpseSnapshot,
   ScenarioSeed,
 } from "@/components/phase4/types";
+import { useCanvasSeeds } from "@/hooks/useCanvasSeeds";
+import { loadCanvasState, useCanvasPersistence } from "@/hooks/useCanvasPersistence";
 import { cn } from "@/lib/utils";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-/* ── Seed shelf (C2: plain language, real-world metaphor) ────────── */
-const SEED_SHELF: ScenarioSeed[] = [
-  {
-    id: "seed-1",
-    title: "The letter arrives",
-    description:
-      "A forgotten letter surfaces in an attic box. The handwriting belongs to someone the protagonist believed dead for twenty years.",
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "seed-2",
-    title: "The storm breaks",
-    description:
-      "A coastal village loses power during the worst storm in a century. Two strangers shelter in the same lighthouse.",
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "seed-3",
-    title: "The offer",
-    description:
-      "An anonymous patron offers to fund the protagonist's art exhibition — but only if they destroy their most personal piece.",
-    createdAt: new Date().toISOString(),
-  },
-];
+/* ── Seed shelf (C2: externalized to /data/seed-templates.json) ──── */
 
 interface CanvasNode {
   type: "seed" | "glimpse";
@@ -58,19 +37,32 @@ interface ForkEdge {
 }
 
 export function ScenarioCanvasView() {
+  /* ── Seed templates (C2: fetched from /data/seed-templates.json) ─ */
+  const { seeds: seedShelf } = useCanvasSeeds();
+
+  /* ── Restore persisted state ────────────────────────────────────── */
+  const restored = useRef(loadCanvasState());
+  const initial = restored.current;
+
   /* ── State ─────────────────────────────────────────────────────── */
-  const idCounter = useRef(100);
-  const [seeds, setSeeds] = useState<ScenarioSeed[]>([]);
-  const [branches, setBranches] = useState<Branch[]>([]);
-  const [snapshots, setSnapshots] = useState<GlimpseSnapshot[]>([]);
-  const [annotations, setAnnotations] = useState<Annotation[]>([]);
-  const [nodes, setNodes] = useState<CanvasNode[]>([]);
-  const [edges, setEdges] = useState<ForkEdge[]>([]);
+  const idCounter = useRef(initial?.idCounter ?? 100);
+  const [seeds, setSeeds] = useState<ScenarioSeed[]>((initial?.seeds ?? []) as ScenarioSeed[]);
+  const [branches, setBranches] = useState<Branch[]>((initial?.branches ?? []) as Branch[]);
+  const [snapshots, setSnapshots] = useState<GlimpseSnapshot[]>((initial?.snapshots ?? []) as GlimpseSnapshot[]);
+  const [annotations, setAnnotations] = useState<Annotation[]>((initial?.annotations ?? []) as Annotation[]);
+  const [nodes, setNodes] = useState<CanvasNode[]>((initial?.nodes ?? []) as CanvasNode[]);
+  const [edges, setEdges] = useState<ForkEdge[]>((initial?.edges ?? []) as ForkEdge[]);
   const [selectedGlimpses, setSelectedGlimpses] = useState<Set<string>>(
     new Set(),
   );
   const [showShelf, setShowShelf] = useState(false);
   const [activeMarker, setActiveMarker] = useState<string | null>(null);
+
+  /* ── Auto-save to localStorage ─────────────────────────────────── */
+  const { save } = useCanvasPersistence();
+  useEffect(() => {
+    save({ seeds, branches, snapshots, annotations, nodes, edges, idCounter: idCounter.current });
+  }, [seeds, branches, snapshots, annotations, nodes, edges, save]);
 
   /* ── Actions ───────────────────────────────────────────────────── */
   const addSeed = useCallback(
@@ -125,7 +117,6 @@ export function ScenarioCanvasView() {
         label: branch.label,
       };
 
-      // Batch all state updates to prevent multiple re-renders
       setBranches((b: Branch[]) => [...b, branch]);
       setSnapshots((s: GlimpseSnapshot[]) => [...s, snapshot]);
       setNodes((n: CanvasNode[]) => [
@@ -245,7 +236,7 @@ export function ScenarioCanvasView() {
           <rect x="12" y="4" width="6" height="12" rx="1" />
         </svg>
       ),
-      onClick: () => {},
+      onClick: () => { },
       disabled: selectedGlimpses.size < 2,
     },
     {
@@ -263,42 +254,52 @@ export function ScenarioCanvasView() {
         </svg>
       ),
       onClick: () => {
-        window.print();
+        const payload = { seeds, branches, snapshots, annotations, nodes, edges, exportedAt: new Date().toISOString() };
+        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `canvas-export-${Date.now()}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
       },
     },
   ];
 
   /* ── Render ────────────────────────────────────────────────────── */
   return (
-    <div className="h-full min-h-0 flex flex-col bg-canvas-bg font-body relative">
+    <div className="h-full min-h-0 flex flex-col bg-canvas-bg dot-grid font-body relative">
       {/* Toolbar — fixed top center */}
       <CanvasToolbar actions={toolbarActions} />
 
       {/* Seed shelf drawer (C2: low-tech, plain language) */}
       {showShelf && (
-        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-40 w-full max-w-2xl">
-          <div className="bg-canvas-surface border border-border-color rounded-lg shadow-token-md p-4 mx-4">
-            <h2 className="font-heading text-lg font-bold text-ink mb-3">
+        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-40 w-full max-w-2xl animate-fade-slide-up">
+          <div className="glass-panel shadow-token-md p-5 mx-4">
+            <h2 className="font-body text-[11px] font-medium uppercase tracking-[0.08em] text-ink mb-2">
               Choose a seed to start
             </h2>
-            <p className="font-body text-sm text-ink-muted mb-4">
+            <p className="font-body text-sm text-ink-muted mb-5">
               A seed is a starting situation for your scenario. Pick one and
               explore what happens.
             </p>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {SEED_SHELF.map((template) => (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 stagger-children">
+              {seedShelf.map((template) => (
                 <button
                   key={template.id}
                   onClick={() => addSeed(template)}
-                  className="text-left rounded-lg border border-border-color bg-canvas-bg p-3
-                             hover:border-teal-500 hover:shadow-token-sm
+                  className="text-left rounded-lg border border-border-color bg-canvas-bg/80 p-4
+                             hover:border-teal-500/50 hover:shadow-glow-emerald
                              transition-all duration-fast
                              focus:outline-none focus:ring-2 focus:ring-teal-500
-                             min-h-touch"
+                             min-h-touch group"
                 >
-                  <h3 className="font-heading text-sm font-bold text-ink mb-1">
-                    {template.title}
-                  </h3>
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-2 h-2 rounded-full bg-teal-500 group-hover:shadow-glow-emerald transition-shadow" />
+                    <h3 className="font-heading text-sm font-bold text-ink">
+                      {template.title}
+                    </h3>
+                  </div>
                   <p className="font-body text-xs text-ink-muted line-clamp-3">
                     {template.description}
                   </p>
@@ -307,7 +308,7 @@ export function ScenarioCanvasView() {
             </div>
             <button
               onClick={() => setShowShelf(false)}
-              className="mt-3 font-body text-sm text-ink-muted hover:text-ink
+              className="mt-4 font-body text-sm text-ink-muted hover:text-ink
                          transition-colors duration-fast"
             >
               Close shelf
@@ -316,7 +317,7 @@ export function ScenarioCanvasView() {
         </div>
       )}
 
-      {/* Canvas — bottom padding when timeline ribbon or comparison tray is visible */}
+      {/* Canvas */}
       <div
         className={cn(
           'flex-1 min-h-0 relative',
@@ -381,17 +382,17 @@ export function ScenarioCanvasView() {
           ))}
         </ScenarioCanvas>
 
-        {/* Empty state (C2: what this is + why empty + how to start) */}
+        {/* Empty state */}
         {seeds.length === 0 && !showShelf && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="text-center pointer-events-auto max-w-sm">
+            <div className="text-center pointer-events-auto max-w-sm animate-fade-in">
               <div
-                className="w-16 h-16 mx-auto mb-4 rounded-full bg-teal-100 flex items-center justify-center"
+                className="w-20 h-20 mx-auto mb-5 rounded-full bg-teal-500/10 border border-teal-500/20 flex items-center justify-center shadow-glow-emerald"
                 aria-hidden="true"
               >
                 <svg
                   viewBox="0 0 24 24"
-                  className="w-8 h-8 text-teal-600"
+                  className="w-9 h-9 text-teal-500"
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="1.5"
@@ -400,20 +401,20 @@ export function ScenarioCanvasView() {
                   <path d="M12 3v5M12 16v5M3 12h5M16 12h5" />
                 </svg>
               </div>
-              <h2 className="font-heading text-xl font-bold text-ink mb-2">
+              <h2 className="font-heading text-2xl font-bold text-ink mb-3">
                 Your canvas is empty
               </h2>
-              <p className="font-body text-sm text-ink-muted mb-4">
+              <p className="font-body text-sm text-ink-muted mb-6 leading-relaxed">
                 Start by choosing a seed — a starting situation for your
                 scenario. Then fork it to explore different paths and compare
                 glimpses side by side.
               </p>
               <button
                 onClick={() => setShowShelf(true)}
-                className="font-body text-base font-medium text-canvas-surface bg-teal-500 hover:bg-teal-600
-                           min-h-touch px-6 py-3 rounded-lg
-                           transition-colors duration-fast
-                           focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2"
+                className="font-body text-base font-medium text-canvas-bg bg-teal-500 hover:bg-teal-600
+                           min-h-touch px-7 py-3 rounded-lg
+                           transition-all duration-fast shadow-glow-emerald hover:shadow-glow-emerald
+                           focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 focus:ring-offset-canvas-bg"
               >
                 Choose a seed
               </button>
@@ -433,7 +434,7 @@ export function ScenarioCanvasView() {
       {/* Comparison tray (C3: side-by-side, max 3) */}
       {selectedGlimpses.size >= 2 && (
         <div className="fixed bottom-14 left-0 right-0 z-20 px-4">
-          <div className="max-w-5xl mx-auto bg-canvas-surface/95 backdrop-blur-sm border border-border-color rounded-lg shadow-token-md p-4">
+          <div className="max-w-5xl mx-auto glass-panel shadow-token-md p-4">
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-heading text-sm font-bold text-ink">
                 Comparing {selectedGlimpses.size} glimpses
@@ -454,7 +455,7 @@ export function ScenarioCanvasView() {
                 return (
                   <div
                     key={snap.id}
-                    className="rounded-md border border-teal-200 bg-teal-50 p-3"
+                    className="rounded-md border border-teal-500/30 bg-teal-500/5 p-3"
                   >
                     <h4 className="font-heading text-xs font-bold text-ink mb-1 truncate">
                       {snap.title}

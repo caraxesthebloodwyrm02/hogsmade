@@ -11,6 +11,7 @@
  * Follows the same patterns as echoes-server, grid-server, etc.
  */
 
+import { emitAudit } from "@cascade/shared-types/audit-client";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import * as z from "zod";
@@ -35,18 +36,35 @@ const DATA_DIR = config.dataDir;
 const BOOKMARKS_PATH = path.join(DATA_DIR, "bookmarks.json");
 const SNAPSHOTS_DIR = path.join(DATA_DIR, "snapshots");
 
-// Known repos in Seeds ecosystem
-const KNOWN_REPOS: Record<string, { description: string; stack: string }> = {
-  "GRID-main": { description: "Full-stack AI framework", stack: "Python 3.13+, FastAPI, ChromaDB" },
-  "afloat": { description: "Next.js subscription chat platform", stack: "TypeScript, Next.js, Stripe" },
-  "echoes": { description: "Multimodal AI assistant platform", stack: "Python 3.12+, FastAPI" },
-  "light_of_the_seven": { description: "Educational computation framework", stack: "Python 3.10+, Rust" },
-  "assistive-tool-contract": { description: "Contract specification", stack: "JSON, Markdown" },
+// Known repos in Seeds ecosystem — path overrides SEEDS_ROOT join when present
+const KNOWN_REPOS: Record<string, { description: string; stack: string; path?: string }> = {
+  "GRID": { description: "Full-stack AI framework", stack: "Python 3.13+, FastAPI, ChromaDB", path: "/home/caraxes/roots/GRID" },
+  "afloat": { description: "Next.js workflow app", stack: "TypeScript, Next.js, Stripe", path: "/home/caraxes/canopy/afloat" },
+  "echoes": { description: "Audit & observability platform", stack: "Python 3.12+, FastAPI", path: "/home/caraxes/canopy/echoes" },
+  "glimpse-engine": { description: "Cognitive rendering engine", stack: "JavaScript", path: "/home/caraxes/roots/glimpse-engine" },
+  "apiguard": { description: "API security gateway", stack: "Python 3.13+", path: "/home/caraxes/roots/apiguard" },
+  "Vision": { description: "AI vision project", stack: "Python", path: "/home/caraxes/grove/Vision" },
+  "hogsmade": { description: "MCP server monorepo", stack: "TypeScript, Node.js", path: "/home/caraxes/CascadeProjects" },
 };
 
-// Alias repo names to actual directory names under SEEDS_ROOT (e.g. "grid" -> "GRID-main" for health checks)
+// Rate limiting for expensive scans
+const SCAN_COOLDOWN_MS = 30_000;
+const lastScanTimes = new Map<string, number>();
+
+function checkScanRateLimit(scanType: string): string | null {
+  const now = Date.now();
+  const last = lastScanTimes.get(scanType);
+  if (last && now - last < SCAN_COOLDOWN_MS) {
+    const waitSec = Math.ceil((SCAN_COOLDOWN_MS - (now - last)) / 1000);
+    return `Rate limited: ${scanType} was run ${Math.round((now - last) / 1000)}s ago. Wait ${waitSec}s.`;
+  }
+  lastScanTimes.set(scanType, now);
+  return null;
+}
+
+// Alias repo names to actual directory names under SEEDS_ROOT (e.g. "grid" -> "GRID" for health checks)
 const REPO_PATH_ALIASES: Record<string, string> = {
-  grid: "GRID-main",
+  grid: "GRID",
 };
 
 // Skip these discovered directory names in ecosystem_scan (no git or not tracked)
@@ -120,8 +138,9 @@ async function runGitCommand(
 }
 
 async function checkRepoHealth(repoName: string): Promise<RepoHealth> {
+  const knownInfo = KNOWN_REPOS[repoName];
   const resolvedDir = REPO_PATH_ALIASES[repoName] ?? repoName;
-  const repoPath = path.join(SEEDS_ROOT, resolvedDir);
+  const repoPath = knownInfo?.path ?? path.join(SEEDS_ROOT, resolvedDir);
   const health: RepoHealth = {
     name: repoName,
     path: repoPath,
@@ -235,14 +254,21 @@ async function loadBookmarks(): Promise<Bookmark[]> {
   }
 }
 
+/** Atomic write: write to .tmp then rename to prevent corruption. */
+async function atomicWriteJson(filepath: string, data: unknown): Promise<void> {
+  const tmpPath = filepath + `.tmp.${process.pid}`;
+  await fs.writeFile(tmpPath, JSON.stringify(data, null, 2), "utf-8");
+  await fs.rename(tmpPath, filepath);
+}
+
 async function saveBookmarks(bookmarks: Bookmark[]): Promise<void> {
-  await fs.writeFile(BOOKMARKS_PATH, JSON.stringify(bookmarks, null, 2), "utf-8");
+  await atomicWriteJson(BOOKMARKS_PATH, bookmarks);
 }
 
 async function saveSnapshot(snapshot: EcosystemSnapshot): Promise<string> {
   const filename = `snapshot-${Date.now()}.json`;
   const filepath = path.join(SNAPSHOTS_DIR, filename);
-  await fs.writeFile(filepath, JSON.stringify(snapshot, null, 2), "utf-8");
+  await atomicWriteJson(filepath, snapshot);
   return filepath;
 }
 
@@ -345,6 +371,10 @@ server.registerTool(
     }),
   },
   async (args: { saveSnapshot?: boolean }) => {
+    const rateLimitMsg = checkScanRateLimit("ecosystem_scan");
+    if (rateLimitMsg) {
+      return { content: [{ type: "text" as const, text: JSON.stringify({ error: rateLimitMsg }) }] };
+    }
     await ensureDataDir();
     const repos: RepoHealth[] = [];
 

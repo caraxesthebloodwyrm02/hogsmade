@@ -6,6 +6,3 @@
 	path = mcp-tool-experiment
 	url = https://github.com/modelcontextprotocol/typescript-sdk
 	ignore = dirty
-[submodule "projects/web/ai-web-demo"]
-	path = projects/web/ai-web-demo
-	url = ./projects/web/ai-web-demo

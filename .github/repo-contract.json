@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "repoName": "CascadeProjects",
+  "defaultBranch": "main",
+  "allowAgentFix": true,
+  "requiredChecks": [
+    "pr-contract",
+    "root-ts-ci",
+    "secrets-scan",
+    "codeql"
+  ],
+  "riskTiers": {
+    "tier0Globs": [
+      "docs/**",
+      "**/*.md"
+    ],
+    "tier2Globs": [
+      ".github/workflows/**",
+      "GATE/**",
+      "mcp_config.json",
+      "claude_code_config.json",
+      "SECURITY.md",
+      ".trufflehog.yml",
+      "GRID-main/**"
+    ]
+  },
+  "trustedCommands": [
+    {
+      "name": "full-check",
+      "workingDirectory": ".",
+      "commands": [
+        "bash scripts/run_repo_contract_checks.sh"
+      ]
+    }
+  ]
+}

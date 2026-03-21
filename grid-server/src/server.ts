@@ -13,6 +13,7 @@
 
 import { ResiliencePolicy } from "@cascade/shared-resilience";
 import { emitAudit } from "@cascade/shared-types/audit-client";
+import { GateSecurityPolicy } from "@cascade/shared-types/security-policy";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import crypto from "crypto";
@@ -193,44 +194,74 @@ async function readNonceRegistry(): Promise<
   return data ?? {};
 }
 
+/** Atomic write: write to .tmp then rename to prevent corruption. */
+async function atomicWriteJson(filepath: string, data: unknown): Promise<void> {
+  const tmpPath = filepath + `.tmp.${process.pid}`;
+  await fs.writeFile(tmpPath, JSON.stringify(data, null, 2), "utf-8");
+  await fs.rename(tmpPath, filepath);
+}
+
 async function writeNonceRegistry(
   registry: Record<string, NonceRegistryEntry>,
 ): Promise<void> {
-  await fs.writeFile(
-    NONCE_REGISTRY_PATH,
-    JSON.stringify(registry, null, 2),
-    "utf-8",
-  );
+  await atomicWriteJson(NONCE_REGISTRY_PATH, registry);
+}
+
+/** Allowed hosts for GRID_API_URL — prevents redirect to malicious servers. */
+const ALLOWED_GRID_HOSTS = new Set(["localhost", "127.0.0.1", "::1"]);
+
+function validateGridApiUrl(raw: string): string | null {
+  try {
+    const parsed = new URL(raw);
+    if (!ALLOWED_GRID_HOSTS.has(parsed.hostname)) {
+      console.error(`[${SERVER_NAME}] GRID_API_URL host '${parsed.hostname}' not in allowlist — ignoring`);
+      return null;
+    }
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      console.error(`[${SERVER_NAME}] GRID_API_URL protocol '${parsed.protocol}' not allowed`);
+      return null;
+    }
+    return parsed.origin;
+  } catch {
+    console.error(`[${SERVER_NAME}] GRID_API_URL is not a valid URL: '${raw}'`);
+    return null;
+  }
 }
 
 async function getEnhancedValidation(
   envelope: Record<string, unknown>,
 ): Promise<Record<string, unknown> | null> {
-  const gridApiUrl =
-    process.env.GRID_API_URL?.trim() || config.gridApiUrl || "";
-  if (!gridApiUrl) {
+  const rawUrl = process.env.GRID_API_URL?.trim() || config.gridApiUrl || "";
+  if (!rawUrl) {
     return null;
+  }
+
+  const gridApiUrl = validateGridApiUrl(rawUrl);
+  if (!gridApiUrl) {
+    return {
+      consulted: true,
+      approved: false,
+      flags: ['grid_url_invalid'],
+      reasoning: 'GRID_API_URL failed host allowlist validation',
+    };
   }
 
   try {
     const payload = await gridApiPolicy.execute<Record<string, unknown>>(
       "validate",
       async () => {
-        const response = await fetch(
-          `${gridApiUrl.replace(/\/$/, "")}/api/v1/gate/validate`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              source_agent: envelope["source_partition"],
-              target: envelope["target_partition"],
-              action: envelope["scope"],
-              payload_hash: envelope["payload_hash"],
-              test_status:
-                envelope["tests_passed"] === true ? "passing" : "failing",
-            }),
-          },
-        );
+        const response = await fetch(`${gridApiUrl}/api/v1/gate/validate`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            source_agent: envelope["source_partition"],
+            target: envelope["target_partition"],
+            action: envelope["scope"],
+            payload_hash: envelope["payload_hash"],
+            test_status:
+              envelope["tests_passed"] === true ? "passing" : "failing",
+          }),
+        });
 
         if (!response.ok) {
           throw new Error(`GRID-main responded with ${response.status}`);
@@ -252,7 +283,7 @@ async function getEnhancedValidation(
       consulted: true,
       approved: false,
       flags: ["grid_unavailable"],
-      reasoning: error instanceof Error ? error.message : String(error),
+      reasoning: "Remote validation unavailable",
     };
   }
 }
@@ -547,11 +578,11 @@ export function buildServer(): McpServer {
         const expected =
           payloadHash != null && machineFp != null && nonceVal != null
             ? computeUserFingerprint(
-                config.gateUserSecret,
-                payloadHash,
-                machineFp,
-                nonceVal,
-              )
+              config.gateUserSecret,
+              payloadHash,
+              machineFp,
+              nonceVal,
+            )
             : "";
         const bufDeclared =
           typeof userFp === "string" && /^[a-f0-9]+$/i.test(userFp)
@@ -583,6 +614,7 @@ export function buildServer(): McpServer {
 
       // Nonce: must be registered and not already burned (replay protection)
       const nonceRegistry = await readNonceRegistry();
+      const noncePolicy = GateSecurityPolicy.validateNonce(nonceVal, nonceRegistry);
       const nonceEntry = nonceVal != null ? nonceRegistry[nonceVal] : undefined;
       const nonceRegistered = nonceVal != null && nonceEntry != null;
       const nonceNotReused = nonceRegistered && nonceEntry.burned !== true;
@@ -604,13 +636,36 @@ export function buildServer(): McpServer {
             ? "nonce already burned"
             : "nonce not registered",
       });
+      // Policy engine cross-check
+      if (noncePolicy.verdict === "deny") {
+        checks.push({
+          check: "nonce_policy",
+          passed: false,
+          detail: `${noncePolicy.policyId}: ${noncePolicy.reason}`,
+        });
+      }
 
       const allPassed = checks.every((c) => c.passed);
       const enhancedValidation = allPassed
         ? await getEnhancedValidation(envelope)
         : null;
+      // P-INT-005: Fail closed when remote validation unavailable for production targets
+      const targetPartition = envelope["target_partition"] as string | undefined;
+      if (enhancedValidation && enhancedValidation["approved"] === false) {
+        const failClosedPolicy = GateSecurityPolicy.failClosedPolicy(
+          !enhancedValidation["flags"]?.toString().includes("grid_unavailable"),
+          targetPartition ?? "",
+        );
+        if (failClosedPolicy.verdict === "deny") {
+          checks.push({
+            check: "fail_closed_policy",
+            passed: false,
+            detail: `${failClosedPolicy.policyId}: ${failClosedPolicy.reason}`,
+          });
+        }
+      }
       const enhancedApproved =
-        enhancedValidation == null || enhancedValidation["approved"] === true;
+        enhancedValidation == null || enhancedValidation["approved"] !== false;
 
       const valid = allPassed && enhancedApproved;
 

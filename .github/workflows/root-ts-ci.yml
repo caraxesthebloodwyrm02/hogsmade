@@ -1,0 +1,82 @@
+name: root-ts-ci
+
+on:
+  push:
+    branches: ["**"]
+    paths:
+      - "shared-types/**"
+      - "afloat-server/**"
+      - "echoes-server/**"
+      - "grid-server/**"
+      - "lots-server/**"
+      - "maintain-server/**"
+      - "pulse-server/**"
+      - "seeds-server/**"
+      - "glimpse-artifact/**"
+      - "glimpse-engine/**"
+      - "glimpse.master.yaml"
+      - "sample-innovations.json"
+      - "sample-scenario.json"
+      - "sample-cross-context-demo.json"
+      - "tests/**"
+      - "scripts/bootstrap_glimpse_logic.mjs"
+      - "scripts/run_repo_contract_checks.sh"
+      - ".github/repo-contract.json"
+      - ".github/workflows/root-ts-ci.yml"
+  pull_request:
+    paths:
+      - "shared-types/**"
+      - "afloat-server/**"
+      - "echoes-server/**"
+      - "grid-server/**"
+      - "lots-server/**"
+      - "maintain-server/**"
+      - "pulse-server/**"
+      - "seeds-server/**"
+      - "glimpse-artifact/**"
+      - "glimpse-engine/**"
+      - "glimpse.master.yaml"
+      - "sample-innovations.json"
+      - "sample-scenario.json"
+      - "sample-cross-context-demo.json"
+      - "tests/**"
+      - "scripts/bootstrap_glimpse_logic.mjs"
+      - "scripts/run_repo_contract_checks.sh"
+      - ".github/repo-contract.json"
+      - ".github/workflows/root-ts-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: root-ts-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: root-ts-ci
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: |
+            shared-types/package-lock.json
+            afloat-server/package-lock.json
+            echoes-server/package-lock.json
+            grid-server/package-lock.json
+            lots-server/package-lock.json
+            maintain-server/package-lock.json
+            pulse-server/package-lock.json
+            seeds-server/package-lock.json
+            glimpse-artifact/package-lock.json
+
+      - name: Run trusted repo checks
+        run: bash scripts/run_repo_contract_checks.sh
+
+# bp-discovery-bp-discovery-hogsmade-20260321101953

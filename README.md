@@ -28,8 +28,10 @@ This root repo is the dedicated local repository for the workspace. It tracks sh
 | `shared-resilience/`   | Shared package    | TypeScript             | Circuit breaker, rate limit, retry patterns   |
 | `glimpse-artifact/`    | App/library       | React, Vite, Tailwind  | UI/component project                          |
 | `glimpse-engine/`      | Visualization     | JavaScript (ES modules)| Data viz engine, runs in browser               |
-| `scripts/`             | Workspace scripts | PowerShell, TypeScript| Root-level utility scripts                    |
+| `scripts/`             | Workspace scripts | PowerShell, TypeScript | Root-level utility scripts                    |
 | `docs/`                | Documentation     | Markdown               | Plans, contracts, repo conventions            |
+| `GRID-main/`           | Nested repo       | Python, FastAPI, uv    | Independent repo; manage in its own git root  |
+| `mcp-tool-experiment/` | Nested repo       | TypeScript, pnpm       | Independent repo; manage in its own git root  |
 | `archive/`             | Archive           | Mixed                  | Session artifacts, scratch files              |
 | `data/`                | Data              | Mixed                  | Memory, skills intelligence DB                |
 | `GATE/`                | Operational       | JSON                   | Envelopes, contracts, nonce registry          |

@@ -20,7 +20,7 @@ export function GlimpseSnapshotCard({
   return (
     <div
       className={cn(
-        'w-72 rounded-lg border bg-canvas-surface p-4 shadow-token-sm',
+        'w-72 glass-panel p-4 shadow-token-sm',
         'transition-all duration-fast',
         isSelected
           ? 'border-teal-500 ring-2 ring-teal-200 shadow-token-md'

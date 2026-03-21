@@ -31,6 +31,8 @@ describe("echoes-server smoke", () => {
 
   afterAll(() => {
     delete process.env.ECHOES_DATA_DIR;
+    delete process.env.ECHOES_AUDIT_PATH;
+    delete process.env.ECHOES_TELEMETRY_DIR;
     rmSync(tempRoot, { recursive: true, force: true });
   });
 
@@ -58,7 +60,7 @@ describe("echoes-server smoke", () => {
 
   it("records and queries audit entries", async () => {
     const server = buildServer();
-    
+
     // Record an audit entry
     const recordResult = await invokeTool(server, "record_audit", {
       source: "test-suite",
@@ -68,7 +70,7 @@ describe("echoes-server smoke", () => {
       metadata: { test: true },
     }) as { isError?: boolean; content?: Array<{ type: string; text?: string }> };
     expect(recordResult.isError).not.toBe(true);
-    
+
     const recordText = recordResult.content?.[0]?.text;
     const recordParsed = JSON.parse(recordText as string);
     expect(recordParsed.recorded).toBe(true);
@@ -81,7 +83,7 @@ describe("echoes-server smoke", () => {
       status: "success",
     }) as { isError?: boolean; content?: Array<{ type: string; text?: string }> };
     expect(queryResult.isError).not.toBe(true);
-    
+
     const queryText = queryResult.content?.[0]?.text;
     const queryParsed = JSON.parse(queryText as string);
     expect(queryParsed.count).toBeGreaterThanOrEqual(1);
@@ -91,7 +93,7 @@ describe("echoes-server smoke", () => {
 
   it("returns audit statistics", async () => {
     const server = buildServer();
-    
+
     // Record a few entries for stats
     await invokeTool(server, "record_audit", {
       source: "stats-test",
@@ -108,7 +110,7 @@ describe("echoes-server smoke", () => {
 
     const statsResult = await invokeTool(server, "audit_stats", {}) as { isError?: boolean; content?: Array<{ type: string; text?: string }> };
     expect(statsResult.isError).not.toBe(true);
-    
+
     const statsText = statsResult.content?.[0]?.text;
     const statsParsed = JSON.parse(statsText as string);
     expect(statsParsed.total).toBeGreaterThanOrEqual(2);
@@ -119,7 +121,7 @@ describe("echoes-server smoke", () => {
 
   it("saves and lists telemetry snapshots", async () => {
     const server = buildServer();
-    
+
     // Save a telemetry snapshot
     const saveResult = await invokeTool(server, "save_telemetry", {
       workspace: "test-workspace",
@@ -128,7 +130,7 @@ describe("echoes-server smoke", () => {
       metrics: { healthScore: 95, commitCount: 42 },
     }) as { isError?: boolean; content?: Array<{ type: string; text?: string }> };
     expect(saveResult.isError).not.toBe(true);
-    
+
     const saveText = saveResult.content?.[0]?.text;
     const saveParsed = JSON.parse(saveText as string);
     expect(saveParsed.saved).toBe(true);
@@ -137,7 +139,7 @@ describe("echoes-server smoke", () => {
     // List telemetry snapshots
     const listResult = await invokeTool(server, "list_telemetry", { limit: 5 }) as { isError?: boolean; content?: Array<{ type: string; text?: string }> };
     expect(listResult.isError).not.toBe(true);
-    
+
     const listText = listResult.content?.[0]?.text;
     const listParsed = JSON.parse(listText as string);
     expect(listParsed.count).toBeGreaterThanOrEqual(1);
@@ -147,7 +149,7 @@ describe("echoes-server smoke", () => {
 
   it("filters audit log by status", async () => {
     const server = buildServer();
-    
+
     // Record entries with different statuses
     await invokeTool(server, "record_audit", {
       source: "filter-test",
@@ -166,10 +168,10 @@ describe("echoes-server smoke", () => {
       tool: "filter_tool",
       status: "blocked",
     }) as { isError?: boolean; content?: Array<{ type: string; text?: string }> };
-    
+
     const blockedText = blockedResult.content?.[0]?.text;
     const blockedParsed = JSON.parse(blockedText as string);
-    
+
     // All returned entries should be blocked
     for (const entry of blockedParsed.entries) {
       expect(entry.status).toBe("blocked");
@@ -178,7 +180,7 @@ describe("echoes-server smoke", () => {
 
   it("filters audit log by timestamp", async () => {
     const server = buildServer();
-    
+
     // Record an entry
     await invokeTool(server, "record_audit", {
       source: "time-test",
@@ -192,7 +194,7 @@ describe("echoes-server smoke", () => {
       limit: 10,
       since,
     }) as { isError?: boolean; content?: Array<{ type: string; text?: string }> };
-    
+
     expect(queryResult.isError).not.toBe(true);
   });
 });

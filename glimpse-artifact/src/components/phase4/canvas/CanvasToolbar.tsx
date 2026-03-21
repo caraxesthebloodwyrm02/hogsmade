@@ -22,7 +22,7 @@ export function CanvasToolbar({ actions, className }: CanvasToolbarProps) {
       className={cn(
         'fixed top-4 left-1/2 -translate-x-1/2 z-30',
         'flex items-center gap-2 px-3 py-2',
-        'bg-canvas-surface/90 backdrop-blur-sm rounded-lg border border-border-color shadow-token-md',
+        'glass-panel shadow-token-md',
         className
       )}
       role="toolbar"

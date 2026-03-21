@@ -10,10 +10,12 @@
  * Port: 8000 (per GATE/agent_schema.json)
  */
 
+import { AuditIntegrityGuard } from '@cascade/shared-types/security-policy';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import * as z from 'zod';
 import { promises as fs } from 'fs';
+import os from 'os';
 import path from 'path';
 import { pathToFileURL } from 'url';
 import { getConfig } from './config.js';
@@ -57,8 +59,31 @@ async function ensureDataDir(): Promise<void> {
   }
 }
 
+/**
+ * Sanitize values to prevent NDJSON injection — strips newlines from strings
+ * so each JSON.stringify produces exactly one line.
+ */
+function sanitizeForNdjson(value: unknown): unknown {
+  if (typeof value === 'string') return value.replace(/[\n\r]/g, ' ');
+  if (Array.isArray(value)) return value.map(sanitizeForNdjson);
+  if (value !== null && typeof value === 'object') {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      out[k.replace(/[\n\r]/g, ' ')] = sanitizeForNdjson(v);
+    }
+    return out;
+  }
+  return value;
+}
+
 async function appendAuditEntry(entry: AuditEntry): Promise<void> {
-  const line = JSON.stringify(entry) + '\n';
+  const sanitized = {
+    ...entry,
+    metadata: entry.metadata
+      ? sanitizeForNdjson(entry.metadata) as Record<string, unknown>
+      : undefined,
+  };
+  const line = JSON.stringify(sanitized) + '\n';
   await fs.appendFile(AUDIT_LOG_PATH, line, 'utf-8');
 }
 
@@ -69,22 +94,28 @@ function normalizeAuditStatus(status: unknown): AuditEntry['status'] | null {
   return null;
 }
 
-async function readAuditLog(limit: number, filter?: { tool?: string; status?: string; since?: string }, metadata?: { parseErrors?: number }): Promise<AuditEntry[]> {
+const MAX_AUDIT_FILE_BYTES = 100 * 1024 * 1024; // 100 MB guard
+
+async function readAuditLog(limit: number, filter?: { tool?: string; status?: string; since?: string }): Promise<AuditEntry[]> {
   let content: string;
   try {
+    const stat = await fs.stat(AUDIT_LOG_PATH);
+    if (stat.size > MAX_AUDIT_FILE_BYTES) {
+      throw new Error(`Audit log too large (${Math.round(stat.size / (1024 * 1024))}MB) — refusing to load into memory`);
+    }
     content = await fs.readFile(AUDIT_LOG_PATH, 'utf-8');
   } catch {
     return [];
   }
 
   const lines = content.trim().split('\n').filter(Boolean);
-  let parseErrors = 0;
+  let corruptLineCount = 0;
   let entries: AuditEntry[] = lines.map(line => {
     try {
       const parsed = JSON.parse(line) as Partial<AuditEntry>;
       const status = normalizeAuditStatus(parsed.status);
       if (!status || !parsed.id || !parsed.timestamp || !parsed.source || !parsed.tool) {
-        parseErrors++;
+        corruptLineCount++;
         return null;
       }
       return {
@@ -92,10 +123,13 @@ async function readAuditLog(limit: number, filter?: { tool?: string; status?: st
         status,
       } as AuditEntry;
     } catch {
-      parseErrors++;
+      corruptLineCount++;
       return null;
     }
   }).filter(Boolean) as AuditEntry[];
+  if (corruptLineCount > 0) {
+    console.error(`[${SERVER_NAME}] ${corruptLineCount} corrupt/malformed lines skipped in audit log`);
+  }
 
   if (filter?.tool) {
     entries = entries.filter(e => e.tool === filter.tool);
@@ -124,10 +158,17 @@ async function readAuditLog(limit: number, filter?: { tool?: string; status?: st
   return entries.slice(-limit).reverse();
 }
 
+/** Atomic write: write to .tmp then rename to prevent corruption on crash/concurrent access. */
+async function atomicWriteJson(filepath: string, data: unknown): Promise<void> {
+  const tmpPath = filepath + `.tmp.${process.pid}`;
+  await fs.writeFile(tmpPath, JSON.stringify(data, null, 2), 'utf-8');
+  await fs.rename(tmpPath, filepath);
+}
+
 async function saveTelemetrySnapshot(snapshot: TelemetrySnapshot): Promise<string> {
   const filename = `snapshot-${Date.now()}.json`;
   const filepath = path.join(TELEMETRY_DIR, filename);
-  await fs.writeFile(filepath, JSON.stringify(snapshot, null, 2), 'utf-8');
+  await atomicWriteJson(filepath, snapshot);
   return filepath;
 }
 
@@ -185,166 +226,196 @@ async function getAuditStats(): Promise<Record<string, unknown>> {
 // ── Server ──
 
 export function buildServer(): McpServer {
-const server = new McpServer({
-  name: SERVER_NAME,
-  version: VERSION,
-});
+  const server = new McpServer({
+    name: SERVER_NAME,
+    version: VERSION,
+  });
 
-// Health check
-server.registerTool(
-  'health_check',
-  { description: 'Check echoes-server health and data store status' },
-  async () => {
-    let auditSize = 0;
-    let telemetryCount = 0;
-    try {
-      const stat = await fs.stat(AUDIT_LOG_PATH);
-      auditSize = stat.size;
-    } catch { /* no file yet */ }
-    try {
-      const files = await fs.readdir(TELEMETRY_DIR);
-      telemetryCount = files.filter(f => f.endsWith('.json')).length;
-    } catch { /* no dir yet */ }
+  // Health check
+  server.registerTool(
+    'health_check',
+    { description: 'Check echoes-server health and data store status' },
+    async () => {
+      let auditSize = 0;
+      let auditLineCount = 0;
+      let auditCorruptLines = 0;
+      let telemetryCount = 0;
+      try {
+        const stat = await fs.stat(AUDIT_LOG_PATH);
+        auditSize = stat.size;
+        // Quick corruption check — count lines vs parseable entries
+        if (stat.size <= MAX_AUDIT_FILE_BYTES) {
+          const raw = await fs.readFile(AUDIT_LOG_PATH, 'utf-8');
+          const lines = raw.trim().split('\n').filter(Boolean);
+          auditLineCount = lines.length;
+          for (const line of lines) {
+            try { JSON.parse(line); } catch { auditCorruptLines++; }
+          }
+        }
+      } catch { /* no file yet */ }
+      try {
+        const files = await fs.readdir(TELEMETRY_DIR);
+        telemetryCount = files.filter(f => f.endsWith('.json')).length;
+      } catch { /* no dir yet */ }
 
-    return {
-      content: [{
-        type: 'text' as const,
-        text: JSON.stringify({
-          status: 'ok',
-          server: SERVER_NAME,
-          version: VERSION,
-          dataDir: DATA_DIR,
-          auditLogBytes: auditSize,
-          telemetrySnapshots: telemetryCount,
-          timestamp: new Date().toISOString(),
-        }, null, 2),
-      }],
-    };
-  }
-);
+      return {
+        content: [{
+          type: 'text' as const,
+          text: JSON.stringify({
+            status: 'ok',
+            server: SERVER_NAME,
+            version: VERSION,
+            dataDir: DATA_DIR,
+            auditLogBytes: auditSize,
+            auditLogSizeMB: Math.round(auditSize / (1024 * 1024)),
+            auditLineCount,
+            auditCorruptLines,
+            telemetrySnapshots: telemetryCount,
+            timestamp: new Date().toISOString(),
+          }, null, 2),
+        }],
+      };
+    }
+  );
 
-// Record audit entry
-server.registerTool(
-  'record_audit',
-  {
-    description: 'Record an audit entry from any MCP server pipeline execution',
-    inputSchema: z.object({
-      source: z.string().min(1).describe('Source server name (e.g. "echoes", "grid-rag")'),
-      tool: z.string().min(1).describe('Tool name that was called'),
-      status: z.enum(['success', 'failure', 'blocked', 'dry_run', 'error']).describe('Execution result status'),
-      durationMs: z.number().optional().describe('Execution duration in milliseconds'),
-      metadata: z.record(z.unknown()).optional().describe('Additional context'),
-    }),
-  },
-  async (args) => {
-    await ensureDataDir();
-    const entry: AuditEntry = {
-      id: `aud-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      timestamp: new Date().toISOString(),
-      source: args.source,
-      tool: args.tool,
-      status: normalizeAuditStatus(args.status) ?? 'failure',
-      durationMs: args.durationMs,
-      metadata: args.metadata as Record<string, unknown> | undefined,
-    };
-    await appendAuditEntry(entry);
-    return {
-      content: [{ type: 'text' as const, text: JSON.stringify({ recorded: true, id: entry.id }) }],
-    };
-  }
-);
+  // Record audit entry
+  server.registerTool(
+    'record_audit',
+    {
+      description: 'Record an audit entry from any MCP server pipeline execution',
+      inputSchema: z.object({
+        source: z.string().min(1).describe('Source server name (e.g. "echoes", "grid-rag")'),
+        tool: z.string().min(1).describe('Tool name that was called'),
+        status: z.enum(['success', 'failure', 'blocked', 'dry_run', 'error']).describe('Execution result status'),
+        durationMs: z.number().optional().describe('Execution duration in milliseconds'),
+        metadata: z.record(z.unknown()).optional().describe('Additional context'),
+      }),
+    },
+    async (args) => {
+      await ensureDataDir();
+      const now = new Date().toISOString();
 
-// Query audit log
-server.registerTool(
-  'query_audit',
-  {
-    description: 'Query the persistent audit log with optional filters',
-    inputSchema: z.object({
-      limit: z.number().min(1).max(500).optional().default(20).describe('Max entries to return'),
-      tool: z.string().optional().describe('Filter by tool name'),
-      status: z.enum(['success', 'failure', 'blocked', 'dry_run', 'error']).optional().describe('Filter by status'),
-      since: z.string().optional().describe('ISO timestamp — only return entries after this time'),
-    }),
-  },
-  async (args) => {
-    await ensureDataDir();
-    const metadata: { parseErrors?: number } = {};
-    const entries = await readAuditLog(args.limit ?? 20, {
-      tool: args.tool,
-      status: args.status,
-      since: args.since,
-    }, metadata);
-    return {
-      content: [{ type: 'text' as const, text: JSON.stringify({ count: entries.length, entries, parseErrors: metadata.parseErrors ?? 0 }, null, 2) }],
-    };
-  }
-);
+      // P-INT-001 + P-INT-002: Validate source and timestamp integrity
+      const integrityCheck = AuditIntegrityGuard.validateEntry(args.source, now);
+      if (integrityCheck.verdict === 'deny') {
+        return {
+          content: [{
+            type: 'text' as const, text: JSON.stringify({
+              recorded: false,
+              error: integrityCheck.reason,
+              policyId: integrityCheck.policyId,
+            })
+          }],
+        };
+      }
 
-// Audit statistics
-server.registerTool(
-  'audit_stats',
-  {
-    description: 'Get aggregate statistics from the audit log — counts by tool, status, source, and average duration',
-    inputSchema: z.object({}),
-  },
-  async () => {
-    await ensureDataDir();
-    const stats = await getAuditStats();
-    return {
-      content: [{ type: 'text' as const, text: JSON.stringify(stats, null, 2) }],
-    };
-  }
-);
+      const entry: AuditEntry = {
+        id: `aud-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        timestamp: now,
+        source: args.source,
+        tool: args.tool,
+        status: normalizeAuditStatus(args.status) ?? 'failure',
+        durationMs: args.durationMs,
+        metadata: args.metadata as Record<string, unknown> | undefined,
+      };
+      await appendAuditEntry(entry);
+      return {
+        content: [{ type: 'text' as const, text: JSON.stringify({ recorded: true, id: entry.id }) }],
+      };
+    }
+  );
 
-// Save telemetry snapshot
-server.registerTool(
-  'save_telemetry',
-  {
-    description: 'Save a workspace telemetry snapshot for longitudinal tracking',
-    inputSchema: z.object({
-      workspace: z.string().min(1).describe('Workspace name or path'),
-      projects: z.number().describe('Number of projects scanned'),
-      activeServers: z.array(z.string()).describe('List of active MCP server names'),
-      metrics: z.record(z.number()).describe('Key-value numeric metrics (e.g. healthScore, commitCount)'),
-    }),
-  },
-  async (args) => {
-    await ensureDataDir();
-    const snapshot: TelemetrySnapshot = {
-      timestamp: new Date().toISOString(),
-      workspace: args.workspace,
-      projects: args.projects,
-      activeServers: args.activeServers,
-      metrics: args.metrics,
-    };
-    const filepath = await saveTelemetrySnapshot(snapshot);
-    return {
-      content: [{ type: 'text' as const, text: JSON.stringify({ saved: true, path: filepath }) }],
-    };
-  }
-);
+  // Query audit log
+  server.registerTool(
+    'query_audit',
+    {
+      description: 'Query the persistent audit log with optional filters',
+      inputSchema: z.object({
+        limit: z.number().min(1).max(500).optional().default(20).describe('Max entries to return'),
+        tool: z.string().optional().describe('Filter by tool name'),
+        status: z.enum(['success', 'failure', 'blocked', 'dry_run', 'error']).optional().describe('Filter by status'),
+        since: z.string().optional().describe('ISO timestamp — only return entries after this time'),
+      }),
+    },
+    async (args) => {
+      await ensureDataDir();
+      const metadata: { parseErrors?: number } = {};
+      const entries = await readAuditLog(args.limit ?? 20, {
+        tool: args.tool,
+        status: args.status,
+        since: args.since,
+      }, metadata);
+      return {
+        content: [{ type: 'text' as const, text: JSON.stringify({ count: entries.length, entries, parseErrors: metadata.parseErrors ?? 0 }, null, 2) }],
+      };
+    }
+  );
 
-// List telemetry snapshots
-server.registerTool(
-  'list_telemetry',
-  {
-    description: 'List recent telemetry snapshots for trend analysis',
-    inputSchema: z.object({
-      limit: z.number().min(1).max(100).optional().default(10).describe('Max snapshots to return'),
-    }),
-  },
-  async (args) => {
-    await ensureDataDir();
-    const snapshots = await listTelemetrySnapshots(args.limit ?? 10);
-    return {
-      content: [{ type: 'text' as const, text: JSON.stringify({ count: snapshots.length, snapshots }, null, 2) }],
-    };
-  }
-);
+  // Audit statistics
+  server.registerTool(
+    'audit_stats',
+    {
+      description: 'Get aggregate statistics from the audit log — counts by tool, status, source, and average duration',
+      inputSchema: z.object({}),
+    },
+    async () => {
+      await ensureDataDir();
+      const stats = await getAuditStats();
+      return {
+        content: [{ type: 'text' as const, text: JSON.stringify(stats, null, 2) }],
+      };
+    }
+  );
 
-// ── Start ──
+  // Save telemetry snapshot
+  server.registerTool(
+    'save_telemetry',
+    {
+      description: 'Save a workspace telemetry snapshot for longitudinal tracking',
+      inputSchema: z.object({
+        workspace: z.string().min(1).describe('Workspace name or path'),
+        projects: z.number().describe('Number of projects scanned'),
+        activeServers: z.array(z.string()).describe('List of active MCP server names'),
+        metrics: z.record(z.number()).describe('Key-value numeric metrics (e.g. healthScore, commitCount)'),
+      }),
+    },
+    async (args) => {
+      await ensureDataDir();
+      const snapshot: TelemetrySnapshot = {
+        timestamp: new Date().toISOString(),
+        workspace: args.workspace,
+        projects: args.projects,
+        activeServers: args.activeServers,
+        metrics: args.metrics,
+      };
+      const filepath = await saveTelemetrySnapshot(snapshot);
+      return {
+        content: [{ type: 'text' as const, text: JSON.stringify({ saved: true, path: filepath }) }],
+      };
+    }
+  );
 
-return server;
+  // List telemetry snapshots
+  server.registerTool(
+    'list_telemetry',
+    {
+      description: 'List recent telemetry snapshots for trend analysis',
+      inputSchema: z.object({
+        limit: z.number().min(1).max(100).optional().default(10).describe('Max snapshots to return'),
+      }),
+    },
+    async (args) => {
+      await ensureDataDir();
+      const snapshots = await listTelemetrySnapshots(args.limit ?? 10);
+      return {
+        content: [{ type: 'text' as const, text: JSON.stringify({ count: snapshots.length, snapshots }, null, 2) }],
+      };
+    }
+  );
+
+  // ── Start ──
+
+  return server;
 }
 
 export async function startServer(): Promise<McpServer> {

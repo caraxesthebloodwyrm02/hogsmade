@@ -1,6 +1,6 @@
 import type { AuditEvent, WorkflowRun } from "@/components/phase4/types";
-import { createDebugLogContext, toUtcIsoString } from "@/lib/debugTime";
-import { useEffect, useState } from "react";
+import { createDebugLogContext } from "@/lib/debugTime";
+import { useDataSource } from "./useDataSource";
 
 // ── GATE-specific types ─────────────────────────────────────────────
 
@@ -26,10 +26,10 @@ export interface UseGateDataResult {
   deployments: Deployment[];
   loading: boolean;
   error: string | null;
+  retry: () => void;
   debugContext: ReturnType<typeof createDebugLogContext> | null;
 }
 
-// Export GATE_STEPS for potential future use
 export const GATE_STEPS = [
   "envelope_exists",
   "payload_integrity",
@@ -46,189 +46,231 @@ function stepLabel(name: string): string {
   return name.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-function offsetIso(baseMs: number, deltaMs: number): string {
-  return toUtcIsoString(baseMs + deltaMs);
+// ── API response types ──────────────────────────────────────────────
+
+interface GateApiResponse {
+  nonces: Array<{
+    nonce: string;
+    status: "active" | "consumed" | "expired";
+    createdAt: string;
+    burnedAt: string | null;
+    envelopeId: string;
+    source: string;
+  }>;
+  envelopes: Array<{
+    id: string;
+    passed: boolean;
+    steps: Array<{ step: string; passed: boolean; details: string }>;
+    durationMs: number;
+    nonceBurned: boolean;
+  }>;
+  maxAgeSeconds: number;
 }
 
-export function createGateSnapshot(now = Date.now()) {
-  const debugContext = createDebugLogContext("gate-flow", now);
+interface GateSnapshot {
+  verifications: WorkflowRun[];
+  auditEvents: AuditEvent[];
+  nonces: NonceEntry[];
+  deployments: Deployment[];
+  debugContext: ReturnType<typeof createDebugLogContext>;
+}
 
-  // ── Real data: GATE/results/envelope_GRID-main_fec6aa7f.json ────────
-  // Actual 9-step verification that passed on 2026-03-07, 4.6ms total
-  const REAL_RESULT_STEPS: {
-    step: string;
-    passed: boolean;
-    details: string;
-  }[] = [
-    {
-      step: "envelope_exists",
-      passed: true,
-      details: "Envelope envelope_GRID-main_fec6aa7f loaded",
-    },
-    { step: "payload_integrity", passed: true, details: "Hash matches" },
-    { step: "fingerprint_match", passed: true, details: "Fingerprint valid" },
-    {
-      step: "nonce_valid",
-      passed: true,
-      details: "Nonce is valid and unburned",
-    },
-    {
-      step: "timestamp_fresh",
-      passed: true,
-      details: "Envelope age 14.1s < 600.0s",
-    },
-    { step: "tests_verified", passed: true, details: "tests_passed=True" },
-    { step: "scope_present", passed: true, details: "Scope has 2 permissions" },
-    {
-      step: "deploy_within_scope",
-      passed: true,
-      details: "Action read_only permitted",
-    },
-    { step: "audit_log", passed: true, details: "Nonce burned=True" },
-  ];
+function transformGateResponse(api: GateApiResponse): GateSnapshot {
+  const debugContext = createDebugLogContext("gate-flow");
 
-  // ── Real data: GATE/incoming/envelope_GRID-main_2026-03-07_230319.json
-  const REAL_ENVELOPE_TS = "2026-03-07T23:09:04.591Z";
-  const REAL_ENVELOPE_ID = "edb45829-9ae6-46b9-b48c-21f6ea7dae71";
-  const REAL_NONCE = "c8409de95f794569842e081b626f6256";
+  const verifications: WorkflowRun[] = api.envelopes.map((env) => ({
+    id: env.id,
+    workflowName: `Envelope: ${env.id}`,
+    status: env.passed ? ("completed" as const) : ("failed" as const),
+    startedAt: new Date().toISOString(),
+    elapsedMs: env.durationMs,
+    steps: env.steps.map((s) => ({
+      name: stepLabel(s.step),
+      status: s.passed ? ("done" as const) : ("failed" as const),
+      durationMs: Math.round((env.durationMs / env.steps.length) * 1000) / 1000,
+    })),
+  }));
+
+  const auditEvents: AuditEvent[] = api.envelopes.map((env, i) => ({
+    id: `gate-audit-${i}`,
+    timestamp: new Date().toISOString(),
+    tool: "validate_envelope",
+    source: "grid-server",
+    status: env.passed ? ("success" as const) : ("failure" as const),
+    durationMs: env.durationMs,
+    summary: `Envelope ${env.id} ${env.passed ? "passed" : "failed"} ${env.steps.length} checks in ${env.durationMs.toFixed(1)}ms`,
+  }));
+
+  const nonces: NonceEntry[] = api.nonces.map((n) => ({
+    nonce: n.nonce,
+    usedAt: n.burnedAt ?? n.createdAt,
+    envelopeId: n.envelopeId.slice(0, 13),
+    status: n.status,
+  }));
+
+  const deployments: Deployment[] = api.envelopes
+    .filter((env) => env.passed)
+    .map((env, i) => ({
+      id: `dep-${i}`,
+      envelopeName: env.id,
+      deployedAt: new Date().toISOString(),
+      riskScore: env.passed ? 5 : 80,
+      result: env.passed ? ("success" as const) : ("failure" as const),
+    }));
+
+  return { verifications, auditEvents, nonces, deployments, debugContext };
+}
+
+// ── Mock fallback ───────────────────────────────────────────────────
+
+const MOCK_GATE_DATA: GateSnapshot = (() => {
+  const debugContext = createDebugLogContext("gate-flow");
+  return {
+    verifications: [{
+      id: "envelope_GRID-main_fec6aa7f",
+      workflowName: "GRID-main v2.6.1 — feature/search-service-guardrail",
+      status: "completed" as const,
+      startedAt: "2026-03-07T23:09:04.591Z",
+      completedAt: "2026-03-07T23:09:09.191Z",
+      elapsedMs: 5,
+      steps: GATE_STEPS.map((s) => ({
+        name: stepLabel(s),
+        status: "done" as const,
+        durationMs: 0.511,
+      })),
+    }],
+    auditEvents: [{
+      id: "ga-real-1",
+      timestamp: "2026-03-07T23:09:04.591Z",
+      tool: "validate_envelope",
+      source: "grid-server",
+      status: "success" as const,
+      durationMs: 5,
+      summary: "Envelope passed all 9 checks in 4.6ms",
+    }],
+    nonces: [{
+      nonce: "c8409de9",
+      usedAt: "2026-03-07T23:09:04.591Z",
+      envelopeId: "edb45829-9ae6",
+      status: "consumed" as const,
+    }],
+    deployments: [{
+      id: "dep-real-1",
+      envelopeName: "GRID-main v2.6.1 (4ff0d47)",
+      deployedAt: "2026-03-07T23:09:04.591Z",
+      riskScore: 5,
+      result: "success" as const,
+    }],
+    debugContext,
+  };
+})();
+
+// ── Deterministic snapshot factory (used by tests) ─────────────────
+
+export function createGateSnapshot(clock: number | string | Date = Date.now()): GateSnapshot {
+  const debugContext = createDebugLogContext("gate-flow", clock);
 
   const verifications: WorkflowRun[] = [
     {
       id: "envelope_GRID-main_fec6aa7f",
       workflowName: "GRID-main v2.6.1 — feature/search-service-guardrail",
-      status: "completed",
-      startedAt: REAL_ENVELOPE_TS,
-      completedAt: "2026-03-07T23:09:09.191Z",
+      status: "completed" as const,
+      startedAt: "2026-03-07T23:09:04.591Z",
       elapsedMs: 5,
-      steps: REAL_RESULT_STEPS.map((s) => ({
-        name: stepLabel(s.step),
+      steps: GATE_STEPS.map((s) => ({
+        name: stepLabel(s),
         status: "done" as const,
-        durationMs: Math.round((4.6 / 9) * 1000) / 1000,
+        durationMs: 0.511,
       })),
     },
     {
-      id: "env-transport-floor",
-      workflowName: "Transport floor logic — data sorting validation",
-      status: "running",
-      startedAt: offsetIso(now, -300000),
-      elapsedMs: 300000,
-      steps: [
-        {
-          name: "Signal Signature Scan",
-          status: "done" as const,
-          durationMs: 120,
-        },
-        {
-          name: "Growth Pattern Scan",
-          status: "done" as const,
-          durationMs: 95,
-        },
-        {
-          name: "Temporal Distance Scan",
-          status: "done" as const,
-          durationMs: 88,
-        },
-        {
-          name: "Influence Link Scan",
-          status: "done" as const,
-          durationMs: 74,
-        },
-        { name: "Semantic Proximity Scan", status: "running" as const },
-        { name: "Floor Assignment", status: "pending" as const },
-      ],
+      id: "envelope_echoes_b3c7d2e1",
+      workflowName: "echoes v1.3.0 — fix/audit-rotation",
+      status: "completed" as const,
+      startedAt: "2026-03-07T23:12:18.204Z",
+      elapsedMs: 4,
+      steps: GATE_STEPS.map((s) => ({
+        name: stepLabel(s),
+        status: "done" as const,
+        durationMs: 0.444,
+      })),
     },
   ];
 
   const auditEvents: AuditEvent[] = [
     {
-      id: "ga-real-1",
-      timestamp: REAL_ENVELOPE_TS,
+      id: "ga-snap-1",
+      timestamp: "2026-03-07T23:09:04.591Z",
       tool: "validate_envelope",
-      source: "Seeds-Deploy.ps1",
-      status: "success",
+      source: "grid-server",
+      status: "success" as const,
       durationMs: 5,
-      summary: `Envelope ${REAL_ENVELOPE_ID} passed all 9 checks in 4.6ms. Commit 4ff0d47. trace=${debugContext.traceId}`,
+      summary: `Envelope passed all 9 checks in 4.6ms trace=${debugContext.traceId}`,
     },
     {
-      id: "ga-real-2",
-      timestamp: REAL_ENVELOPE_TS,
-      tool: "nonce_status",
-      source: "Seeds-Deploy.ps1",
-      status: "success",
+      id: "ga-snap-2",
+      timestamp: "2026-03-07T23:12:18.204Z",
+      tool: "validate_envelope",
+      source: "echoes-server",
+      status: "success" as const,
+      durationMs: 4,
+      summary: "Envelope passed all 9 checks in 3.8ms",
+    },
+    {
+      id: "ga-snap-3",
+      timestamp: "2026-03-07T23:15:00.000Z",
+      tool: "nonce_audit",
+      source: "grid-server",
+      status: "success" as const,
       durationMs: 1,
-      summary: `Nonce ${REAL_NONCE.slice(0, 8)}… burned for ${REAL_ENVELOPE_ID.slice(0, 8)}…`,
-    },
-    {
-      id: "ga-real-3",
-      timestamp: offsetIso(now, -300000),
-      tool: "transport_evaluate",
-      source: "transport-floor-logic",
-      status: "dry_run",
-      durationMs: 300000,
-      summary: `Transport floor evaluation in progress — 4/5 conditions scored. span=${debugContext.spanId}`,
+      summary: `Nonce rotation completed span=${debugContext.spanId}`,
     },
   ];
 
-  // ── Real data: GATE/.nonce_registry.json ─────────────────────────────
   const nonces: NonceEntry[] = [
     {
-      nonce: REAL_NONCE.slice(0, 8),
-      usedAt: REAL_ENVELOPE_TS,
-      envelopeId: REAL_ENVELOPE_ID.slice(0, 13),
-      status: "active", // Real registry shows burned=false
+      nonce: "c8409de9",
+      usedAt: "2026-03-07T23:09:04.591Z",
+      envelopeId: "edb45829-9ae6",
+      status: "consumed" as const,
     },
   ];
 
   const deployments: Deployment[] = [
     {
-      id: "dep-real-1",
+      id: "dep-snap-1",
       envelopeName: "GRID-main v2.6.1 (4ff0d47)",
-      deployedAt: REAL_ENVELOPE_TS,
-      riskScore: 5, // read_only scope, tests+lint passed → low risk
-      result: "success",
+      deployedAt: "2026-03-07T23:09:04.591Z",
+      riskScore: 5,
+      result: "success" as const,
     },
   ];
 
   return { verifications, auditEvents, nonces, deployments, debugContext };
 }
 
-// ── Hook ─────────────────────────────────────────────────────────────
-// Currently returns mock data with simulated loading.
-// When 4.3 polling lands, swap internals to read from grid-server API
-// (GATE_DIR files: incoming/*.json, results/*.json, audit.ndjson,
-//  .nonce_registry.json) without changing the return shape.
+// ── Hook ────────────────────────────────────────────────────────────
 
 export function useGateData(): UseGateDataResult {
-  const [verifications, setVerifications] = useState<WorkflowRun[]>([]);
-  const [auditEvents, setAuditEvents] = useState<AuditEvent[]>([]);
-  const [nonces, setNonces] = useState<NonceEntry[]>([]);
-  const [deployments, setDeployments] = useState<Deployment[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error] = useState<string | null>(null);
-  const [debugContext, setDebugContext] = useState<ReturnType<
-    typeof createDebugLogContext
-  > | null>(null);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      const snapshot = createGateSnapshot();
-      setVerifications(snapshot.verifications);
-      setAuditEvents(snapshot.auditEvents);
-      setNonces(snapshot.nonces);
-      setDeployments(snapshot.deployments);
-      setDebugContext(snapshot.debugContext);
-      setLoading(false);
-    }, 600);
-    return () => clearTimeout(timer);
-  }, []);
+  const { data, loading, error, retry } = useDataSource<GateSnapshot>({
+    fetcher: async (signal) => {
+      const res = await fetch("/api/gate/status", { signal });
+      if (!res.ok) throw new Error(`GATE API error: ${res.status}`);
+      const api = (await res.json()) as GateApiResponse;
+      return transformGateResponse(api);
+    },
+    mock: MOCK_GATE_DATA,
+    pollMs: 120_000,
+  });
 
   return {
-    verifications,
-    auditEvents,
-    nonces,
-    deployments,
+    verifications: data.verifications,
+    auditEvents: data.auditEvents,
+    nonces: data.nonces,
+    deployments: data.deployments,
     loading,
     error,
-    debugContext,
+    retry,
+    debugContext: data.debugContext ?? null,
   };
 }
