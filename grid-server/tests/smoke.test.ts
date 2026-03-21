@@ -115,7 +115,7 @@ describe("grid-server smoke", () => {
 
   it("validate_envelope fails closed when GRID_API_URL is set but remote validation fails (grid_unavailable)", async () => {
     // Unreachable URL so remote validation fails; grid-server must fail closed (valid: false).
-    process.env.GRID_API_URL = "http://127.0.0.1:99999";
+    process.env.GRID_API_URL = "http://127.0.0.1:65535";
     delete process.env.GATE_USER_SECRET;
     const gateDir = process.env.GATE_DIR!;
     const incomingDir = path.join(gateDir, "incoming");

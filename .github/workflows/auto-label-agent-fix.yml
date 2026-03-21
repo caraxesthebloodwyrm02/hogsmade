@@ -1,0 +1,36 @@
+name: auto-label-agent-fix
+
+on:
+  workflow_run:
+    workflows:
+      - "root-ts-ci"
+      - "Secrets & Credential Gate"
+      - "Boundary & Safety Gate"
+      - "GRID-main CI"
+      - "codeql"
+    types: [completed]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  label:
+    if: |
+      github.event.workflow_run.conclusion == 'failure' &&
+      github.event.workflow_run.actor.login == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Label associated pull requests
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prs = context.payload.workflow_run.pull_requests || [];
+            for (const pr of prs) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                labels: ['agent:fix'],
+              });
+            }

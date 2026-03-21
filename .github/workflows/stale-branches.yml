@@ -1,0 +1,62 @@
+name: Stale Branch Report
+
+on:
+  schedule:
+    - cron: "0 9 1 * *"  # 1st of every month at 09:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  report:
+    name: List stale branches
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Find branches older than 90 days with no open PR
+        run: |
+          echo "## Stale Branch Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Branches with no commits in the last 90 days and no open PR:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          CUTOFF=$(date -d "90 days ago" +%s 2>/dev/null || date -v-90d +%s)
+          STALE_COUNT=0
+          PROTECTED="main master hogsmade"
+
+          for branch in $(git branch -r --format='%(refname:short)' | sed 's|origin/||' | sort); do
+            # Skip protected branches
+            skip=false
+            for p in $PROTECTED; do
+              if [ "$branch" = "$p" ]; then
+                skip=true
+                break
+              fi
+            done
+            if [ "$skip" = "true" ]; then continue; fi
+
+            # Skip HEAD pointer
+            if [ "$branch" = "HEAD" ]; then continue; fi
+
+            # Get last commit date
+            last_commit=$(git log -1 --format=%ct "origin/$branch" 2>/dev/null || echo "0")
+            if [ "$last_commit" -lt "$CUTOFF" ] && [ "$last_commit" -gt "0" ]; then
+              last_date=$(git log -1 --format=%ci "origin/$branch" 2>/dev/null || echo "unknown")
+              echo "- \`$branch\` — last commit: $last_date" >> $GITHUB_STEP_SUMMARY
+              STALE_COUNT=$((STALE_COUNT + 1))
+            fi
+          done
+
+          if [ "$STALE_COUNT" -eq 0 ]; then
+            echo "No stale branches found." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Total stale branches: $STALE_COUNT**" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Policy: Feature branches merge+delete within 30 days. Fix branches within 7 days." >> $GITHUB_STEP_SUMMARY
+          fi
