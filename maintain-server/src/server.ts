@@ -738,117 +738,111 @@ async function getSystemMetrics(topN: number): Promise<SystemMetrics> {
       }
     } catch { /* PowerShell not available */ }
   } else {
-  }
-} catch { /* PowerShell not available */ }
-  } else {
-  // Linux/macOS: use df
-  try {
-    const { stdout } = await execFileAsync("df", ["-BG", "--output=target,size,avail"], { timeout: 10000 });
-    const lines = stdout.trim().split("\n").slice(1); // skip header
-    for (const line of lines) {
-      const parts = line.trim().split(/\s+/);
-      if (parts.length >= 3 && (parts[0] === "/" || parts[0]?.startsWith("/home"))) {
-        const totalGB = parseInt(parts[1]) || 0;
-        const freeGB = parseInt(parts[2]) || 0;
-        const freePercent = totalGB > 0 ? Math.round((freeGB / totalGB) * 100) : 0;
-        volumes.push({ drive: parts[0], totalGB, freeGB, freePercent });
-        if (freePercent < 5) {
-          status = "critical";
-          warnings.push(`Critical disk space on ${parts[0]} (${freePercent}% free)`);
-        } else if (freePercent < 10) {
-          if (status !== "critical") status = "warning";
-          warnings.push(`Low disk space on ${parts[0]} (${freePercent}% free)`);
+    // Linux/macOS: use df
+    try {
+      const { stdout } = await execFileAsync("df", ["-BG", "--output=target,size,avail"], { timeout: 10000 });
+      const lines = stdout.trim().split("\n").slice(1);
+      for (const line of lines) {
+        const parts = line.trim().split(/\s+/);
+        if (parts.length >= 3 && (parts[0] === "/" || parts[0]?.startsWith("/home"))) {
+          const totalGB = parseInt(parts[1]) || 0;
+          const freeGB = parseInt(parts[2]) || 0;
+          const freePercent = totalGB > 0 ? Math.round((freeGB / totalGB) * 100) : 0;
+          volumes.push({ drive: parts[0], totalGB, freeGB, freePercent });
+          if (freePercent < 5) {
+            status = "critical";
+            warnings.push(`Critical disk space on ${parts[0]} (${freePercent}% free)`);
+          } else if (freePercent < 10) {
+            if (status !== "critical") status = "warning";
+            warnings.push(`Low disk space on ${parts[0]} (${freePercent}% free)`);
+          }
         }
       }
-    }
-  } catch { /* df not available */ }
-}
-
-// Top processes — platform-aware
-let topProcesses: SystemMetrics["topProcesses"] = [];
-if (os.platform() === "win32") {
-  try {
-    const { stdout } = await execFileAsync("powershell", [
-      "-NoProfile",
-      "-Command",
-      `Get-Process | Sort-Object WorkingSet64 -Descending | Select-Object -First ${topN} Name,Id,WorkingSet64 | ConvertTo-Json`,
-    ], { timeout: 30000 });
-    const procData = JSON.parse(stdout);
-    const procs = Array.isArray(procData) ? procData : [procData];
-    topProcesses = procs.map(
-      (p: { Name: string; Id: number; WorkingSet64: number }) => ({
-        name: p.Name, pid: p.Id, memoryMB: Math.round(p.WorkingSet64 / (1024 * 1024)),
-      }),
-    );
-  } catch { /* PowerShell not available */ }
-} else {
-  // Linux: use ps
-  try {
-    const { stdout } = await execFileAsync("ps", [
-      "axo", "comm,pid,rss", "--sort=-rss", "--no-headers",
-    ], { timeout: 10000 });
-    const lines = stdout.trim().split("\n").slice(0, topN);
-    topProcesses = lines.map((line) => {
-      const parts = line.trim().split(/\s+/);
-      return {
-        name: parts[0] ?? "unknown",
-        pid: parseInt(parts[1]) || 0,
-        memoryMB: Math.round((parseInt(parts[2]) || 0) / 1024),
-      };
-    });
-  } catch { /* ps not available */ }
-}
+    } catch { /* df not available */ }
   }
 
-// Swap — platform-aware
-let swapTotal = 0;
-let swapUsed = 0;
-if (os.platform() === "win32") {
-  try {
-    const { stdout } = await execFileAsync("powershell", [
-      "-NoProfile",
-      "-Command",
-      "Get-CimInstance Win32_PageFileUsage | Select-Object AllocatedBaseSize,CurrentUsage | ConvertTo-Json",
-    ], { timeout: 30000 });
-    const swapData = JSON.parse(stdout);
-    if (swapData) {
-      swapTotal = swapData.AllocatedBaseSize || 0;
-      swapUsed = swapData.CurrentUsage || 0;
-    }
-  } catch { /* No pagefile or PowerShell unavailable */ }
-} else {
-  // Linux: parse /proc/meminfo
-  try {
-    const meminfo = await fs.readFile("/proc/meminfo", "utf-8");
-    const swapTotalMatch = meminfo.match(/SwapTotal:\s+(\d+)/);
-    const swapFreeMatch = meminfo.match(/SwapFree:\s+(\d+)/);
-    if (swapTotalMatch) swapTotal = Math.round(parseInt(swapTotalMatch[1]) / (1024 * 1024));
-    if (swapTotalMatch && swapFreeMatch) {
-      swapUsed = Math.round((parseInt(swapTotalMatch[1]) - parseInt(swapFreeMatch[1])) / (1024 * 1024));
-    }
-  } catch { /* /proc/meminfo not available */ }
-}
+  // Top processes — platform-aware
+  let topProcesses: SystemMetrics["topProcesses"] = [];
+  if (os.platform() === "win32") {
+    try {
+      const { stdout } = await execFileAsync("powershell", [
+        "-NoProfile",
+        "-Command",
+        `Get-Process | Sort-Object WorkingSet64 -Descending | Select-Object -First ${topN} Name,Id,WorkingSet64 | ConvertTo-Json`,
+      ], { timeout: 30000 });
+      const procData = JSON.parse(stdout);
+      const procs = Array.isArray(procData) ? procData : [procData];
+      topProcesses = procs.map(
+        (p: { Name: string; Id: number; WorkingSet64: number }) => ({
+          name: p.Name,
+          pid: p.Id,
+          memoryMB: Math.round(p.WorkingSet64 / (1024 * 1024)),
+        }),
+      );
+    } catch { /* PowerShell not available */ }
+  } else {
+    try {
+      const { stdout } = await execFileAsync("ps", [
+        "axo", "comm,pid,rss", "--sort=-rss", "--no-headers",
+      ], { timeout: 10000 });
+      const lines = stdout.trim().split("\n").slice(0, topN);
+      topProcesses = lines.map((line) => {
+        const parts = line.trim().split(/\s+/);
+        return {
+          name: parts[0] ?? "unknown",
+          pid: parseInt(parts[1]) || 0,
+          memoryMB: Math.round((parseInt(parts[2]) || 0) / 1024),
+        };
+      });
+    } catch { /* ps not available */ }
   }
 
-// Uptime
-const uptimeSec = os.uptime();
-const days = Math.floor(uptimeSec / 86400);
-const hours = Math.floor((uptimeSec % 86400) / 3600);
-const uptime = `${days}d ${hours}h`;
+  // Swap — platform-aware
+  let swapTotal = 0;
+  let swapUsed = 0;
+  if (os.platform() === "win32") {
+    try {
+      const { stdout } = await execFileAsync("powershell", [
+        "-NoProfile",
+        "-Command",
+        "Get-CimInstance Win32_PageFileUsage | Select-Object AllocatedBaseSize,CurrentUsage | ConvertTo-Json",
+      ], { timeout: 30000 });
+      const swapData = JSON.parse(stdout);
+      if (swapData) {
+        swapTotal = swapData.AllocatedBaseSize || 0;
+        swapUsed = swapData.CurrentUsage || 0;
+      }
+    } catch { /* No pagefile or PowerShell unavailable */ }
+  } else {
+    try {
+      const meminfo = await fs.readFile("/proc/meminfo", "utf-8");
+      const swapTotalMatch = meminfo.match(/SwapTotal:\s+(\d+)/);
+      const swapFreeMatch = meminfo.match(/SwapFree:\s+(\d+)/);
+      if (swapTotalMatch) swapTotal = Math.round(parseInt(swapTotalMatch[1]) / (1024 * 1024));
+      if (swapTotalMatch && swapFreeMatch) {
+        swapUsed = Math.round((parseInt(swapTotalMatch[1]) - parseInt(swapFreeMatch[1])) / (1024 * 1024));
+      }
+    } catch { /* /proc/meminfo not available */ }
+  }
 
-return {
-  ram: {
-    totalGB: Math.round(totalMem / 1024 ** 3),
-    freeGB: Math.round(freeMem / 1024 ** 3),
-    usedPercent,
-  },
-  swap: { totalGB: swapTotal, usedGB: swapUsed },
-  volumes,
-  topProcesses,
-  uptime,
-  status,
-  warnings,
-};
+  const uptimeSec = os.uptime();
+  const days = Math.floor(uptimeSec / 86400);
+  const hours = Math.floor((uptimeSec % 86400) / 3600);
+  const uptime = `${days}d ${hours}h`;
+
+  return {
+    ram: {
+      totalGB: Math.round(totalMem / 1024 ** 3),
+      freeGB: Math.round(freeMem / 1024 ** 3),
+      usedPercent,
+    },
+    swap: { totalGB: swapTotal, usedGB: swapUsed },
+    volumes,
+    topProcesses,
+    uptime,
+    status,
+    warnings,
+  };
 }
 
 // ── Cleanup Execution ──
