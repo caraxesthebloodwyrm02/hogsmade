@@ -43,7 +43,6 @@ Each has its own README, lockfile, and toolchain. Use [CLAUDE.md](../CLAUDE.md) 
 |---------|------------|--------|
 | `GRID-main/` | Its own git root | Python, FastAPI, uv; see `GRID-main/docs/project/`. |
 | `mcp-tool-experiment/` | Its own git root | TypeScript, pnpm; includes MCP SDK and safety pipeline. |
-| `projects/web/ai-web-demo/` | Its own git root | AI web demo frontend/backend; local submodule. |
 
 Root repo only records their commit refs. See [GIT_REPO.md](GIT_REPO.md) and [SUBMODULES.md](SUBMODULES.md).
 

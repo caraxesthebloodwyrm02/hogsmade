@@ -28,7 +28,6 @@ This root repo is the dedicated local repository for the workspace. It tracks sh
 | `docs/`                | Documentation     | Markdown               | Plans, contracts, repo conventions            |
 | `GRID-main/`           | Nested repo       | Python, FastAPI, uv    | Independent repo; manage in its own git root  |
 | `mcp-tool-experiment/` | Nested repo       | TypeScript, pnpm       | Independent repo; manage in its own git root  |
-| `projects/web/ai-web-demo/` | Nested repo  | TypeScript, Vite       | AI web demo; local submodule                   |
 | `glimpse-artifact/`    | App/library       | React, Vite, Tailwind  | UI/component project                          |
 | `glimpse-engine/`      | Visualization     | JavaScript (ES modules)| Data viz engine, runs in browser               |
 
