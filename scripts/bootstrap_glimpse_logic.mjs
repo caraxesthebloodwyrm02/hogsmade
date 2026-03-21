@@ -1,10 +1,10 @@
+import { execFile } from "node:child_process";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { execFile } from "node:child_process";
 import { promisify } from "node:util";
+import { runContextPipeline, validateConfigWithRegistry } from "../glimpse-engine/core/engine.js";
 import { parseMasterConfig } from "../glimpse-engine/master-config.js";
-import { runContextPipeline, validateConfigWithRegistry } from "../glimpse-engine/engine.js";
 import { rankViews } from "../glimpse-engine/view-specs.js";
 
 const execFileAsync = promisify(execFile);

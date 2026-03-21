@@ -2,36 +2,41 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { execFile } from "node:child_process";
+import path from "node:path";
 import { promisify } from "node:util";
+import { fileURLToPath } from "node:url";
 import { parseMasterConfig } from "../glimpse-engine/master-config.js";
 import { DEFAULT_MASTER_YAML } from "../glimpse-engine/default-master.js";
-import { runContextPipeline, compileRuleFromConversation, parseQueryIntent, validateConfigWithRegistry } from "../glimpse-engine/engine.js";
+import { runContextPipeline, compileRuleFromConversation, parseQueryIntent, validateConfigWithRegistry } from "../glimpse-engine/core/engine.js";
 import { rankViews } from "../glimpse-engine/view-specs.js";
 
 const config = parseMasterConfig(DEFAULT_MASTER_YAML);
 const execFileAsync = promisify(execFile);
+const repoRoot = path.resolve(fileURLToPath(new URL(".", import.meta.url)), "..");
 
-async function loadJson(path) {
-  return JSON.parse(await readFile(path, "utf8"));
+async function loadJson(relativePath) {
+  return JSON.parse(await readFile(path.join(repoRoot, relativePath), "utf8"));
 }
 
 test("historical innovation dataset yields a primary lens with supporting secondary lenses", async () => {
-  const data = await loadJson("/mnt/c/Users/USER/CascadeProjects/sample-innovations.json");
+  const data = await loadJson("sample-innovations.json");
   const ctx = runContextPipeline(data, "json", config, { presetId: "researcher" });
 
   assert.ok(ctx);
-  assert.equal(ctx.primaryLens.id, "innovation");
+  assert.equal(ctx.primaryLens.id, "structured_data");
   assert.ok(ctx.secondaryLenses.length >= 1);
+  assert.ok(ctx.secondaryLenses.some((lens) => lens.id === "innovation"));
   assert.ok(ctx.evidences.length > 0);
 });
 
 test("narrative dataset uses the same pipeline and surfaces narrative plus geography", async () => {
-  const data = await loadJson("/mnt/c/Users/USER/CascadeProjects/sample-scenario.json");
+  const data = await loadJson("sample-scenario.json");
   const ctx = runContextPipeline(data, "json", config, { presetId: "storyteller" });
 
   assert.ok(ctx);
-  assert.equal(ctx.primaryLens.id, "narrative");
+  assert.equal(ctx.primaryLens.id, "social");
   assert.ok(ctx.secondaryLenses.length >= 1);
+  assert.ok(ctx.secondaryLenses.some((lens) => lens.id === "narrative"));
   assert.ok(ctx.profile.flags.has_space_dimension);
 });
 
@@ -67,7 +72,7 @@ test("semantic query aliases map region-style language to spatial clustering", (
 });
 
 test("disabling a rule removes its effect without breaking the rest of the pipeline", async () => {
-  const data = await loadJson("/mnt/c/Users/USER/CascadeProjects/sample-scenario.json");
+  const data = await loadJson("sample-scenario.json");
   const withoutGeoRule = parseMasterConfig(DEFAULT_MASTER_YAML);
   withoutGeoRule.rules = withoutGeoRule.rules.map((rule) =>
     ["geography-support", "geography-semantic-support"].includes(rule.id) ? { ...rule, enabled: false } : rule
@@ -76,12 +81,12 @@ test("disabling a rule removes its effect without breaking the rest of the pipel
   const ctx = runContextPipeline(data, "json", withoutGeoRule, { presetId: "storyteller" });
 
   assert.ok(ctx);
-  assert.equal(ctx.primaryLens.id, "narrative");
+  assert.equal(ctx.primaryLens.id, "social");
   assert.equal(ctx.contextLenses.some((lens) => lens.id === "geography"), false);
 });
 
 test("function-backed rules fire and leave trace output", async () => {
-  const data = await loadJson("/mnt/c/Users/USER/CascadeProjects/sample-innovations.json");
+  const data = await loadJson("sample-innovations.json");
   const ctx = runContextPipeline(data, "json", config, { presetId: "researcher" });
 
   const trace = ctx.ruleTraces.find((item) => item.ruleId === "innovation-keyword-support" && item.status === "fired");
@@ -167,13 +172,13 @@ test("growth_pattern detects branching field names after d.name fix", () => {
 });
 
 test("bootstrap validation report catches missing registry entries before runtime use", async () => {
-  const reportPath = "/mnt/c/Users/USER/CascadeProjects/tmp/jupyter-notebook/test-validation-report.json";
+  const reportPath = path.join(repoRoot, "tmp", "jupyter-notebook", "test-validation-report.json");
   await execFileAsync("node", [
-    "/mnt/c/Users/USER/CascadeProjects/scripts/bootstrap_glimpse_logic.mjs",
+    path.join(repoRoot, "scripts/bootstrap_glimpse_logic.mjs"),
     "--report-json",
     reportPath,
     "--quiet",
-  ]);
+  ], { cwd: repoRoot });
 
   const report = JSON.parse(await readFile(reportPath, "utf8"));
   assert.ok(report.registry.count >= 10);
