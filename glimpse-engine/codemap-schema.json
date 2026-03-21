@@ -1,0 +1,726 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Glimpse CodeMap Schema",
+  "description": "Schema for generating comprehensive code maps with LOC, paths, and detailed file information",
+  "type": "object",
+  "properties": {
+    "codeMap": {
+      "type": "object",
+      "description": "Root object containing the complete codebase mapping",
+      "properties": {
+        "metadata": {
+          "type": "object",
+          "description": "Metadata about the code map generation",
+          "properties": {
+            "generatedAt": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Timestamp when the code map was generated"
+            },
+            "version": {
+              "type": "string",
+              "pattern": "^\\d+\\.\\d+\\.\\d+$",
+              "description": "Schema version"
+            },
+            "generator": {
+              "type": "string",
+              "description": "Tool or process that generated this code map"
+            },
+            "rootPath": {
+              "type": "string",
+              "format": "uri",
+              "description": "Absolute root path of the analyzed codebase"
+            },
+            "totalFiles": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Total number of files analyzed"
+            },
+            "totalLOC": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Total lines of code across all files"
+            },
+            "languages": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "Programming language name"
+                  },
+                  "extension": {
+                    "type": "string",
+                    "pattern": "^\\.[a-zA-Z0-9]+$",
+                    "description": "File extension"
+                  },
+                  "fileCount": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": "Number of files using this language"
+                  },
+                  "loc": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": "Lines of code for this language"
+                  },
+                  "percentage": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 100,
+                    "description": "Percentage of total codebase"
+                  }
+                },
+                "required": ["name", "extension", "fileCount", "loc", "percentage"]
+              },
+              "description": "Breakdown by programming language"
+            }
+          },
+          "required": ["generatedAt", "version", "generator", "rootPath", "totalFiles", "totalLOC"]
+        },
+        "directories": {
+          "type": "object",
+          "description": "Hierarchical directory structure",
+          "patternProperties": {
+            "^[a-zA-Z0-9_\\-\\.]+$": {
+              "$ref": "#/definitions/directory"
+            }
+          },
+          "additionalProperties": false
+        },
+        "files": {
+          "type": "object",
+          "description": "Flat index of all files with their metadata",
+          "patternProperties": {
+            "^[a-zA-Z0-9_\\-\\.]+\\.[a-zA-Z0-9]+$": {
+              "$ref": "#/definitions/file"
+            }
+          },
+          "additionalProperties": false
+        },
+        "dependencies": {
+          "type": "object",
+          "description": "Dependency relationships between files",
+          "properties": {
+            "imports": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/dependency"
+              },
+              "description": "Import relationships"
+            },
+            "exports": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/dependency"
+              },
+              "description": "Export relationships"
+            },
+            "requires": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/dependency"
+              },
+              "description": "Require relationships (CommonJS)"
+            }
+          }
+        },
+        "metrics": {
+          "type": "object",
+          "description": "Code quality and complexity metrics",
+          "properties": {
+            "complexity": {
+              "type": "object",
+              "properties": {
+                "cyclomatic": {
+                  "type": "number",
+                  "minimum": 1,
+                  "description": "Average cyclomatic complexity"
+                },
+                "cognitive": {
+                  "type": "number",
+                  "minimum": 1,
+                  "description": "Average cognitive complexity"
+                }
+              }
+            },
+            "maintainability": {
+              "type": "object",
+              "properties": {
+                "index": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 100,
+                  "description": "Maintainability index (0-100)"
+                },
+                "technicalDebt": {
+                  "type": "string",
+                  "description": "Estimated technical debt in hours"
+                }
+              }
+            },
+            "coverage": {
+              "type": "object",
+              "properties": {
+                "lines": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 100,
+                  "description": "Line coverage percentage"
+                },
+                "functions": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 100,
+                  "description": "Function coverage percentage"
+                },
+                "branches": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 100,
+                  "description": "Branch coverage percentage"
+                }
+              }
+            }
+          }
+        }
+      },
+      "required": ["metadata", "directories", "files"]
+    }
+  },
+  "definitions": {
+    "directory": {
+      "type": "object",
+      "description": "Directory information and contents",
+      "properties": {
+        "path": {
+          "type": "string",
+          "format": "uri",
+          "description": "Full path to directory"
+        },
+        "name": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-\\.]+$",
+          "description": "Directory name"
+        },
+        "parent": {
+          "type": "string",
+          "description": "Parent directory path"
+        },
+        "depth": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Depth from root directory"
+        },
+        "fileCount": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of files in this directory"
+        },
+        "subdirectoryCount": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of subdirectories"
+        },
+        "loc": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Total lines of code in this directory"
+        },
+        "languages": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Programming languages used in this directory"
+        },
+        "subdirectories": {
+          "type": "object",
+          "patternProperties": {
+            "^[a-zA-Z0-9_\\-\\.]+$": {
+              "$ref": "#/definitions/directory"
+            }
+          },
+          "additionalProperties": false,
+          "description": "Nested subdirectories"
+        },
+        "files": {
+          "type": "object",
+          "patternProperties": {
+            "^[a-zA-Z0-9_\\-\\.]+\\.[a-zA-Z0-9]+$": {
+              "$ref": "#/definitions/file"
+            }
+          },
+          "additionalProperties": false,
+          "description": "Files in this directory"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Directory creation timestamp"
+        },
+        "modifiedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last modification timestamp"
+        }
+      },
+      "required": ["path", "name", "depth", "fileCount", "loc"]
+    },
+    "file": {
+      "type": "object",
+      "description": "Detailed file information",
+      "properties": {
+        "path": {
+          "type": "string",
+          "format": "uri",
+          "description": "Full file path"
+        },
+        "name": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-\\.]+\\.[a-zA-Z0-9]+$",
+          "description": "File name with extension"
+        },
+        "basename": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-\\.]+$",
+          "description": "File name without extension"
+        },
+        "extension": {
+          "type": "string",
+          "pattern": "^\\.[a-zA-Z0-9]+$",
+          "description": "File extension including dot"
+        },
+        "language": {
+          "type": "string",
+          "description": "Programming language"
+        },
+        "directory": {
+          "type": "string",
+          "format": "uri",
+          "description": "Parent directory path"
+        },
+        "size": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "File size in bytes"
+        },
+        "loc": {
+          "type": "object",
+          "description": "Lines of code breakdown",
+          "properties": {
+            "total": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Total lines including empty and comments"
+            },
+            "code": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Lines of actual code"
+            },
+            "comment": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Comment lines"
+            },
+            "blank": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Empty lines"
+            }
+          },
+          "required": ["total", "code", "comment", "blank"]
+        },
+        "functions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/function"
+          },
+          "description": "Functions defined in this file"
+        },
+        "classes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/class"
+          },
+          "description": "Classes defined in this file"
+        },
+        "imports": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/import"
+          },
+          "description": "Import statements"
+        },
+        "exports": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/export"
+          },
+          "description": "Export statements"
+        },
+        "complexity": {
+          "type": "object",
+          "properties": {
+            "cyclomatic": {
+              "type": "number",
+              "minimum": 1,
+              "description": "Cyclomatic complexity"
+            },
+            "cognitive": {
+              "type": "number",
+              "minimum": 1,
+              "description": "Cognitive complexity"
+            },
+            "halstead": {
+              "type": "object",
+              "properties": {
+                "difficulty": {
+                  "type": "number",
+                  "minimum": 0,
+                  "description": "Halstead difficulty"
+                },
+                "volume": {
+                  "type": "number",
+                  "minimum": 0,
+                  "description": "Halstead volume"
+                },
+                "effort": {
+                  "type": "number",
+                  "minimum": 0,
+                  "description": "Halstead effort"
+                }
+              }
+            }
+          }
+        },
+        "testCoverage": {
+          "type": "object",
+          "properties": {
+            "linesCovered": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Number of lines covered by tests"
+            },
+            "linesTotal": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Total number of lines"
+            },
+            "percentage": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100,
+              "description": "Coverage percentage"
+            }
+          }
+        },
+        "hash": {
+          "type": "string",
+          "pattern": "^[a-fA-F0-9]{40,64}$",
+          "description": "File hash (SHA-1 or SHA-256)"
+        },
+        "encoding": {
+          "type": "string",
+          "enum": ["utf-8", "utf-16", "ascii", "binary"],
+          "description": "File encoding"
+        },
+        "lineEndings": {
+          "type": "string",
+          "enum": ["LF", "CRLF", "CR"],
+          "description": "Line ending style"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "File creation timestamp"
+        },
+        "modifiedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last modification timestamp"
+        },
+        "accessedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last access timestamp"
+        }
+      },
+      "required": ["path", "name", "basename", "extension", "directory", "size", "loc"]
+    },
+    "function": {
+      "type": "object",
+      "description": "Function definition",
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-zA-Z_$][a-zA-Z0-9_$]*$",
+          "description": "Function name"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["function", "arrow", "async", "generator", "method", "constructor"],
+          "description": "Function type"
+        },
+        "line": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Starting line number"
+        },
+        "lineEnd": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Ending line number"
+        },
+        "parameters": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/parameter"
+          },
+          "description": "Function parameters"
+        },
+        "returnType": {
+          "type": "string",
+          "description": "Return type annotation"
+        },
+        "visibility": {
+          "type": "string",
+          "enum": ["public", "private", "protected", "internal"],
+          "description": "Visibility modifier"
+        },
+        "static": {
+          "type": "boolean",
+          "description": "Whether function is static"
+        },
+        "async": {
+          "type": "boolean",
+          "description": "Whether function is async"
+        },
+        "complexity": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Function complexity"
+        },
+        "docComment": {
+          "type": "string",
+          "description": "Function documentation comment"
+        }
+      },
+      "required": ["name", "type", "line", "lineEnd"]
+    },
+    "class": {
+      "type": "object",
+      "description": "Class definition",
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-zA-Z_$][a-zA-Z0-9_$]*$",
+          "description": "Class name"
+        },
+        "line": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Starting line number"
+        },
+        "lineEnd": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Ending line number"
+        },
+        "extends": {
+          "type": "string",
+          "description": "Parent class name"
+        },
+        "implements": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Implemented interfaces"
+        },
+        "methods": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/function"
+          },
+          "description": "Class methods"
+        },
+        "properties": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/property"
+          },
+          "description": "Class properties"
+        },
+        "visibility": {
+          "type": "string",
+          "enum": ["public", "private", "protected", "internal"],
+          "description": "Class visibility"
+        },
+        "abstract": {
+          "type": "boolean",
+          "description": "Whether class is abstract"
+        },
+        "static": {
+          "type": "boolean",
+          "description": "Whether class is static"
+        }
+      },
+      "required": ["name", "line", "lineEnd"]
+    },
+    "parameter": {
+      "type": "object",
+      "description": "Function parameter",
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-zA-Z_$][a-zA-Z0-9_$]*$",
+          "description": "Parameter name"
+        },
+        "type": {
+          "type": "string",
+          "description": "Parameter type annotation"
+        },
+        "optional": {
+          "type": "boolean",
+          "description": "Whether parameter is optional"
+        },
+        "defaultValue": {
+          "description": "Default value if optional"
+        },
+        "rest": {
+          "type": "boolean",
+          "description": "Whether parameter is rest parameter"
+        }
+      },
+      "required": ["name"]
+    },
+    "property": {
+      "type": "object",
+      "description": "Class property",
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-zA-Z_$][a-zA-Z0-9_$]*$",
+          "description": "Property name"
+        },
+        "type": {
+          "type": "string",
+          "description": "Property type annotation"
+        },
+        "visibility": {
+          "type": "string",
+          "enum": ["public", "private", "protected", "internal"],
+          "description": "Property visibility"
+        },
+        "static": {
+          "type": "boolean",
+          "description": "Whether property is static"
+        },
+        "readonly": {
+          "type": "boolean",
+          "description": "Whether property is readonly"
+        },
+        "line": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Property declaration line"
+        }
+      },
+      "required": ["name"]
+    },
+    "import": {
+      "type": "object",
+      "description": "Import statement",
+      "properties": {
+        "source": {
+          "type": "string",
+          "description": "Import source path"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["default", "named", "namespace", "side-effect"],
+          "description": "Import type"
+        },
+        "specifiers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Imported specifiers"
+        },
+        "line": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Import statement line"
+        },
+        "local": {
+          "type": "boolean",
+          "description": "Whether import is local (relative) or external"
+        }
+      },
+      "required": ["source", "type", "line"]
+    },
+    "export": {
+      "type": "object",
+      "description": "Export statement",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Exported name"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["default", "named", "namespace", "re-export"],
+          "description": "Export type"
+        },
+        "source": {
+          "type": "string",
+          "description": "Re-export source (if applicable)"
+        },
+        "line": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Export statement line"
+        }
+      },
+      "required": ["type", "line"]
+    },
+    "dependency": {
+      "type": "object",
+      "description": "Dependency relationship",
+      "properties": {
+        "from": {
+          "type": "string",
+          "format": "uri",
+          "description": "Source file path"
+        },
+        "to": {
+          "type": "string",
+          "format": "uri",
+          "description": "Target file path"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["import", "require", "export", "re-export"],
+          "description": "Dependency type"
+        },
+        "strength": {
+          "type": "string",
+          "enum": ["strong", "weak", "circular"],
+          "description": "Dependency strength"
+        },
+        "line": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Line number where dependency occurs"
+        }
+      },
+      "required": ["from", "to", "type"]
+    }
+  },
+  "required": ["codeMap"],
+  "additionalProperties": false
+}

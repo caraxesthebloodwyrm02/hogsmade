@@ -218,18 +218,77 @@ export class PatternRegistry {
   }
 
   /**
-   * Generate insight text from template and evidence
+   * Generate insight text from template and evidence.
+   * Returns structured insight with compression metadata.
    */
-  generateInsight(template, evidence) {
-    let insight = template;
-    
+  generateInsight(template, evidence, context) {
+    let text = template;
+
     evidence.forEach((ev, index) => {
-      insight = insight.replace(`{${index}}`, ev.reason || 'detected pattern');
-      insight = insight.replace(`{score${index}}`, (ev.score || 0).toFixed(2));
-      insight = insight.replace(`{value${index}}`, ev.value || 'unknown');
+      text = text.replace(`{${index}}`, ev.reason || 'detected pattern');
+      text = text.replace(`{score${index}}`, (ev.score || 0).toFixed(2));
+      text = text.replace(`{value${index}}`, ev.value || 'unknown');
     });
 
-    return insight;
+    // Enhanced: return structured insight
+    const evidenceIds = evidence.map((ev) => ev.id || ev.reason).filter(Boolean);
+    const avgConfidence = evidence.length > 0
+      ? evidence.reduce((s, e) => s + (e.confidence || e.score || 0.5), 0) / evidence.length
+      : 0;
+
+    // Confidence qualifier
+    const qualifier = avgConfidence >= 0.8 ? "high" : avgConfidence >= 0.5 ? "moderate" : "tentative";
+
+    return {
+      text,
+      confidence: Math.round(avgConfidence * 1000) / 1000,
+      confidenceQualifier: qualifier,
+      supportingEvidence: evidenceIds,
+      evidenceCount: evidence.length,
+    };
+  }
+
+  /**
+   * Compose a new pattern from multiple child patterns.
+   * The composed pattern requires ALL children to match.
+   */
+  compose(parentId, childIds) {
+    const children = childIds.map((id) => this.patterns.get(id)).filter(Boolean);
+    if (children.length === 0) return null;
+
+    const composed = {
+      id: parentId,
+      name: `Composed: ${children.map((c) => c.name).join(" + ")}`,
+      description: `Composite pattern requiring: ${children.map((c) => c.name).join(", ")}`,
+      category: children[0].category,
+      conditions: children.flatMap((c) => c.conditions || []),
+      insights: children.flatMap((c) => c.insights || []),
+      viewRecommendations: children.flatMap((c) => c.viewRecommendations || []),
+      composed: true,
+      childPatternIds: childIds,
+    };
+
+    this.register(composed);
+    return composed;
+  }
+
+  /**
+   * Create a derived pattern that inherits from a base but customizes.
+   */
+  registerDerived(baseId, overrides) {
+    const base = this.patterns.get(baseId);
+    if (!base) return null;
+
+    const derived = {
+      ...base,
+      ...overrides,
+      id: overrides.id || `${baseId}-derived`,
+      derived: true,
+      basePatternId: baseId,
+    };
+
+    this.register(derived);
+    return derived;
   }
 
   /**

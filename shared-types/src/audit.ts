@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const AuditStatusSchema = z.enum(["success", "failure", "blocked", "dry_run"]);
+export const AuditStatusSchema = z.enum(["success", "failure", "blocked", "dry_run", "error"]);
 export type AuditStatus = z.infer<typeof AuditStatusSchema>;
 
 export const AuditEventSchema = z.object({

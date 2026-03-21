@@ -3,9 +3,10 @@ import { mkdtempSync, rmSync } from "fs";
 import os from "os";
 import path from "path";
 
-type TestServer = {
+// Type assertion for testing - bypass private property access
+interface TestServer {
   _registeredTools: Record<string, { inputSchema?: unknown; handler: (...args: any[]) => unknown }>;
-};
+}
 
 function getToolNames(server: TestServer): string[] {
   return Object.keys(server._registeredTools);
@@ -25,7 +26,8 @@ describe("seeds-server smoke", () => {
   beforeAll(async () => {
     process.env.SEEDS_ROOT = path.join(tempRoot, "Seeds");
     process.env.SEEDS_DATA_DIR = path.join(tempRoot, ".seeds-server");
-    ({ buildServer } = await import("../src/server.ts"));
+    const serverModule = await import("../src/server.ts") as unknown as { buildServer: () => TestServer };
+    ({ buildServer } = serverModule);
     ({ getConfig } = await import("../src/config.ts"));
   });
 
@@ -53,9 +55,54 @@ describe("seeds-server smoke", () => {
       "ecosystem_trend",
     ]));
 
-    const health = await invokeTool(server, "health_check");
-    const bookmarks = await invokeTool(server, "bookmark_list", { limit: 5 });
+    const health = await invokeTool(server, "health_check") as { isError?: boolean };
+    const bookmarks = await invokeTool(server, "bookmark_list", { limit: 5 }) as { isError?: boolean };
     expect(health.isError).not.toBe(true);
     expect(bookmarks.isError).not.toBe(true);
+  });
+
+  it("runs ecosystem_scan and returns repository data", async () => {
+    const server = buildServer();
+    
+    // Create a test repository structure
+    const seedsRoot = process.env.SEEDS_ROOT!;
+    const testRepo = path.join(seedsRoot, "test-project");
+    require("fs").mkdirSync(testRepo, { recursive: true });
+    require("fs").writeFileSync(path.join(testRepo, "package.json"), '{"name": "test"}');
+    require("fs").mkdirSync(path.join(testRepo, ".git"), { recursive: true });
+    require("fs").writeFileSync(path.join(testRepo, ".git", "HEAD"), "ref: refs/heads/main\n");
+    
+    const result = await invokeTool(server, "ecosystem_scan", { saveSnapshot: false }) as { isError?: boolean; content?: Array<{ type: string; text?: string }> };
+    expect(result.isError).not.toBe(true);
+    
+    const text = result.content?.[0]?.text;
+    const parsed = JSON.parse(text as string);
+    expect(parsed.summary.totalRepos).toBeGreaterThanOrEqual(1);
+    expect(parsed.repos).toBeDefined();
+    
+    // Find our test repo
+    const testRepoData = parsed.repos.find((r: any) => r.name === "test-project");
+    expect(testRepoData).toBeDefined();
+    expect(testRepoData.healthScore).toBeDefined();
+  });
+
+  it("runs ecosystem_trend and returns historical data", async () => {
+    const server = buildServer();
+    
+    // First run scans to create snapshots (need at least 2 for trend analysis)
+    await invokeTool(server, "ecosystem_scan", { saveSnapshot: true });
+    await invokeTool(server, "ecosystem_scan", { saveSnapshot: true });
+    
+    const result = await invokeTool(server, "ecosystem_trend", { limit: 5 }) as { isError?: boolean; content?: Array<{ type: string; text?: string }> };
+    expect(result.isError).not.toBe(true);
+    
+    const text = result.content?.[0]?.text;
+    const parsed = JSON.parse(text as string);
+    // Trend analysis requires at least 2 snapshots
+    expect(parsed.snapshotsCompared).toBeGreaterThanOrEqual(2);
+    expect(parsed.overallScoreTrend).toBeDefined();
+    expect(parsed.improving).toBeDefined();
+    expect(parsed.degrading).toBeDefined();
+    expect(parsed.stable).toBeDefined();
   });
 });

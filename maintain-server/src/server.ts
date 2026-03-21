@@ -719,7 +719,7 @@ async function getSystemMetrics(topN: number): Promise<SystemMetrics> {
         "-NoProfile",
         "-Command",
         "Get-Volume | Where-Object {$_.DriveLetter} | Select-Object DriveLetter,SizeRemaining,Size | ConvertTo-Json",
-      ]);
+      ], { timeout: 30000 });
       const volData = JSON.parse(stdout);
       const vols = Array.isArray(volData) ? volData : [volData];
       for (const v of vols) {
@@ -741,7 +741,7 @@ async function getSystemMetrics(topN: number): Promise<SystemMetrics> {
     // Linux/macOS: use df
     try {
       const { stdout } = await execFileAsync("df", ["-BG", "--output=target,size,avail"], { timeout: 10000 });
-      const lines = stdout.trim().split("\n").slice(1); // skip header
+      const lines = stdout.trim().split("\n").slice(1);
       for (const line of lines) {
         const parts = line.trim().split(/\s+/);
         if (parts.length >= 3 && (parts[0] === "/" || parts[0]?.startsWith("/home"))) {
@@ -769,17 +769,18 @@ async function getSystemMetrics(topN: number): Promise<SystemMetrics> {
         "-NoProfile",
         "-Command",
         `Get-Process | Sort-Object WorkingSet64 -Descending | Select-Object -First ${topN} Name,Id,WorkingSet64 | ConvertTo-Json`,
-      ]);
+      ], { timeout: 30000 });
       const procData = JSON.parse(stdout);
       const procs = Array.isArray(procData) ? procData : [procData];
       topProcesses = procs.map(
         (p: { Name: string; Id: number; WorkingSet64: number }) => ({
-          name: p.Name, pid: p.Id, memoryMB: Math.round(p.WorkingSet64 / (1024 * 1024)),
+          name: p.Name,
+          pid: p.Id,
+          memoryMB: Math.round(p.WorkingSet64 / (1024 * 1024)),
         }),
       );
     } catch { /* PowerShell not available */ }
   } else {
-    // Linux: use ps
     try {
       const { stdout } = await execFileAsync("ps", [
         "axo", "comm,pid,rss", "--sort=-rss", "--no-headers",
@@ -805,7 +806,7 @@ async function getSystemMetrics(topN: number): Promise<SystemMetrics> {
         "-NoProfile",
         "-Command",
         "Get-CimInstance Win32_PageFileUsage | Select-Object AllocatedBaseSize,CurrentUsage | ConvertTo-Json",
-      ]);
+      ], { timeout: 30000 });
       const swapData = JSON.parse(stdout);
       if (swapData) {
         swapTotal = swapData.AllocatedBaseSize || 0;
@@ -813,7 +814,6 @@ async function getSystemMetrics(topN: number): Promise<SystemMetrics> {
       }
     } catch { /* No pagefile or PowerShell unavailable */ }
   } else {
-    // Linux: parse /proc/meminfo
     try {
       const meminfo = await fs.readFile("/proc/meminfo", "utf-8");
       const swapTotalMatch = meminfo.match(/SwapTotal:\s+(\d+)/);
@@ -825,7 +825,6 @@ async function getSystemMetrics(topN: number): Promise<SystemMetrics> {
     } catch { /* /proc/meminfo not available */ }
   }
 
-  // Uptime
   const uptimeSec = os.uptime();
   const days = Math.floor(uptimeSec / 86400);
   const hours = Math.floor((uptimeSec % 86400) / 3600);
@@ -1522,7 +1521,7 @@ export function buildServer(): McpServer {
                   count: workspaceResults.length,
                   avgHealth: Math.round(
                     workspaceResults.reduce((s, w) => s + w.healthScore, 0) /
-                      Math.max(1, workspaceResults.length),
+                    Math.max(1, workspaceResults.length),
                   ),
                 },
                 gitScan: {
@@ -1539,33 +1538,33 @@ export function buildServer(): McpServer {
                   actions: [
                     ...(report.reclaimableTotalMB > 100
                       ? [
-                          {
-                            priority: "high",
-                            action: "cleanup_execute",
-                            params: { actions: ["temp_clean", "pycache"] },
-                            estimatedSavingsMB: report.reclaimableTotalMB,
-                          },
-                        ]
+                        {
+                          priority: "high",
+                          action: "cleanup_execute",
+                          params: { actions: ["temp_clean", "pycache"] },
+                          estimatedSavingsMB: report.reclaimableTotalMB,
+                        },
+                      ]
                       : []),
                     ...(gitResults.filter((g) => g.gcRecommended).length > 0
                       ? [
-                          {
-                            priority: "medium",
-                            action: "git_gc",
-                            repos: gitResults
-                              .filter((g) => g.gcRecommended)
-                              .map((g) => g.name),
-                          },
-                        ]
+                        {
+                          priority: "medium",
+                          action: "git_gc",
+                          repos: gitResults
+                            .filter((g) => g.gcRecommended)
+                            .map((g) => g.name),
+                        },
+                      ]
                       : []),
                     ...(systemMetrics.status !== "healthy"
                       ? [
-                          {
-                            priority: "high",
-                            action: "address_system_warnings",
-                            warnings: systemMetrics.warnings,
-                          },
-                        ]
+                        {
+                          priority: "high",
+                          action: "address_system_warnings",
+                          warnings: systemMetrics.warnings,
+                        },
+                      ]
                       : []),
                   ],
                 },

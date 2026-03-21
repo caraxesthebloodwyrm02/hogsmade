@@ -87,11 +87,8 @@ async function appendAuditEntry(entry: AuditEntry): Promise<void> {
   await fs.appendFile(AUDIT_LOG_PATH, line, 'utf-8');
 }
 
-function normalizeAuditStatus(status: unknown): Exclude<AuditEntry['status'], 'error'> | null {
-  if (status === 'error') {
-    return 'failure';
-  }
-  if (status === 'success' || status === 'blocked' || status === 'failure' || status === 'dry_run') {
+function normalizeAuditStatus(status: unknown): AuditEntry['status'] | null {
+  if (status === 'success' || status === 'blocked' || status === 'failure' || status === 'dry_run' || status === 'error') {
     return status;
   }
   return null;
@@ -99,7 +96,11 @@ function normalizeAuditStatus(status: unknown): Exclude<AuditEntry['status'], 'e
 
 const MAX_AUDIT_FILE_BYTES = 100 * 1024 * 1024; // 100 MB guard
 
-async function readAuditLog(limit: number, filter?: { tool?: string; status?: string; since?: string }): Promise<AuditEntry[]> {
+async function readAuditLog(
+  limit: number,
+  filter?: { tool?: string; status?: string; since?: string },
+  metadata?: { parseErrors?: number }
+): Promise<AuditEntry[]> {
   let content: string;
   try {
     const stat = await fs.stat(AUDIT_LOG_PATH);
@@ -140,7 +141,16 @@ async function readAuditLog(limit: number, filter?: { tool?: string; status?: st
   if (filter?.status) {
     const normalizedStatus = normalizeAuditStatus(filter.status);
     if (normalizedStatus) {
-      entries = entries.filter(e => e.status === normalizedStatus);
+      entries = entries.filter(entry => {
+        if (entry.status === normalizedStatus) {
+          return true;
+        }
+        // Also match legacy entries where 'error' was stored but normalized on read
+        if (filter.status === 'error' && (entry.status === 'error' || entry.status === 'failure')) {
+          return true;
+        }
+        return false;
+      });
     }
   }
   if (filter?.since) {
@@ -148,6 +158,7 @@ async function readAuditLog(limit: number, filter?: { tool?: string; status?: st
     entries = entries.filter(e => new Date(e.timestamp).getTime() >= since);
   }
 
+  if (metadata) metadata.parseErrors = corruptLineCount;
   return entries.slice(-limit).reverse();
 }
 
@@ -219,193 +230,196 @@ async function getAuditStats(): Promise<Record<string, unknown>> {
 // ── Server ──
 
 export function buildServer(): McpServer {
-const server = new McpServer({
-  name: SERVER_NAME,
-  version: VERSION,
-});
+  const server = new McpServer({
+    name: SERVER_NAME,
+    version: VERSION,
+  });
 
-// Health check
-server.registerTool(
-  'health_check',
-  { description: 'Check echoes-server health and data store status' },
-  async () => {
-    let auditSize = 0;
-    let auditLineCount = 0;
-    let auditCorruptLines = 0;
-    let telemetryCount = 0;
-    try {
-      const stat = await fs.stat(AUDIT_LOG_PATH);
-      auditSize = stat.size;
-      // Quick corruption check — count lines vs parseable entries
-      if (stat.size <= MAX_AUDIT_FILE_BYTES) {
-        const raw = await fs.readFile(AUDIT_LOG_PATH, 'utf-8');
-        const lines = raw.trim().split('\n').filter(Boolean);
-        auditLineCount = lines.length;
-        for (const line of lines) {
-          try { JSON.parse(line); } catch { auditCorruptLines++; }
+  // Health check
+  server.registerTool(
+    'health_check',
+    { description: 'Check echoes-server health and data store status' },
+    async () => {
+      let auditSize = 0;
+      let auditLineCount = 0;
+      let auditCorruptLines = 0;
+      let telemetryCount = 0;
+      try {
+        const stat = await fs.stat(AUDIT_LOG_PATH);
+        auditSize = stat.size;
+        // Quick corruption check — count lines vs parseable entries
+        if (stat.size <= MAX_AUDIT_FILE_BYTES) {
+          const raw = await fs.readFile(AUDIT_LOG_PATH, 'utf-8');
+          const lines = raw.trim().split('\n').filter(Boolean);
+          auditLineCount = lines.length;
+          for (const line of lines) {
+            try { JSON.parse(line); } catch { auditCorruptLines++; }
+          }
         }
-      }
-    } catch { /* no file yet */ }
-    try {
-      const files = await fs.readdir(TELEMETRY_DIR);
-      telemetryCount = files.filter(f => f.endsWith('.json')).length;
-    } catch { /* no dir yet */ }
+      } catch { /* no file yet */ }
+      try {
+        const files = await fs.readdir(TELEMETRY_DIR);
+        telemetryCount = files.filter(f => f.endsWith('.json')).length;
+      } catch { /* no dir yet */ }
 
-    return {
-      content: [{
-        type: 'text' as const,
-        text: JSON.stringify({
-          status: 'ok',
-          server: SERVER_NAME,
-          version: VERSION,
-          dataDir: DATA_DIR,
-          auditLogBytes: auditSize,
-          auditLogSizeMB: Math.round(auditSize / (1024 * 1024)),
-          auditLineCount,
-          auditCorruptLines,
-          telemetrySnapshots: telemetryCount,
-          timestamp: new Date().toISOString(),
-        }, null, 2),
-      }],
-    };
-  }
-);
-
-// Record audit entry
-server.registerTool(
-  'record_audit',
-  {
-    description: 'Record an audit entry from any MCP server pipeline execution',
-    inputSchema: z.object({
-      source: z.string().min(1).describe('Source server name (e.g. "echoes", "grid-rag")'),
-      tool: z.string().min(1).describe('Tool name that was called'),
-      status: z.enum(['success', 'failure', 'blocked', 'dry_run', 'error']).describe('Execution result status'),
-      durationMs: z.number().optional().describe('Execution duration in milliseconds'),
-      metadata: z.record(z.unknown()).optional().describe('Additional context'),
-    }),
-  },
-  async (args) => {
-    await ensureDataDir();
-    const now = new Date().toISOString();
-
-    // P-INT-001 + P-INT-002: Validate source and timestamp integrity
-    const integrityCheck = AuditIntegrityGuard.validateEntry(args.source, now);
-    if (integrityCheck.verdict === 'deny') {
       return {
-        content: [{ type: 'text' as const, text: JSON.stringify({
-          recorded: false,
-          error: integrityCheck.reason,
-          policyId: integrityCheck.policyId,
-        }) }],
+        content: [{
+          type: 'text' as const,
+          text: JSON.stringify({
+            status: 'ok',
+            server: SERVER_NAME,
+            version: VERSION,
+            dataDir: DATA_DIR,
+            auditLogBytes: auditSize,
+            auditLogSizeMB: Math.round(auditSize / (1024 * 1024)),
+            auditLineCount,
+            auditCorruptLines,
+            telemetrySnapshots: telemetryCount,
+            timestamp: new Date().toISOString(),
+          }, null, 2),
+        }],
       };
     }
+  );
 
-    const entry: AuditEntry = {
-      id: `aud-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      timestamp: now,
-      source: args.source,
-      tool: args.tool,
-      status: normalizeAuditStatus(args.status) ?? 'failure',
-      durationMs: args.durationMs,
-      metadata: args.metadata as Record<string, unknown> | undefined,
-    };
-    await appendAuditEntry(entry);
-    return {
-      content: [{ type: 'text' as const, text: JSON.stringify({ recorded: true, id: entry.id }) }],
-    };
-  }
-);
+  // Record audit entry
+  server.registerTool(
+    'record_audit',
+    {
+      description: 'Record an audit entry from any MCP server pipeline execution',
+      inputSchema: z.object({
+        source: z.string().min(1).describe('Source server name (e.g. "echoes", "grid-rag")'),
+        tool: z.string().min(1).describe('Tool name that was called'),
+        status: z.enum(['success', 'failure', 'blocked', 'dry_run', 'error']).describe('Execution result status'),
+        durationMs: z.number().optional().describe('Execution duration in milliseconds'),
+        metadata: z.record(z.unknown()).optional().describe('Additional context'),
+      }),
+    },
+    async (args) => {
+      await ensureDataDir();
+      const now = new Date().toISOString();
 
-// Query audit log
-server.registerTool(
-  'query_audit',
-  {
-    description: 'Query the persistent audit log with optional filters',
-    inputSchema: z.object({
-      limit: z.number().min(1).max(500).optional().default(20).describe('Max entries to return'),
-      tool: z.string().optional().describe('Filter by tool name'),
-      status: z.enum(['success', 'failure', 'blocked', 'dry_run', 'error']).optional().describe('Filter by status'),
-      since: z.string().optional().describe('ISO timestamp — only return entries after this time'),
-    }),
-  },
-  async (args) => {
-    await ensureDataDir();
-    const entries = await readAuditLog(args.limit ?? 20, {
-      tool: args.tool,
-      status: args.status,
-      since: args.since,
-    });
-    return {
-      content: [{ type: 'text' as const, text: JSON.stringify({ count: entries.length, entries }, null, 2) }],
-    };
-  }
-);
+      // P-INT-001 + P-INT-002: Validate source and timestamp integrity
+      const integrityCheck = AuditIntegrityGuard.validateEntry(args.source, now);
+      if (integrityCheck.verdict === 'deny') {
+        return {
+          content: [{
+            type: 'text' as const, text: JSON.stringify({
+              recorded: false,
+              error: integrityCheck.reason,
+              policyId: integrityCheck.policyId,
+            })
+          }],
+        };
+      }
 
-// Audit statistics
-server.registerTool(
-  'audit_stats',
-  {
-    description: 'Get aggregate statistics from the audit log — counts by tool, status, source, and average duration',
-    inputSchema: z.object({}),
-  },
-  async () => {
-    await ensureDataDir();
-    const stats = await getAuditStats();
-    return {
-      content: [{ type: 'text' as const, text: JSON.stringify(stats, null, 2) }],
-    };
-  }
-);
+      const entry: AuditEntry = {
+        id: `aud-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        timestamp: now,
+        source: args.source,
+        tool: args.tool,
+        status: normalizeAuditStatus(args.status) ?? 'failure',
+        durationMs: args.durationMs,
+        metadata: args.metadata as Record<string, unknown> | undefined,
+      };
+      await appendAuditEntry(entry);
+      return {
+        content: [{ type: 'text' as const, text: JSON.stringify({ recorded: true, id: entry.id }) }],
+      };
+    }
+  );
 
-// Save telemetry snapshot
-server.registerTool(
-  'save_telemetry',
-  {
-    description: 'Save a workspace telemetry snapshot for longitudinal tracking',
-    inputSchema: z.object({
-      workspace: z.string().min(1).describe('Workspace name or path'),
-      projects: z.number().describe('Number of projects scanned'),
-      activeServers: z.array(z.string()).describe('List of active MCP server names'),
-      metrics: z.record(z.number()).describe('Key-value numeric metrics (e.g. healthScore, commitCount)'),
-    }),
-  },
-  async (args) => {
-    await ensureDataDir();
-    const snapshot: TelemetrySnapshot = {
-      timestamp: new Date().toISOString(),
-      workspace: args.workspace,
-      projects: args.projects,
-      activeServers: args.activeServers,
-      metrics: args.metrics,
-    };
-    const filepath = await saveTelemetrySnapshot(snapshot);
-    return {
-      content: [{ type: 'text' as const, text: JSON.stringify({ saved: true, path: filepath }) }],
-    };
-  }
-);
+  // Query audit log
+  server.registerTool(
+    'query_audit',
+    {
+      description: 'Query the persistent audit log with optional filters',
+      inputSchema: z.object({
+        limit: z.number().min(1).max(500).optional().default(20).describe('Max entries to return'),
+        tool: z.string().optional().describe('Filter by tool name'),
+        status: z.enum(['success', 'failure', 'blocked', 'dry_run', 'error']).optional().describe('Filter by status'),
+        since: z.string().optional().describe('ISO timestamp — only return entries after this time'),
+      }),
+    },
+    async (args) => {
+      await ensureDataDir();
+      const metadata: { parseErrors?: number } = {};
+      const entries = await readAuditLog(args.limit ?? 20, {
+        tool: args.tool,
+        status: args.status,
+        since: args.since,
+      }, metadata);
+      return {
+        content: [{ type: 'text' as const, text: JSON.stringify({ count: entries.length, entries, parseErrors: metadata.parseErrors ?? 0 }, null, 2) }],
+      };
+    }
+  );
 
-// List telemetry snapshots
-server.registerTool(
-  'list_telemetry',
-  {
-    description: 'List recent telemetry snapshots for trend analysis',
-    inputSchema: z.object({
-      limit: z.number().min(1).max(100).optional().default(10).describe('Max snapshots to return'),
-    }),
-  },
-  async (args) => {
-    await ensureDataDir();
-    const snapshots = await listTelemetrySnapshots(args.limit ?? 10);
-    return {
-      content: [{ type: 'text' as const, text: JSON.stringify({ count: snapshots.length, snapshots }, null, 2) }],
-    };
-  }
-);
+  // Audit statistics
+  server.registerTool(
+    'audit_stats',
+    {
+      description: 'Get aggregate statistics from the audit log — counts by tool, status, source, and average duration',
+      inputSchema: z.object({}),
+    },
+    async () => {
+      await ensureDataDir();
+      const stats = await getAuditStats();
+      return {
+        content: [{ type: 'text' as const, text: JSON.stringify(stats, null, 2) }],
+      };
+    }
+  );
 
-// ── Start ──
+  // Save telemetry snapshot
+  server.registerTool(
+    'save_telemetry',
+    {
+      description: 'Save a workspace telemetry snapshot for longitudinal tracking',
+      inputSchema: z.object({
+        workspace: z.string().min(1).describe('Workspace name or path'),
+        projects: z.number().describe('Number of projects scanned'),
+        activeServers: z.array(z.string()).describe('List of active MCP server names'),
+        metrics: z.record(z.number()).describe('Key-value numeric metrics (e.g. healthScore, commitCount)'),
+      }),
+    },
+    async (args) => {
+      await ensureDataDir();
+      const snapshot: TelemetrySnapshot = {
+        timestamp: new Date().toISOString(),
+        workspace: args.workspace,
+        projects: args.projects,
+        activeServers: args.activeServers,
+        metrics: args.metrics,
+      };
+      const filepath = await saveTelemetrySnapshot(snapshot);
+      return {
+        content: [{ type: 'text' as const, text: JSON.stringify({ saved: true, path: filepath }) }],
+      };
+    }
+  );
 
-return server;
+  // List telemetry snapshots
+  server.registerTool(
+    'list_telemetry',
+    {
+      description: 'List recent telemetry snapshots for trend analysis',
+      inputSchema: z.object({
+        limit: z.number().min(1).max(100).optional().default(10).describe('Max snapshots to return'),
+      }),
+    },
+    async (args) => {
+      await ensureDataDir();
+      const snapshots = await listTelemetrySnapshots(args.limit ?? 10);
+      return {
+        content: [{ type: 'text' as const, text: JSON.stringify({ count: snapshots.length, snapshots }, null, 2) }],
+      };
+    }
+  );
+
+  // ── Start ──
+
+  return server;
 }
 
 export async function startServer(): Promise<McpServer> {

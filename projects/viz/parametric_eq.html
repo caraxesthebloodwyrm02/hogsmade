@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Parametric EQ</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #1a1a1e;
+      color: #e0e0e0;
+      font-family: 'Segoe UI', -apple-system, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    #eq-unit {
+      width: 900px;
+      background: #222228;
+      border-radius: 12px;
+      border: 1px solid #333;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+      overflow: hidden;
+    }
+
+    /* --- Header strip --- */
+    .eq-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 20px;
+      background: #1c1c20;
+      border-bottom: 1px solid #2a2a2e;
+    }
+
+    .eq-title {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      color: #888;
+    }
+
+    .eq-badge {
+      font-size: 10px;
+      color: #555;
+      letter-spacing: 0.8px;
+    }
+
+    /* --- Spectrum display --- */
+    #spectrumWrap {
+      position: relative;
+      width: 100%;
+      height: 320px;
+      cursor: crosshair;
+    }
+
+    #spectrumCanvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* --- Knob strip --- */
+    .knob-strip {
+      display: flex;
+      justify-content: center;
+      gap: 48px;
+      padding: 24px 20px 28px;
+      background: #1c1c20;
+      border-top: 1px solid #2a2a2e;
+    }
+
+    .knob-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      min-width: 80px;
+    }
+
+    .knob-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: #666;
+    }
+
+    .knob-value {
+      font-size: 13px;
+      font-weight: 500;
+      color: #ccc;
+      font-variant-numeric: tabular-nums;
+      min-width: 72px;
+      text-align: center;
+    }
+
+    /* Rotary knob */
+    .knob-outer {
+      position: relative;
+      width: 56px;
+      height: 56px;
+      cursor: grab;
+    }
+
+    .knob-outer:active {
+      cursor: grabbing;
+    }
+
+    .knob-ring {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 40% 35%, #3a3a42, #28282e);
+      border: 2px solid #444;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    }
+
+    .knob-indicator {
+      position: absolute;
+      top: 6px;
+      left: 50%;
+      width: 2px;
+      height: 14px;
+      margin-left: -1px;
+      background: #00ccff;
+      border-radius: 1px;
+      transform-origin: center 22px;
+      pointer-events: none;
+    }
+
+    .knob-group.freq .knob-indicator {
+      background: #00ff88;
+    }
+
+    .knob-group.q .knob-indicator {
+      background: #ffaa00;
+    }
+
+    .knob-group.gain .knob-indicator {
+      background: #00ccff;
+    }
+
+    /* Filter type selector */
+    .filter-selector {
+      display: flex;
+      gap: 4px;
+      padding: 4px;
+      background: #1a1a1e;
+      border-radius: 6px;
+      margin-top: 4px;
+    }
+
+    .filter-btn {
+      font-size: 10px;
+      padding: 4px 8px;
+      border: none;
+      border-radius: 4px;
+      background: transparent;
+      color: #666;
+      cursor: pointer;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+    }
+
+    .filter-btn.active {
+      background: #333;
+      color: #e0e0e0;
+    }
+
+    .filter-btn:hover:not(.active) {
+      color: #999;
+    }
+
+    /* --- Info strip --- */
+    .info-strip {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 20px;
+      font-size: 10px;
+      color: #444;
+      border-top: 1px solid #2a2a2e;
+      background: #1a1a1e;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="eq-unit">
+    <div class="eq-header">
+      <span class="eq-title">Parametric EQ</span>
+      <span class="eq-badge">1-Band &middot; 20 Hz – 20 kHz</span>
+    </div>
+
+    <div id="spectrumWrap">
+      <canvas id="spectrumCanvas"></canvas>
+    </div>
+
+    <div class="knob-strip">
+      <div class="knob-group freq">
+        <span class="knob-label">Freq</span>
+        <div class="knob-outer" data-param="freq">
+          <div class="knob-ring"></div>
+          <div class="knob-indicator"></div>
+        </div>
+        <span class="knob-value" id="freqVal">1.00 kHz</span>
+      </div>
+
+      <div class="knob-group q">
+        <span class="knob-label">Q</span>
+        <div class="knob-outer" data-param="q">
+          <div class="knob-ring"></div>
+          <div class="knob-indicator"></div>
+        </div>
+        <span class="knob-value" id="qVal">1.00</span>
+      </div>
+
+      <div class="knob-group gain">
+        <span class="knob-label">Gain</span>
+        <div class="knob-outer" data-param="gain">
+          <div class="knob-ring"></div>
+          <div class="knob-indicator"></div>
+        </div>
+        <span class="knob-value" id="gainVal">0.0 dB</span>
+      </div>
+
+      <div class="knob-group">
+        <span class="knob-label">Type</span>
+        <div class="filter-selector">
+          <button class="filter-btn active" data-type="bell">Bell</button>
+          <button class="filter-btn" data-type="lowshelf">Lo Sh</button>
+          <button class="filter-btn" data-type="highshelf">Hi Sh</button>
+          <button class="filter-btn" data-type="notch">Notch</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="info-strip">
+      <span>Click + drag knobs &middot; Scroll for fine adjust</span>
+      <span>Studio reference: 44.1 kHz / 24-bit</span>
+    </div>
+  </div>
+
+  <script>
+    // ============================================================
+    // Parametric EQ Visualizer
+    // Standard biquad transfer function — real filter math, not cosmetic
+    // ============================================================
+
+    const canvas = document.getElementById('spectrumCanvas');
+    const ctx = canvas.getContext('2d');
+    const wrap = document.getElementById('spectrumWrap');
+
+    // Hi-DPI scaling
+    function sizeCanvas() {
+      const dpr = window.devicePixelRatio || 1;
+      const rect = wrap.getBoundingClientRect();
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      return { w: rect.width, h: rect.height };
+    }
+
+    let dims = sizeCanvas();
+    window.addEventListener('resize', () => { dims = sizeCanvas(); draw(); });
+
+    // ============================================================
+    // EQ Parameters
+    // ============================================================
+    const FREQ_MIN = 20;
+    const FREQ_MAX = 20000;
+    const GAIN_MIN = -24;     // dB
+    const GAIN_MAX = 24;      // dB
+    const Q_MIN = 0.1;
+    const Q_MAX = 18.0;
+    const SAMPLE_RATE = 44100;
+
+    const state = {
+      freq: 1000,   // Hz
+      q: 1.0,
+      gain: 0.0,    // dB
+      type: 'bell'  // bell | lowshelf | highshelf | notch
+    };
+
+    // Normalized 0–1 for knob rotation
+    function freqToNorm(f) { return Math.log(f / FREQ_MIN) / Math.log(FREQ_MAX / FREQ_MIN); }
+    function normToFreq(n) { return FREQ_MIN * Math.pow(FREQ_MAX / FREQ_MIN, n); }
+    function gainToNorm(g) { return (g - GAIN_MIN) / (GAIN_MAX - GAIN_MIN); }
+    function normToGain(n) { return GAIN_MIN + n * (GAIN_MAX - GAIN_MIN); }
+    function qToNorm(q) { return Math.log(q / Q_MIN) / Math.log(Q_MAX / Q_MIN); }
+    function normToQ(n) { return Q_MIN * Math.pow(Q_MAX / Q_MIN, n); }
+
+    // ============================================================
+    // Biquad coefficient calculation
+    // Reference: Audio EQ Cookbook (Robert Bristow-Johnson)
+    // ============================================================
+    function calcBiquadCoeffs(freq, q, gainDb, type) {
+      const A = Math.pow(10, gainDb / 40);
+      const w0 = 2 * Math.PI * freq / SAMPLE_RATE;
+      const sinW0 = Math.sin(w0);
+      const cosW0 = Math.cos(w0);
+      const alpha = sinW0 / (2 * q);
+
+      let b0, b1, b2, a0, a1, a2;
+
+      switch (type) {
+        case 'bell':
+          b0 = 1 + alpha * A;
+          b1 = -2 * cosW0;
+          b2 = 1 - alpha * A;
+          a0 = 1 + alpha / A;
+          a1 = -2 * cosW0;
+          a2 = 1 - alpha / A;
+          break;
+
+        case 'lowshelf': {
+          const sq = 2 * Math.sqrt(A) * alpha;
+          b0 = A * ((A + 1) - (A - 1) * cosW0 + sq);
+          b1 = 2 * A * ((A - 1) - (A + 1) * cosW0);
+          b2 = A * ((A + 1) - (A - 1) * cosW0 - sq);
+          a0 = (A + 1) + (A - 1) * cosW0 + sq;
+          a1 = -2 * ((A - 1) + (A + 1) * cosW0);
+          a2 = (A + 1) + (A - 1) * cosW0 - sq;
+          break;
+        }
+
+        case 'highshelf': {
+          const sq = 2 * Math.sqrt(A) * alpha;
+          b0 = A * ((A + 1) + (A - 1) * cosW0 + sq);
+          b1 = -2 * A * ((A - 1) + (A + 1) * cosW0);
+          b2 = A * ((A + 1) + (A - 1) * cosW0 - sq);
+          a0 = (A + 1) - (A - 1) * cosW0 + sq;
+          a1 = 2 * ((A - 1) - (A + 1) * cosW0);
+          a2 = (A + 1) - (A - 1) * cosW0 - sq;
+          break;
+        }
+
+        case 'notch':
+          b0 = 1;
+          b1 = -2 * cosW0;
+          b2 = 1;
+          a0 = 1 + alpha;
+          a1 = -2 * cosW0;
+          a2 = 1 - alpha;
+          break;
+      }
+
+      return { b0: b0 / a0, b1: b1 / a0, b2: b2 / a0, a1: a1 / a0, a2: a2 / a0 };
+    }
+
+    // Evaluate magnitude response at a given frequency
+    function evalMagnitudeDb(coeffs, freq) {
+      const w = 2 * Math.PI * freq / SAMPLE_RATE;
+      const cosw = Math.cos(w);
+      const cos2w = Math.cos(2 * w);
+      const sinw = Math.sin(w);
+      const sin2w = Math.sin(2 * w);
+
+      const numRe = coeffs.b0 + coeffs.b1 * cosw + coeffs.b2 * cos2w;
+      const numIm = -(coeffs.b1 * sinw + coeffs.b2 * sin2w);
+      const denRe = 1 + coeffs.a1 * cosw + coeffs.a2 * cos2w;
+      const denIm = -(coeffs.a1 * sinw + coeffs.a2 * sin2w);
+
+      const numMag = numRe * numRe + numIm * numIm;
+      const denMag = denRe * denRe + denIm * denIm;
+
+      if (denMag === 0) return 0;
+      return 10 * Math.log10(numMag / denMag);
+    }
+
+    // ============================================================
+    // Frequency / pixel mapping (logarithmic)
+    // ============================================================
+    function freqToX(f) {
+      return (Math.log(f / FREQ_MIN) / Math.log(FREQ_MAX / FREQ_MIN)) * dims.w;
+    }
+
+    function xToFreq(x) {
+      return FREQ_MIN * Math.pow(FREQ_MAX / FREQ_MIN, x / dims.w);
+    }
+
+    function dbToY(db) {
+      // Map GAIN_MIN..GAIN_MAX → bottom..top with padding
+      const pad = 20;
+      const usable = dims.h - 2 * pad;
+      return pad + usable * (1 - (db - GAIN_MIN) / (GAIN_MAX - GAIN_MIN));
+    }
+
+    // ============================================================
+    // Draw
+    // ============================================================
+    const FREQ_MARKERS = [20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000];
+    const DB_MARKERS = [-24, -18, -12, -6, 0, 6, 12, 18, 24];
+
+    function draw() {
+      const { w, h } = dims;
+      ctx.clearRect(0, 0, w, h);
+
+      // Background
+      ctx.fillStyle = '#1e1e24';
+      ctx.fillRect(0, 0, w, h);
+
+      // --- dB grid lines ---
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'middle';
+      ctx.font = '10px "Segoe UI", sans-serif';
+
+      for (const db of DB_MARKERS) {
+        const y = dbToY(db);
+        ctx.strokeStyle = db === 0 ? '#444' : '#2a2a2e';
+        ctx.lineWidth = db === 0 ? 1 : 0.5;
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(w, y);
+        ctx.stroke();
+
+        ctx.fillStyle = db === 0 ? '#777' : '#444';
+        ctx.fillText((db > 0 ? '+' : '') + db, 30, y);
+      }
+
+      // --- Frequency grid lines ---
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+
+      for (const f of FREQ_MARKERS) {
+        const x = freqToX(f);
+        ctx.strokeStyle = '#2a2a2e';
+        ctx.lineWidth = 0.5;
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, h);
+        ctx.stroke();
+
+        let label;
+        if (f >= 1000) label = (f / 1000) + 'k';
+        else label = String(f);
+        ctx.fillStyle = '#444';
+        ctx.fillText(label, x, h - 14);
+      }
+
+      // --- EQ curve ---
+      const coeffs = calcBiquadCoeffs(state.freq, state.q, state.gain, state.type);
+      const STEPS = 512;
+
+      // Filled area under/over 0dB
+      ctx.beginPath();
+      const zeroY = dbToY(0);
+      ctx.moveTo(0, zeroY);
+      for (let i = 0; i <= STEPS; i++) {
+        const f = FREQ_MIN * Math.pow(FREQ_MAX / FREQ_MIN, i / STEPS);
+        const db = evalMagnitudeDb(coeffs, f);
+        const clampedDb = Math.max(GAIN_MIN, Math.min(GAIN_MAX, db));
+        const x = freqToX(f);
+        const y = dbToY(clampedDb);
+        ctx.lineTo(x, y);
+      }
+      ctx.lineTo(freqToX(FREQ_MAX), zeroY);
+      ctx.closePath();
+
+      // Fill gradient — green for boost, blue for cut
+      const curveColor = state.gain >= 0 ? 'rgba(0, 255, 136, 0.12)' : 'rgba(0, 204, 255, 0.12)';
+      ctx.fillStyle = curveColor;
+      ctx.fill();
+
+      // Stroke the curve
+      ctx.beginPath();
+      for (let i = 0; i <= STEPS; i++) {
+        const f = FREQ_MIN * Math.pow(FREQ_MAX / FREQ_MIN, i / STEPS);
+        const db = evalMagnitudeDb(coeffs, f);
+        const clampedDb = Math.max(GAIN_MIN, Math.min(GAIN_MAX, db));
+        const x = freqToX(f);
+        const y = dbToY(clampedDb);
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.strokeStyle = state.gain >= 0 ? '#00ff88' : '#00ccff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // --- Band handle (draggable dot) ---
+      const handleX = freqToX(state.freq);
+      const handleDb = evalMagnitudeDb(coeffs, state.freq);
+      const handleY = dbToY(Math.max(GAIN_MIN, Math.min(GAIN_MAX, handleDb)));
+
+      // Glow
+      const glow = ctx.createRadialGradient(handleX, handleY, 0, handleX, handleY, 18);
+      glow.addColorStop(0, 'rgba(0, 255, 136, 0.3)');
+      glow.addColorStop(1, 'rgba(0, 255, 136, 0)');
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(handleX, handleY, 18, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Dot
+      ctx.fillStyle = '#00ff88';
+      ctx.beginPath();
+      ctx.arc(handleX, handleY, 5, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Label near handle
+      ctx.fillStyle = '#aaa';
+      ctx.font = '11px "Segoe UI", sans-serif';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'bottom';
+      const freqLabel = state.freq >= 1000
+        ? (state.freq / 1000).toFixed(2) + ' kHz'
+        : Math.round(state.freq) + ' Hz';
+      ctx.fillText(freqLabel + '  ' + state.gain.toFixed(1) + ' dB', handleX + 10, handleY - 4);
+
+      // --- Bandwidth indicator (Q visualization) ---
+      // Show -3dB bandwidth lines for bell/notch
+      if (state.type === 'bell' || state.type === 'notch') {
+        const bw = state.freq / state.q; // bandwidth in Hz
+        const fLow = state.freq - bw / 2;
+        const fHigh = state.freq + bw / 2;
+
+        if (fLow > FREQ_MIN) {
+          const xLow = freqToX(Math.max(FREQ_MIN, fLow));
+          ctx.strokeStyle = 'rgba(255, 170, 0, 0.3)';
+          ctx.lineWidth = 1;
+          ctx.setLineDash([4, 4]);
+          ctx.beginPath();
+          ctx.moveTo(xLow, 0);
+          ctx.lineTo(xLow, h);
+          ctx.stroke();
+        }
+
+        if (fHigh < FREQ_MAX) {
+          const xHigh = freqToX(Math.min(FREQ_MAX, fHigh));
+          ctx.strokeStyle = 'rgba(255, 170, 0, 0.3)';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(xHigh, 0);
+          ctx.lineTo(xHigh, h);
+          ctx.stroke();
+        }
+        ctx.setLineDash([]);
+      }
+    }
+
+    // ============================================================
+    // Knob interaction
+    // ============================================================
+    function updateKnobVisual(param) {
+      let norm;
+      if (param === 'freq') norm = freqToNorm(state.freq);
+      else if (param === 'q') norm = qToNorm(state.q);
+      else if (param === 'gain') norm = gainToNorm(state.gain);
+
+      // Rotation: -135° to +135° (270° sweep)
+      const angle = -135 + norm * 270;
+      const knobEl = document.querySelector(`[data-param="${param}"] .knob-indicator`);
+      if (knobEl) knobEl.style.transform = `rotate(${angle}deg)`;
+    }
+
+    function updateReadouts() {
+      const freqLabel = state.freq >= 1000
+        ? (state.freq / 1000).toFixed(2) + ' kHz'
+        : Math.round(state.freq) + ' Hz';
+      document.getElementById('freqVal').textContent = freqLabel;
+      document.getElementById('qVal').textContent = state.q.toFixed(2);
+      document.getElementById('gainVal').textContent = (state.gain >= 0 ? '+' : '') + state.gain.toFixed(1) + ' dB';
+
+      updateKnobVisual('freq');
+      updateKnobVisual('q');
+      updateKnobVisual('gain');
+    }
+
+    // Drag tracking
+    let activeKnob = null;
+    let dragStartY = 0;
+    let dragStartValue = 0;
+
+    document.querySelectorAll('.knob-outer').forEach(knob => {
+      const param = knob.dataset.param;
+      if (!param) return;
+
+      knob.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        activeKnob = param;
+        dragStartY = e.clientY;
+        if (param === 'freq') dragStartValue = freqToNorm(state.freq);
+        else if (param === 'q') dragStartValue = qToNorm(state.q);
+        else if (param === 'gain') dragStartValue = gainToNorm(state.gain);
+      });
+
+      // Scroll for fine adjust
+      knob.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const delta = -e.deltaY * 0.001;
+        if (param === 'freq') {
+          let n = freqToNorm(state.freq) + delta;
+          state.freq = normToFreq(Math.max(0, Math.min(1, n)));
+        } else if (param === 'q') {
+          let n = qToNorm(state.q) + delta;
+          state.q = normToQ(Math.max(0, Math.min(1, n)));
+        } else if (param === 'gain') {
+          let n = gainToNorm(state.gain) + delta;
+          state.gain = normToGain(Math.max(0, Math.min(1, n)));
+        }
+        updateReadouts();
+        draw();
+      });
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (!activeKnob) return;
+      const dy = dragStartY - e.clientY;
+      const sensitivity = 0.005;
+      let norm = dragStartValue + dy * sensitivity;
+      norm = Math.max(0, Math.min(1, norm));
+
+      if (activeKnob === 'freq') state.freq = normToFreq(norm);
+      else if (activeKnob === 'q') state.q = normToQ(norm);
+      else if (activeKnob === 'gain') state.gain = normToGain(norm);
+
+      updateReadouts();
+      draw();
+    });
+
+    window.addEventListener('mouseup', () => { activeKnob = null; });
+
+    // --- Spectrum drag (click on canvas to move band) ---
+    let spectrumDrag = false;
+
+    wrap.addEventListener('mousedown', (e) => {
+      if (e.target !== canvas) return;
+      spectrumDrag = true;
+      const rect = canvas.getBoundingClientRect();
+      state.freq = xToFreq(e.clientX - rect.left);
+      state.freq = Math.max(FREQ_MIN, Math.min(FREQ_MAX, state.freq));
+      updateReadouts();
+      draw();
+    });
+
+    wrap.addEventListener('mousemove', (e) => {
+      if (!spectrumDrag) return;
+      const rect = canvas.getBoundingClientRect();
+      state.freq = xToFreq(e.clientX - rect.left);
+      state.freq = Math.max(FREQ_MIN, Math.min(FREQ_MAX, state.freq));
+
+      // Vertical = gain
+      const pad = 20;
+      const usable = dims.h - 2 * pad;
+      const yNorm = 1 - (e.clientY - rect.top - pad) / usable;
+      state.gain = GAIN_MIN + yNorm * (GAIN_MAX - GAIN_MIN);
+      state.gain = Math.max(GAIN_MIN, Math.min(GAIN_MAX, state.gain));
+
+      updateReadouts();
+      draw();
+    });
+
+    wrap.addEventListener('mouseup', () => { spectrumDrag = false; });
+    wrap.addEventListener('mouseleave', () => { spectrumDrag = false; });
+
+    // Scroll on spectrum = Q adjust
+    wrap.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const delta = -e.deltaY * 0.002;
+      let n = qToNorm(state.q) + delta;
+      state.q = normToQ(Math.max(0, Math.min(1, n)));
+      updateReadouts();
+      draw();
+    });
+
+    // --- Filter type buttons ---
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        state.type = btn.dataset.type;
+        draw();
+      });
+    });
+
+    // ============================================================
+    // Init
+    // ============================================================
+    updateReadouts();
+    draw();
+  </script>
+</body>
+
+</html>

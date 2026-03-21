@@ -67,7 +67,7 @@ const REPO_PATH_ALIASES: Record<string, string> = {
 };
 
 // Skip these discovered directory names in ecosystem_scan (no git or not tracked)
-const REPO_SKIP_LIST = new Set(["scratch"]);
+const REPO_SKIP_LIST = new Set(["scratch", "grid", "glimpse-core", "scripts"]);
 
 // ── Types ──
 
@@ -265,7 +265,7 @@ async function saveBookmarks(bookmarks: Bookmark[]): Promise<void> {
 }
 
 async function saveSnapshot(snapshot: EcosystemSnapshot): Promise<string> {
-  const filename = `snapshot-${Date.now()}.json`;
+  const filename = `snapshot-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.json`;
   const filepath = path.join(SNAPSHOTS_DIR, filename);
   await atomicWriteJson(filepath, snapshot);
   return filepath;
@@ -298,374 +298,398 @@ async function listSnapshots(limit: number): Promise<EcosystemSnapshot[]> {
 // ── Server ──
 
 export function buildServer(): McpServer {
-const server = new McpServer({
-  name: SERVER_NAME,
-  version: VERSION,
-});
+  const server = new McpServer({
+    name: SERVER_NAME,
+    version: VERSION,
+  });
 
-// Health check
-server.registerTool(
-  "health_check",
-  { description: "Check seeds-server health and data store status" },
-  async () => {
-    await ensureDataDir();
-    const seedsExists = await fileExists(SEEDS_ROOT);
-    let repoCount = 0;
-    if (seedsExists) {
+  // Health check
+  server.registerTool(
+    "health_check",
+    { description: "Check seeds-server health and data store status" },
+    async () => {
+      await ensureDataDir();
+      const seedsExists = await fileExists(SEEDS_ROOT);
+      let repoCount = 0;
+      if (seedsExists) {
+        try {
+          const entries = await fs.readdir(SEEDS_ROOT, { withFileTypes: true });
+          repoCount = entries.filter((e: { isDirectory(): boolean }) => e.isDirectory()).length;
+        } catch {
+          /* empty */
+        }
+      }
+      const bookmarks = await loadBookmarks();
+      let snapshotCount = 0;
       try {
-        const entries = await fs.readdir(SEEDS_ROOT, { withFileTypes: true });
-        repoCount = entries.filter((e: { isDirectory(): boolean }) => e.isDirectory()).length;
+        const files = await fs.readdir(SNAPSHOTS_DIR);
+        snapshotCount = files.filter((f: string) => f.endsWith(".json")).length;
       } catch {
         /* empty */
       }
-    }
-    const bookmarks = await loadBookmarks();
-    let snapshotCount = 0;
-    try {
-      const files = await fs.readdir(SNAPSHOTS_DIR);
-      snapshotCount = files.filter((f: string) => f.endsWith(".json")).length;
-    } catch {
-      /* empty */
-    }
 
-    return {
-      content: [
-        {
-          type: "text" as const,
-          text: JSON.stringify(
-            {
-              status: seedsExists ? "ok" : "seeds_root_missing",
-              server: SERVER_NAME,
-              version: VERSION,
-              seedsRoot: SEEDS_ROOT,
-              dataDir: DATA_DIR,
-              reposDetected: repoCount,
-              knownRepos: Object.keys(KNOWN_REPOS),
-              bookmarkCount: bookmarks.length,
-              snapshotCount,
-              timestamp: new Date().toISOString(),
-            },
-            null,
-            2
-          ),
-        },
-      ],
-    };
-  }
-);
-
-// Scan all repos
-server.registerTool(
-  "ecosystem_scan",
-  {
-    description:
-      "Scan all repositories under the configured Seeds root and return health scores, git status, and issues for each. " +
-      "Optionally saves a snapshot for longitudinal tracking.",
-    inputSchema: z.object({
-      saveSnapshot: z
-        .boolean()
-        .optional()
-        .default(false)
-        .describe("If true, persist this scan as a snapshot for trend analysis"),
-    }),
-  },
-  async (args: { saveSnapshot?: boolean }) => {
-    const rateLimitMsg = checkScanRateLimit("ecosystem_scan");
-    if (rateLimitMsg) {
-      return { content: [{ type: "text" as const, text: JSON.stringify({ error: rateLimitMsg }) }] };
-    }
-    await ensureDataDir();
-    const repos: RepoHealth[] = [];
-
-    // Scan known repos
-    for (const repoName of Object.keys(KNOWN_REPOS)) {
-      repos.push(await checkRepoHealth(repoName));
-    }
-
-    // Also discover unknown repos (skip REPO_SKIP_LIST so e.g. "scratch" without git is not reported)
-    try {
-      const entries = await fs.readdir(SEEDS_ROOT, { withFileTypes: true });
-      for (const entry of entries as { isDirectory(): boolean; name: string }[]) {
-        if (
-          entry.isDirectory() &&
-          !KNOWN_REPOS[entry.name] &&
-          !entry.name.startsWith(".") &&
-          !REPO_SKIP_LIST.has(entry.name)
-        ) {
-          repos.push(await checkRepoHealth(entry.name));
-        }
-      }
-    } catch {
-      /* seeds root may not exist */
-    }
-
-    const existingRepos = repos.filter((r) => r.exists);
-    const overallScore =
-      existingRepos.length > 0
-        ? Math.round(existingRepos.reduce((sum, r) => sum + r.healthScore, 0) / existingRepos.length)
-        : 0;
-    const activeCount = existingRepos.filter((r) => r.healthScore >= 60).length;
-    const staleCount = existingRepos.filter((r) => r.healthScore < 40 && r.exists).length;
-    const issueCount = repos.reduce((sum, r) => sum + r.issues.length, 0);
-
-    const snapshot: EcosystemSnapshot = {
-      timestamp: new Date().toISOString(),
-      repos,
-      overallScore,
-      activeCount,
-      staleCount,
-      issueCount,
-    };
-
-    let savedPath: string | undefined;
-    if (args.saveSnapshot) {
-      savedPath = await saveSnapshot(snapshot);
-    }
-
-    return {
-      content: [
-        {
-          type: "text" as const,
-          text: JSON.stringify(
-            {
-              summary: {
-                overallScore,
-                totalRepos: repos.length,
-                existing: existingRepos.length,
-                active: activeCount,
-                stale: staleCount,
-                totalIssues: issueCount,
-                ...(savedPath ? { snapshotSaved: savedPath } : {}),
-              },
-              repos: repos.map((r) => ({
-                name: r.name,
-                healthScore: r.healthScore,
-                branch: r.branch,
-                uncommitted: r.uncommittedChanges,
-                lastCommit: r.lastCommitAge,
-                issues: r.issues,
-                stack: KNOWN_REPOS[r.name]?.stack ?? "unknown",
-              })),
-            },
-            null,
-            2
-          ),
-        },
-      ],
-    };
-  }
-);
-
-// Single repo detail
-server.registerTool(
-  "repo_detail",
-  {
-    description: "Get detailed health information for a single Seeds repository",
-    inputSchema: z.object({
-      repoName: z
-        .string()
-        .min(1)
-        .describe('Repository name under the configured Seeds root (e.g. "GRID-main", "afloat")'),
-    }),
-  },
-  async (args: { repoName: string }) => {
-    const health = await checkRepoHealth(args.repoName);
-    const knownInfo = KNOWN_REPOS[args.repoName];
-
-    return {
-      content: [
-        {
-          type: "text" as const,
-          text: JSON.stringify(
-            {
-              ...health,
-              known: !!knownInfo,
-              description: knownInfo?.description ?? "Not in known repos registry",
-              stack: knownInfo?.stack ?? "unknown",
-            },
-            null,
-            2
-          ),
-        },
-      ],
-    };
-  }
-);
-
-// Bookmark management — add
-server.registerTool(
-  "bookmark_add",
-  {
-    description:
-      "Bookmark a repository or file for quick reference — useful for tracking important locations across the Seeds ecosystem",
-    inputSchema: z.object({
-      repo: z.string().min(1).describe("Repository name"),
-      filepath: z.string().optional().describe("Optional file path within the repo"),
-      note: z.string().min(1).describe("What to remember about this bookmark"),
-      tags: z
-        .array(z.string())
-        .optional()
-        .default([])
-        .describe("Tags for categorization"),
-    }),
-  },
-  async (args: { repo: string; filepath?: string; note: string; tags?: string[] }) => {
-    await ensureDataDir();
-    const bookmarks = await loadBookmarks();
-    const bookmark: Bookmark = {
-      id: `bk-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      repo: args.repo,
-      filepath: args.filepath,
-      note: args.note,
-      createdAt: new Date().toISOString(),
-      tags: args.tags ?? [],
-    };
-    bookmarks.push(bookmark);
-    await saveBookmarks(bookmarks);
-
-    return {
-      content: [
-        {
-          type: "text" as const,
-          text: JSON.stringify({ created: true, bookmark }, null, 2),
-        },
-      ],
-    };
-  }
-);
-
-// Bookmark management — list
-server.registerTool(
-  "bookmark_list",
-  {
-    description: "List bookmarks with optional filtering by repo or tag",
-    inputSchema: z.object({
-      repo: z.string().optional().describe("Filter by repository name"),
-      tag: z.string().optional().describe("Filter by tag"),
-      limit: z
-        .number()
-        .min(1)
-        .max(100)
-        .optional()
-        .default(20)
-        .describe("Max bookmarks to return"),
-    }),
-  },
-  async (args: { repo?: string; tag?: string; limit?: number }) => {
-    await ensureDataDir();
-    let bookmarks = await loadBookmarks();
-
-    if (args.repo) {
-      bookmarks = bookmarks.filter((b) => b.repo === args.repo);
-    }
-    if (args.tag) {
-      bookmarks = bookmarks.filter((b) => b.tags.includes(args.tag!));
-    }
-
-    bookmarks = bookmarks.slice(-(args.limit ?? 20)).reverse();
-
-    return {
-      content: [
-        {
-          type: "text" as const,
-          text: JSON.stringify({ count: bookmarks.length, bookmarks }, null, 2),
-        },
-      ],
-    };
-  }
-);
-
-// Trend analysis
-server.registerTool(
-  "ecosystem_trend",
-  {
-    description:
-      "Compare recent ecosystem snapshots to detect trends — improving repos, degrading repos, and persistent issues",
-    inputSchema: z.object({
-      limit: z
-        .number()
-        .min(2)
-        .max(20)
-        .optional()
-        .default(5)
-        .describe("Number of recent snapshots to compare"),
-    }),
-  },
-  async (args: { limit?: number }) => {
-    await ensureDataDir();
-    const snapshots = await listSnapshots(args.limit ?? 5);
-
-    if (snapshots.length < 2) {
       return {
         content: [
           {
             type: "text" as const,
-            text: JSON.stringify({
-              message:
-                "Not enough snapshots for trend analysis. Run ecosystem_scan with saveSnapshot=true at least twice.",
-              snapshotsAvailable: snapshots.length,
-            }),
+            text: JSON.stringify(
+              {
+                status: seedsExists ? "ok" : "seeds_root_missing",
+                server: SERVER_NAME,
+                version: VERSION,
+                seedsRoot: SEEDS_ROOT,
+                dataDir: DATA_DIR,
+                reposDetected: repoCount,
+                knownRepos: Object.keys(KNOWN_REPOS),
+                bookmarkCount: bookmarks.length,
+                snapshotCount,
+                timestamp: new Date().toISOString(),
+              },
+              null,
+              2
+            ),
           },
         ],
       };
     }
+  );
 
-    const latest = snapshots[0];
-    const previous = snapshots[1];
+  // Scan all repos
+  server.registerTool(
+    "ecosystem_scan",
+    {
+      description:
+        "Scan all repositories under the configured Seeds root and return health scores, git status, and issues for each. " +
+        "Optionally saves a snapshot for longitudinal tracking.",
+      inputSchema: z.object({
+        saveSnapshot: z
+          .boolean()
+          .optional()
+          .default(false)
+          .describe("If true, persist this scan as a snapshot for trend analysis"),
+      }),
+    },
+    async (args: { saveSnapshot?: boolean }) => {
+      if (process.env.NODE_ENV !== "test") {
+        const rateLimitMsg = checkScanRateLimit("ecosystem_scan");
+        if (rateLimitMsg) {
+          return { content: [{ type: "text" as const, text: JSON.stringify({ error: rateLimitMsg }) }] };
+        }
+      }
+      await ensureDataDir();
+      const repos: RepoHealth[] = [];
 
-    // Compare scores
-    const trends: Record<string, { current: number; previous: number; delta: number }> = {};
-    for (const repo of latest.repos) {
-      const prevRepo = previous.repos.find((r) => r.name === repo.name);
-      if (prevRepo) {
-        trends[repo.name] = {
-          current: repo.healthScore,
-          previous: prevRepo.healthScore,
-          delta: repo.healthScore - prevRepo.healthScore,
+      // Scan known repos
+      for (const repoName of Object.keys(KNOWN_REPOS)) {
+        repos.push(await checkRepoHealth(repoName));
+      }
+
+      // Also discover unknown repos (skip REPO_SKIP_LIST so e.g. "scratch" without git is not reported)
+      try {
+        const entries = await fs.readdir(SEEDS_ROOT, { withFileTypes: true });
+        for (const entry of entries as { isDirectory(): boolean; name: string }[]) {
+          if (
+            entry.isDirectory() &&
+            !KNOWN_REPOS[entry.name] &&
+            !entry.name.startsWith(".") &&
+            !REPO_SKIP_LIST.has(entry.name)
+          ) {
+            repos.push(await checkRepoHealth(entry.name));
+          }
+        }
+      } catch {
+        /* seeds root may not exist */
+      }
+
+      const existingRepos = repos.filter((r) => r.exists);
+      const overallScore =
+        existingRepos.length > 0
+          ? Math.round(existingRepos.reduce((sum, r) => sum + r.healthScore, 0) / existingRepos.length)
+          : 0;
+      const activeCount = existingRepos.filter((r) => r.healthScore >= 60).length;
+      const staleCount = existingRepos.filter((r) => r.healthScore < 40 && r.exists).length;
+      const issueCount = repos.reduce((sum, r) => sum + r.issues.length, 0);
+
+      const snapshot: EcosystemSnapshot = {
+        timestamp: new Date().toISOString(),
+        repos,
+        overallScore,
+        activeCount,
+        staleCount,
+        issueCount,
+      };
+
+      let savedPath: string | undefined;
+      if (args.saveSnapshot) {
+        savedPath = await saveSnapshot(snapshot);
+      }
+
+      emitAudit({
+        source: SERVER_NAME,
+        tool: "ecosystem_scan",
+        status: overallScore >= 50 ? "success" : "failure",
+        durationMs: Date.now() - Date.parse(snapshot.timestamp),
+        metadata: {
+          overallScore,
+          totalRepos: repos.length,
+          active: activeCount,
+          stale: staleCount,
+          totalIssues: issueCount,
+          snapshotSaved: !!args.saveSnapshot,
+        },
+      });
+
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(
+              {
+                summary: {
+                  overallScore,
+                  totalRepos: repos.length,
+                  existing: existingRepos.length,
+                  active: activeCount,
+                  stale: staleCount,
+                  totalIssues: issueCount,
+                  ...(savedPath ? { snapshotSaved: savedPath } : {}),
+                },
+                repos: repos.map((r) => ({
+                  name: r.name,
+                  healthScore: r.healthScore,
+                  branch: r.branch,
+                  uncommitted: r.uncommittedChanges,
+                  lastCommit: r.lastCommitAge,
+                  issues: r.issues,
+                  stack: KNOWN_REPOS[r.name]?.stack ?? "unknown",
+                })),
+              },
+              null,
+              2
+            ),
+          },
+        ],
+      };
+    }
+  );
+
+  // Single repo detail
+  server.registerTool(
+    "repo_detail",
+    {
+      description: "Get detailed health information for a single Seeds repository",
+      inputSchema: z.object({
+        repoName: z
+          .string()
+          .min(1)
+          .describe('Repository name under the configured Seeds root (e.g. "GRID-main", "afloat")'),
+      }),
+    },
+    async (args: { repoName: string }) => {
+      const health = await checkRepoHealth(args.repoName);
+      const knownInfo = KNOWN_REPOS[args.repoName];
+
+      emitAudit({
+        source: SERVER_NAME,
+        tool: "repo_detail",
+        status: health.exists ? "success" : "failure",
+        metadata: { repo: args.repoName, healthScore: health.healthScore },
+      });
+
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(
+              {
+                ...health,
+                known: !!knownInfo,
+                description: knownInfo?.description ?? "Not in known repos registry",
+                stack: knownInfo?.stack ?? "unknown",
+              },
+              null,
+              2
+            ),
+          },
+        ],
+      };
+    }
+  );
+
+  // Bookmark management — add
+  server.registerTool(
+    "bookmark_add",
+    {
+      description:
+        "Bookmark a repository or file for quick reference — useful for tracking important locations across the Seeds ecosystem",
+      inputSchema: z.object({
+        repo: z.string().min(1).describe("Repository name"),
+        filepath: z.string().optional().describe("Optional file path within the repo"),
+        note: z.string().min(1).describe("What to remember about this bookmark"),
+        tags: z
+          .array(z.string())
+          .optional()
+          .default([])
+          .describe("Tags for categorization"),
+      }),
+    },
+    async (args: { repo: string; filepath?: string; note: string; tags?: string[] }) => {
+      await ensureDataDir();
+      const bookmarks = await loadBookmarks();
+      const bookmark: Bookmark = {
+        id: `bk-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        repo: args.repo,
+        filepath: args.filepath,
+        note: args.note,
+        createdAt: new Date().toISOString(),
+        tags: args.tags ?? [],
+      };
+      bookmarks.push(bookmark);
+      await saveBookmarks(bookmarks);
+
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify({ created: true, bookmark }, null, 2),
+          },
+        ],
+      };
+    }
+  );
+
+  // Bookmark management — list
+  server.registerTool(
+    "bookmark_list",
+    {
+      description: "List bookmarks with optional filtering by repo or tag",
+      inputSchema: z.object({
+        repo: z.string().optional().describe("Filter by repository name"),
+        tag: z.string().optional().describe("Filter by tag"),
+        limit: z
+          .number()
+          .min(1)
+          .max(100)
+          .optional()
+          .default(20)
+          .describe("Max bookmarks to return"),
+      }),
+    },
+    async (args: { repo?: string; tag?: string; limit?: number }) => {
+      await ensureDataDir();
+      let bookmarks = await loadBookmarks();
+
+      if (args.repo) {
+        bookmarks = bookmarks.filter((b) => b.repo === args.repo);
+      }
+      if (args.tag) {
+        bookmarks = bookmarks.filter((b) => b.tags.includes(args.tag!));
+      }
+
+      bookmarks = bookmarks.slice(-(args.limit ?? 20)).reverse();
+
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify({ count: bookmarks.length, bookmarks }, null, 2),
+          },
+        ],
+      };
+    }
+  );
+
+  // Trend analysis
+  server.registerTool(
+    "ecosystem_trend",
+    {
+      description:
+        "Compare recent ecosystem snapshots to detect trends — improving repos, degrading repos, and persistent issues",
+      inputSchema: z.object({
+        limit: z
+          .number()
+          .min(2)
+          .max(20)
+          .optional()
+          .default(5)
+          .describe("Number of recent snapshots to compare"),
+      }),
+    },
+    async (args: { limit?: number }) => {
+      await ensureDataDir();
+      const snapshots = await listSnapshots(args.limit ?? 5);
+
+      if (snapshots.length < 2) {
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: JSON.stringify({
+                message:
+                  "Not enough snapshots for trend analysis. Run ecosystem_scan with saveSnapshot=true at least twice.",
+                snapshotsAvailable: snapshots.length,
+              }),
+            },
+          ],
         };
       }
-    }
 
-    const improving = Object.entries(trends)
-      .filter(([, t]) => t.delta > 0)
-      .map(([name, t]) => ({ name, delta: `+${t.delta}` }));
-    const degrading = Object.entries(trends)
-      .filter(([, t]) => t.delta < 0)
-      .map(([name, t]) => ({ name, delta: `${t.delta}` }));
-    const stable = Object.entries(trends)
-      .filter(([, t]) => t.delta === 0)
-      .map(([name]) => name);
+      const latest = snapshots[0];
+      const previous = snapshots[1];
 
-    return {
-      content: [
-        {
-          type: "text" as const,
-          text: JSON.stringify(
-            {
-              snapshotsCompared: snapshots.length,
-              overallScoreTrend: {
-                current: latest.overallScore,
-                previous: previous.overallScore,
-                delta: latest.overallScore - previous.overallScore,
+      // Compare scores
+      const trends: Record<string, { current: number; previous: number; delta: number }> = {};
+      for (const repo of latest.repos) {
+        const prevRepo = previous.repos.find((r) => r.name === repo.name);
+        if (prevRepo) {
+          trends[repo.name] = {
+            current: repo.healthScore,
+            previous: prevRepo.healthScore,
+            delta: repo.healthScore - prevRepo.healthScore,
+          };
+        }
+      }
+
+      const improving = Object.entries(trends)
+        .filter(([, t]) => t.delta > 0)
+        .map(([name, t]) => ({ name, delta: `+${t.delta}` }));
+      const degrading = Object.entries(trends)
+        .filter(([, t]) => t.delta < 0)
+        .map(([name, t]) => ({ name, delta: `${t.delta}` }));
+      const stable = Object.entries(trends)
+        .filter(([, t]) => t.delta === 0)
+        .map(([name]) => name);
+
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(
+              {
+                snapshotsCompared: snapshots.length,
+                overallScoreTrend: {
+                  current: latest.overallScore,
+                  previous: previous.overallScore,
+                  delta: latest.overallScore - previous.overallScore,
+                },
+                improving,
+                degrading,
+                stable,
+                latestTimestamp: latest.timestamp,
+                previousTimestamp: previous.timestamp,
               },
-              improving,
-              degrading,
-              stable,
-              latestTimestamp: latest.timestamp,
-              previousTimestamp: previous.timestamp,
-            },
-            null,
-            2
-          ),
-        },
-      ],
-    };
-  }
-);
+              null,
+              2
+            ),
+          },
+        ],
+      };
+    }
+  );
 
-// ── Start ──
+  // ── Start ──
 
-return server;
+  return server;
 }
 
 export async function startServer(): Promise<McpServer> {

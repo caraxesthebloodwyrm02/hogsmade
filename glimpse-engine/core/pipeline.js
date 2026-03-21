@@ -20,17 +20,52 @@ import {
   summarizeLenses,
 } from "../functions/rules.js";
 import {
+  runMultiPassInference,
+} from "./multi-pass.js";
+import {
+  detectDataComplexity,
+  selectPipelineMode,
+} from "./modes.js";
+import {
+  findInvariantPatterns,
+  rankByDensity,
+} from "./compression.js";
+import {
+  selectGroundingProvider,
+  applyGrounding,
+} from "./grounding.js";
+import {
   normalizeRecords
 } from "../utils/parsing.js";
 import {
   bucketYear,
 } from "../utils/utils.js";
+import {
+  bucketYearAdaptive,
+  computeTemporalRange,
+} from "../analysis/temporal.js";
+import {
+  createConfidenceFrame,
+  detectGaps,
+  summarizeConfidence,
+  recordOutcome,
+} from "./confidence.js";
 
 export function computeClusters(context, dimension) {
+  // Compute temporal range for adaptive bucketing
+  let timeRange = 50; // default decade-level
+  if (dimension === "time") {
+    const timeValues = context.entities
+      .map((e) => e.dimensions.time)
+      .filter((v) => typeof v === "number");
+    const range = computeTemporalRange(timeValues);
+    if (range) timeRange = range.range;
+  }
+
   const groups = {};
   context.entities.forEach((entity) => {
     let key = "Other";
-    if (dimension === "time") key = bucketYear(entity.dimensions.time) || "Unknown";
+    if (dimension === "time") key = bucketYearAdaptive(entity.dimensions.time, timeRange) || bucketYear(entity.dimensions.time) || "Unknown";
     else if (dimension === "space") key = entity.dimensions.space || "Unknown";
     else if (dimension === "domain") key = entity.dimensions.domain || context.contextLenses[0]?.label || entity.type || "General";
     else if (dimension === "catalyst") key = entity.dimensions.catalyst || "Unknown";
@@ -57,7 +92,17 @@ export function runContextPipeline(rawData, fileType, config, options = {}) {
   const entities = buildEntities(records, profile, config);
   const base = buildBaseRelations(entities);
   const datasetScope = buildDatasetScope(records, profile, entities, base.relations, config);
-  const ruleState = applyRules(config, datasetScope, entities, base.relations);
+
+  // Phase 3: Mode detection — adapt pipeline depth to data complexity
+  const complexity = detectDataComplexity(profile, entities, base.relations);
+  const modeSettings = selectPipelineMode(complexity, config);
+
+  // Phase 1C + 2: Confidence-tracked multi-pass inference
+  const confidenceFrame = createConfidenceFrame();
+  const ruleState = runMultiPassInference(config, datasetScope, entities, base.relations, {
+    maxPasses: modeSettings.passCount,
+    confidenceFrame,
+  });
   const allEvidences = [...base.evidences, ...ruleState.evidences];
   const evidenceIndex = createEvidenceIndex(allEvidences);
   const contextLenses = summarizeLenses(config, ruleState.lensBuckets, options.presetId || config.defaults?.active_preset || "analyst");
@@ -76,6 +121,7 @@ export function runContextPipeline(rawData, fileType, config, options = {}) {
         affects: ["relation", "context_lens"],
         reason: "This relation bridges two different context lenses.",
         payload: { sourceLens, targetLens },
+        basis: "system-generated",
       });
       relation.evidenceIds.push(evidence.id);
       allEvidences.push(evidence);
@@ -86,6 +132,40 @@ export function runContextPipeline(rawData, fileType, config, options = {}) {
 
   const viewPreferences = ruleState.viewPreferences;
   const clusterBy = profile.flags.has_space_dimension ? "space" : profile.flags.has_time_dimension ? "time" : "domain";
+
+  // Confidence calibration & gap detection
+  detectGaps(confidenceFrame, { entities, relations, evidences: allEvidences, profile });
+  const confidenceReport = summarizeConfidence(confidenceFrame);
+
+  // Phase 4A: Insight compression — find invariant patterns ranked by density
+  const invariantPatterns = findInvariantPatterns(allEvidences, entities, relations, contextLenses);
+  const rankedPatterns = rankByDensity(invariantPatterns);
+
+  // Phase 4B: Grounding — local-first verification of top patterns
+  let groundedInsights = rankedPatterns;
+  if (modeSettings.groundingRecommended || options.grounding) {
+    const groundingMode = options.groundingMode || "local";
+    const provider = selectGroundingProvider(groundingMode, options);
+    groundedInsights = applyGrounding(provider, rankedPatterns.map((p) => ({
+      compressed: p.pattern,
+      original: p.pattern,
+      densityScore: p.densityScore,
+      supportingEvidence: [],
+      entityId: null,
+    })), {
+      entities,
+      relations,
+      evidences: allEvidences,
+      inferenceGaps: confidenceFrame.gaps,
+    });
+
+    // Wire grounding results back as outcomes for calibration
+    for (const insight of groundedInsights) {
+      if (insight.grounding) {
+        recordOutcome(confidenceFrame, "grounding", insight.grounding.confirmed);
+      }
+    }
+  }
 
   return {
     records,
@@ -107,6 +187,12 @@ export function runContextPipeline(rawData, fileType, config, options = {}) {
     ruleTraces: ruleState.ruleTraces,
     validationReport: ruleState.validationReport,
     functionInventory: ruleState.registryInventory,
+    confidenceReport,
+    inferenceGaps: confidenceFrame.gaps,
+    complexity,
+    modeSettings,
+    invariantPatterns: rankedPatterns,
+    groundedInsights,
   };
 }
 

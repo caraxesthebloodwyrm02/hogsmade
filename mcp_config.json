@@ -10,7 +10,6 @@
     "zed": "Configured at ~/.config/zed/settings.json under context_servers (see also zed_config.jsonc reference)",
     "opencode": "Configured at ~/.config/opencode/config.json under mcpServers (absolutized Python paths, no cwd)"
   },
-
   "mcpServers": {
     "echoes-server": {
       "command": "npx",
@@ -23,7 +22,6 @@
         "ECHOES_AUDIT_PATH": "/home/caraxes/.echoes/audit.ndjson"
       }
     },
-
     "grid-server": {
       "command": "npx",
       "args": [
@@ -37,7 +35,6 @@
         "GRID_API_URL": "http://localhost:8080"
       }
     },
-
     "afloat-server": {
       "command": "npx",
       "args": [
@@ -47,7 +44,6 @@
       ],
       "env": {}
     },
-
     "lots-server": {
       "command": "npx",
       "args": [
@@ -60,7 +56,6 @@
         "ECHOES_AUDIT_PATH": "/home/caraxes/.echoes/audit.ndjson"
       }
     },
-
     "seeds-server": {
       "command": "npx",
       "args": [
@@ -72,7 +67,6 @@
         "SEEDS_ROOT": "/home/caraxes/seed"
       }
     },
-
     "pulse-server": {
       "command": "npx",
       "args": [
@@ -82,10 +76,11 @@
       ],
       "env": {}
     },
-
     "grid-rag": {
       "command": "/home/caraxes/roots/GRID/.venv/bin/python",
-      "args": ["mcp-setup/server/grid_rag_mcp_server.py"],
+      "args": [
+        "mcp-setup/server/grid_rag_mcp_server.py"
+      ],
       "env": {
         "PYTHONPATH": "/home/caraxes/roots/GRID/src:/home/caraxes/roots/GRID",
         "RAG_EMBEDDING_PROVIDER": "ollama",
@@ -97,10 +92,12 @@
         "OLLAMA_BASE_URL": "http://localhost:11434"
       }
     },
-
     "grid-rag-enhanced": {
       "command": "/home/caraxes/roots/GRID/.venv/bin/python",
-      "args": ["-m", "grid.mcp.enhanced_rag_server"],
+      "args": [
+        "-m",
+        "grid.mcp.enhanced_rag_server"
+      ],
       "env": {
         "PYTHONPATH": "/home/caraxes/roots/GRID/src:/home/caraxes/roots/GRID",
         "RAG_EMBEDDING_PROVIDER": "ollama",
@@ -112,39 +109,42 @@
         "OLLAMA_BASE_URL": "http://localhost:11434"
       }
     },
-
     "grid-enhanced-tools": {
       "command": "/home/caraxes/roots/GRID/.venv/bin/python",
-      "args": ["mcp-setup/server/enhanced_tools_mcp_server.py"],
+      "args": [
+        "mcp-setup/server/enhanced_tools_mcp_server.py"
+      ],
       "env": {
         "PYTHONPATH": "/home/caraxes/roots/GRID/src:/home/caraxes/roots/GRID"
       }
     },
-
     "portfolio-safety-lens": {
       "command": "/home/caraxes/roots/GRID/.venv/bin/python",
-      "args": ["mcp-setup/server/portfolio_safety_mcp_server.py"],
+      "args": [
+        "mcp-setup/server/portfolio_safety_mcp_server.py"
+      ],
       "env": {
         "PYTHONPATH": "/home/caraxes/roots/GRID/src:/home/caraxes/roots/GRID:/home/caraxes/seed/archive/Coinbase_from_zip"
       }
     },
-
     "code-analysis": {
       "command": "/home/caraxes/roots/GRID/.venv/bin/python",
-      "args": ["mcp-setup/server/code_analysis_mcp_server.py"],
+      "args": [
+        "mcp-setup/server/code_analysis_mcp_server.py"
+      ],
       "env": {
         "PYTHONPATH": "/home/caraxes/roots/GRID/src:/home/caraxes/roots/GRID"
       }
     },
-
     "test-runner": {
       "command": "/home/caraxes/roots/GRID/.venv/bin/python",
-      "args": ["mcp-setup/server/test_runner_mcp_server.py"],
+      "args": [
+        "mcp-setup/server/test_runner_mcp_server.py"
+      ],
       "env": {
         "PYTHONPATH": "/home/caraxes/roots/GRID/src:/home/caraxes/roots/GRID"
       }
     },
-
     "maintain-server": {
       "command": "npx",
       "args": [

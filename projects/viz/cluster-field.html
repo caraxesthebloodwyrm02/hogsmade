@@ -1,0 +1,1649 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>The Field</title>
+    <style>
+      :root {
+        --void: #06060e;
+        --surface: #0f0f1e;
+        --mau5-green: #00ff88;
+        --mau5-cyan: #00ccff;
+        --rezz-magenta: #ff00ff;
+        --rezz-violet: #8b00ff;
+        --ember: #ff3366;
+        --ghost: rgba(255, 255, 255, 0.7);
+        --grid-line: rgba(255, 255, 255, 0.04);
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace;
+        background: var(--void);
+        color: var(--ghost);
+        overflow: hidden;
+        height: 100vh;
+        width: 100vw;
+      }
+      #canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 0;
+      }
+      .hud {
+        position: fixed;
+        z-index: 10;
+        pointer-events: none;
+      }
+      .title-bar {
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        text-align: center;
+      }
+      .title-bar h1 {
+        font-size: 14px;
+        font-weight: 400;
+        letter-spacing: 6px;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.3);
+      }
+      .title-bar .cluster-name {
+        font-size: 11px;
+        letter-spacing: 3px;
+        color: rgba(255, 255, 255, 0.15);
+        margin-top: 4px;
+      }
+      .ns-tabs {
+        top: 20px;
+        left: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        pointer-events: all;
+      }
+      .ns-tab {
+        padding: 6px 14px;
+        font-size: 10px;
+        font-family: inherit;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 4px;
+        background: rgba(255, 255, 255, 0.02);
+        color: rgba(255, 255, 255, 0.4);
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+      .ns-tab:hover {
+        background: rgba(255, 255, 255, 0.06);
+        color: rgba(255, 255, 255, 0.7);
+      }
+      .ns-tab.active {
+        border-color: var(--tab-color);
+        color: var(--tab-color);
+        background: rgba(255, 255, 255, 0.04);
+      }
+      .detail-panel {
+        position: fixed;
+        z-index: 20;
+        background: rgba(6, 6, 14, 0.92);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        padding: 20px;
+        min-width: 260px;
+        max-width: 320px;
+        backdrop-filter: blur(12px);
+        display: none;
+        pointer-events: all;
+      }
+      .detail-panel .pod-name {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+      .detail-panel .pod-tier {
+        font-size: 10px;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        margin-bottom: 12px;
+      }
+      .detail-panel .pod-meta {
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.5);
+        line-height: 1.8;
+      }
+      .detail-panel .pod-meta span {
+        color: rgba(255, 255, 255, 0.8);
+      }
+      .detail-panel .pod-labels {
+        margin-top: 10px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+      }
+      .detail-panel .label-tag {
+        font-size: 9px;
+        padding: 2px 8px;
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: rgba(255, 255, 255, 0.5);
+        letter-spacing: 0.5px;
+      }
+      .detail-panel .close-btn {
+        position: absolute;
+        top: 8px;
+        right: 12px;
+        font-size: 14px;
+        color: rgba(255, 255, 255, 0.3);
+        cursor: pointer;
+        background: none;
+        border: none;
+        font-family: inherit;
+      }
+      .detail-panel .close-btn:hover {
+        color: rgba(255, 255, 255, 0.7);
+      }
+      .portal {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        z-index: 10;
+        pointer-events: all;
+      }
+      .portal a {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 10px;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: var(--rezz-magenta);
+        text-decoration: none;
+        opacity: 0.4;
+        transition: opacity 0.3s;
+      }
+      .portal a:hover {
+        opacity: 0.9;
+      }
+      .portal .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--rezz-magenta);
+        box-shadow: 0 0 12px var(--rezz-magenta);
+        animation: portalPulse 2s ease-in-out infinite;
+      }
+      @keyframes portalPulse {
+        0%,
+        100% {
+          box-shadow: 0 0 8px var(--rezz-magenta);
+        }
+        50% {
+          box-shadow:
+            0 0 20px var(--rezz-magenta),
+            0 0 40px rgba(255, 0, 255, 0.3);
+        }
+      }
+
+      /* --- BRIGHT THEME (from angle_automation_phase_drift.html) --- */
+      [data-theme="bright"] {
+        --void: #f8f6f3;
+        --surface: #eeeae5;
+        --mau5-green: #0d9668;
+        --mau5-cyan: #0284c7;
+        --rezz-magenta: #db2777;
+        --rezz-violet: #7c3aed;
+        --ember: #dc2626;
+        --ghost: rgba(30, 30, 40, 0.8);
+        --grid-line: rgba(0, 0, 0, 0.05);
+      }
+      [data-theme="bright"] body {
+        background: var(--void);
+        color: var(--ghost);
+      }
+      [data-theme="bright"] .title-bar h1 {
+        color: rgba(0, 0, 0, 0.35);
+      }
+      [data-theme="bright"] .title-bar .cluster-name {
+        color: rgba(0, 0, 0, 0.2);
+      }
+      [data-theme="bright"] .ns-tab {
+        border-color: rgba(0, 0, 0, 0.1);
+        background: rgba(0, 0, 0, 0.02);
+        color: rgba(0, 0, 0, 0.5);
+      }
+      [data-theme="bright"] .ns-tab:hover {
+        background: rgba(0, 0, 0, 0.05);
+        color: rgba(0, 0, 0, 0.8);
+      }
+      [data-theme="bright"] .detail-panel {
+        background: rgba(255, 255, 255, 0.95);
+        border-color: rgba(0, 0, 0, 0.12);
+      }
+      [data-theme="bright"] .detail-panel .pod-meta {
+        color: rgba(0, 0, 0, 0.55);
+      }
+      [data-theme="bright"] .detail-panel .pod-meta span {
+        color: rgba(0, 0, 0, 0.85);
+      }
+      [data-theme="bright"] .detail-panel .label-tag {
+        border-color: rgba(0, 0, 0, 0.12);
+        color: rgba(0, 0, 0, 0.55);
+      }
+      [data-theme="bright"] .detail-panel .close-btn {
+        color: rgba(0, 0, 0, 0.3);
+      }
+      [data-theme="bright"] .portal a {
+        color: var(--rezz-magenta);
+      }
+      [data-theme="bright"] .portal .dot {
+        background: var(--rezz-magenta);
+        box-shadow: 0 0 8px var(--rezz-magenta);
+      }
+
+      /* --- CONTROLS, INFO BAR, LEGEND, SEARCH, TOGGLE --- */
+      .ctrl-bar {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 15;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 10px 20px;
+        background: rgba(6, 6, 14, 0.85);
+        backdrop-filter: blur(10px);
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
+        font-size: 11px;
+        pointer-events: all;
+      }
+      [data-theme="bright"] .ctrl-bar {
+        background: rgba(255, 255, 255, 0.9);
+        border-top-color: rgba(0, 0, 0, 0.08);
+      }
+      .ctrl-bar .stat {
+        color: rgba(255, 255, 255, 0.5);
+      }
+      .ctrl-bar .stat b {
+        color: rgba(255, 255, 255, 0.9);
+        font-weight: 600;
+      }
+      [data-theme="bright"] .ctrl-bar .stat {
+        color: rgba(0, 0, 0, 0.5);
+      }
+      [data-theme="bright"] .ctrl-bar .stat b {
+        color: rgba(0, 0, 0, 0.85);
+      }
+      .ctrl-bar input[type="range"] {
+        width: 80px;
+        height: 3px;
+        -webkit-appearance: none;
+        appearance: none;
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 2px;
+        cursor: pointer;
+      }
+      [data-theme="bright"] .ctrl-bar input[type="range"] {
+        background: rgba(0, 0, 0, 0.12);
+      }
+      .ctrl-bar input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #00ccff;
+        cursor: pointer;
+      }
+      .ctrl-bar .search-box {
+        padding: 4px 10px;
+        font-size: 10px;
+        font-family: inherit;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 4px;
+        background: rgba(255, 255, 255, 0.04);
+        color: inherit;
+        outline: none;
+        width: 140px;
+        letter-spacing: 0.5px;
+      }
+      [data-theme="bright"] .ctrl-bar .search-box {
+        border-color: rgba(0, 0, 0, 0.12);
+        background: rgba(0, 0, 0, 0.03);
+      }
+      .ctrl-bar .search-box::placeholder {
+        color: rgba(255, 255, 255, 0.25);
+      }
+      [data-theme="bright"] .ctrl-bar .search-box::placeholder {
+        color: rgba(0, 0, 0, 0.3);
+      }
+      .theme-toggle {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 15;
+        padding: 5px 12px;
+        font-size: 10px;
+        font-family: inherit;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        cursor: pointer;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 4px;
+        background: rgba(255, 255, 255, 0.03);
+        color: rgba(255, 255, 255, 0.4);
+        transition: all 0.3s ease;
+        pointer-events: all;
+      }
+      [data-theme="bright"] .theme-toggle {
+        border-color: rgba(0, 0, 0, 0.12);
+        background: rgba(0, 0, 0, 0.03);
+        color: rgba(0, 0, 0, 0.5);
+      }
+      .theme-toggle:hover {
+        opacity: 0.9;
+      }
+      .legend-bar {
+        position: fixed;
+        bottom: 44px;
+        left: 20px;
+        z-index: 15;
+        display: flex;
+        gap: 14px;
+        font-size: 9px;
+        letter-spacing: 0.5px;
+        color: rgba(255, 255, 255, 0.35);
+        pointer-events: none;
+      }
+      [data-theme="bright"] .legend-bar {
+        color: rgba(0, 0, 0, 0.4);
+      }
+      .legend-bar .lg-dot {
+        display: inline-block;
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        margin-right: 4px;
+        vertical-align: middle;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="canvas"></canvas>
+
+    <div class="hud title-bar">
+      <h1>The Field</h1>
+      <div class="cluster-name">cluster / cascade-projects</div>
+    </div>
+
+    <div class="hud ns-tabs" id="nsTabs"></div>
+
+    <div class="detail-panel" id="detailPanel">
+      <button class="close-btn" onclick="closeDetail()">&times;</button>
+      <div class="pod-name" id="dpName"></div>
+      <div class="pod-tier" id="dpTier"></div>
+      <div class="pod-meta" id="dpMeta"></div>
+      <div class="pod-labels" id="dpLabels"></div>
+    </div>
+
+    <div class="portal">
+      <a href="spiral-void.html">
+        <span class="dot"></span>
+        Enter the Void
+      </a>
+    </div>
+
+    <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">
+      Bright
+    </button>
+
+    <div class="legend-bar" id="legendBar">
+      <span
+        ><span class="lg-dot" style="background: #00ff88"></span
+        >Production</span
+      >
+      <span
+        ><span class="lg-dot" style="background: #00ccff"></span>Active</span
+      >
+      <span
+        ><span class="lg-dot" style="background: #fbbf24"></span>Working</span
+      >
+      <span
+        ><span class="lg-dot" style="background: #ff3366"></span>Pre-alpha</span
+      >
+      <span>|</span>
+      <span
+        ><span class="lg-dot" style="background: #00ff88"></span>System
+        Eng</span
+      >
+      <span
+        ><span class="lg-dot" style="background: #ff00ff"></span>Visual ID</span
+      >
+      <span
+        ><span class="lg-dot" style="background: #00ccff"></span>Audience</span
+      >
+    </div>
+
+    <div class="ctrl-bar" id="ctrlBar">
+      <input
+        class="search-box"
+        id="searchBox"
+        type="text"
+        placeholder="Search pods..."
+        oninput="onSearch(this.value)"
+      />
+      <span class="stat">Health <b id="healthVal">0%</b></span>
+      <label class="stat" style="display: flex; align-items: center; gap: 6px"
+        >Min
+        <input
+          type="range"
+          id="healthThreshold"
+          min="0"
+          max="100"
+          value="0"
+          oninput="onHealthThreshold(this.value)"
+        />
+        <b id="threshVal">0%</b>
+      </label>
+      <span style="flex: 1"></span>
+      <span class="stat" id="statsProjects">—</span>
+      <span class="stat" id="statsLOC">—</span>
+      <span class="stat" id="statsDeps">—</span>
+      <span class="stat" id="statsVerdict">—</span>
+    </div>
+
+    <script
+      src="cluster-manifest.js"
+      onerror="console.log('No live manifest found — using static data')"
+    ></script>
+    <script>
+      const canvas = document.getElementById("canvas");
+      const ctx = canvas.getContext("2d");
+
+      // --- DATA MODEL ---
+      const COLORS = {
+        "system-engineering": "#00ff88",
+        "visual-identity": "#ff00ff",
+        "audience-bridge": "#00ccff",
+      };
+      const STATUS_COLORS = {
+        production: "#00ff88",
+        active: "#00ccff",
+        complete: "#fbbf24",
+        working: "#fbbf24",
+        "pre-alpha": "#ff3366",
+      };
+
+      // --- LIVE DATA MERGE ---
+      // If k8s-codebase-analyzer has generated a manifest, use real data.
+      // Otherwise fall back to the static CLUSTER below.
+      function buildClusterFromManifest(m) {
+        const cluster = { namespaces: {}, services: [] };
+        for (const [nsKey, ns] of Object.entries(m.namespaces)) {
+          cluster.namespaces[nsKey] = {
+            label: ns.label,
+            pods: ns.pods.map((p) => ({
+              id: p.id,
+              name: p.name,
+              initials: p.initials,
+              status: p.status,
+              tier: p.tier,
+              loc: p.loc,
+              tests: p.tests,
+              files: p.files,
+              health: p.health,
+              lastModified: p.lastModified,
+              gitStatus: p.gitStatus,
+              desc: p.desc,
+              labels: p.labels,
+              eval: p.eval,
+            })),
+          };
+        }
+        cluster.services = m.services.map((s) => ({
+          from: s.from,
+          to: s.to,
+          label: s.label,
+        }));
+        cluster.evalSummary = m.evalSummary;
+        cluster.generatedAt = m.generatedAt;
+        cluster.isLive = true;
+        return cluster;
+      }
+
+      const CLUSTER = window.LIVE_MANIFEST
+        ? buildClusterFromManifest(window.LIVE_MANIFEST)
+        : {
+            namespaces: {
+              "system-engineering": {
+                label: "System Engineering",
+                pods: [
+                  {
+                    id: "grid",
+                    name: "GRID",
+                    initials: "GR",
+                    status: "production",
+                    tier: "T1 Flagship",
+                    loc: "190k+",
+                    tests: 438,
+                    desc: "Full-stack AI framework. Python 3.13, FastAPI, ChromaDB, Ollama.",
+                    labels: [
+                      "Structural Persistence",
+                      "Seed of many Branches",
+                      "Precision",
+                      "Clean Boundaries",
+                    ],
+                  },
+                  {
+                    id: "apiguard",
+                    name: "APIGuard",
+                    initials: "AG",
+                    status: "production",
+                    tier: "T1 Flagship",
+                    loc: "~5k",
+                    tests: 106,
+                    desc: "Resilience library on PyPI. Circuit breaking, rate limiting, retry.",
+                    labels: [
+                      "Boundary Design",
+                      "Meticulous",
+                      "Research Experiment",
+                    ],
+                  },
+                  {
+                    id: "symphony",
+                    name: "Symphony",
+                    initials: "SY",
+                    status: "active",
+                    tier: "T3 Supporting",
+                    desc: "Real-time performance dashboard. WebSocket, chokidar, X-Factor engine.",
+                    labels: ["Real-Time", "Interactive"],
+                  },
+                  {
+                    id: "echoes",
+                    name: "Echoes",
+                    initials: "EC",
+                    status: "working",
+                    tier: "MCP Server",
+                    desc: "Error reporting and diagnostics MCP server.",
+                    labels: ["Voice", "Authenticity"],
+                  },
+                  {
+                    id: "pulse",
+                    name: "Pulse",
+                    initials: "PL",
+                    status: "working",
+                    tier: "MCP Server",
+                    desc: "Health monitoring and daily briefing server.",
+                    labels: ["Groundedness"],
+                  },
+                  {
+                    id: "lots",
+                    name: "Lots",
+                    initials: "LT",
+                    status: "working",
+                    tier: "MCP Server",
+                    desc: "Experiment lab and comparison engine.",
+                    labels: ["Divergence"],
+                  },
+                  {
+                    id: "seeds",
+                    name: "Seeds",
+                    initials: "SD",
+                    status: "working",
+                    tier: "MCP Server",
+                    desc: "Project seeding and template server.",
+                    labels: ["Seeds", "Struggles"],
+                  },
+                  {
+                    id: "maintain",
+                    name: "Maintain",
+                    initials: "MT",
+                    status: "working",
+                    tier: "MCP Server",
+                    desc: "System hygiene and cleanup workflows.",
+                    labels: ["Humility"],
+                  },
+                ],
+              },
+              "visual-identity": {
+                label: "Visual Identity",
+                pods: [
+                  {
+                    id: "glimpse-artifact",
+                    name: "Glimpse Artifact",
+                    initials: "GA",
+                    status: "complete",
+                    tier: "T3 Supporting",
+                    desc: "React component library. CVA, TailwindCSS, shadcn-style.",
+                    labels: ["Visual Storytelling", "Darkness", "Hypnotic"],
+                  },
+                  {
+                    id: "glimpse-engine",
+                    name: "Glimpse Engine",
+                    initials: "GE",
+                    status: "complete",
+                    tier: "T3 Supporting",
+                    desc: "Cognitive analysis engine. Rules, lenses, presets.",
+                    labels: [
+                      "Hypnocurrency",
+                      "Infraliminal",
+                      "Conditional Recognition",
+                    ],
+                  },
+                  {
+                    id: "afloat",
+                    name: "Afloat",
+                    initials: "AF",
+                    status: "working",
+                    tier: "MCP Server",
+                    desc: "Workflow orchestration. Depends on shared-types.",
+                    labels: ["Tone", "Vulnerability"],
+                  },
+                ],
+              },
+              "audience-bridge": {
+                label: "Audience Bridge",
+                pods: [
+                  {
+                    id: "mcp-experiment",
+                    name: "MCP Experiment",
+                    initials: "MX",
+                    status: "pre-alpha",
+                    tier: "T3 Supporting",
+                    desc: "TypeScript SDK v2. pnpm monorepo, Vitest, Zod v4.",
+                    labels: ["Innovation", "Divergence"],
+                  },
+                  {
+                    id: "shared-types",
+                    name: "Shared Types",
+                    initials: "ST",
+                    status: "working",
+                    tier: "Build Dep",
+                    desc: "Shared TypeScript types and audit client.",
+                    labels: ["Clean Boundaries"],
+                  },
+                  {
+                    id: "grid-server",
+                    name: "GRID Server",
+                    initials: "GS",
+                    status: "working",
+                    tier: "MCP Server",
+                    desc: "GATE governance and verification system.",
+                    labels: ["Aim", "Groundedness"],
+                  },
+                ],
+              },
+            },
+            services: [
+              { from: "grid", to: "apiguard", label: "Resilience Integration" },
+              { from: "afloat", to: "shared-types", label: "Type Dependency" },
+              {
+                from: "grid-server",
+                to: "shared-types",
+                label: "Type Dependency",
+              },
+              {
+                from: "glimpse-engine",
+                to: "glimpse-artifact",
+                label: "Render Pipeline",
+              },
+              { from: "grid", to: "symphony", label: "Metrics Feed" },
+              { from: "grid", to: "echoes", label: "Error Reporting" },
+            ],
+          };
+
+      const AMBIENT_WORDS = [
+        "Essence",
+        "Loneliness",
+        "Existentialism",
+        "Darkness",
+        "Spiral",
+        "Authenticity",
+        "Emotional Depth",
+        "Fibonacci",
+        "Exclusive",
+        "Distinct",
+        "Rising Icon",
+        "Undercurrents",
+      ];
+
+      // --- STATE ---
+      let W,
+        H,
+        time = 0;
+      let podPositions = []; // {id, x, y, r, ns, pod}
+      let hoveredPod = null;
+      let selectedPod = null;
+      let activeNs = "all";
+      let mouseX = 0,
+        mouseY = 0;
+      let ambientWords = [];
+
+      function resize() {
+        W = canvas.width = window.innerWidth;
+        H = canvas.height = window.innerHeight;
+        layoutPods();
+        layoutAmbientWords();
+      }
+
+      function layoutPods() {
+        podPositions = [];
+        const nsKeys = Object.keys(CLUSTER.namespaces);
+
+        // Give system-engineering more horizontal space (it has 8 pods)
+        const regions = {
+          "system-engineering": {
+            cx: W * 0.22,
+            cy: H * 0.5,
+            rx: W * 0.18,
+            ry: H * 0.35,
+          },
+          "visual-identity": {
+            cx: W * 0.52,
+            cy: H * 0.5,
+            rx: W * 0.12,
+            ry: H * 0.3,
+          },
+          "audience-bridge": {
+            cx: W * 0.78,
+            cy: H * 0.5,
+            rx: W * 0.12,
+            ry: H * 0.3,
+          },
+        };
+
+        nsKeys.forEach((nsKey) => {
+          const ns = CLUSTER.namespaces[nsKey];
+          const pods = ns.pods;
+          const reg = regions[nsKey];
+
+          pods.forEach((pod, pi) => {
+            const tierScale = pod.tier.startsWith("T1")
+              ? 1.3
+              : pod.tier.startsWith("T3")
+                ? 0.85
+                : 1;
+            const r = 24 * tierScale;
+
+            if (pods.length <= 4) {
+              // Small namespace: simple grid 2x2
+              const col = pi % 2,
+                row = Math.floor(pi / 2);
+              const gapX = reg.rx * 0.9,
+                gapY = reg.ry * 0.55;
+              podPositions.push({
+                id: pod.id,
+                x: reg.cx + (col - 0.5) * gapX,
+                y:
+                  reg.cy +
+                  (row - (Math.ceil(pods.length / 2) - 1) * 0.5) * gapY,
+                r,
+                ns: nsKey,
+                pod,
+                baseX: reg.cx,
+                baseY: reg.cy,
+              });
+            } else {
+              // Large namespace: 2 columns, staggered
+              const col = pi % 2,
+                row = Math.floor(pi / 2);
+              const gapX = reg.rx * 0.7,
+                gapY = reg.ry * 0.2 + 12;
+              const rows = Math.ceil(pods.length / 2);
+              podPositions.push({
+                id: pod.id,
+                x: reg.cx + (col - 0.5) * gapX + (row % 2 === 1 ? 8 : 0),
+                y: reg.cy + (row - (rows - 1) * 0.5) * gapY,
+                r,
+                ns: nsKey,
+                pod,
+                baseX: reg.cx,
+                baseY: reg.cy,
+              });
+            }
+          });
+        });
+      }
+
+      function layoutAmbientWords() {
+        ambientWords = AMBIENT_WORDS.map((w) => ({
+          text: w,
+          x: Math.random() * W,
+          y: Math.random() * H,
+          vx: (Math.random() - 0.5) * 0.15,
+          vy: (Math.random() - 0.5) * 0.1,
+          size: 28 + Math.random() * 40,
+          opacity: 0.02 + Math.random() * 0.04,
+        }));
+      }
+
+      // --- RENDERING ---
+      function drawBackground() {
+        const grad = ctx.createRadialGradient(
+          W / 2,
+          H / 2,
+          0,
+          W / 2,
+          H / 2,
+          Math.max(W, H) * 0.7,
+        );
+        grad.addColorStop(0, "#0a0a18");
+        grad.addColorStop(1, "#06060e");
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, W, H);
+
+        // Grid lines
+        ctx.strokeStyle = "rgba(255,255,255,0.02)";
+        ctx.lineWidth = 1;
+        const gridSize = 60;
+        for (let x = 0; x < W; x += gridSize) {
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, H);
+          ctx.stroke();
+        }
+        for (let y = 0; y < H; y += gridSize) {
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(W, y);
+          ctx.stroke();
+        }
+      }
+
+      function drawAmbientWords() {
+        ambientWords.forEach((w) => {
+          w.x += w.vx;
+          w.y += w.vy;
+          if (w.x < -200) w.x = W + 100;
+          if (w.x > W + 200) w.x = -100;
+          if (w.y < -100) w.y = H + 50;
+          if (w.y > H + 100) w.y = -50;
+
+          ctx.save();
+          ctx.globalAlpha = w.opacity + Math.sin(time * 0.008 + w.size) * 0.01;
+          ctx.font = `300 ${w.size}px 'SF Mono', monospace`;
+          ctx.fillStyle = "#ffffff";
+          ctx.fillText(w.text, w.x, w.y);
+          ctx.restore();
+        });
+      }
+
+      function drawNamespaceRegions() {
+        const nsKeys = Object.keys(CLUSTER.namespaces);
+        nsKeys.forEach((nsKey, ni) => {
+          if (activeNs !== "all" && activeNs !== nsKey) return;
+          const pods = podPositions.filter((p) => p.ns === nsKey);
+          if (pods.length === 0) return;
+
+          // Compute bounding box
+          let minX = Infinity,
+            minY = Infinity,
+            maxX = -Infinity,
+            maxY = -Infinity;
+          pods.forEach((p) => {
+            minX = Math.min(minX, p.x - p.r - 30);
+            minY = Math.min(minY, p.y - p.r - 30);
+            maxX = Math.max(maxX, p.x + p.r + 30);
+            maxY = Math.max(maxY, p.y + p.r + 30);
+          });
+
+          const pad = 40;
+          const color = COLORS[nsKey];
+
+          ctx.save();
+          ctx.strokeStyle = color;
+          ctx.globalAlpha = 0.08;
+          ctx.lineWidth = 1;
+          ctx.setLineDash([4, 8]);
+          ctx.beginPath();
+          const rx = minX - pad,
+            ry = minY - pad;
+          const rw = maxX - minX + pad * 2,
+            rh = maxY - minY + pad * 2;
+          ctx.roundRect(rx, ry, rw, rh, 12);
+          ctx.stroke();
+          ctx.setLineDash([]);
+
+          // Namespace label
+          ctx.globalAlpha = 0.15;
+          ctx.font = "9px monospace";
+          ctx.letterSpacing = "2px";
+          ctx.fillStyle = color;
+          ctx.fillText(
+            CLUSTER.namespaces[nsKey].label.toUpperCase(),
+            rx + 12,
+            ry + 16,
+          );
+          ctx.restore();
+        });
+      }
+
+      function drawServices() {
+        CLUSTER.services.forEach((svc) => {
+          const fromPod = podPositions.find((p) => p.id === svc.from);
+          const toPod = podPositions.find((p) => p.id === svc.to);
+          if (!fromPod || !toPod) return;
+          if (
+            activeNs !== "all" &&
+            activeNs !== fromPod.ns &&
+            activeNs !== toPod.ns
+          )
+            return;
+
+          const isHighlighted =
+            hoveredPod &&
+            (hoveredPod.id === svc.from || hoveredPod.id === svc.to);
+          const alpha = isHighlighted ? 0.6 : hoveredPod ? 0.05 : 0.12;
+
+          // Bezier curve
+          const mx = (fromPod.x + toPod.x) / 2;
+          const my = (fromPod.y + toPod.y) / 2 - 40;
+
+          ctx.save();
+          ctx.globalAlpha = alpha;
+          ctx.strokeStyle = "#00ccff";
+          ctx.lineWidth = isHighlighted ? 1.5 : 1;
+          ctx.beginPath();
+          ctx.moveTo(fromPod.x, fromPod.y);
+          ctx.quadraticCurveTo(mx, my, toPod.x, toPod.y);
+          ctx.stroke();
+
+          // Flowing particles along the curve
+          if (alpha > 0.05) {
+            const particleCount = isHighlighted ? 5 : 2;
+            for (let i = 0; i < particleCount; i++) {
+              const t = (time * 0.003 + i / particleCount) % 1;
+              const px =
+                (1 - t) * (1 - t) * fromPod.x +
+                2 * (1 - t) * t * mx +
+                t * t * toPod.x;
+              const py =
+                (1 - t) * (1 - t) * fromPod.y +
+                2 * (1 - t) * t * my +
+                t * t * toPod.y;
+              ctx.globalAlpha = alpha * (1 - Math.abs(t - 0.5) * 2);
+              ctx.fillStyle = "#00ccff";
+              ctx.beginPath();
+              ctx.arc(px, py, isHighlighted ? 2.5 : 1.5, 0, Math.PI * 2);
+              ctx.fill();
+            }
+          }
+
+          // Label on highlighted
+          if (isHighlighted) {
+            ctx.globalAlpha = 0.5;
+            ctx.font = "9px monospace";
+            ctx.fillStyle = "#00ccff";
+            ctx.textAlign = "center";
+            ctx.fillText(svc.label, mx, my - 8);
+            ctx.textAlign = "start";
+          }
+
+          ctx.restore();
+        });
+      }
+
+      function drawPods() {
+        podPositions.forEach((p) => {
+          if (activeNs !== "all" && activeNs !== p.ns) return;
+
+          const isHovered = hoveredPod && hoveredPod.id === p.id;
+          const isSelected = selectedPod && selectedPod.id === p.id;
+          const isFaded =
+            hoveredPod &&
+            !isHovered &&
+            !CLUSTER.services.some(
+              (s) =>
+                (s.from === hoveredPod.id && s.to === p.id) ||
+                (s.to === hoveredPod.id && s.from === p.id),
+            );
+
+          const breath = 1 + Math.sin(time * 0.02 + p.x * 0.01) * 0.03;
+          const scale = isHovered ? 1.15 : breath;
+          const r = p.r * scale;
+          const nsColor = COLORS[p.ns];
+          const statusColor = STATUS_COLORS[p.pod.status] || "#fbbf24";
+
+          ctx.save();
+          if (isFaded) ctx.globalAlpha = 0.15;
+
+          // Health ring
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, r + 4, 0, Math.PI * 2);
+          ctx.strokeStyle = statusColor;
+          ctx.lineWidth =
+            p.pod.status === "pre-alpha"
+              ? 1 + Math.sin(time * 0.06) * 0.8
+              : 1.5;
+          ctx.globalAlpha = (isFaded ? 0.1 : 0.4) + (isHovered ? 0.3 : 0);
+          ctx.stroke();
+
+          // Pod body
+          ctx.globalAlpha = isFaded ? 0.1 : 0.85;
+          const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, r);
+          grad.addColorStop(0, "#1a1a2e");
+          grad.addColorStop(1, "#0f0f1e");
+          ctx.fillStyle = grad;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Border
+          ctx.strokeStyle = nsColor;
+          ctx.lineWidth = isHovered || isSelected ? 2 : 1;
+          ctx.globalAlpha = isFaded ? 0.05 : isHovered ? 0.8 : 0.2;
+          ctx.stroke();
+
+          // Glow on hover
+          if (isHovered) {
+            ctx.globalAlpha = 0.15;
+            ctx.shadowColor = nsColor;
+            ctx.shadowBlur = 20;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+          }
+
+          // Initials
+          ctx.globalAlpha = isFaded ? 0.1 : 0.8;
+          ctx.fillStyle = nsColor;
+          ctx.font = `600 ${r * 0.65}px monospace`;
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText(p.pod.initials, p.x, p.y);
+
+          // Name below pod
+          ctx.globalAlpha = isFaded ? 0.05 : isHovered ? 0.7 : 0.25;
+          ctx.fillStyle = "#ffffff";
+          ctx.font = "9px monospace";
+          ctx.fillText(p.pod.name, p.x, p.y + r + 16);
+
+          // Labels on hover
+          if (isHovered && p.pod.labels) {
+            p.pod.labels.forEach((label, li) => {
+              const lx = p.x;
+              const ly = p.y + r + 28 + li * 14;
+              ctx.globalAlpha = 0.4;
+              ctx.font = "8px monospace";
+              ctx.fillStyle = nsColor;
+              ctx.fillText(label, lx, ly);
+            });
+          }
+
+          ctx.textAlign = "start";
+          ctx.textBaseline = "alphabetic";
+          ctx.restore();
+        });
+      }
+
+      function drawIngress() {
+        const x = 40;
+        const y = H / 2;
+        const pulse = Math.sin(time * 0.03) * 0.3 + 0.5;
+
+        ctx.save();
+        ctx.globalAlpha = pulse * 0.3;
+
+        // Arrow
+        ctx.fillStyle = "#00ccff";
+        ctx.beginPath();
+        ctx.moveTo(x, y - 12);
+        ctx.lineTo(x + 18, y);
+        ctx.lineTo(x, y + 12);
+        ctx.closePath();
+        ctx.fill();
+
+        // Label
+        ctx.globalAlpha = 0.2;
+        ctx.font = "8px monospace";
+        ctx.fillStyle = "#00ccff";
+        ctx.save();
+        ctx.translate(x - 8, y + 30);
+        ctx.rotate(-Math.PI / 2);
+        ctx.fillText("INGRESS", 0, 0);
+        ctx.restore();
+
+        ctx.restore();
+      }
+
+      // --- INTERACTION ---
+      function hitTest(mx, my) {
+        for (let i = podPositions.length - 1; i >= 0; i--) {
+          const p = podPositions[i];
+          if (activeNs !== "all" && activeNs !== p.ns) continue;
+          if (typeof isPodVisible === "function" && !isPodVisible(p.pod))
+            continue;
+          const dx = mx - p.x,
+            dy = my - p.y;
+          if (dx * dx + dy * dy < (p.r + 8) * (p.r + 8)) return p;
+        }
+        return null;
+      }
+
+      canvas.addEventListener("mousemove", (e) => {
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+        const hit = hitTest(mouseX, mouseY);
+        hoveredPod = hit;
+        canvas.style.cursor = hit ? "pointer" : "default";
+      });
+
+      canvas.addEventListener("click", (e) => {
+        const hit = hitTest(e.clientX, e.clientY);
+        if (hit) {
+          showDetail(hit);
+        } else {
+          closeDetail();
+        }
+      });
+
+      function showDetail(p) {
+        selectedPod = p;
+        const panel = document.getElementById("detailPanel");
+        const pod = p.pod;
+
+        document.getElementById("dpName").textContent = pod.name;
+        document.getElementById("dpName").style.color = COLORS[p.ns];
+        document.getElementById("dpTier").textContent = pod.tier;
+        document.getElementById("dpTier").style.color =
+          STATUS_COLORS[pod.status];
+
+        let meta = `Status: <span>${pod.status}</span>`;
+        if (pod.health != null)
+          meta += `<br>Health: <span style="color:${pod.health >= 80 ? "#00ff88" : pod.health >= 50 ? "#fbbf24" : "#ff3366"}">${pod.health}%</span>`;
+        if (pod.loc) meta += `<br>Lines: <span>${pod.loc}</span>`;
+        if (pod.files) meta += `<br>Files: <span>${pod.files}</span>`;
+        if (pod.tests) meta += `<br>Tests: <span>${pod.tests}</span>`;
+        if (pod.gitStatus) meta += `<br>Git: <span>${pod.gitStatus}</span>`;
+        meta += `<br>Namespace: <span>${p.ns}</span>`;
+        if (pod.eval) {
+          const ev = pod.eval;
+          meta += `<br><br><span style="color:${COLORS[p.ns]};font-size:10px;letter-spacing:1px">EVAL ${ev.total}/${ev.maxScore} — ${ev.verdict}</span>`;
+          const dims = ev.scores;
+          if (dims) {
+            const bar = (v) => "█".repeat(v) + "░".repeat(3 - v);
+            meta += `<br><span style="font-size:9px;opacity:0.6">STR ${bar(dims.structure)}  EVD ${bar(dims.evidence)}  RES ${bar(dims.resilience)}</span>`;
+            meta += `<br><span style="font-size:9px;opacity:0.6">ACT ${bar(dims.activity)}  DEP ${bar(dims.dependency_health)}</span>`;
+          }
+        }
+        if (pod.desc) meta += `<br><br>${pod.desc}`;
+        document.getElementById("dpMeta").innerHTML = meta;
+
+        const labelsEl = document.getElementById("dpLabels");
+        labelsEl.innerHTML = "";
+        if (pod.labels) {
+          pod.labels.forEach((l) => {
+            const tag = document.createElement("span");
+            tag.className = "label-tag";
+            tag.textContent = l;
+            tag.style.borderColor = COLORS[p.ns] + "33";
+            labelsEl.appendChild(tag);
+          });
+        }
+
+        // Position panel near pod but within viewport
+        let px = Math.min(p.x + p.r + 20, W - 340);
+        let py = Math.max(p.y - 60, 20);
+        if (py + 300 > H) py = H - 320;
+        panel.style.left = px + "px";
+        panel.style.top = py + "px";
+        panel.style.display = "block";
+      }
+
+      function closeDetail() {
+        selectedPod = null;
+        document.getElementById("detailPanel").style.display = "none";
+      }
+
+      // --- NAMESPACE TABS ---
+      function buildTabs() {
+        const container = document.getElementById("nsTabs");
+        const allTab = document.createElement("button");
+        allTab.className = "ns-tab active";
+        allTab.textContent = "All";
+        allTab.style.setProperty("--tab-color", "#ffffff");
+        allTab.onclick = () => setActiveNs("all");
+        container.appendChild(allTab);
+
+        Object.keys(CLUSTER.namespaces).forEach((nsKey) => {
+          const tab = document.createElement("button");
+          tab.className = "ns-tab";
+          tab.textContent = CLUSTER.namespaces[nsKey].label;
+          tab.dataset.ns = nsKey;
+          tab.style.setProperty("--tab-color", COLORS[nsKey]);
+          tab.onclick = () => setActiveNs(nsKey);
+          container.appendChild(tab);
+        });
+      }
+
+      function setActiveNs(ns) {
+        activeNs = ns;
+        closeDetail();
+        document.querySelectorAll(".ns-tab").forEach((t) => {
+          t.classList.toggle(
+            "active",
+            (ns === "all" && !t.dataset.ns) || t.dataset.ns === ns,
+          );
+        });
+      }
+
+      // --- THEME, SEARCH, HEALTH FILTER, STATS ---
+      let currentTheme = "dark";
+      let searchQuery = "";
+      let healthMin = 0;
+
+      function isBright() {
+        return currentTheme === "bright";
+      }
+
+      function toggleTheme() {
+        currentTheme = currentTheme === "dark" ? "bright" : "dark";
+        document.documentElement.setAttribute("data-theme", currentTheme);
+        document.getElementById("themeToggle").textContent =
+          currentTheme === "dark" ? "Bright" : "Dark";
+      }
+
+      function onSearch(q) {
+        searchQuery = q.toLowerCase().trim();
+      }
+
+      function onHealthThreshold(v) {
+        healthMin = parseInt(v);
+        document.getElementById("threshVal").textContent = v + "%";
+      }
+
+      function isPodVisible(pod) {
+        if (
+          searchQuery &&
+          !pod.name.toLowerCase().includes(searchQuery) &&
+          !pod.id.toLowerCase().includes(searchQuery)
+        )
+          return false;
+        if (pod.health != null && pod.health < healthMin) return false;
+        return true;
+      }
+
+      function updateStats() {
+        let totalPods = 0,
+          totalLOC = 0;
+        for (const ns of Object.values(CLUSTER.namespaces)) {
+          for (const p of ns.pods) {
+            totalPods++;
+            totalLOC += p.locRaw || 0;
+          }
+        }
+        document.getElementById("statsProjects").innerHTML =
+          "Pods <b>" + totalPods + "</b>";
+        document.getElementById("statsLOC").innerHTML =
+          "LOC <b>" +
+          (totalLOC >= 1000 ? Math.round(totalLOC / 1000) + "k" : totalLOC) +
+          "</b>";
+        document.getElementById("statsDeps").innerHTML =
+          "Deps <b>" + CLUSTER.services.length + "</b>";
+        if (CLUSTER.evalSummary) {
+          const ev = CLUSTER.evalSummary;
+          document.getElementById("statsVerdict").innerHTML =
+            "Ecosystem <b>" +
+            ev.ecosystemScore +
+            "% " +
+            ev.ecosystemVerdict +
+            "</b>";
+          document.getElementById("healthVal").textContent =
+            ev.ecosystemScore + "%";
+        }
+      }
+
+      // Override drawBackground for theme awareness
+      const _origDrawBackground = drawBackground;
+      drawBackground = function () {
+        if (isBright()) {
+          const grad = ctx.createRadialGradient(
+            W / 2,
+            H / 2,
+            0,
+            W / 2,
+            H / 2,
+            Math.max(W, H) * 0.7,
+          );
+          grad.addColorStop(0, "#faf8f5");
+          grad.addColorStop(1, "#f0ece7");
+          ctx.fillStyle = grad;
+          ctx.fillRect(0, 0, W, H);
+          ctx.strokeStyle = "rgba(0,0,0,0.04)";
+          ctx.lineWidth = 1;
+          const gridSize = 60;
+          for (let x = 0; x < W; x += gridSize) {
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, H);
+            ctx.stroke();
+          }
+          for (let y = 0; y < H; y += gridSize) {
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(W, y);
+            ctx.stroke();
+          }
+        } else {
+          _origDrawBackground();
+        }
+      };
+
+      // Override drawPods to respect search/health filter
+      const _origDrawPods = drawPods;
+      drawPods = function () {
+        podPositions.forEach((p) => {
+          if (activeNs !== "all" && activeNs !== p.ns) return;
+          if (!isPodVisible(p.pod)) {
+            // Draw faded version
+            ctx.save();
+            ctx.globalAlpha = 0.07;
+            ctx.fillStyle = "#666";
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.r * 0.7, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+            return;
+          }
+
+          const isHovered = hoveredPod && hoveredPod.id === p.id;
+          const isSelected = selectedPod && selectedPod.id === p.id;
+          const isFaded =
+            hoveredPod &&
+            !isHovered &&
+            !CLUSTER.services.some(
+              (s) =>
+                (s.from === hoveredPod.id && s.to === p.id) ||
+                (s.to === hoveredPod.id && s.from === p.id),
+            );
+
+          const breath = 1 + Math.sin(time * 0.02 + p.x * 0.01) * 0.03;
+          const scale = isHovered ? 1.15 : breath;
+          const r = p.r * scale;
+          const bright = isBright();
+          const nsColor = bright
+            ? {
+                "system-engineering": "#0d9668",
+                "visual-identity": "#db2777",
+                "audience-bridge": "#0284c7",
+              }[p.ns] || "#666"
+            : COLORS[p.ns];
+          const statusColor = bright
+            ? {
+                production: "#0d9668",
+                active: "#0284c7",
+                complete: "#d97706",
+                working: "#d97706",
+                "pre-alpha": "#dc2626",
+              }[p.pod.status] || "#d97706"
+            : STATUS_COLORS[p.pod.status] || "#fbbf24";
+
+          ctx.save();
+          if (isFaded) ctx.globalAlpha = 0.15;
+
+          // Health ring
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, r + 4, 0, Math.PI * 2);
+          ctx.strokeStyle = statusColor;
+          ctx.lineWidth =
+            p.pod.status === "pre-alpha"
+              ? 1 + Math.sin(time * 0.06) * 0.8
+              : 1.5;
+          ctx.globalAlpha = (isFaded ? 0.1 : 0.4) + (isHovered ? 0.3 : 0);
+          ctx.stroke();
+
+          // Pod body
+          ctx.globalAlpha = isFaded ? 0.1 : 0.85;
+          if (bright) {
+            const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, r);
+            grad.addColorStop(0, "#ffffff");
+            grad.addColorStop(1, "#f5f2ef");
+            ctx.fillStyle = grad;
+          } else {
+            const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, r);
+            grad.addColorStop(0, "#1a1a2e");
+            grad.addColorStop(1, "#0f0f1e");
+            ctx.fillStyle = grad;
+          }
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Border
+          ctx.strokeStyle = nsColor;
+          ctx.lineWidth = isHovered || isSelected ? 2 : 1;
+          ctx.globalAlpha = isFaded ? 0.05 : isHovered ? 0.8 : 0.3;
+          ctx.stroke();
+
+          // Glow on hover
+          if (isHovered) {
+            ctx.globalAlpha = bright ? 0.08 : 0.15;
+            ctx.shadowColor = nsColor;
+            ctx.shadowBlur = 20;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+          }
+
+          // Initials
+          ctx.globalAlpha = isFaded ? 0.1 : 0.8;
+          ctx.fillStyle = nsColor;
+          ctx.font = `600 ${r * 0.65}px monospace`;
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText(p.pod.initials, p.x, p.y);
+
+          // Name below pod
+          ctx.globalAlpha = isFaded ? 0.05 : isHovered ? 0.7 : 0.25;
+          ctx.fillStyle = bright ? "#1a1a2e" : "#ffffff";
+          ctx.font = "9px monospace";
+          ctx.fillText(p.pod.name, p.x, p.y + r + 16);
+
+          // Health % below name (if live data)
+          if (p.pod.health != null) {
+            ctx.globalAlpha = isFaded ? 0.03 : 0.2;
+            ctx.fillStyle = statusColor;
+            ctx.font = "8px monospace";
+            ctx.fillText(p.pod.health + "%", p.x, p.y + r + 27);
+          }
+
+          // Labels on hover
+          if (isHovered && p.pod.labels) {
+            p.pod.labels.forEach((label, li) => {
+              ctx.globalAlpha = 0.4;
+              ctx.font = "8px monospace";
+              ctx.fillStyle = nsColor;
+              ctx.fillText(label, p.x, p.y + r + 38 + li * 14);
+            });
+          }
+
+          ctx.textAlign = "start";
+          ctx.textBaseline = "alphabetic";
+          ctx.restore();
+        });
+      };
+
+      // Override drawAmbientWords for bright theme
+      const _origDrawAmbientWords = drawAmbientWords;
+      drawAmbientWords = function () {
+        if (isBright()) {
+          ambientWords.forEach((w) => {
+            w.x += w.vx;
+            w.y += w.vy;
+            if (w.x < -200) w.x = W + 100;
+            if (w.x > W + 200) w.x = -100;
+            if (w.y < -100) w.y = H + 50;
+            if (w.y > H + 100) w.y = -50;
+            ctx.save();
+            ctx.globalAlpha =
+              w.opacity * 0.6 + Math.sin(time * 0.008 + w.size) * 0.005;
+            ctx.font = `300 ${w.size}px 'SF Mono', monospace`;
+            ctx.fillStyle = "#c8b8a8";
+            ctx.fillText(w.text, w.x, w.y);
+            ctx.restore();
+          });
+        } else {
+          _origDrawAmbientWords();
+        }
+      };
+
+      // Override drawNamespaceRegions for bright theme
+      const _origDrawNsRegions = drawNamespaceRegions;
+      drawNamespaceRegions = function () {
+        if (isBright()) {
+          const nsKeys = Object.keys(CLUSTER.namespaces);
+          nsKeys.forEach((nsKey) => {
+            if (activeNs !== "all" && activeNs !== nsKey) return;
+            const pods = podPositions.filter((p) => p.ns === nsKey);
+            if (pods.length === 0) return;
+            let minX = Infinity,
+              minY = Infinity,
+              maxX = -Infinity,
+              maxY = -Infinity;
+            pods.forEach((p) => {
+              minX = Math.min(minX, p.x - p.r - 30);
+              minY = Math.min(minY, p.y - p.r - 30);
+              maxX = Math.max(maxX, p.x + p.r + 30);
+              maxY = Math.max(maxY, p.y + p.r + 30);
+            });
+            const pad = 40;
+            const brightColors = {
+              "system-engineering": "#0d9668",
+              "visual-identity": "#db2777",
+              "audience-bridge": "#0284c7",
+            };
+            const color = brightColors[nsKey] || "#666";
+            ctx.save();
+            ctx.strokeStyle = color;
+            ctx.globalAlpha = 0.12;
+            ctx.lineWidth = 1;
+            ctx.setLineDash([4, 8]);
+            ctx.beginPath();
+            ctx.roundRect(
+              minX - pad,
+              minY - pad,
+              maxX - minX + pad * 2,
+              maxY - minY + pad * 2,
+              12,
+            );
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.globalAlpha = 0.25;
+            ctx.font = "9px monospace";
+            ctx.fillStyle = color;
+            ctx.fillText(
+              CLUSTER.namespaces[nsKey].label.toUpperCase(),
+              minX - pad + 12,
+              minY - pad + 16,
+            );
+            ctx.restore();
+          });
+        } else {
+          _origDrawNsRegions();
+        }
+      };
+
+      // Override drawServices for bright theme
+      const _origDrawServices = drawServices;
+      drawServices = function () {
+        if (isBright()) {
+          CLUSTER.services.forEach((svc) => {
+            const fromPod = podPositions.find((p) => p.id === svc.from);
+            const toPod = podPositions.find((p) => p.id === svc.to);
+            if (!fromPod || !toPod) return;
+            if (
+              activeNs !== "all" &&
+              activeNs !== fromPod.ns &&
+              activeNs !== toPod.ns
+            )
+              return;
+            const isHighlighted =
+              hoveredPod &&
+              (hoveredPod.id === svc.from || hoveredPod.id === svc.to);
+            const alpha = isHighlighted ? 0.5 : hoveredPod ? 0.04 : 0.1;
+            const mx = (fromPod.x + toPod.x) / 2,
+              my = (fromPod.y + toPod.y) / 2 - 40;
+            ctx.save();
+            ctx.globalAlpha = alpha;
+            ctx.strokeStyle = "#0284c7";
+            ctx.lineWidth = isHighlighted ? 1.5 : 1;
+            ctx.beginPath();
+            ctx.moveTo(fromPod.x, fromPod.y);
+            ctx.quadraticCurveTo(mx, my, toPod.x, toPod.y);
+            ctx.stroke();
+            if (isHighlighted) {
+              ctx.globalAlpha = 0.5;
+              ctx.font = "9px monospace";
+              ctx.fillStyle = "#0284c7";
+              ctx.textAlign = "center";
+              ctx.fillText(svc.label, mx, my - 8);
+              ctx.textAlign = "start";
+            }
+            ctx.restore();
+          });
+        } else {
+          _origDrawServices();
+        }
+      };
+
+      // Override drawIngress for bright theme
+      const _origDrawIngress = drawIngress;
+      drawIngress = function () {
+        if (isBright()) {
+          const x = 40,
+            y = H / 2;
+          const pulse = Math.sin(time * 0.03) * 0.3 + 0.5;
+          ctx.save();
+          ctx.globalAlpha = pulse * 0.2;
+          ctx.fillStyle = "#0284c7";
+          ctx.beginPath();
+          ctx.moveTo(x, y - 12);
+          ctx.lineTo(x + 18, y);
+          ctx.lineTo(x, y + 12);
+          ctx.closePath();
+          ctx.fill();
+          ctx.globalAlpha = 0.15;
+          ctx.font = "8px monospace";
+          ctx.fillStyle = "#0284c7";
+          ctx.save();
+          ctx.translate(x - 8, y + 30);
+          ctx.rotate(-Math.PI / 2);
+          ctx.fillText("INGRESS", 0, 0);
+          ctx.restore();
+          ctx.restore();
+        } else {
+          _origDrawIngress();
+        }
+      };
+
+      // --- MAIN LOOP ---
+      function animate() {
+        time++;
+        drawBackground();
+        drawAmbientWords();
+        drawNamespaceRegions();
+        drawServices();
+        drawPods();
+        drawIngress();
+        requestAnimationFrame(animate);
+      }
+
+      window.addEventListener("resize", resize);
+      resize();
+      buildTabs();
+      updateStats();
+      animate();
+    </script>
+  </body>
+</html>

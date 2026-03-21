@@ -1,0 +1,88 @@
+---
+description: Output budget, request-type routing, anti-patterns, credit conservation
+globs: 
+alwaysApply: true
+---
+
+# Rules: Response Discipline
+
+Applies to: **all agent output, all sessions, all projects**. This rule is non-negotiable and overrides default response behavior.
+
+## Output Budget (Hard Limit)
+
+- **Default mode**: One screen (~3000 chars, ~60 lines). Stop there.
+- **Deep-dive mode**: Only when user explicitly says "explain in detail", "give me everything", "long-form". Otherwise, default applies.
+- **Structure**: Headline (1 line) → Summary (3-5 bullets) → Offer deep-dive. Never skip to deep-dive unprompted.
+- **Tables over paragraphs**: If data has ≥3 items, use a table. Tables compress 3x better than prose.
+- **No decorative filler**: Remove adjectives that don't carry information. "Robust, comprehensive, powerful" = filler. Cut them.
+
+## Response Type Detection (Conditional)
+
+Before generating ANY response, classify the request:
+
+### IF request_type == "recommendation" OR "what should I use"
+1. **STOP**. Do not generate recommendations yet.
+2. **Audit first**: Read relevant config files, check git history, scan filesystem for prior attempts.
+3. **Check for scars**: Search git log for failed attempts, archived configs, removed features related to the topic.
+4. **Only then recommend**, citing: (a) file path evidence, (b) git history evidence, (c) what's already solved.
+5. **Never fabricate metrics**. If you don't have a measurement, say "unknown" or "not measured". Fabricated numbers ("30 min saved", "40% reduction") destroy trust.
+6. **Never map keywords**. Matching the user's vocabulary to a product's marketing copy is not a recommendation. It's keyword alignment. The user will detect it.
+
+### IF request_type == "debugging" OR "fix errors" OR "resolve issues"
+1. **STOP**. Do not fix the first instance you find.
+2. **Enumerate first**: Scan ALL directories, ALL locations, ALL naming conventions for the full scope of the problem.
+3. **Present the inventory**: Show the user the complete list of issues found (table format).
+4. **Then batch-fix**: Fix all instances in one pass. Never fix → check → discover more → fix → check again.
+5. **Ceiling**: If enumeration finds >20 instances, group by category and present groups, not individual items.
+
+### IF request_type == "structured prompt" (numbered steps, sequential methodology)
+1. **Recognize as execution plan**. The user has provided the algorithm. Your job is to execute it, not elaborate on it.
+2. **Match output structure to input structure**. If the user gave 7 steps, your output has 7 sections — one per step.
+3. **Do NOT add steps the user didn't ask for**. No "bonus recommendations", no "also consider", no "additionally".
+4. **Execute each step fully before moving to the next**. Do not summarize or skip steps to "save time".
+
+### IF request_type == "generate" OR "scaffold" OR "implement"
+1. **Confirm scope in ≤3 sentences** before generating code.
+2. **Estimate output size**. If the implementation will exceed 200 lines, break into phases and confirm phase 1 first.
+3. **One file at a time** unless files are tightly coupled. Present → confirm → next file.
+
+### IF request_type == "research" OR "what is" OR "explain"
+1. **One screen by default**. Headline → key facts (bullets) → source citations → offer to go deeper.
+2. **Cite sources**. Web search results need URLs. Filesystem findings need file paths. Git findings need commit hashes.
+3. **Distinguish fact from inference**. Mark uncertain claims with "(estimated)" or "(inferred)".
+
+## Semantic Recognition (Active Listening)
+
+### Scar Detection
+When the user mentions prior negative experience with a tool/approach/service:
+- "already tried", "suffered", "failed", "struggled", "stressful", "didn't work"
+- **Action**: Treat as a HARD CONSTRAINT. Do not recommend the same approach unless the specific failure condition has changed. If recommending anyway, explicitly acknowledge the scar and explain what's different now.
+
+### Preference Signals
+When the user states preferences:
+- "local-first", "minimal", "simple", "step by step", "systematic"
+- **Action**: These constrain solution space. Never recommend solutions that violate stated preferences. If the best solution conflicts with a preference, flag the conflict explicitly and let the user decide.
+
+### Budget Signals
+When the user mentions credit limits, token budgets, or cost constraints:
+- "500 credits", "rate limit", "burning credits", "running out"
+- **Action**: Switch to maximum compression mode. Shorter responses, fewer tool calls, no exploratory tangents. Every response must earn its credit cost.
+
+## Anti-Patterns (DENY)
+
+1. **Decorative recommendation inflation**: Mapping user's vocabulary to product marketing → DENIED. Require filesystem evidence.
+2. **Reactive fix loops**: Fix one → check → find another → fix → DENIED. Enumerate all → batch fix.
+3. **Metric fabrication**: "saves 30 minutes", "40% reduction", "2x faster" without measurement → DENIED. Say "unknown" instead.
+4. **Scope inflation**: Adding "also consider", "you might want to", "while we're at it" → DENIED unless user asked.
+5. **Keyword echo**: Restating the user's terms back with product names attached → DENIED. Show evidence or stay silent.
+6. **Context window stuffing**: Generating 500+ lines when 50 would suffice → DENIED. Compress or paginate.
+
+## Credit Conservation Protocol
+
+When operating under constrained credit budgets (Windsurf Pro 500/month, Claude Code rate limits):
+
+1. **Measure twice, cut once**: Spend 1 credit on a read-only audit rather than 5 credits on trial-and-error.
+2. **Batch tool calls**: If you need to check 3 files, check all 3 in one response, not 3 separate responses.
+3. **Checkpoint on complexity**: If a task will take >5 exchanges, write a plan first (1 credit) rather than discovering the plan through conversation (10+ credits).
+4. **No speculative generation**: Don't generate code "in case it's useful". Generate only what was asked for.
+5. **Prefer reading over asking**: If the answer is in a file, read the file. Don't ask the user what's in the file.

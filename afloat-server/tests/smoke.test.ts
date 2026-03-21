@@ -2,10 +2,12 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { mkdtempSync, rmSync } from "fs";
 import os from "os";
 import path from "path";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
-type TestServer = {
+// Type assertion for testing - bypass private property access
+interface TestServer {
   _registeredTools: Record<string, { inputSchema?: unknown; handler: (...args: any[]) => unknown }>;
-};
+}
 
 function getToolNames(server: TestServer): string[] {
   return Object.keys(server._registeredTools);
@@ -23,7 +25,8 @@ describe("afloat-server smoke", () => {
 
   beforeAll(async () => {
     process.env.AFLOAT_DATA_DIR = path.join(tempRoot, ".afloat");
-    ({ buildServer } = await import("../src/server.ts"));
+    const serverModule = await import("../src/server.ts");
+    buildServer = serverModule.buildServer as unknown as () => TestServer;
   });
 
   afterAll(() => {
@@ -44,8 +47,8 @@ describe("afloat-server smoke", () => {
 
   it("runs health_check and workflow_list", async () => {
     const server = buildServer();
-    const health = await invokeTool(server, "health_check");
-    const list = await invokeTool(server, "workflow_list", { limit: 5 });
+    const health = await invokeTool(server, "health_check") as { isError?: boolean };
+    const list = await invokeTool(server, "workflow_list", { limit: 5 }) as { isError?: boolean };
     expect(health.isError).not.toBe(true);
     expect(list.isError).not.toBe(true);
   });

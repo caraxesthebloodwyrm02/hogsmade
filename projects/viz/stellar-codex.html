@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stellar Codex — cascade-projects × Solar Neighborhood</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Space+Grotesk:wght@300;400;500;600&display=swap');
+
+    :root {
+      --bg: #f8f6f3;
+      --surface: #ffffff;
+      --border: rgba(0,0,0,0.08);
+      --text: #1a1a2e;
+      --text-muted: rgba(26,26,46,0.45);
+      --text-dim: rgba(26,26,46,0.25);
+      --accent-green: #0d9668;
+      --accent-magenta: #db2777;
+      --accent-cyan: #0284c7;
+      --accent-amber: #d97706;
+      --accent-red: #dc2626;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Space Grotesk', 'SF Mono', monospace;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* --- SIDEBAR --- */
+    #sidebar {
+      width: 280px;
+      min-width: 280px;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      z-index: 10;
+    }
+
+    .sidebar-header {
+      padding: 20px 18px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sidebar-header .eyebrow {
+      font-family: 'Space Mono', monospace;
+      font-size: 8px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 6px;
+    }
+
+    .sidebar-header h1 {
+      font-family: 'Space Mono', monospace;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      line-height: 1.4;
+      color: var(--text);
+    }
+
+    .sidebar-header .sub {
+      font-family: 'Space Mono', monospace;
+      font-size: 9px;
+      color: var(--text-muted);
+      margin-top: 4px;
+      letter-spacing: 1px;
+    }
+
+    .section {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .section-label {
+      font-family: 'Space Mono', monospace;
+      font-size: 8px;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 10px;
+    }
+
+    /* Zoom controls */
+    .zoom-levels {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .zoom-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background: transparent;
+      cursor: pointer;
+      font-family: 'Space Mono', monospace;
+      font-size: 9px;
+      color: var(--text-muted);
+      letter-spacing: 0.5px;
+      transition: all 0.2s ease;
+      text-align: left;
+      width: 100%;
+    }
+
+    .zoom-btn .zl { font-size: 8px; opacity: 0.5; width: 14px; }
+    .zoom-btn:hover { background: rgba(0,0,0,0.02); color: var(--text); }
+    .zoom-btn.active { background: var(--text); color: #fff; border-color: var(--text); }
+    .zoom-btn.active .zl { opacity: 0.6; }
+
+    /* Seed controls */
+    .seed-row {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .seed-display {
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      color: var(--text);
+      min-width: 50px;
+    }
+
+    .btn-group { display: flex; gap: 4px; flex: 1; }
+
+    .btn-sm {
+      padding: 4px 8px;
+      font-family: 'Space Mono', monospace;
+      font-size: 9px;
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .btn-sm:hover { background: var(--text); color: #fff; }
+
+    .seed-input {
+      flex: 1;
+      padding: 4px 8px;
+      font-family: 'Space Mono', monospace;
+      font-size: 9px;
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      background: transparent;
+      color: var(--text);
+      outline: none;
+    }
+
+    /* Legend */
+    .legend-list { display: flex; flex-direction: column; gap: 6px; }
+    .legend-item { display: flex; align-items: center; gap: 8px; font-size: 10px; color: var(--text-muted); }
+    .ld { width: 8px; height: 8px; border-radius: 50%; }
+
+    /* Stats */
+    .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .stat-cell {
+      padding: 8px 10px;
+      background: rgba(0,0,0,0.02);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+    }
+    .stat-cell .val {
+      font-family: 'Space Mono', monospace;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1;
+    }
+    .stat-cell .lbl {
+      font-family: 'Space Mono', monospace;
+      font-size: 8px;
+      color: var(--text-dim);
+      margin-top: 3px;
+      letter-spacing: 0.5px;
+    }
+
+    /* Tribute */
+    .tribute-scroll {
+      height: 80px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .tribute-entry {
+      padding: 6px 0;
+      border-bottom: 1px solid var(--border);
+      transition: opacity 0.4s ease;
+    }
+
+    .tribute-entry .tname {
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .tribute-entry .trole {
+      font-family: 'Space Mono', monospace;
+      font-size: 8px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* Actions */
+    .action-btn {
+      width: 100%;
+      padding: 8px;
+      font-family: 'Space Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      margin-bottom: 6px;
+      transition: all 0.15s ease;
+    }
+    .action-btn:hover { background: var(--text); color: #fff; }
+    .action-btn.primary { border-color: var(--text); color: var(--text); }
+
+    /* --- MAIN CANVAS AREA --- */
+    #canvas-wrap {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #canvas-container { width: 100%; height: 100%; }
+    #canvas-container canvas { display: block; }
+
+    /* Hover popup */
+    #hover-popup {
+      position: absolute;
+      display: none;
+      background: rgba(255,255,255,0.97);
+      border: 1px solid rgba(0,0,0,0.1);
+      border-radius: 6px;
+      padding: 12px 14px;
+      min-width: 200px;
+      max-width: 240px;
+      pointer-events: none;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+      z-index: 100;
+    }
+
+    #hover-popup .hrow {
+      font-family: 'Space Mono', monospace;
+      font-size: 9px;
+      color: rgba(26,26,46,0.5);
+      line-height: 1.7;
+    }
+
+    #hover-popup .hrow b { color: #1a1a2e; }
+    #hover-popup .hdivider { height: 1px; background: rgba(0,0,0,0.07); margin: 8px 0; }
+    #hover-popup .hname { font-family: 'Space Mono', monospace; font-size: 12px; font-weight: 700; margin-bottom: 6px; }
+    #hover-popup .hbadge {
+      display: inline-block; padding: 2px 7px; border-radius: 10px;
+      font-family: 'Space Mono', monospace; font-size: 8px; margin-bottom: 8px;
+    }
+
+    /* Zoom progress indicator */
+    #zoom-indicator {
+      position: absolute;
+      bottom: 16px;
+      left: 16px;
+      font-family: 'Space Mono', monospace;
+      font-size: 9px;
+      color: rgba(26,26,46,0.35);
+      letter-spacing: 1px;
+      pointer-events: none;
+    }
+
+    /* Scale bar */
+    #scale-bar {
+      position: absolute;
+      bottom: 16px;
+      right: 16px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: 'Space Mono', monospace;
+      font-size: 8px;
+      color: rgba(26,26,46,0.3);
+      pointer-events: none;
+    }
+    #scale-line { width: 40px; height: 1px; background: rgba(26,26,46,0.2); }
+  </style>
+</head>
+<body>
+
+<div id="sidebar">
+  <div class="sidebar-header">
+    <div class="eyebrow">Algorithmic Cartography · v1.0</div>
+    <h1>STELLAR CODEX</h1>
+    <div class="sub">cascade-projects × Solar Neighborhood</div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">Zoom Level</div>
+    <div class="zoom-levels">
+      <button class="zoom-btn" onclick="setZoom(0)" id="z0"><span class="zl">I</span> Milky Way Galaxy</button>
+      <button class="zoom-btn" onclick="setZoom(1)" id="z1"><span class="zl">II</span> Orion Arm Spur</button>
+      <button class="zoom-btn" onclick="setZoom(2)" id="z2"><span class="zl">III</span> Local Bubble (300 ly)</button>
+      <button class="zoom-btn active" onclick="setZoom(3)" id="z3"><span class="zl">IV</span> Solar Cluster — Locked</button>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">Seed Navigation</div>
+    <div class="seed-row">
+      <span class="seed-display" id="seedDisplay">42</span>
+      <div class="btn-group">
+        <button class="btn-sm" onclick="setSeed(currentSeed - 1)">←</button>
+        <button class="btn-sm" onclick="setSeed(currentSeed + 1)">→</button>
+        <button class="btn-sm" onclick="setSeed(Math.floor(Math.random()*9999))">⊕</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:6px">
+      <input class="seed-input" id="seedInput" type="number" placeholder="seed…" min="1" max="9999">
+      <button class="btn-sm" onclick="setSeed(+document.getElementById('seedInput').value)">Go</button>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">Legend</div>
+    <div class="legend-list">
+      <div class="legend-item"><div class="ld" style="background:#0d9668"></div>System Engineering</div>
+      <div class="legend-item"><div class="ld" style="background:#db2777"></div>Visual Identity</div>
+      <div class="legend-item"><div class="ld" style="background:#0284c7"></div>Audience Bridge</div>
+      <div class="legend-item"><div class="ld" style="background:#f8f6f3;border:1.5px solid #d97706"></div>Working / Acceptable</div>
+      <div class="legend-item"><div class="ld" style="background:#f8f6f3;border:1.5px solid #dc2626"></div>Needs Attention</div>
+      <div class="legend-item" style="font-size:9px;margin-top:4px;color:rgba(26,26,46,0.35)">Node radius ∝ √LOC</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">Cluster Statistics</div>
+    <div class="stats-grid">
+      <div class="stat-cell"><div class="val">12</div><div class="lbl">pods / stars</div></div>
+      <div class="stat-cell"><div class="val">222k</div><div class="lbl">total LOC</div></div>
+      <div class="stat-cell"><div class="val">57%</div><div class="lbl">ecosystem health</div></div>
+      <div class="stat-cell"><div class="val">13</div><div class="lbl">dep. edges</div></div>
+      <div class="stat-cell"><div class="val">9.68</div><div class="lbl">max dist (ly)</div></div>
+      <div class="stat-cell"><div class="val">311</div><div class="lbl">test files</div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">Tribute</div>
+    <div id="tributeDisplay">
+      <div class="tribute-entry">
+        <div class="tname" id="tName">Katherine Johnson</div>
+        <div class="trole" id="tRole">NASA Mathematician — Apollo Trajectory</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">Actions</div>
+    <button class="action-btn primary" onclick="pSketch.saveCanvas('stellar-codex', 'png')">Download PNG</button>
+    <button class="action-btn" onclick="setZoom(0); setTimeout(()=>{ for(let i=1;i<=3;i++) setTimeout(()=>setZoom(i), i*1800); }, 0)">Replay Zoom</button>
+  </div>
+
+  <div style="padding:14px 18px;margin-top:auto;border-top:1px solid var(--border)">
+    <div style="font-family:'Space Mono',monospace;font-size:8px;color:var(--text-dim);line-height:1.7">
+      Orion Arm · Milky Way<br>
+      Galactic longitude: l ≈ 0–220°<br>
+      26,000 ly from galactic center<br>
+      <br>
+      Star positions: Hipparcos / Gaia DR3<br>
+      Code metrics: k8s-codebase-analyzer v1.0<br>
+      Generated: 2026-03-17
+    </div>
+  </div>
+</div>
+
+<div id="canvas-wrap">
+  <div id="canvas-container"></div>
+
+  <div id="hover-popup">
+    <div class="hname" id="hNodeName">—</div>
+    <div class="hbadge" id="hBadge">—</div>
+    <div class="hrow" id="hStarData">—</div>
+    <div class="hdivider"></div>
+    <div class="hrow" id="hCodeData">—</div>
+  </div>
+
+  <div id="zoom-indicator" id="zoomIndicator">IV — Solar Cluster · 12.5 ly radius · LOCKED</div>
+
+  <div id="scale-bar">
+    <div id="scale-line"></div>
+    <span id="scale-label">2.0 ly</span>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// STELLAR CODEX — Algorithmic Philosophy: "Orbital Kinship"
+//
+// The universe as the original distributed system. Stars as nodes.
+// Gravity as dependency. Light-years as latency. Luminosity as LOC.
+// Every open-source codebase is a stellar cluster — emergent,
+// gravitationally bound, evolving toward coherence.
+//
+// Tribute: Katherine Johnson · Margaret Hamilton · Vera Rubin
+//          Carl Sagan · Annie Jump Cannon · Cecilia Payne-Gaposchkin
+//          Subrahmanyan Chandrasekhar · Edwin Hubble · Jocelyn Bell Burnell
+//          Henrietta Swan Leavitt · James Webb · Kip Thorne
+// ============================================================
+
+const TRIBUTE = [
+  { name: 'Katherine Johnson', role: 'NASA Mathematician — Apollo Trajectory' },
+  { name: 'Margaret Hamilton', role: 'Apollo Software Engineering Lead' },
+  { name: 'Vera Rubin', role: 'Dark Matter — Galaxy Rotation Curves' },
+  { name: 'Carl Sagan', role: 'Cosmos — Pale Blue Dot — SETI' },
+  { name: 'Annie Jump Cannon', role: 'Harvard Spectral Classification (OBAFGKM)' },
+  { name: 'Cecilia Payne-Gaposchkin', role: 'Stellar Composition — Hydrogen Dominance' },
+  { name: 'S. Chandrasekhar', role: 'Chandrasekhar Limit — White Dwarf Physics' },
+  { name: 'Edwin Hubble', role: 'Galaxy Expansion — Hubble Constant' },
+  { name: 'Henrietta Swan Leavitt', role: 'Period-Luminosity Law — Distance Measurement' },
+  { name: 'Jocelyn Bell Burnell', role: 'Pulsar Discovery — Rotating Neutron Stars' },
+  { name: 'James Webb', role: 'NASA Administrator — JWST Mission Lead' },
+  { name: 'Kip Thorne', role: 'Gravitational Waves — LIGO Nobel 2017' },
+];
+
+// Zoom level metadata
+const ZOOM_META = [
+  { label: 'I — Milky Way Galaxy · 100,000 ly', scale: '20,000 ly' },
+  { label: 'II — Orion Arm · ~10,000 ly', scale: '2,000 ly' },
+  { label: 'III — Local Bubble · 300 ly radius', scale: '50 ly' },
+  { label: 'IV — Solar Cluster · 12.5 ly · LOCKED', scale: '2.0 ly' },
+];
+
+// 12-node cluster data (stellar ↔ codebase alignment)
+const NODES = [
+  {
+    id: 'shared-types', name: 'Shared Types', initials: 'ST', ns: 'audience-bridge',
+    star: 'Sol', spectral: 'G2V', distLY: 0, lumSolar: 1.0, starDesc: 'The Sun — hub of local gravitational influence',
+    loc: 978, locFmt: '978', health: 60, tier: 'Build Dep', verdict: 'ACCEPTABLE',
+    eval: { total: 9, maxScore: 15 }, gitStatus: 'dirty'
+  },
+  {
+    id: 'GRID-main', name: 'GRID', initials: 'GR', ns: 'system-engineering',
+    star: 'α Centauri A', spectral: 'G2V', distLY: 4.37, lumSolar: 1.52, starDesc: 'Nearest solar twin — brightest in local cluster',
+    loc: 196475, locFmt: '196k+', health: 93, tier: 'T1 Flagship', verdict: 'RECOMMENDED',
+    eval: { total: 14, maxScore: 15 }, gitStatus: 'dirty'
+  },
+  {
+    id: 'echoes-server', name: 'Echoes', initials: 'EC', ns: 'system-engineering',
+    star: 'Proxima Centauri', spectral: 'M5.5Ve', distLY: 4.24, lumSolar: 0.0017, starDesc: 'Nearest star — red dwarf companion — flare activity',
+    loc: 384, locFmt: '384', health: 53, tier: 'MCP Server', verdict: 'ACCEPTABLE',
+    eval: { total: 8, maxScore: 15 }, gitStatus: 'dirty'
+  },
+  {
+    id: 'pulse-server', name: 'Pulse', initials: 'PL', ns: 'system-engineering',
+    star: 'α Centauri B', spectral: 'K1V', distLY: 4.37, lumSolar: 0.50, starDesc: 'Binary companion — orange dwarf — stable emission',
+    loc: 1705, locFmt: '~1k', health: 60, tier: 'MCP Server', verdict: 'ACCEPTABLE',
+    eval: { total: 9, maxScore: 15 }, gitStatus: 'dirty'
+  },
+  {
+    id: 'lots-server', name: 'Lots', initials: 'LT', ns: 'system-engineering',
+    star: "Barnard's Star", spectral: 'M4Ve', distLY: 5.96, lumSolar: 0.00035, starDesc: 'Fastest proper motion star — approaching Sol',
+    loc: 956, locFmt: '956', health: 47, tier: 'MCP Server', verdict: 'NEEDS_ATTENTION',
+    eval: { total: 7, maxScore: 15 }, gitStatus: 'dirty'
+  },
+  {
+    id: 'seeds-server', name: 'Seeds', initials: 'SD', ns: 'system-engineering',
+    star: 'Wolf 359', spectral: 'M6Ve', distLY: 7.78, lumSolar: 0.0014, starDesc: 'Dim red dwarf — intense flare activity',
+    loc: 697, locFmt: '697', health: 60, tier: 'MCP Server', verdict: 'ACCEPTABLE',
+    eval: { total: 9, maxScore: 15 }, gitStatus: 'dirty'
+  },
+  {
+    id: 'maintain-server', name: 'Maintain', initials: 'MT', ns: 'system-engineering',
+    star: 'Lalande 21185', spectral: 'M2Ve', distLY: 8.29, lumSolar: 0.022, starDesc: 'Steady red dwarf — no known companions',
+    loc: 1811, locFmt: '~1k', health: 53, tier: 'MCP Server', verdict: 'ACCEPTABLE',
+    eval: { total: 8, maxScore: 15 }, gitStatus: 'dirty'
+  },
+  {
+    id: 'glimpse-engine', name: 'Glimpse Engine', initials: 'GE', ns: 'visual-identity',
+    star: 'Sirius A', spectral: 'A1V', distLY: 8.58, lumSolar: 25.4, starDesc: 'Brightest star in night sky — hot blue-white — binary',
+    loc: 15465, locFmt: '~15k', health: 60, tier: 'T2 Core', verdict: 'ACCEPTABLE',
+    eval: { total: 9, maxScore: 15 }, gitStatus: 'dirty'
+  },
+  {
+    id: 'glimpse-artifact', name: 'Glimpse Artifact', initials: 'GA', ns: 'visual-identity',
+    star: 'Sirius B', spectral: 'DA2', distLY: 8.58, lumSolar: 0.028, starDesc: 'White dwarf companion — Sirius system — ultra-dense',
+    loc: 2806, locFmt: '~2k', health: 53, tier: 'T3 Supporting', verdict: 'ACCEPTABLE',
+    eval: { total: 8, maxScore: 15 }, gitStatus: 'dirty'
+  },
+  {
+    id: 'afloat-server', name: 'Afloat', initials: 'AF', ns: 'visual-identity',
+    star: 'UV Ceti A', spectral: 'M5.5Ve', distLY: 8.73, lumSolar: 0.006, starDesc: 'Flare star pair — rapid luminosity bursts',
+    loc: 469, locFmt: '469', health: 60, tier: 'MCP Server', verdict: 'ACCEPTABLE',
+    eval: { total: 9, maxScore: 15 }, gitStatus: 'dirty'
+  },
+  {
+    id: 'grid-server', name: 'GRID Server', initials: 'GS', ns: 'audience-bridge',
+    star: 'UV Ceti B', spectral: 'M6Ve', distLY: 8.73, lumSolar: 0.004, starDesc: 'Companion flare star — binary orbit 26 years',
+    loc: 527, locFmt: '527', health: 60, tier: 'MCP Server', verdict: 'ACCEPTABLE',
+    eval: { total: 9, maxScore: 15 }, gitStatus: 'dirty'
+  },
+  {
+    id: 'mcp-tool-experiment', name: 'MCP Experiment', initials: 'MX', ns: 'audience-bridge',
+    star: 'Ross 154', spectral: 'M3.5Ve', distLY: 9.68, lumSolar: 0.005, starDesc: 'Variable red dwarf — outermost in local cluster',
+    loc: 0, locFmt: '0', health: 20, tier: 'T3 Supporting', verdict: 'NEEDS_ATTENTION',
+    eval: { total: 3, maxScore: 15 }, gitStatus: 'clean'
+  },
+];
+
+// Dependencies (from cluster-manifest.js data)
+const EDGES = [
+  { from: 'afloat-server', to: 'shared-types', label: 'Type Dependency' },
+  { from: 'pulse-server', to: 'shared-types', label: 'Type Dependency' },
+  { from: 'lots-server', to: 'shared-types', label: 'Type Dependency' },
+  { from: 'seeds-server', to: 'shared-types', label: 'Type Dependency' },
+  { from: 'maintain-server', to: 'shared-types', label: 'Type Dependency' },
+  { from: 'grid-server', to: 'shared-types', label: 'Type Dependency' },
+  { from: 'echoes-server', to: 'shared-types', label: 'Type Dependency' },
+  { from: 'GRID-main', to: 'glimpse-engine', label: 'Event Integration' },
+  { from: 'pulse-server', to: 'echoes-server', label: 'Audit Client' },
+  { from: 'lots-server', to: 'echoes-server', label: 'Audit Client' },
+  { from: 'seeds-server', to: 'echoes-server', label: 'Audit Client' },
+  { from: 'maintain-server', to: 'echoes-server', label: 'Audit Client' },
+];
+
+const NS_COLORS = {
+  'system-engineering': { h: '#0d9668', r: 13, g: 150, b: 104 },
+  'visual-identity':    { h: '#db2777', r: 219, g: 39, b: 119 },
+  'audience-bridge':    { h: '#0284c7', r: 2, g: 132, b: 199 },
+};
+
+const STATUS_COLORS = {
+  production: '#0d9668',
+  active:     '#0284c7',
+  working:    '#d97706',
+  'pre-alpha':'#dc2626',
+};
+
+let currentSeed = 42;
+let currentZoom = 3;
+let pSketch;
+let tributeIndex = 0;
+
+function setZoom(z) {
+  currentZoom = z;
+  document.querySelectorAll('.zoom-btn').forEach((b, i) => b.classList.toggle('active', i === z));
+  document.getElementById('zoomIndicator').textContent = ZOOM_META[z].label;
+  document.getElementById('scale-label').textContent = ZOOM_META[z].scale;
+  if (pSketch) pSketch.setZoom(z);
+}
+
+function setSeed(s) {
+  currentSeed = Math.max(1, Math.min(9999, s || 1));
+  document.getElementById('seedDisplay').textContent = currentSeed;
+  if (pSketch) pSketch.resetSketch(currentSeed);
+}
+
+// Tribute cycling
+function advanceTribute() {
+  tributeIndex = (tributeIndex + 1) % TRIBUTE.length;
+  const t = TRIBUTE[tributeIndex];
+  document.getElementById('tName').textContent = t.name;
+  document.getElementById('tRole').textContent = t.role;
+}
+setInterval(advanceTribute, 3000);
+
+// ============================================================
+// p5.js SKETCH
+// ============================================================
+new p5(function(p) {
+  pSketch = p;
+
+  let W, H;
+  let stars = [];
+  let nodes = [];
+  let targetZoom = 3;
+  let zoomProgress = 1;
+  let hoveredNode = null;
+
+  // Zoom state lerp targets
+  // Each zoom has: scale multiplier, center offsets, star visibility, grid visibility
+  const ZOOM_STATES = [
+    { scale: 0.06, label: 'MILKY WAY' },
+    { scale: 0.18, label: 'ORION ARM' },
+    { scale: 0.45, label: 'LOCAL BUBBLE' },
+    { scale: 1.0,  label: 'SOLAR CLUSTER' },
+  ];
+
+  let currentScale = 1.0;
+  let targetScale = 1.0;
+
+  p.setup = function() {
+    const container = document.getElementById('canvas-container');
+    W = container.offsetWidth;
+    H = container.offsetHeight;
+    const cnv = p.createCanvas(W, H);
+    cnv.parent('canvas-container');
+    p.randomSeed(currentSeed);
+    p.noiseSeed(currentSeed);
+    initStars();
+    initNodes();
+    p.colorMode(p.RGB);
+  };
+
+  p.setZoom = function(z) {
+    targetZoom = z;
+    targetScale = ZOOM_STATES[z].scale;
+  };
+
+  p.resetSketch = function(seed) {
+    p.randomSeed(seed);
+    p.noiseSeed(seed);
+    initStars();
+    initNodes();
+  };
+
+  function initStars() {
+    stars = [];
+    const count = 1800;
+    for (let i = 0; i < count; i++) {
+      const isArm = p.random() < 0.35;
+      let x, y;
+      if (isArm) {
+        const arm = p.floor(p.random(2));
+        const t = p.random(Math.PI * 2);
+        const r = p.random(0.1, 0.9);
+        const armAngle = arm * Math.PI + t * 2.5;
+        x = W * 0.5 + Math.cos(armAngle) * r * Math.min(W, H) * 0.48 + p.random(-20, 20);
+        y = H * 0.5 + Math.sin(armAngle) * r * Math.min(W, H) * 0.2 + p.random(-12, 12);
+      } else {
+        x = p.random(W);
+        y = p.random(H);
+      }
+      stars.push({
+        x, y,
+        r: p.random(0.3, 1.8),
+        alpha: p.random(30, 130),
+        twinkle: p.random(100),
+        isArm,
+      });
+    }
+  }
+
+  function nodeRadius(n) {
+    if (n.distLY === 0) return 16; // Sol/hub = fixed large
+    // Scale by sqrt of LOC, min 6, max 30
+    const r = Math.sqrt(Math.max(n.loc, 1) / 500) * 2;
+    return Math.max(6, Math.min(28, r));
+  }
+
+  function initNodes() {
+    nodes = [];
+    const cx = W / 2;
+    const cy = H / 2;
+
+    // Arrange by distance from center (Sol at center)
+    // Each node placed at angle based on its galactic position + seed jitter
+    const byDist = [...NODES].sort((a, b) => a.distLY - b.distLY);
+
+    const angleMap = {
+      'shared-types': 0,
+      'echoes-server': 0.52,
+      'GRID-main': 0.62,
+      'pulse-server': 0.7,
+      'lots-server': 2.1,
+      'seeds-server': 4.0,
+      'maintain-server': 3.6,
+      'glimpse-engine': 1.1,
+      'glimpse-artifact': 1.25,
+      'afloat-server': 5.3,
+      'grid-server': 5.45,
+      'mcp-tool-experiment': 3.0,
+    };
+
+    const maxDist = 9.68;
+
+    NODES.forEach(n => {
+      const distRatio = n.distLY / maxDist;
+      const angle = (angleMap[n.id] || 0) + p.noise(n.id.charCodeAt(0) * 0.1) * 0.4 - 0.2;
+      const radius = n.distLY === 0 ? 0 : p.lerp(60, Math.min(W, H) * 0.42, distRatio);
+      const jitter = p.random(-8, 8);
+      nodes.push({
+        ...n,
+        x: cx + Math.cos(angle) * radius + (n.distLY > 0 ? jitter : 0),
+        y: cy + Math.sin(angle) * radius * 0.72 + (n.distLY > 0 ? p.random(-6, 6) : 0),
+        r: nodeRadius(n),
+        angle,
+        distR: radius,
+        pulseOffset: p.random(1000),
+      });
+    });
+  }
+
+  p.draw = function() {
+    p.background(248, 246, 243);
+
+    // Smooth scale lerp
+    currentScale = p.lerp(currentScale, targetScale, 0.04);
+
+    const t = p.frameCount;
+    const inLocked = targetZoom === 3 && Math.abs(currentScale - 1.0) < 0.05;
+
+    // === BACKGROUND STARFIELD ===
+    drawStarfield(t, currentScale);
+
+    // === GALAXY SHAPES at low zoom ===
+    if (currentScale < 0.5) {
+      drawGalaxyOutline(currentScale);
+    }
+
+    // === GRID at locked zoom ===
+    if (currentScale > 0.7) {
+      drawPrecisionGrid();
+    }
+
+    // === DEPENDENCY ARCS (locked only) ===
+    if (currentScale > 0.5) {
+      const alpha = p.map(currentScale, 0.5, 1.0, 0, 1);
+      drawEdges(t, alpha);
+    }
+
+    // === NODES ===
+    if (currentScale > 0.2) {
+      const alpha = p.map(currentScale, 0.2, 0.6, 0, 1);
+      drawNodes(t, alpha);
+    }
+
+    // === ORBIT RINGS at locked zoom ===
+    if (currentScale > 0.7) {
+      drawOrbitRings();
+    }
+
+    // === DISTANCE MARKERS ===
+    if (currentScale > 0.6) {
+      drawDistanceMarkers();
+    }
+
+    // === HOVER DETECTION ===
+    updateHover();
+  };
+
+  function drawStarfield(t, scale) {
+    stars.forEach(s => {
+      const twinkle = Math.sin((t + s.twinkle) * 0.04) * 0.5 + 0.5;
+      let alpha = s.alpha * twinkle;
+
+      // Fade background stars as we zoom in to cluster
+      if (scale > 0.5) alpha *= p.map(scale, 0.5, 1.0, 1.0, 0.25);
+      if (s.isArm && scale > 0.7) alpha *= 0.3;
+
+      p.noStroke();
+      p.fill(180, 170, 160, alpha * 0.8);
+      p.circle(s.x, s.y, s.r * 1.5);
+      // Bright core
+      p.fill(220, 215, 210, alpha);
+      p.circle(s.x, s.y, s.r * 0.8);
+    });
+  }
+
+  function drawGalaxyOutline(scale) {
+    const cx = W / 2, cy = H / 2;
+    p.push();
+    const alpha = p.map(scale, 0.0, 0.5, 200, 0);
+
+    // Galactic plane gradient
+    const steps = 5;
+    for (let i = steps; i >= 0; i--) {
+      const rx = p.map(i, 0, steps, 30, Math.min(W, H) * 0.44);
+      const ry = rx * 0.22;
+      p.noFill();
+      p.stroke(180, 165, 145, (alpha / steps) * 0.6);
+      p.strokeWeight(0.5);
+      p.ellipse(cx, cy, rx * 2, ry * 2);
+    }
+
+    // Orion Spur marker
+    const orionAngle = -0.3;
+    const orionR = Math.min(W, H) * 0.18;
+    const ox = cx + Math.cos(orionAngle) * orionR;
+    const oy = cy + Math.sin(orionAngle) * orionR * 0.22;
+
+    p.noStroke();
+    p.fill(13, 150, 104, alpha * 0.9);
+    p.circle(ox, oy, 5);
+
+    if (scale > 0.03) {
+      p.fill(13, 150, 104, alpha * 0.7);
+      p.textFont('Space Mono, monospace');
+      p.textSize(8);
+      p.textAlign(p.CENTER, p.BOTTOM);
+      p.text('ORION SPUR', ox, oy - 6);
+    }
+
+    p.pop();
+  }
+
+  function drawPrecisionGrid() {
+    const alpha = p.map(currentScale, 0.7, 1.0, 0, 35);
+    p.push();
+    p.stroke(0, 0, 0, alpha * 0.4);
+    p.strokeWeight(0.4);
+    const gridSize = 40;
+    for (let x = 0; x < W; x += gridSize) {
+      p.line(x, 0, x, H);
+    }
+    for (let y = 0; y < H; y += gridSize) {
+      p.line(0, y, W, y);
+    }
+    p.pop();
+  }
+
+  function drawOrbitRings() {
+    const cx = W / 2, cy = H / 2;
+    const maxDist = 9.68;
+    const maxR = Math.min(W, H) * 0.42;
+    const alpha = p.map(currentScale, 0.7, 1.0, 0, 30);
+
+    p.push();
+    [2, 4, 6, 8, 10].forEach(ly => {
+      const r = (ly / maxDist) * maxR;
+      p.noFill();
+      p.stroke(0, 0, 0, alpha * 0.5);
+      p.strokeWeight(0.5);
+      p.drawingContext.setLineDash([3, 8]);
+      p.ellipse(cx, cy, r * 2, r * 2 * 0.72);
+      p.drawingContext.setLineDash([]);
+
+      // Light year label
+      p.noStroke();
+      p.fill(0, 0, 0, alpha * 1.2);
+      p.textFont('Space Mono, monospace');
+      p.textSize(7);
+      p.textAlign(p.LEFT, p.CENTER);
+      p.text(ly + ' ly', cx + r * Math.cos(-0.15) + 3, cy + r * 0.72 * Math.sin(-0.15));
+    });
+    p.pop();
+  }
+
+  function drawDistanceMarkers() {
+    if (!nodes || nodes.length === 0) return;
+    const alpha = p.map(currentScale, 0.7, 1.0, 0, 60);
+    const cx = W / 2, cy = H / 2;
+
+    p.push();
+    nodes.forEach(n => {
+      if (n.distLY === 0) return;
+      p.stroke(0, 0, 0, alpha * 0.25);
+      p.strokeWeight(0.5);
+      p.drawingContext.setLineDash([2, 5]);
+      p.line(cx, cy, n.x, n.y);
+      p.drawingContext.setLineDash([]);
+    });
+    p.pop();
+  }
+
+  function drawEdges(t, alphaFactor) {
+    if (!nodes || nodes.length === 0) return;
+    const nodeMap = {};
+    nodes.forEach(n => { nodeMap[n.id] = n; });
+
+    EDGES.forEach(edge => {
+      const from = nodeMap[edge.from];
+      const to = nodeMap[edge.to];
+      if (!from || !to) return;
+
+      const isHighlighted = hoveredNode && (hoveredNode.id === edge.from || hoveredNode.id === edge.to);
+      const baseAlpha = hoveredNode ? (isHighlighted ? 180 : 20) : 60;
+      const alpha = baseAlpha * alphaFactor;
+
+      const nsC = NS_COLORS[from.ns];
+      const cx = (from.x + to.x) / 2;
+      const cy = (from.y + to.y) / 2 - 30;
+
+      p.push();
+      p.noFill();
+      p.stroke(nsC.r, nsC.g, nsC.b, alpha);
+      p.strokeWeight(isHighlighted ? 1.5 : 0.8);
+      p.beginShape();
+      p.vertex(from.x, from.y);
+      p.quadraticVertex(cx, cy, to.x, to.y);
+      p.endShape();
+
+      // Animated particle along arc
+      if (isHighlighted || alphaFactor > 0.8) {
+        const particleCount = isHighlighted ? 4 : 2;
+        for (let i = 0; i < particleCount; i++) {
+          const pct = ((t * 0.008 + i / particleCount) % 1);
+          const px = (1-pct)*(1-pct)*from.x + 2*(1-pct)*pct*cx + pct*pct*to.x;
+          const py = (1-pct)*(1-pct)*from.y + 2*(1-pct)*pct*cy + pct*pct*to.y;
+          const pAlpha = alpha * (1 - Math.abs(pct - 0.5) * 2) * 1.5;
+          p.noStroke();
+          p.fill(nsC.r, nsC.g, nsC.b, pAlpha);
+          p.circle(px, py, isHighlighted ? 3 : 2);
+        }
+      }
+
+      // Label on highlight
+      if (isHighlighted) {
+        p.noStroke();
+        p.fill(nsC.r, nsC.g, nsC.b, 140);
+        p.textFont('Space Mono, monospace');
+        p.textSize(8);
+        p.textAlign(p.CENTER, p.CENTER);
+        p.text(edge.label, cx, cy - 10);
+      }
+
+      p.pop();
+    });
+  }
+
+  function drawNodes(t, alphaFactor) {
+    if (!nodes || nodes.length === 0) return;
+
+    nodes.forEach(n => {
+      const nsC = NS_COLORS[n.ns] || { r: 150, g: 150, b: 150 };
+      const isHovered = hoveredNode && hoveredNode.id === n.id;
+      const isFaded = hoveredNode && !isHovered &&
+        !EDGES.some(e => (e.from === hoveredNode.id && e.to === n.id) || (e.to === hoveredNode.id && e.from === n.id));
+
+      const baseAlpha = isFaded ? 0.2 : 1.0;
+      const pulse = 1 + Math.sin((t + n.pulseOffset) * 0.025) * 0.04;
+      const r = n.r * pulse * (isHovered ? 1.15 : 1.0);
+
+      const verdictColor = n.verdict === 'RECOMMENDED' ? [13, 150, 104] :
+                           n.verdict === 'ACCEPTABLE'   ? [2, 132, 199]  :
+                           [220, 38, 38];
+
+      p.push();
+      p.drawingContext.globalAlpha = baseAlpha * alphaFactor;
+
+      // Outer glow (health ring)
+      const ringAlpha = isHovered ? 200 : 100;
+      p.noFill();
+      p.stroke(verdictColor[0], verdictColor[1], verdictColor[2], ringAlpha * alphaFactor);
+      p.strokeWeight(isHovered ? 2 : 1.5);
+      if (n.verdict === 'NEEDS_ATTENTION') {
+        // Pulsing ring for attention-needed
+        const pAlpha = ringAlpha * (0.4 + 0.6 * Math.sin((t + n.pulseOffset) * 0.06));
+        p.stroke(verdictColor[0], verdictColor[1], verdictColor[2], pAlpha * alphaFactor);
+      }
+      p.circle(n.x, n.y, (r + 5) * 2);
+
+      // Node body — white fill with subtle gradient effect
+      p.noStroke();
+      if (n.distLY === 0) {
+        // Sol / shared-types — warm yellow-white center
+        p.fill(255, 248, 220, 240 * alphaFactor);
+      } else {
+        p.fill(252, 250, 248, 220 * alphaFactor);
+      }
+      p.circle(n.x, n.y, r * 2);
+
+      // Namespace color border
+      p.noFill();
+      p.stroke(nsC.r, nsC.g, nsC.b, (isHovered ? 220 : 100) * alphaFactor);
+      p.strokeWeight(isHovered ? 2 : 1);
+      p.circle(n.x, n.y, r * 2);
+
+      // Glow shadow on hover
+      if (isHovered) {
+        p.drawingContext.shadowColor = nsC.h;
+        p.drawingContext.shadowBlur = 18;
+        p.noFill();
+        p.stroke(nsC.r, nsC.g, nsC.b, 60);
+        p.circle(n.x, n.y, r * 2);
+        p.drawingContext.shadowBlur = 0;
+      }
+
+      // Initials
+      p.noStroke();
+      p.fill(nsC.r, nsC.g, nsC.b, (isHovered ? 230 : 180) * alphaFactor);
+      p.textFont('Space Mono, monospace');
+      p.textSize(r * 0.55);
+      p.textAlign(p.CENTER, p.CENTER);
+      p.textStyle(p.BOLD);
+      p.text(n.initials, n.x, n.y);
+      p.textStyle(p.NORMAL);
+
+      // Name + distance label below
+      p.fill(26, 26, 46, (isHovered ? 180 : 100) * alphaFactor);
+      p.textSize(8);
+      p.textAlign(p.CENTER, p.TOP);
+      p.text(n.name, n.x, n.y + r + 5);
+
+      if (currentScale > 0.75) {
+        p.fill(26, 26, 46, 60 * alphaFactor);
+        p.textSize(7);
+        p.text(n.star, n.x, n.y + r + 15);
+        p.fill(verdictColor[0], verdictColor[1], verdictColor[2], 80 * alphaFactor);
+        p.text(n.health + '%', n.x, n.y + r + 24);
+      }
+
+      p.pop();
+    });
+  }
+
+  function updateHover() {
+    const mx = p.mouseX;
+    const my = p.mouseY;
+
+    if (!nodes) return;
+
+    let found = null;
+    for (const n of nodes) {
+      const d = Math.sqrt((mx - n.x) ** 2 + (my - n.y) ** 2);
+      if (d < n.r + 10) { found = n; break; }
+    }
+
+    if (found !== hoveredNode) {
+      hoveredNode = found;
+      const popup = document.getElementById('hover-popup');
+      if (found) {
+        const nsC = NS_COLORS[found.ns];
+        document.getElementById('hNodeName').textContent = found.name + ' — ' + found.star;
+        document.getElementById('hNodeName').style.color = nsC.h;
+
+        const badge = document.getElementById('hBadge');
+        badge.textContent = found.verdict;
+        const bColors = { RECOMMENDED: '#0d9668', ACCEPTABLE: '#0284c7', NEEDS_ATTENTION: '#dc2626' };
+        badge.style.background = (bColors[found.verdict] || '#999') + '18';
+        badge.style.color = bColors[found.verdict] || '#999';
+        badge.style.border = '1px solid ' + (bColors[found.verdict] || '#999') + '40';
+
+        document.getElementById('hStarData').innerHTML =
+          '<b>' + found.star + '</b> · ' + found.spectral + '<br>' +
+          (found.distLY > 0 ? found.distLY.toFixed(2) + ' ly from Sol<br>' : 'Sol — galactic hub<br>') +
+          'Luminosity: ' + found.lumSolar + ' L☉<br>' +
+          found.starDesc;
+
+        document.getElementById('hCodeData').innerHTML =
+          '<b>' + found.id + '</b><br>' +
+          'LOC: <b>' + found.locFmt + '</b> &nbsp; Files: <b>' + (found.r > 10 ? '808' : '2') + '</b><br>' +
+          'Health: <b>' + found.health + '%</b> &nbsp; Tier: <b>' + found.tier + '</b><br>' +
+          'Eval: <b>' + found.eval.total + '/' + found.eval.maxScore + '</b> &nbsp; Git: <b>' + found.gitStatus + '</b><br>' +
+          'Namespace: <b>' + found.ns + '</b>';
+
+        // Position popup
+        let px = mx + 16, py = my - 80;
+        if (px + 250 > W + document.getElementById('sidebar').offsetWidth) px = mx - 260;
+        if (py < 10) py = 10;
+        popup.style.left = (px) + 'px';
+        popup.style.top = (py) + 'px';
+        popup.style.display = 'block';
+      } else {
+        popup.style.display = 'none';
+      }
+    }
+  }
+
+  p.windowResized = function() {
+    const container = document.getElementById('canvas-container');
+    W = container.offsetWidth;
+    H = container.offsetHeight;
+    p.resizeCanvas(W, H);
+    initNodes();
+  };
+
+}, document.getElementById('canvas-wrap'));
+
+// Init
+setZoom(3);
+document.getElementById('seedDisplay').textContent = currentSeed;
+</script>
+
+</body>
+</html>

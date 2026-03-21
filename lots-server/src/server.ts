@@ -57,6 +57,33 @@ interface Catalog {
   lastUpdated: string;
 }
 
+// ── Catalog Schema (runtime validation) ──
+
+const CatalogSchema = z.object({
+  experiments: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      description: z.string(),
+      status: z.enum(["draft", "running", "complete", "failed", "archived"]),
+      script: z.string().optional(),
+      language: z.string().optional(),
+      tags: z.array(z.string()),
+      createdAt: z.string(),
+      updatedAt: z.string(),
+      results: z
+        .object({
+          exitCode: z.number(),
+          stdout: z.string(),
+          stderr: z.string(),
+          durationMs: z.number(),
+        })
+        .optional(),
+    }),
+  ),
+  lastUpdated: z.string(),
+});
+
 // ── Data Layer ──
 
 async function ensureDir(): Promise<void> {
@@ -64,12 +91,32 @@ async function ensureDir(): Promise<void> {
 }
 
 async function loadCatalog(): Promise<Catalog> {
+  let content: string;
   try {
-    const content = await fs.readFile(CATALOG_PATH, "utf-8");
-    return JSON.parse(content) as Catalog;
-  } catch {
-    return { experiments: [], lastUpdated: new Date().toISOString() };
+    content = await fs.readFile(CATALOG_PATH, "utf-8");
+  } catch (err: unknown) {
+    if ((err as NodeJS.ErrnoException).code === "ENOENT") {
+      return { experiments: [], lastUpdated: new Date().toISOString() };
+    }
+    throw new Error(`Catalog unreadable: ${(err as Error).message}`);
   }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(content);
+  } catch {
+    throw new Error(
+      "Catalog contains invalid JSON — manual repair required before mutations",
+    );
+  }
+
+  const result = CatalogSchema.safeParse(parsed);
+  if (!result.success) {
+    throw new Error(
+      `Catalog schema invalid: ${result.error.issues.map((i: { message: string }) => i.message).join("; ")}`,
+    );
+  }
+  return result.data;
 }
 
 /** Atomic write: write to .tmp then rename to prevent corruption. */
@@ -88,6 +135,15 @@ async function saveCatalog(catalog: Catalog): Promise<void> {
 
 function generateId(): string {
   return `exp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function isInsideDir(candidate: string, root: string): boolean {
+  const resolvedCandidate = path.resolve(candidate);
+  const resolvedRoot = path.resolve(root);
+  return (
+    resolvedCandidate === resolvedRoot ||
+    resolvedCandidate.startsWith(resolvedRoot + path.sep)
+  );
 }
 
 // ── Server ──
@@ -147,7 +203,14 @@ export function buildServer(): McpServer {
         script: z
           .string()
           .optional()
-          .describe("Script content or file path to execute"),
+          .describe("Inline script content or file path (see scriptMode)"),
+        scriptMode: z
+          .enum(["inline", "file"])
+          .optional()
+          .default("inline")
+          .describe(
+            "'inline' = script content saved as new file; 'file' = existing path relative to experiments dir",
+          ),
         language: z
           .enum(["python", "node", "powershell", "bash"])
           .optional()
@@ -163,6 +226,7 @@ export function buildServer(): McpServer {
       name: string;
       description: string;
       script?: string;
+      scriptMode?: "inline" | "file";
       language?: string;
       tags?: string[];
     }) => {
@@ -181,19 +245,37 @@ export function buildServer(): McpServer {
         updatedAt: now,
       };
 
-      // Save script to file if inline content provided
-      if (args.script && !args.script.includes(path.sep)) {
-        const ext =
-          args.language === "python"
-            ? ".py"
-            : args.language === "node"
-              ? ".js"
-              : args.language === "powershell"
-                ? ".ps1"
-                : ".sh";
-        const scriptPath = path.join(EXPERIMENTS_DIR, `${exp.id}${ext}`);
-        await fs.writeFile(scriptPath, args.script, "utf-8");
-        exp.script = scriptPath;
+      if (args.script) {
+        if (args.scriptMode === "file") {
+          const resolved = path.resolve(EXPERIMENTS_DIR, args.script);
+          if (!isInsideDir(resolved, EXPERIMENTS_DIR)) {
+            return {
+              content: [
+                {
+                  type: "text" as const,
+                  text: JSON.stringify({
+                    error:
+                      "Script file path resolves outside experiments directory — blocked for security",
+                  }),
+                },
+              ],
+              isError: true,
+            };
+          }
+          exp.script = resolved;
+        } else {
+          const ext =
+            args.language === "python"
+              ? ".py"
+              : args.language === "node"
+                ? ".js"
+                : args.language === "powershell"
+                  ? ".ps1"
+                  : ".sh";
+          const scriptPath = path.join(EXPERIMENTS_DIR, `${exp.id}${ext}`);
+          await fs.writeFile(scriptPath, args.script, "utf-8");
+          exp.script = scriptPath;
+        }
       }
 
       catalog.experiments.push(exp);
@@ -288,6 +370,21 @@ export function buildServer(): McpServer {
       }),
     },
     async (args: { experimentId: string; timeoutSeconds?: number }) => {
+      if (!config.enableExperimentRun) {
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: JSON.stringify({
+                error:
+                  "Experiment execution is disabled (set LOTS_ENABLE_EXPERIMENT_RUN=true to enable)",
+              }),
+            },
+          ],
+          isError: true,
+        };
+      }
+
       await ensureDir();
       const catalog = await loadCatalog();
       const exp = catalog.experiments.find((e) => e.id === args.experimentId);
@@ -379,6 +476,14 @@ export function buildServer(): McpServer {
             timeout,
             cwd: EXPERIMENTS_DIR,
             maxBuffer: 1024 * 1024,
+            env: {
+              PATH: process.env.PATH ?? "",
+              HOME: process.env.HOME,
+              USERPROFILE: process.env.USERPROFILE,
+              SYSTEMROOT: process.env.SYSTEMROOT,
+              TEMP: process.env.TEMP,
+              TMP: process.env.TMP,
+            },
           },
         );
 
@@ -408,22 +513,26 @@ export function buildServer(): McpServer {
       exp.updatedAt = new Date().toISOString();
       await saveCatalog(catalog);
 
-      emitAudit({
-        source: "lots-server",
-        tool: "experiment_run",
-        status: exp.status === "complete" ? "success" : "failure",
-        durationMs: exp.results?.durationMs,
-        metadata: {
-          experimentId: exp.id,
-          name: exp.name,
-          language: exp.language,
-          tags: exp.tags,
-          relatedRepo: exp.tags
-            .find((tag) => tag.startsWith("repo:"))
-            ?.slice(5),
-          exitCode: exp.results?.exitCode,
-        },
-      });
+      try {
+        emitAudit({
+          source: "lots-server",
+          tool: "experiment_run",
+          status: exp.status === "complete" ? "success" : "failure",
+          durationMs: exp.results?.durationMs,
+          metadata: {
+            experimentId: exp.id,
+            name: exp.name,
+            language: exp.language,
+            tags: exp.tags,
+            relatedRepo: exp.tags
+              .find((tag) => tag.startsWith("repo:"))
+              ?.slice(5),
+            exitCode: exp.results?.exitCode,
+          },
+        });
+      } catch {
+        // Audit write failure must not mask successful experiment operation
+      }
 
       return {
         content: [
@@ -524,7 +633,7 @@ export function buildServer(): McpServer {
                     durationMs: b.results?.durationMs,
                   },
                   speedDiff:
-                    a.results && b.results
+                    a.results && b.results && a.results.durationMs > 0
                       ? `${(((b.results.durationMs - a.results.durationMs) / a.results.durationMs) * 100).toFixed(1)}%`
                       : "N/A",
                 },
@@ -567,12 +676,18 @@ export function buildServer(): McpServer {
     targetRepo?: string;
   }
 
+  interface TelemetryReadResult {
+    data: Array<Record<string, any>>;
+    parseErrors: number;
+  }
+
   async function readAuditEntries(
     limit: number,
-  ): Promise<Array<Record<string, any>>> {
+  ): Promise<TelemetryReadResult> {
     try {
       const raw = await fs.readFile(config.echoesAuditPath, "utf-8");
-      return raw
+      let parseErrors = 0;
+      const data = raw
         .trim()
         .split("\n")
         .filter(Boolean)
@@ -580,68 +695,81 @@ export function buildServer(): McpServer {
           try {
             return JSON.parse(line);
           } catch {
+            parseErrors++;
             return null;
           }
         })
         .filter(Boolean)
         .reverse()
         .slice(0, limit);
-    } catch {
-      return [];
+      return { data, parseErrors };
+    } catch (err: unknown) {
+      if ((err as NodeJS.ErrnoException).code === "ENOENT") {
+        return { data: [], parseErrors: 0 };
+      }
+      return { data: [], parseErrors: 1 };
     }
   }
 
   async function readLatestSnapshots(
     limit: number,
-  ): Promise<Array<Record<string, any>>> {
+  ): Promise<TelemetryReadResult> {
     try {
       const files = (await fs.readdir(config.seedsSnapshotsDir))
         .filter((f: string) => f.endsWith(".json"))
         .sort()
         .reverse()
         .slice(0, limit);
-      const snapshots: Array<Record<string, any>> = [];
+      let parseErrors = 0;
+      const data: Array<Record<string, any>> = [];
       for (const file of files) {
         try {
           const content = await fs.readFile(
             path.join(config.seedsSnapshotsDir, file),
             "utf-8",
           );
-          snapshots.push(JSON.parse(content));
+          data.push(JSON.parse(content));
         } catch {
-          /* skip */
+          parseErrors++;
         }
       }
-      return snapshots;
-    } catch {
-      return [];
+      return { data, parseErrors };
+    } catch (err: unknown) {
+      if ((err as NodeJS.ErrnoException).code === "ENOENT") {
+        return { data: [], parseErrors: 0 };
+      }
+      return { data: [], parseErrors: 1 };
     }
   }
 
   async function readWorkflowHistory(
     limit: number,
-  ): Promise<Array<Record<string, any>>> {
+  ): Promise<TelemetryReadResult> {
     try {
       const files = (await fs.readdir(config.afloatHistoryDir))
         .filter((f: string) => f.endsWith(".json"))
         .sort()
         .reverse()
         .slice(0, limit);
-      const executions: Array<Record<string, any>> = [];
+      let parseErrors = 0;
+      const data: Array<Record<string, any>> = [];
       for (const file of files) {
         try {
           const content = await fs.readFile(
             path.join(config.afloatHistoryDir, file),
             "utf-8",
           );
-          executions.push(JSON.parse(content));
+          data.push(JSON.parse(content));
         } catch {
-          /* skip */
+          parseErrors++;
         }
       }
-      return executions;
-    } catch {
-      return [];
+      return { data, parseErrors };
+    } catch (err: unknown) {
+      if ((err as NodeJS.ErrnoException).code === "ENOENT") {
+        return { data: [], parseErrors: 0 };
+      }
+      return { data: [], parseErrors: 1 };
     }
   }
 
@@ -784,25 +912,41 @@ export function buildServer(): McpServer {
     return signals;
   }
 
+  interface TelemetryDegradation {
+    auditParseErrors: number;
+    snapshotParseErrors: number;
+    workflowParseErrors: number;
+    isDegraded: boolean;
+  }
+
   async function detectLocalPatterns(
     targetRepo?: string,
     targetSource?: string,
-  ): Promise<PatternSignal[]> {
-    const [auditEntries, snapshots, workflows] = await Promise.all([
+  ): Promise<{ signals: PatternSignal[]; degradation: TelemetryDegradation }> {
+    const [audit, snapshots, workflows] = await Promise.all([
       readAuditEntries(200),
       readLatestSnapshots(5),
       readWorkflowHistory(30),
     ]);
 
+    const degradation: TelemetryDegradation = {
+      auditParseErrors: audit.parseErrors,
+      snapshotParseErrors: snapshots.parseErrors,
+      workflowParseErrors: workflows.parseErrors,
+      isDegraded:
+        audit.parseErrors > 0 ||
+        snapshots.parseErrors > 0 ||
+        workflows.parseErrors > 0,
+    };
+
     const signals: PatternSignal[] = [
-      ...detectRepeatedFailures(auditEntries, 72, 2, targetSource),
-      ...detectLowHealthTrend(snapshots, 70, targetRepo),
-      ...detectWorkflowRetryFailures(workflows, 2),
+      ...detectRepeatedFailures(audit.data, 72, 2, targetSource),
+      ...detectLowHealthTrend(snapshots.data, 70, targetRepo),
+      ...detectWorkflowRetryFailures(workflows.data, 2),
     ];
 
-    // Sort by confidence descending
     signals.sort((a, b) => b.confidence - a.confidence);
-    return signals;
+    return { signals, degradation };
   }
 
   function proposalFromPattern(signal: PatternSignal): ExperimentProposal {
@@ -862,7 +1006,7 @@ export function buildServer(): McpServer {
     }) => {
       await ensureDir();
       const maxProposals = args.maxProposals ?? 5;
-      const signals = await detectLocalPatterns(args.repo, args.source);
+      const { signals, degradation } = await detectLocalPatterns(args.repo, args.source);
       const proposals = signals.slice(0, maxProposals).map(proposalFromPattern);
 
       let savedDrafts: Array<{ id: string; title: string }> = [];
@@ -887,18 +1031,22 @@ export function buildServer(): McpServer {
         await saveCatalog(catalog);
       }
 
-      emitAudit({
-        source: "lots-server",
-        tool: "experiment_suggest",
-        status: proposals.length > 0 ? "success" : "success",
-        metadata: {
-          proposalCount: proposals.length,
-          savedAsDraft: args.saveAsDraft ?? false,
-          draftCount: savedDrafts.length,
-          targetRepo: args.repo,
-          targetSource: args.source,
-        },
-      });
+      try {
+        emitAudit({
+          source: "lots-server",
+          tool: "experiment_suggest",
+          status: proposals.length > 0 ? "success" : "success",
+          metadata: {
+            proposalCount: proposals.length,
+            savedAsDraft: args.saveAsDraft ?? false,
+            draftCount: savedDrafts.length,
+            targetRepo: args.repo,
+            targetSource: args.source,
+          },
+        });
+      } catch {
+        // Audit write failure must not mask successful suggest operation
+      }
 
       return {
         content: [
@@ -910,6 +1058,7 @@ export function buildServer(): McpServer {
                 patternsDetected: signals.length,
                 proposals,
                 ...(savedDrafts.length > 0 ? { savedDrafts } : {}),
+                ...(degradation.isDegraded ? { telemetryDegradation: degradation } : {}),
               },
               null,
               2,

@@ -160,11 +160,13 @@ function emitDiagnosticEvidence(rule, scopeType, targetId, message, state) {
   const evidence = createEvidence({
     sourceRuleId: rule.id,
     confidence: 0.4,
+    confidence_source: "diagnostic",
     scope: scopeType,
     targetId,
     affects: ["diagnostics"],
     reason: message,
     payload: { diagnostic: true },
+    basis: "diagnostic",
   });
   state.evidences.push(evidence);
   state.validationReport.diagnostics.push(message);
@@ -269,6 +271,7 @@ export function applyRules(config, datasetScope, entities, relations) {
       const evidence = createEvidence({
         sourceRuleId: rule.id,
         confidence: deriveConfidence(rule, output || { matched: true }, config),
+        confidence_source: "rule-derived",
         scope: scopeType,
         targetId,
         affects: rule.affects || [],
@@ -280,6 +283,7 @@ export function applyRules(config, datasetScope, entities, relations) {
           returns: rule.returns || null,
           result: output ? clone(output) : null,
         },
+        basis: "rule-evaluation",
       });
       state.evidences.push(evidence);
       trace.status = "fired";

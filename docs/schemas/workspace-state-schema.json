@@ -1,0 +1,325 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CascadeProjects Workspace State",
+  "description": "Condensed schema representing the complete current state of the CascadeProjects workspace",
+  "type": "object",
+  "properties": {
+    "workspace": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "const": "CascadeProjects" },
+        "root": { "type": "string", "pattern": "^C:\\\\Users\\\\USER\\\\CascadeProjects$" },
+        "total_size_mb": { "type": "number", "description": "Total workspace size in MB" },
+        "project_count": { "type": "number", "description": "Number of active projects" },
+        "last_scan": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "root", "total_size_mb", "project_count"]
+    },
+    "core_frameworks": {
+      "type": "object",
+      "properties": {
+        "grid_main": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string", "const": "grid-intelligence" },
+            "version": { "type": "string", "pattern": "^2\\." },
+            "language": { "type": "string", "const": "python" },
+            "python_version": { "type": "string", "pattern": "^3\\.13" },
+            "size_mb": { "type": "number" },
+            "status": { "type": "string", "enum": ["production", "development", "maintenance"] },
+            "architecture": {
+              "type": "object",
+              "properties": {
+                "pattern": { "type": "string", "const": "Application → Service → Database → Core" },
+                "paradigm": { "type": "string", "const": "DDD" },
+                "ai_stack": {
+                  "type": "object",
+                  "properties": {
+                    "llm": { "type": "string", "enum": ["ollama", "openai", "anthropic"] },
+                    "vector_db": { "type": "string", "const": "chromadb" },
+                    "embedding_model": { "type": "string" },
+                    "rag_provider": { "type": "string", "enum": ["local", "cloud"] }
+                  }
+                }
+              }
+            },
+            "modules": {
+              "type": "object",
+              "properties": {
+                "safety": { "type": "boolean" },
+                "security": { "type": "boolean" },
+                "boundaries": { "type": "boolean" },
+                "mothership": { "type": "boolean" },
+                "agentic": { "type": "boolean" }
+              }
+            }
+          }
+        },
+        "glimpse_engine": {
+          "type": "object",
+          "properties": {
+            "version": { "type": "string", "const": "2" },
+            "language": { "type": "string", "const": "javascript" },
+            "size_mb": { "type": "number" },
+            "pipeline_phases": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "ingest",
+                  "profile", 
+                  "entities",
+                  "relations_fuzzy",
+                  "mode_detection",
+                  "multi_pass_inference",
+                  "gap_detection",
+                  "compression",
+                  "grounding"
+                ]
+              },
+              "minItems": 9
+            },
+            "features": {
+              "type": "object",
+              "properties": {
+                "fuzzy_similarity": { "type": "boolean" },
+                "temporal_bucketing": { "type": "boolean" },
+                "confidence_calibration": { "type": "boolean" },
+                "multi_pass_inference": { "type": "boolean" },
+                "insight_compression": { "type": "boolean" },
+                "local_grounding": { "type": "boolean" },
+                "custom_definitions": { "type": "boolean" },
+                "path_system": { "type": "boolean" },
+                "decisional_interview": { "type": "boolean" }
+              }
+            },
+            "cli_integration": {
+              "type": "object",
+              "properties": {
+                "global_command": { "type": "boolean" },
+                "powershell_profiles": { "type": "boolean" },
+                "vscode_integration": { "type": "boolean" },
+                "cursor_integration": { "type": "boolean" },
+                "windsurf_integration": { "type": "boolean" },
+                "zed_integration": { "type": "boolean" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "mcp_ecosystem": {
+      "type": "object",
+      "properties": {
+        "sdk": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string", "const": "@modelcontextprotocol/sdk" },
+            "version": { "type": "string", "pattern": "^1\\." },
+            "language": { "type": "string", "const": "typescript" }
+          }
+        },
+        "servers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "language": { "type": "string", "enum": ["typescript", "python"] },
+              "size_mb": { "type": "number" },
+              "status": { "type": "string", "enum": ["working", "pre-alpha", "complete"] },
+              "dependencies": {
+                "type": "object",
+                "properties": {
+                  "shared_types": { "type": "boolean" },
+                  "mcp_sdk": { "type": "boolean" },
+                  "zod": { "type": "boolean" }
+                }
+              },
+              "tools": {
+                "type": "array",
+                "items": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "project_structure": {
+      "type": "object",
+      "properties": {
+        "active_projects": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "type": { "type": "string", "enum": ["framework", "mcp_server", "library", "tool", "archive"] },
+              "language": { "type": "string", "enum": ["python", "typescript", "javascript", "mixed"] },
+              "size_mb": { "type": "number" },
+              "status": { "type": "string", "enum": ["production", "development", "complete", "archived"] },
+              "has_git": { "type": "boolean" },
+              "has_ci_cd": { "type": "boolean" },
+              "has_tests": { "type": "boolean" }
+            }
+          }
+        },
+        "shared_components": {
+          "type": "object",
+          "properties": {
+            "types": {
+              "type": "object",
+              "properties": {
+                "name": { "type": "string", "const": "@cascade/shared-types" },
+                "version": { "type": "string" },
+                "exports": {
+                  "type": "array",
+                  "items": { "type": "string" }
+                }
+              }
+            },
+            "resilience": {
+              "type": "object",
+              "properties": {
+                "name": { "type": "string", "const": "shared-resilience" },
+                "modules": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": ["circuit-breaker", "health-check", "rate-limit"]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "tool_integrations": {
+      "type": "object",
+      "properties": {
+        "ides": {
+          "type": "object",
+          "properties": {
+            "vscode": {
+              "type": "object",
+              "properties": {
+                "mcp_servers": { "type": "number" },
+                "snippets": { "type": "boolean" },
+                "tasks": { "type": "boolean" }
+              }
+            },
+            "cursor": {
+              "type": "object",
+              "properties": {
+                "mcp_servers": { "type": "number" },
+                "snippets": { "type": "boolean" },
+                "keybindings": { "type": "boolean" }
+              }
+            },
+            "windsurf": {
+              "type": "object",
+              "properties": {
+                "mcp_servers": { "type": "number" },
+                "snippets": { "type": "boolean" },
+                "workflows": { "type": "boolean" }
+              }
+            },
+            "zed": {
+              "type": "object",
+              "properties": {
+                "mcp_servers": { "type": "number" },
+                "context_servers": { "type": "boolean" }
+              }
+            }
+          }
+        },
+        "shell_integration": {
+          "type": "object",
+          "properties": {
+            "powershell": {
+              "type": "object",
+              "properties": {
+                "profiles_configured": { "type": "number" },
+                "functions_available": { "type": "number" },
+                "aliases_configured": { "type": "number" }
+              }
+            },
+            "global_cli": {
+              "type": "object",
+              "properties": {
+                "glimpse_command": { "type": "boolean" },
+                "npm_link": { "type": "boolean" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "configuration": {
+      "type": "object",
+      "properties": {
+        "glimpse_master": {
+          "type": "object",
+          "properties": {
+            "version": { "type": "number", "const": 2 },
+            "active_preset": { "type": "string" },
+            "thresholds": {
+              "type": "object",
+              "properties": {
+                "secondary_lens": { "type": "number" },
+                "evidence_confidence": { "type": "number" },
+                "view_rank": { "type": "number" }
+              }
+            }
+          }
+        },
+        "mcp_global": {
+          "type": "object",
+          "properties": {
+            "servers_registered": { "type": "number" },
+            "context_servers": { "type": "number" }
+          }
+        }
+      }
+    },
+    "health_metrics": {
+      "type": "object",
+      "properties": {
+        "build_status": {
+          "type": "object",
+          "properties": {
+            "grid_main": { "type": "string", "enum": ["passing", "failing", "unknown"] },
+            "glimpse_engine": { "type": "string", "enum": ["passing", "failing", "unknown"] },
+            "mcp_servers": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string",
+                "enum": ["passing", "failing", "unknown"]
+              }
+            }
+          }
+        },
+        "test_coverage": {
+          "type": "object",
+          "properties": {
+            "unit_tests": { "type": "number" },
+            "integration_tests": { "type": "number" },
+            "total_tests": { "type": "number" }
+          }
+        },
+        "diagnostic_health": {
+          "type": "object",
+          "properties": {
+            "total_issues": { "type": "number" },
+            "critical_errors": { "type": "number" },
+            "warnings": { "type": "number" },
+            "last_check": { "type": "string", "format": "date-time" }
+          }
+        }
+      }
+    }
+  },
+  "required": ["workspace", "core_frameworks", "mcp_ecosystem", "project_structure"],
+  "additionalProperties": false
+}

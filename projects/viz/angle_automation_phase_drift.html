@@ -1,0 +1,672 @@
+<style>
+  #container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  #visualizer {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  #lfo-strip {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  canvas {
+    background: linear-gradient(135deg, #f5f5f5 0%, #fafafa 100%);
+    border-radius: 8px;
+    display: block;
+    width: 100%;
+  }
+
+  .curve-canvas {
+    grid-column: 1;
+  }
+
+  .orbit-canvas {
+    grid-column: 2;
+  }
+
+  @media (max-width: 800px) {
+    #visualizer {
+      grid-template-columns: 1fr;
+    }
+
+    #lfo-strip {
+      grid-template-columns: 1fr;
+    }
+
+    .orbit-canvas {
+      grid-column: 1;
+    }
+  }
+
+  .controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    background: var(--color-background-secondary);
+    padding: 16px;
+    border-radius: 8px;
+  }
+
+  .control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+  }
+
+  .value {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+  }
+
+  input[type="range"] {
+    width: 100%;
+  }
+
+  select {
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    font-size: 12px;
+  }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    font-size: 12px;
+    padding: 12px;
+    background: var(--color-background-secondary);
+    border-radius: 8px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+
+  .snap-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .snap-badge.snapped {
+    background: #d4edda;
+    color: #155724;
+  }
+
+  .snap-badge.drifting {
+    background: #fff3cd;
+    color: #856404;
+  }
+
+  .lfo-source {
+    font-size: 10px;
+    color: #888;
+    padding: 8px;
+    text-align: center;
+    border-top: 1px solid #eee;
+    margin-top: 8px;
+  }
+
+  .lfo-source a {
+    color: #666;
+  }
+
+  .quadrant-label {
+    font-size: 10px;
+    fill: #aaa;
+  }
+</style>
+
+<div id="container">
+  <div id="visualizer">
+    <canvas id="curveCanvas" class="curve-canvas" width="300" height="300"></canvas>
+    <canvas id="orbitCanvas" class="orbit-canvas" width="300" height="300"></canvas>
+  </div>
+
+  <div id="lfo-strip">
+    <canvas id="lfoWaveCanvas" width="300" height="120"></canvas>
+    <canvas id="lfoQuadrantCanvas" width="300" height="120"></canvas>
+  </div>
+
+  <div class="controls">
+    <div class="control-group">
+      <label class="label">Loop speed</label>
+      <input type="range" id="speed" min="10" max="100" value="50">
+      <span class="value" id="speedVal">50%</span>
+    </div>
+    <div class="control-group">
+      <label class="label">Phase increment per lap</label>
+      <input type="range" id="phaseInc" min="1" max="90" value="33">
+      <span class="value" id="phaseIncVal">33° (11 laps to full rotation)</span>
+    </div>
+    <div class="control-group">
+      <label class="label">LFO waveform</label>
+      <select id="lfoType">
+        <option value="sinewave">Sine (quarter-cycle interpolated)</option>
+        <option value="triangle">Triangle (linear ramp)</option>
+        <option value="sawtooth">Sawtooth (0→1 ramp)</option>
+      </select>
+    </div>
+    <div class="control-group">
+      <label class="label">Current angle</label>
+      <span class="value" id="angleVal">0°</span>
+    </div>
+    <div class="control-group">
+      <label class="label">Cumulative phase drift</label>
+      <span class="value" id="driftVal">0°</span>
+    </div>
+    <div class="control-group">
+      <label class="label">LFO output</label>
+      <span class="value" id="lfoVal">0.000</span>
+    </div>
+    <div class="control-group">
+      <label class="label">Grid snap</label>
+      <span class="value" id="snapVal"><span class="snap-badge drifting">DRIFTING</span></span>
+    </div>
+    <div class="control-group">
+      <label class="label">Quadrant</label>
+      <span class="value" id="quadrantVal">Q0 [0→1]</span>
+    </div>
+  </div>
+
+  <div class="legend">
+    <div class="legend-item">
+      <div class="legend-dot" style="background: #ff006e;"></div>Automation curve (LFO-shaped)
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background: #00d9ff;"></div>Orbital path (active loop)
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background: #ddd;"></div>Previous loops (phase history)
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background: #ff8c00;"></div>LFO modulation output
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background: #7b68ee;"></div>Quarter-cycle quadrant
+    </div>
+  </div>
+
+  <div class="lfo-source">
+    LFO model ported from <a
+      href="https://github.com/torvalds/GuitarPedal/blob/main/RP2354A/src/lfo.h">torvalds/GuitarPedal
+      RP2354A/src/lfo.h</a> — quarter-cycle phase accumulator with sine table interpolation
+  </div>
+</div>
+
+<script>
+  // === DOM references ===
+  const curveCanvas = document.getElementById('curveCanvas');
+  const orbitCanvas = document.getElementById('orbitCanvas');
+  const lfoWaveCanvas = document.getElementById('lfoWaveCanvas');
+  const lfoQuadrantCanvas = document.getElementById('lfoQuadrantCanvas');
+  const curveCtx = curveCanvas.getContext('2d');
+  const orbitCtx = orbitCanvas.getContext('2d');
+  const lfoWaveCtx = lfoWaveCanvas.getContext('2d');
+  const lfoQuadCtx = lfoQuadrantCanvas.getContext('2d');
+
+  const speedSlider = document.getElementById('speed');
+  const phaseIncSlider = document.getElementById('phaseInc');
+  const lfoTypeSelect = document.getElementById('lfoType');
+  const angleValSpan = document.getElementById('angleVal');
+  const driftValSpan = document.getElementById('driftVal');
+  const speedValSpan = document.getElementById('speedVal');
+  const phaseIncValSpan = document.getElementById('phaseIncVal');
+  const lfoValSpan = document.getElementById('lfoVal');
+  const snapValSpan = document.getElementById('snapVal');
+  const quadrantValSpan = document.getElementById('quadrantVal');
+
+  // === LFO engine — ported from torvalds/GuitarPedal RP2354A/src/lfo.h ===
+  // Quarter-cycle phase accumulator: 30-bit index, 2 high bits = quadrant
+  // 256-entry sine table with linear interpolation
+  const QUARTER_SINE = new Float64Array(257);
+  for (let i = 0; i <= 256; i++) {
+    QUARTER_SINE[i] = Math.sin((i / 256) * Math.PI / 2);
+  }
+
+  const LFO_TYPE = { SINE: 'sinewave', TRIANGLE: 'triangle', SAW: 'sawtooth' };
+  const TWO_POW_32 = 4294967296;
+  const FRAME_RATE = 60; // animation frames per second (approximate)
+
+  function lfoCreate(freqHz) {
+    const step = Math.round((freqHz / FRAME_RATE) * TWO_POW_32);
+    return { phase: 0, step: step };
+  }
+
+  function lfoSetFreq(lfo, freqHz) {
+    lfo.step = Math.round((freqHz / FRAME_RATE) * TWO_POW_32);
+  }
+
+  // Advance phase accumulator and return value in [-1, 1]
+  function lfoStep(lfo, type) {
+    lfo.phase = (lfo.phase + lfo.step) % TWO_POW_32;
+    if (lfo.phase < 0) lfo.phase += TWO_POW_32;
+
+    // Extract quadrant (top 2 bits) and table index (next 8 bits)
+    const normalized = lfo.phase / TWO_POW_32; // 0..1
+    const quadrant = Math.floor(normalized * 4); // 0,1,2,3
+    const withinQ = (normalized * 4) - quadrant; // 0..1 within quadrant
+
+    let value = 0;
+    switch (type) {
+      case LFO_TYPE.SINE: {
+        const idx = withinQ * 256;
+        const lo = Math.floor(idx);
+        const frac = idx - lo;
+        const sample = QUARTER_SINE[lo] + (QUARTER_SINE[lo + 1] - QUARTER_SINE[lo]) * frac;
+        // Q0: 0→1, Q1: 1→0, Q2: 0→-1, Q3: -1→0
+        if (quadrant === 0) value = sample;
+        else if (quadrant === 1) value = QUARTER_SINE[256 - lo] + (QUARTER_SINE[255 - lo] - QUARTER_SINE[256 - lo]) * frac;
+        else if (quadrant === 2) value = -sample;
+        else value = -(QUARTER_SINE[256 - lo] + (QUARTER_SINE[255 - lo] - QUARTER_SINE[256 - lo]) * frac);
+        break;
+      }
+      case LFO_TYPE.TRIANGLE: {
+        // Linear ramp: Q0: 0→1, Q1: 1→0, Q2: 0→-1, Q3: -1→0
+        if (quadrant === 0) value = withinQ;
+        else if (quadrant === 1) value = 1 - withinQ;
+        else if (quadrant === 2) value = -withinQ;
+        else value = -(1 - withinQ);
+        break;
+      }
+      case LFO_TYPE.SAW: {
+        // 0→1 over full cycle, then -1 jump
+        value = normalized * 2 - 1;
+        break;
+      }
+    }
+    return { value: value, quadrant: quadrant, normalized: normalized };
+  }
+
+  // === State ===
+  let time = 0;
+  const lfo = lfoCreate(0.8); // ~0.8 Hz default — visible modulation at 60fps
+  const lfoHistory = new Float64Array(300); // rolling waveform buffer
+  let lfoHistoryIdx = 0;
+  let currentLfoResult = { value: 0, quadrant: 0, normalized: 0 };
+
+  const QUADRANT_LABELS = ['Q0 [0→1]', 'Q1 [1→0]', 'Q2 [0→-1]', 'Q3 [-1→0]'];
+  const QUADRANT_COLORS = ['#4caf50', '#2196f3', '#ff9800', '#e91e63'];
+  // Async/await mapping: each quadrant maps to a phase of backoff/recovery
+  const QUADRANT_ASYNC = [
+    'token refill (rising)',    // Q0: rate limit bucket refilling
+    'cooldown (plateau→decay)', // Q1: backoff interval decreasing
+    'retry wait (deepening)',   // Q2: exponential backoff increasing
+    'recovery (approaching 0)'  // Q3: circuit half-open, probing
+  ];
+
+  // === Grid drawing ===
+  function drawGrid(ctx, width, height, color = '#e0e0e0') {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 0.5;
+    const gridSize = 30;
+    for (let x = 0; x < width; x += gridSize) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke();
+    }
+    for (let y = 0; y < height; y += gridSize) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke();
+    }
+  }
+
+  // === Automation curve — now LFO-shaped ===
+  function drawAutomationCurve() {
+    const w = curveCanvas.width;
+    const h = curveCanvas.height;
+    const cx = w / 2;
+    const cy = h / 2;
+    const radius = 80;
+    const lfoMod = currentLfoResult.value; // [-1, 1]
+
+    curveCtx.clearRect(0, 0, w, h);
+    drawGrid(curveCtx, w, h);
+
+    const speed = parseInt(speedSlider.value);
+    const loopTime = 100 - speed + 20;
+    const normalizedTime = (time % loopTime) / loopTime;
+    const angle = normalizedTime * Math.PI * 2;
+
+    // LFO shapes the automation curve radius — modulates the wobble amplitude
+    const lfoInfluence = 12 * lfoMod; // ±12px modulation from LFO
+    curveCtx.strokeStyle = '#ff006e';
+    curveCtx.lineWidth = 2;
+    curveCtx.beginPath();
+    for (let i = 0; i <= 1; i += 0.01) {
+      const a = i * Math.PI * 2;
+      const off = Math.sin(a * 3) * 8 + lfoInfluence * Math.sin(a);
+      const x = cx + Math.cos(a) * (radius + off);
+      const y = cy + Math.sin(a) * (radius + off);
+      if (i === 0) curveCtx.moveTo(x, y);
+      else curveCtx.lineTo(x, y);
+    }
+    curveCtx.stroke();
+
+    // Cursor dot
+    const offCursor = Math.sin(angle * 3) * 8 + lfoInfluence * Math.sin(angle);
+    const x = cx + Math.cos(angle) * (radius + offCursor);
+    const y = cy + Math.sin(angle) * (radius + offCursor);
+    curveCtx.fillStyle = '#ff006e';
+    curveCtx.beginPath();
+    curveCtx.arc(x, y, 5, 0, Math.PI * 2);
+    curveCtx.fill();
+
+    // Reference circle
+    curveCtx.strokeStyle = '#999';
+    curveCtx.lineWidth = 0.5;
+    curveCtx.setLineDash([3, 3]);
+    curveCtx.beginPath();
+    curveCtx.arc(cx, cy, radius, 0, Math.PI * 2);
+    curveCtx.stroke();
+    curveCtx.setLineDash([]);
+
+    curveCtx.fillStyle = '#999';
+    curveCtx.font = '12px sans-serif';
+    curveCtx.textAlign = 'center';
+    curveCtx.fillText('Automation loop (LFO-shaped)', cx, h - 10);
+  }
+
+  // === Orbital phase history ===
+  function drawOrbit() {
+    const w = orbitCanvas.width;
+    const h = orbitCanvas.height;
+    const cx = w / 2;
+    const cy = h / 2;
+    const radius = 60;
+
+    orbitCtx.clearRect(0, 0, w, h);
+    drawGrid(orbitCtx, w, h);
+
+    const speed = parseInt(speedSlider.value);
+    const phaseInc = parseInt(phaseIncSlider.value);
+    const loopTime = 100 - speed + 20;
+    const normalizedTime = (time % loopTime) / loopTime;
+    const currentAngle = normalizedTime * Math.PI * 2;
+    const lap = Math.floor(time / loopTime);
+
+    // Reference circle
+    orbitCtx.strokeStyle = '#ddd';
+    orbitCtx.lineWidth = 1;
+    orbitCtx.setLineDash([2, 2]);
+    orbitCtx.beginPath();
+    orbitCtx.arc(cx, cy, radius, 0, Math.PI * 2);
+    orbitCtx.stroke();
+    orbitCtx.setLineDash([]);
+
+    // Previous laps (ghost trails)
+    for (let j = 0; j < lap; j++) {
+      const phaseOffset = j * phaseInc * Math.PI / 180;
+      orbitCtx.strokeStyle = 'rgba(200, 200, 200, 0.3)';
+      orbitCtx.lineWidth = 1;
+      orbitCtx.beginPath();
+      for (let i = 0; i <= 1; i += 0.02) {
+        const a = i * Math.PI * 2 + phaseOffset;
+        const ox = cx + Math.cos(a) * radius;
+        const oy = cy + Math.sin(a) * radius;
+        if (i === 0) orbitCtx.moveTo(ox, oy);
+        else orbitCtx.lineTo(ox, oy);
+      }
+      orbitCtx.stroke();
+    }
+
+    // Active lap
+    const phaseOffset = lap * phaseInc * Math.PI / 180;
+    orbitCtx.strokeStyle = '#00d9ff';
+    orbitCtx.lineWidth = 2;
+    orbitCtx.beginPath();
+    for (let i = 0; i <= normalizedTime; i += 0.02) {
+      const a = i * Math.PI * 2 + phaseOffset;
+      const ox = cx + Math.cos(a) * radius;
+      const oy = cy + Math.sin(a) * radius;
+      if (i === 0) orbitCtx.moveTo(ox, oy);
+      else orbitCtx.lineTo(ox, oy);
+    }
+    orbitCtx.stroke();
+
+    // Cursor
+    const finalAngle = currentAngle + phaseOffset;
+    const px = cx + Math.cos(finalAngle) * radius;
+    const py = cy + Math.sin(finalAngle) * radius;
+    orbitCtx.fillStyle = '#00d9ff';
+    orbitCtx.beginPath();
+    orbitCtx.arc(px, py, 4, 0, Math.PI * 2);
+    orbitCtx.fill();
+
+    orbitCtx.fillStyle = '#999';
+    orbitCtx.font = '12px sans-serif';
+    orbitCtx.textAlign = 'center';
+    orbitCtx.fillText('Orbital phase history', cx, h - 10);
+
+    angleValSpan.textContent = Math.round(finalAngle * 180 / Math.PI) % 360 + '°';
+    driftValSpan.textContent = Math.round(lap * phaseInc) + '°';
+  }
+
+  // === LFO waveform trace ===
+  function drawLfoWave() {
+    const w = lfoWaveCanvas.width;
+    const h = lfoWaveCanvas.height;
+    const mid = h / 2;
+
+    lfoWaveCtx.clearRect(0, 0, w, h);
+
+    // Background
+    lfoWaveCtx.fillStyle = '#fafafa';
+    lfoWaveCtx.fillRect(0, 0, w, h);
+
+    // Zero line
+    lfoWaveCtx.strokeStyle = '#ccc';
+    lfoWaveCtx.lineWidth = 0.5;
+    lfoWaveCtx.setLineDash([4, 4]);
+    lfoWaveCtx.beginPath();
+    lfoWaveCtx.moveTo(0, mid);
+    lfoWaveCtx.lineTo(w, mid);
+    lfoWaveCtx.stroke();
+    lfoWaveCtx.setLineDash([]);
+
+    // ±1 reference lines
+    lfoWaveCtx.strokeStyle = '#eee';
+    lfoWaveCtx.beginPath();
+    lfoWaveCtx.moveTo(0, 8); lfoWaveCtx.lineTo(w, 8);
+    lfoWaveCtx.moveTo(0, h - 8); lfoWaveCtx.lineTo(w, h - 8);
+    lfoWaveCtx.stroke();
+
+    // Waveform trace — color-coded by quadrant
+    const len = lfoHistory.length;
+    const step = w / len;
+    for (let i = 1; i < len; i++) {
+      const idx = (lfoHistoryIdx + i) % len;
+      const prevIdx = (lfoHistoryIdx + i - 1) % len;
+      const val = lfoHistory[idx];
+      const prevVal = lfoHistory[prevIdx];
+
+      // Determine quadrant from normalized position in cycle for color
+      const absVal = Math.abs(val);
+      const rising = val > prevVal;
+      let qColor;
+      if (val >= 0 && rising) qColor = QUADRANT_COLORS[0];
+      else if (val >= 0 && !rising) qColor = QUADRANT_COLORS[1];
+      else if (val < 0 && !rising) qColor = QUADRANT_COLORS[2];
+      else qColor = QUADRANT_COLORS[3];
+
+      lfoWaveCtx.strokeStyle = qColor;
+      lfoWaveCtx.lineWidth = 1.5;
+      lfoWaveCtx.beginPath();
+      lfoWaveCtx.moveTo((i - 1) * step, mid - prevVal * (mid - 8));
+      lfoWaveCtx.lineTo(i * step, mid - val * (mid - 8));
+      lfoWaveCtx.stroke();
+    }
+
+    // Current value marker
+    const curX = w - 2;
+    const curY = mid - currentLfoResult.value * (mid - 8);
+    lfoWaveCtx.fillStyle = '#ff8c00';
+    lfoWaveCtx.beginPath();
+    lfoWaveCtx.arc(curX, curY, 3, 0, Math.PI * 2);
+    lfoWaveCtx.fill();
+
+    lfoWaveCtx.fillStyle = '#999';
+    lfoWaveCtx.font = '10px sans-serif';
+    lfoWaveCtx.textAlign = 'left';
+    lfoWaveCtx.fillText('+1', 2, 14);
+    lfoWaveCtx.fillText('-1', 2, h - 4);
+    lfoWaveCtx.textAlign = 'center';
+    lfoWaveCtx.fillText('LFO waveform (quadrant-colored)', w / 2, h - 2);
+  }
+
+  // === LFO quadrant decomposition ===
+  function drawLfoQuadrant() {
+    const w = lfoQuadrantCanvas.width;
+    const h = lfoQuadrantCanvas.height;
+    const cx = w / 2;
+    const cy = h / 2 - 4;
+    const r = Math.min(cx, cy) - 16;
+
+    lfoQuadCtx.clearRect(0, 0, w, h);
+    lfoQuadCtx.fillStyle = '#fafafa';
+    lfoQuadCtx.fillRect(0, 0, w, h);
+
+    const q = currentLfoResult.quadrant;
+    const norm = currentLfoResult.normalized;
+
+    // Draw 4 quadrant arcs
+    for (let i = 0; i < 4; i++) {
+      const startA = (i * Math.PI / 2) - Math.PI / 2; // start from top
+      const endA = startA + Math.PI / 2;
+      lfoQuadCtx.fillStyle = i === q ? QUADRANT_COLORS[i] + '44' : '#f0f0f0';
+      lfoQuadCtx.beginPath();
+      lfoQuadCtx.moveTo(cx, cy);
+      lfoQuadCtx.arc(cx, cy, r, startA, endA);
+      lfoQuadCtx.closePath();
+      lfoQuadCtx.fill();
+
+      lfoQuadCtx.strokeStyle = i === q ? QUADRANT_COLORS[i] : '#ddd';
+      lfoQuadCtx.lineWidth = i === q ? 2 : 1;
+      lfoQuadCtx.beginPath();
+      lfoQuadCtx.arc(cx, cy, r, startA, endA);
+      lfoQuadCtx.stroke();
+
+      // Quadrant label
+      const labelA = startA + Math.PI / 4;
+      const lx = cx + Math.cos(labelA) * (r * 0.6);
+      const ly = cy + Math.sin(labelA) * (r * 0.6);
+      lfoQuadCtx.fillStyle = i === q ? QUADRANT_COLORS[i] : '#aaa';
+      lfoQuadCtx.font = i === q ? 'bold 10px sans-serif' : '9px sans-serif';
+      lfoQuadCtx.textAlign = 'center';
+      lfoQuadCtx.textBaseline = 'middle';
+      lfoQuadCtx.fillText('Q' + i, lx, ly);
+    }
+
+    // Phase hand — sweeps around the circle
+    const handAngle = norm * Math.PI * 2 - Math.PI / 2;
+    const hx = cx + Math.cos(handAngle) * (r - 4);
+    const hy = cy + Math.sin(handAngle) * (r - 4);
+    lfoQuadCtx.strokeStyle = '#ff8c00';
+    lfoQuadCtx.lineWidth = 2;
+    lfoQuadCtx.beginPath();
+    lfoQuadCtx.moveTo(cx, cy);
+    lfoQuadCtx.lineTo(hx, hy);
+    lfoQuadCtx.stroke();
+
+    // Hand tip
+    lfoQuadCtx.fillStyle = '#ff8c00';
+    lfoQuadCtx.beginPath();
+    lfoQuadCtx.arc(hx, hy, 3, 0, Math.PI * 2);
+    lfoQuadCtx.fill();
+
+    // Async/await mapping label for active quadrant
+    lfoQuadCtx.fillStyle = QUADRANT_COLORS[q];
+    lfoQuadCtx.font = '10px sans-serif';
+    lfoQuadCtx.textAlign = 'center';
+    lfoQuadCtx.textBaseline = 'top';
+    lfoQuadCtx.fillText(QUADRANT_ASYNC[q], cx, h - 14);
+
+    lfoQuadCtx.fillStyle = '#999';
+    lfoQuadCtx.font = '10px sans-serif';
+    lfoQuadCtx.fillText('Quarter-cycle quadrant', cx, h - 2);
+  }
+
+  // === Grid snap detection ===
+  function checkGridSnap(phaseInc) {
+    // If 360 divides evenly by phaseInc, the orbit snaps back to start
+    // Like tempo-synced LFO vs free-running: snapped = deterministic, drifting = exploratory
+    return (360 % phaseInc === 0);
+  }
+
+  // === Update all readouts ===
+  function updateLabels() {
+    speedValSpan.textContent = speedSlider.value + '%';
+    const phaseVal = parseInt(phaseIncSlider.value);
+    const cyclesTo360 = Math.round(360 / phaseVal);
+    phaseIncValSpan.textContent = phaseVal + '° (' + cyclesTo360 + ' laps to full rotation)';
+
+    // LFO value
+    lfoValSpan.textContent = currentLfoResult.value.toFixed(3);
+
+    // Grid snap
+    const snapped = checkGridSnap(phaseVal);
+    snapValSpan.innerHTML = snapped
+      ? '<span class="snap-badge snapped">SNAPPED</span>'
+      : '<span class="snap-badge drifting">DRIFTING</span>';
+
+    // Quadrant
+    const q = currentLfoResult.quadrant;
+    quadrantValSpan.textContent = QUADRANT_LABELS[q];
+    quadrantValSpan.style.color = QUADRANT_COLORS[q];
+  }
+
+  // === Animation loop ===
+  function animate() {
+    time++;
+
+    // Advance LFO
+    const type = lfoTypeSelect.value;
+    currentLfoResult = lfoStep(lfo, type);
+
+    // Record to rolling buffer
+    lfoHistory[lfoHistoryIdx % lfoHistory.length] = currentLfoResult.value;
+    lfoHistoryIdx++;
+
+    drawAutomationCurve();
+    drawOrbit();
+    drawLfoWave();
+    drawLfoQuadrant();
+    updateLabels();
+    requestAnimationFrame(animate);
+  }
+
+  // === Event listeners ===
+  speedSlider.addEventListener('input', updateLabels);
+  phaseIncSlider.addEventListener('input', updateLabels);
+  lfoTypeSelect.addEventListener('change', () => {
+    lfo.phase = 0; // reset on waveform change for clean transition
+    lfoHistoryIdx = 0;
+    lfoHistory.fill(0);
+  });
+
+  updateLabels();
+  animate();
+</script>

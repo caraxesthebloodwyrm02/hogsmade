@@ -26,7 +26,6 @@ import re
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from textwrap import dedent
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -310,14 +309,14 @@ def analyze(diff_files: dict[str, list[str]], test_results_raw: str) -> ReviewRe
     # ── Positive signals ───────────────────────────────────────────────────
     if result.test_files_changed:
         result.positives.append(
-            f"Test files modified alongside production changes "
-            f"({', '.join(Path(f).name for f in result.test_files_changed)}). "
+            "Test files modified alongside production changes "
+            "(" + ", ".join(Path(f).name for f in result.test_files_changed) + "). "
             "This is required by safety.md."
         )
     if result.rules_files_changed:
         result.positives.append(
-            f"Rules/governance files updated "
-            f"({', '.join(Path(f).name for f in result.rules_files_changed)}). "
+            "Rules/governance files updated "
+            "(" + ", ".join(Path(f).name for f in result.rules_files_changed) + "). "
             "Keeping rules current with code changes is good practice."
         )
 
@@ -342,13 +341,13 @@ def analyze(diff_files: dict[str, list[str]], test_results_raw: str) -> ReviewRe
 
     # ── Test result note ───────────────────────────────────────────────────
     if "passed" in test_results_raw.lower() or "failed" in test_results_raw.lower():
-        lines = [l for l in test_results_raw.splitlines() if l.strip()]
+        lines = [line for line in test_results_raw.splitlines() if line.strip()]
         summary_line = next(
-            (l for l in reversed(lines) if re.search(r"\d+\s+(passed|failed|error)", l)),
+            (line for line in reversed(lines) if re.search(r"\d+\s+(passed|failed|error)", line)),
             ""
         )
         if "failed" in summary_line or "error" in summary_line:
-            result.test_results_note = f"⚠️ Test suite status: `{summary_line.strip()}`"
+            result.test_results_note = "⚠️ Test suite status: " + summary_line.strip()
             result.findings.append(Finding(
                 severity=Sev.HIGH,
                 dimension="Correctness",
@@ -362,8 +361,8 @@ def analyze(diff_files: dict[str, list[str]], test_results_raw: str) -> ReviewRe
                 recommendation="Fix all test failures before merging. Run: `uv run pytest safety/tests/ boundaries/ -q --tb=short`",
             ))
         elif summary_line:
-            result.test_results_note = f"✅ Test suite status: `{summary_line.strip()}`"
-            result.positives.append(f"All existing safety/boundary tests passing: `{summary_line.strip()}`")
+            result.test_results_note = "✅ Test suite status: " + summary_line.strip()
+            result.positives.append("All existing safety/boundary tests passing: " + summary_line.strip())
 
     return result
 
@@ -463,11 +462,11 @@ def render_review_body(result: ReviewResult) -> str:
                     lines.append(f.line_context)
                     lines.append("```")
                 lines.append("")
-                lines.append(f"**Why this matters:**  ")
-                lines.append(f"{f.rationale}")
+                lines.append("**Why this matters:**  ")
+                lines.append(f.rationale)
                 lines.append("")
-                lines.append(f"**Recommendation:**  ")
-                lines.append(f"{f.recommendation}")
+                lines.append("**Recommendation:**  ")
+                lines.append(f.recommendation)
 
     # ── Positives ───────────────────────────────────────────────────────────
     if result.positives:
