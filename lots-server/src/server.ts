@@ -530,8 +530,8 @@ export function buildServer(): McpServer {
             exitCode: exp.results?.exitCode,
           },
         });
-      } catch {
-        // Audit write failure must not mask successful experiment operation
+      } catch (auditErr) {
+        console.error(`[${SERVER_NAME}] audit write failed for experiment_run:`, auditErr);
       }
 
       return {
@@ -1044,8 +1044,8 @@ export function buildServer(): McpServer {
             targetSource: args.source,
           },
         });
-      } catch {
-        // Audit write failure must not mask successful suggest operation
+      } catch (auditErr) {
+        console.error(`[${SERVER_NAME}] audit write failed for experiment_suggest:`, auditErr);
       }
 
       return {

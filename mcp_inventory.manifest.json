@@ -1,6 +1,10 @@
 {
   "version": "1.0.0",
   "description": "Supplements mcp_config.json with bootstrap contracts and explicit status for every GRID mcp-setup Python server (TUV-001 / .dev-rules.md). Editor canonical keys must match mcp_config.json mcpServers exactly.",
+  "transportModel": {
+    "editorCanonical": "stdio — all servers launched as child processes via editor MCP config (mcp_config.json / claude_code_config.json). No exposed ports.",
+    "gridStandalone": "HTTP — GRID mcp-setup/mcp_config.json defines ports 8000-8009 with /health endpoints for standalone deployment. Not used by editor configs."
+  },
   "paths": {
     "gridRepoRelativeToCascade": "../roots/GRID"
   },
