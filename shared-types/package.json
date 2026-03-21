@@ -21,6 +21,8 @@
   },
   "scripts": {
     "build": "tsc",
+    "lint": "tsc --noEmit",
+    "check": "tsc --noEmit",
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
