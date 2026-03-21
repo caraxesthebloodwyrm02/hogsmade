@@ -99,6 +99,7 @@ jobs:
           cache: npm
           cache-dependency-path: |
             shared-types/package-lock.json
+            shared-resilience/package-lock.json
             ${{ matrix.project }}/package-lock.json
 
       - name: Install shared-types dependencies
@@ -107,6 +108,14 @@ jobs:
 
       - name: Build shared-types
         working-directory: shared-types
+        run: npm run build
+
+      - name: Install shared-resilience dependencies
+        working-directory: shared-resilience
+        run: npm ci
+
+      - name: Build shared-resilience
+        working-directory: shared-resilience
         run: npm run build
 
       - name: Install server dependencies
