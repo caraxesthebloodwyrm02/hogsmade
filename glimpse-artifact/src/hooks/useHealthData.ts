@@ -1,10 +1,11 @@
 import type { HealthScore } from "@/components/phase4/types";
-import { useEffect, useState } from "react";
+import { useDataSource } from "./useDataSource";
 
 interface UseHealthDataResult {
   data: HealthScore[];
   loading: boolean;
   error: string | null;
+  retry: () => void;
 }
 
 const MOCK_HEALTH: HealthScore[] = [
@@ -22,17 +23,15 @@ const MOCK_HEALTH: HealthScore[] = [
 ];
 
 export function useHealthData(): UseHealthDataResult {
-  const [data, setData] = useState<HealthScore[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, _setError] = useState<string | null>(null);
+  const { data, loading, error, retry } = useDataSource<HealthScore[]>({
+    fetcher: async (signal) => {
+      const res = await fetch("/api/health/ecosystem", { signal });
+      if (!res.ok) throw new Error(`Health fetch failed (${res.status})`);
+      return res.json();
+    },
+    mock: MOCK_HEALTH,
+    pollMs: 60_000,
+  });
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setData(MOCK_HEALTH);
-      setLoading(false);
-    }, 200); // Reduced from 600ms for better UX
-    return () => clearTimeout(timer);
-  }, []);
-
-  return { data, loading, error };
+  return { data, loading, error, retry };
 }

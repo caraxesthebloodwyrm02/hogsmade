@@ -103,7 +103,7 @@ export function ExperimentCard({
   return (
     <div
       className={cn(
-        "rounded-xl border border-border-color/50 bg-canvas-surface p-5 shadow-token-sm",
+        "rounded-xl border border-border-color/50 bg-canvas-surface p-5 shadow-token-sm card-glow",
         "transition-all duration-300 hover:shadow-token-md hover:border-border-color",
         className,
       )}
@@ -156,7 +156,7 @@ export function ExperimentCard({
               <span
                 className="flex items-center text-xs px-1.5 py-0.5 rounded font-bold"
                 style={{
-                  color: delta >= 0 ? "var(--emerald-700)" : "var(--rose-700)",
+                  color: delta >= 0 ? "var(--emerald-500)" : "var(--rose-500)",
                   backgroundColor: delta >= 0 ? "var(--emerald-100)" : "var(--rose-100)",
                 }}
               >

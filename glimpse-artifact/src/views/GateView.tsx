@@ -52,8 +52,8 @@ export function GateView() {
   } = useGateData();
 
   return (
-    <div className="h-full overflow-y-auto bg-canvas-bg font-body">
-      <header className="px-6 py-5 border-b border-border-color bg-canvas-surface">
+    <div className="h-full overflow-y-auto bg-canvas-bg dot-grid font-body">
+      <header className="px-6 py-5 border-b border-border-color bg-canvas-surface/80 backdrop-blur-md shadow-token-sm">
         <h1 className="font-heading text-xl font-bold text-ink">
           GATE Pipeline
         </h1>

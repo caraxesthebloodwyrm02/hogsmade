@@ -1,10 +1,11 @@
 import type { Experiment } from "@/components/phase4/types";
-import { useEffect, useState } from "react";
+import { useDataSource } from "./useDataSource";
 
 interface UseExperimentsResult {
   experiments: Experiment[];
   loading: boolean;
   error: string | null;
+  retry: () => void;
 }
 
 const MOCK_EXPERIMENTS: Experiment[] = [
@@ -39,17 +40,10 @@ const MOCK_EXPERIMENTS: Experiment[] = [
 ];
 
 export function useExperiments(): UseExperimentsResult {
-  const [experiments, setExperiments] = useState<Experiment[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, _setError] = useState<string | null>(null);
+  // TODO(D3): Replace `mock` with `fetcher` calling lots-server
+  const { data: experiments, loading, error, retry } = useDataSource<Experiment[]>({
+    mock: MOCK_EXPERIMENTS,
+  });
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setExperiments(MOCK_EXPERIMENTS);
-      setLoading(false);
-    }, 200); // Reduced from 700ms for better UX
-    return () => clearTimeout(timer);
-  }, []);
-
-  return { experiments, loading, error };
+  return { experiments, loading, error, retry };
 }

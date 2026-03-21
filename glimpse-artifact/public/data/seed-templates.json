@@ -1,0 +1,27 @@
+[
+    {
+        "id": "seed-1",
+        "title": "The letter arrives",
+        "description": "A forgotten letter surfaces in an attic box. The handwriting belongs to someone the protagonist believed dead for twenty years."
+    },
+    {
+        "id": "seed-2",
+        "title": "The storm breaks",
+        "description": "A coastal village loses power during the worst storm in a century. Two strangers shelter in the same lighthouse."
+    },
+    {
+        "id": "seed-3",
+        "title": "The offer",
+        "description": "An anonymous patron offers to fund the protagonist's art exhibition — but only if they destroy their most personal piece."
+    },
+    {
+        "id": "seed-4",
+        "title": "The map fragment",
+        "description": "A torn map found in a secondhand book leads to coordinates in the middle of a desert. Someone has already been digging there."
+    },
+    {
+        "id": "seed-5",
+        "title": "The inheritance clause",
+        "description": "A distant relative's will includes one peculiar condition: the heir must live in the crumbling estate for exactly one year before claiming it."
+    }
+]

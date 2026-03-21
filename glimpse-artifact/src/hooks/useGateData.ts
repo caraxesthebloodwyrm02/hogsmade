@@ -1,6 +1,6 @@
 import type { AuditEvent, WorkflowRun } from "@/components/phase4/types";
 import { createDebugLogContext, toUtcIsoString } from "@/lib/debugTime";
-import { useEffect, useState } from "react";
+import { useDataSource } from "./useDataSource";
 
 // ── GATE-specific types ─────────────────────────────────────────────
 
@@ -26,6 +26,7 @@ export interface UseGateDataResult {
   deployments: Deployment[];
   loading: boolean;
   error: string | null;
+  retry: () => void;
   debugContext: ReturnType<typeof createDebugLogContext> | null;
 }
 
@@ -60,32 +61,32 @@ export function createGateSnapshot(now = Date.now()) {
     passed: boolean;
     details: string;
   }[] = [
-    {
-      step: "envelope_exists",
-      passed: true,
-      details: "Envelope envelope_GRID-main_fec6aa7f loaded",
-    },
-    { step: "payload_integrity", passed: true, details: "Hash matches" },
-    { step: "fingerprint_match", passed: true, details: "Fingerprint valid" },
-    {
-      step: "nonce_valid",
-      passed: true,
-      details: "Nonce is valid and unburned",
-    },
-    {
-      step: "timestamp_fresh",
-      passed: true,
-      details: "Envelope age 14.1s < 600.0s",
-    },
-    { step: "tests_verified", passed: true, details: "tests_passed=True" },
-    { step: "scope_present", passed: true, details: "Scope has 2 permissions" },
-    {
-      step: "deploy_within_scope",
-      passed: true,
-      details: "Action read_only permitted",
-    },
-    { step: "audit_log", passed: true, details: "Nonce burned=True" },
-  ];
+      {
+        step: "envelope_exists",
+        passed: true,
+        details: "Envelope envelope_GRID-main_fec6aa7f loaded",
+      },
+      { step: "payload_integrity", passed: true, details: "Hash matches" },
+      { step: "fingerprint_match", passed: true, details: "Fingerprint valid" },
+      {
+        step: "nonce_valid",
+        passed: true,
+        details: "Nonce is valid and unburned",
+      },
+      {
+        step: "timestamp_fresh",
+        passed: true,
+        details: "Envelope age 14.1s < 600.0s",
+      },
+      { step: "tests_verified", passed: true, details: "tests_passed=True" },
+      { step: "scope_present", passed: true, details: "Scope has 2 permissions" },
+      {
+        step: "deploy_within_scope",
+        passed: true,
+        details: "Action read_only permitted",
+      },
+      { step: "audit_log", passed: true, details: "Nonce burned=True" },
+    ];
 
   // ── Real data: GATE/incoming/envelope_GRID-main_2026-03-07_230319.json
   const REAL_ENVELOPE_TS = "2026-03-07T23:09:04.591Z";
@@ -194,41 +195,35 @@ export function createGateSnapshot(now = Date.now()) {
 
 // ── Hook ─────────────────────────────────────────────────────────────
 // Currently returns mock data with simulated loading.
-// When 4.3 polling lands, swap internals to read from grid-server API
+// When 4.3 polling lands, swap `mock` for `fetcher` to read from grid-server API
 // (GATE_DIR files: incoming/*.json, results/*.json, audit.ndjson,
 //  .nonce_registry.json) without changing the return shape.
 
-export function useGateData(): UseGateDataResult {
-  const [verifications, setVerifications] = useState<WorkflowRun[]>([]);
-  const [auditEvents, setAuditEvents] = useState<AuditEvent[]>([]);
-  const [nonces, setNonces] = useState<NonceEntry[]>([]);
-  const [deployments, setDeployments] = useState<Deployment[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error] = useState<string | null>(null);
-  const [debugContext, setDebugContext] = useState<ReturnType<
-    typeof createDebugLogContext
-  > | null>(null);
+interface GateSnapshot {
+  verifications: WorkflowRun[];
+  auditEvents: AuditEvent[];
+  nonces: NonceEntry[];
+  deployments: Deployment[];
+  debugContext: ReturnType<typeof createDebugLogContext>;
+}
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      const snapshot = createGateSnapshot();
-      setVerifications(snapshot.verifications);
-      setAuditEvents(snapshot.auditEvents);
-      setNonces(snapshot.nonces);
-      setDeployments(snapshot.deployments);
-      setDebugContext(snapshot.debugContext);
-      setLoading(false);
-    }, 600);
-    return () => clearTimeout(timer);
-  }, []);
+const MOCK_GATE_DATA: GateSnapshot = createGateSnapshot();
+
+export function useGateData(): UseGateDataResult {
+  // TODO(G1): Replace `mock` with `fetcher` calling grid-server GATE endpoints
+  const { data, loading, error, retry } = useDataSource<GateSnapshot>({
+    mock: MOCK_GATE_DATA,
+    mockDelayMs: 400,
+  });
 
   return {
-    verifications,
-    auditEvents,
-    nonces,
-    deployments,
+    verifications: data.verifications,
+    auditEvents: data.auditEvents,
+    nonces: data.nonces,
+    deployments: data.deployments,
     loading,
     error,
-    debugContext,
+    retry,
+    debugContext: data.debugContext ?? null,
   };
 }

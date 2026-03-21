@@ -1,0 +1,162 @@
+{
+  "_README": "Canonical MCP config — single source of truth for all editors",
+  "_updated": "2026-03-21",
+  "_usage": {
+    "windsurf": "Configured at ~/.codeium/windsurf/windsurf/mcp_config.json (absolutized Python paths, no cwd)",
+    "windsurf-next": "Configured at ~/.codeium/windsurf-next/mcp_config.json (same format as windsurf)",
+    "cursor": "Configured at .cursor/mcp.json in project root (cwd IS supported, uses claude_code_config.json pattern)",
+    "vscode": "Copy mcpServers block to .vscode/mcp.json (cwd IS supported)",
+    "claude-code": "See claude_code_config.json (different format: goes in ~/.claude.json under mcpServers)",
+    "zed": "Configured at ~/.config/zed/settings.json under context_servers (see also zed_config.jsonc reference)",
+    "opencode": "Configured at ~/.config/opencode/config.json under mcpServers (absolutized Python paths, no cwd)"
+  },
+
+  "mcpServers": {
+    "echoes-server": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "tsx",
+        "/home/caraxes/CascadeProjects/echoes-server/src/server.ts"
+      ],
+      "env": {
+        "ECHOES_AUDIT_PATH": "/home/caraxes/.echoes/audit.ndjson"
+      }
+    },
+
+    "grid-server": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "tsx",
+        "/home/caraxes/CascadeProjects/grid-server/src/server.ts"
+      ],
+      "env": {
+        "CASCADE_WORKSPACE_ROOT": "/home/caraxes/CascadeProjects",
+        "GATE_DIR": "/home/caraxes/CascadeProjects/GATE",
+        "GRID_API_URL": "http://localhost:8080"
+      }
+    },
+
+    "afloat-server": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "tsx",
+        "/home/caraxes/CascadeProjects/afloat-server/src/server.ts"
+      ],
+      "env": {}
+    },
+
+    "lots-server": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "tsx",
+        "/home/caraxes/CascadeProjects/lots-server/src/server.ts"
+      ],
+      "env": {
+        "LOTS_EXPERIMENTS_DIR": "/home/caraxes/CascadeProjects/experiments",
+        "ECHOES_AUDIT_PATH": "/home/caraxes/.echoes/audit.ndjson"
+      }
+    },
+
+    "seeds-server": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "tsx",
+        "/home/caraxes/CascadeProjects/seeds-server/src/server.ts"
+      ],
+      "env": {
+        "SEEDS_ROOT": "/home/caraxes/seed"
+      }
+    },
+
+    "pulse-server": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "tsx",
+        "/home/caraxes/CascadeProjects/pulse-server/src/server.ts"
+      ],
+      "env": {}
+    },
+
+    "grid-rag": {
+      "command": "/home/caraxes/roots/GRID/.venv/bin/python",
+      "args": ["mcp-setup/server/grid_rag_mcp_server.py"],
+      "env": {
+        "PYTHONPATH": "/home/caraxes/roots/GRID/src:/home/caraxes/roots/GRID",
+        "RAG_EMBEDDING_PROVIDER": "ollama",
+        "RAG_EMBEDDING_MODEL": "nomic-embed-text-v2-moe:latest",
+        "RAG_LLM_MODE": "local",
+        "RAG_LLM_MODEL_LOCAL": "ministral:latest",
+        "RAG_VECTOR_STORE_PROVIDER": "chromadb",
+        "RAG_VECTOR_STORE_PATH": "/home/caraxes/roots/GRID/.rag_db",
+        "OLLAMA_BASE_URL": "http://localhost:11434"
+      }
+    },
+
+    "grid-rag-enhanced": {
+      "command": "/home/caraxes/roots/GRID/.venv/bin/python",
+      "args": ["-m", "grid.mcp.enhanced_rag_server"],
+      "env": {
+        "PYTHONPATH": "/home/caraxes/roots/GRID/src:/home/caraxes/roots/GRID",
+        "RAG_EMBEDDING_PROVIDER": "ollama",
+        "RAG_EMBEDDING_MODEL": "nomic-embed-text-v2-moe:latest",
+        "RAG_LLM_MODE": "local",
+        "RAG_LLM_MODEL_LOCAL": "ministral:latest",
+        "RAG_VECTOR_STORE_PROVIDER": "chromadb",
+        "RAG_VECTOR_STORE_PATH": "/home/caraxes/roots/GRID/.rag_db",
+        "OLLAMA_BASE_URL": "http://localhost:11434"
+      }
+    },
+
+    "grid-enhanced-tools": {
+      "command": "/home/caraxes/roots/GRID/.venv/bin/python",
+      "args": ["mcp-setup/server/enhanced_tools_mcp_server.py"],
+      "env": {
+        "PYTHONPATH": "/home/caraxes/roots/GRID/src:/home/caraxes/roots/GRID"
+      }
+    },
+
+    "portfolio-safety-lens": {
+      "command": "/home/caraxes/roots/GRID/.venv/bin/python",
+      "args": ["mcp-setup/server/portfolio_safety_mcp_server.py"],
+      "env": {
+        "PYTHONPATH": "/home/caraxes/roots/GRID/src:/home/caraxes/roots/GRID:/home/caraxes/seed/archive/Coinbase_from_zip"
+      }
+    },
+
+    "code-analysis": {
+      "command": "/home/caraxes/roots/GRID/.venv/bin/python",
+      "args": ["mcp-setup/server/code_analysis_mcp_server.py"],
+      "env": {
+        "PYTHONPATH": "/home/caraxes/roots/GRID/src:/home/caraxes/roots/GRID"
+      }
+    },
+
+    "test-runner": {
+      "command": "/home/caraxes/roots/GRID/.venv/bin/python",
+      "args": ["mcp-setup/server/test_runner_mcp_server.py"],
+      "env": {
+        "PYTHONPATH": "/home/caraxes/roots/GRID/src:/home/caraxes/roots/GRID"
+      }
+    },
+
+    "maintain-server": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "tsx",
+        "/home/caraxes/CascadeProjects/maintain-server/src/server.ts"
+      ],
+      "env": {
+        "CASCADE_WORKSPACE_ROOT": "/home/caraxes/CascadeProjects",
+        "SEEDS_ROOT": "/home/caraxes/seed",
+        "ECHOES_AUDIT_PATH": "/home/caraxes/.echoes/audit.ndjson"
+      }
+    }
+  }
+}

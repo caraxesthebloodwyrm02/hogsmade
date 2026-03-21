@@ -117,8 +117,8 @@ export function WorkflowStatusCard({
       className={cn(
         "rounded-xl border p-5 shadow-token-sm transition-all duration-300",
         statusCfg.alert
-          ? "border-rose-300 bg-rose-50/20 shadow-rose-900/5 hover:border-rose-400 hover:shadow-rose-900/10"
-          : "border-border-color/50 bg-canvas-surface hover:shadow-token-md hover:border-border-color",
+          ? "border-rose-500/30 bg-rose-100 hover:border-rose-500/50 hover:shadow-glow-rose"
+          : "border-border-color/50 bg-canvas-surface hover:shadow-token-md hover:border-border-color card-glow",
         className,
       )}
       role="article"
@@ -151,9 +151,9 @@ export function WorkflowStatusCard({
 
       <button
         onClick={() => setExpanded((e) => !e)}
-        className="flex items-center gap-1.5 font-body text-sm font-semibold text-teal-600 hover:text-teal-700 hover:bg-teal-50
+        className="flex items-center gap-1.5 font-body text-sm font-semibold text-teal-500 hover:text-teal-600 hover:bg-teal-500/10
                    min-h-touch px-3 py-1.5 rounded-md
-                   transition-all duration-fast w-full justify-center border border-transparent hover:border-teal-100
+                   transition-all duration-fast w-full justify-center border border-transparent hover:border-teal-500/20
                    focus:outline-none focus:ring-2 focus:ring-teal-500"
         aria-expanded={expanded}
         aria-controls={`steps-${data.id}`}

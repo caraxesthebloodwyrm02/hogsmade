@@ -72,3 +72,52 @@ export interface Annotation {
   y: number;
   color?: string;
 }
+
+// ── MCP Topology ──────────────────────────────────────────────────────
+
+export interface McpServerNode {
+  id: string;
+  name: string;
+  description: string;
+  enabled: boolean;
+  toolCount: number;
+  port?: number;
+}
+
+export interface McpEdge {
+  source: string;
+  target: string;
+  type: 'dependency' | 'dataflow';
+  label?: string;
+}
+
+// ── Cognition Patterns ────────────────────────────────────────────────
+
+export interface CognitionPattern {
+  name: string;
+  activation: number;
+  recentQueries: number;
+}
+
+// ── CI/CD Pipeline ────────────────────────────────────────────────────
+
+export interface PipelinePR {
+  id: string;
+  title: string;
+  author: string;
+  source: 'dependabot' | 'human';
+  status: 'pending' | 'scanning' | 'building' | 'merged' | 'fix-queue';
+  labels: string[];
+  runnerType?: 'self-hosted' | 'github';
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ── GATE Envelope Stages ──────────────────────────────────────────────
+
+export interface EnvelopeStage {
+  name: string;
+  status: 'passed' | 'failed' | 'pending' | 'skipped';
+  details?: string;
+  durationMs?: number;
+}

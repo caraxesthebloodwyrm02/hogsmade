@@ -1,10 +1,11 @@
 import type { AuditEvent } from "@/components/phase4/types";
-import { useEffect, useState } from "react";
+import { useDataSource } from "./useDataSource";
 
 interface UseAuditStreamResult {
   events: AuditEvent[];
   loading: boolean;
   error: string | null;
+  retry: () => void;
 }
 
 const MOCK_EVENTS: AuditEvent[] = [
@@ -99,17 +100,15 @@ const MOCK_EVENTS: AuditEvent[] = [
 ];
 
 export function useAuditStream(): UseAuditStreamResult {
-  const [events, setEvents] = useState<AuditEvent[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, _setError] = useState<string | null>(null);
+  const { data: events, loading, error, retry } = useDataSource<AuditEvent[]>({
+    fetcher: async (signal) => {
+      const res = await fetch("/api/audit/events?limit=50", { signal });
+      if (!res.ok) throw new Error(`Audit fetch failed (${res.status})`);
+      return res.json();
+    },
+    mock: MOCK_EVENTS,
+    pollMs: 30_000,
+  });
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setEvents(MOCK_EVENTS);
-      setLoading(false);
-    }, 200); // Reduced from 800ms for better UX
-    return () => clearTimeout(timer);
-  }, []);
-
-  return { events, loading, error };
+  return { events, loading, error, retry };
 }

@@ -47,11 +47,13 @@ export default {
           100: "var(--emerald-100)",
           500: "var(--emerald-500)",
           600: "var(--emerald-600)",
+          700: "var(--emerald-700)",
         },
       },
       fontFamily: {
         heading: "var(--font-heading)",
         body: "var(--font-body)",
+        mono: "var(--font-mono)",
       },
       spacing: {
         xs: "var(--space-xs)",
@@ -74,6 +76,9 @@ export default {
       boxShadow: {
         "token-sm": "var(--shadow-sm)",
         "token-md": "var(--shadow-md)",
+        "glow-emerald": "var(--glow-emerald)",
+        "glow-amber": "var(--glow-amber)",
+        "glow-rose": "var(--glow-rose)",
       },
       borderRadius: {
         lg: "var(--radius-lg)",

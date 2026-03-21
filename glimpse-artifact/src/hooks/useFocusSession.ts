@@ -1,10 +1,11 @@
 import type { WorkflowRun } from "@/components/phase4/types";
-import { useEffect, useState } from "react";
+import { useDataSource } from "./useDataSource";
 
 interface UseFocusSessionResult {
   session: WorkflowRun | null;
   loading: boolean;
   error: string | null;
+  retry: () => void;
 }
 
 const MOCK_SESSION: WorkflowRun = {
@@ -23,17 +24,10 @@ const MOCK_SESSION: WorkflowRun = {
 };
 
 export function useFocusSession(): UseFocusSessionResult {
-  const [session, setSession] = useState<WorkflowRun | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, _setError] = useState<string | null>(null);
+  // TODO(D4): Replace `mock` with `fetcher` calling pulse-server
+  const { data: session, loading, error, retry } = useDataSource<WorkflowRun | null>({
+    mock: MOCK_SESSION,
+  });
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setSession(MOCK_SESSION);
-      setLoading(false);
-    }, 200); // Reduced from 500ms for better UX
-    return () => clearTimeout(timer);
-  }, []);
-
-  return { session, loading, error };
+  return { session, loading, error, retry };
 }
