@@ -172,3 +172,17 @@ stripe*invoice*task.json
 
 # Glimpse engine duplicate docs (canonical in docs/)
 glimpse-engine/GLIMPSE_BENCH.md
+
+# Personal / sensitive files (never track)
+resume.txt
+memory.md
+
+# Ephemeral session logs
+experiments/thread.txt
+
+# Research binaries (EXIF metadata, binary bloat)
+projects/research/**/*.jpg
+projects/research/**/*.jpeg
+projects/research/**/*.docx
+projects/research/**/*.pdf
+projects/research/images/

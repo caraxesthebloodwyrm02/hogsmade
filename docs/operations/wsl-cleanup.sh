@@ -5,7 +5,7 @@
 #                              v2.0                                        #
 #                                                                          #
 # Comprehensive system cleanup with performance optimization for WSL      #
-# Safe to run repeatedly - includes proper error handling                 #
+# Requires --confirm flag for destructive operations                     #
 #############################################################################
 
 set -euo pipefail
@@ -68,12 +68,34 @@ check_sudo() {
     fi
 }
 
+check_wsl() {
+    if ! grep -qi microsoft /proc/version 2>/dev/null; then
+        warning "This does not appear to be a WSL environment"
+        read -rp "Continue anyway? [y/N] " reply
+        [[ "$reply" =~ ^[Yy]$ ]] || exit 1
+    fi
+}
+
+confirm_destructive() {
+    if [[ "${CONFIRMED:-false}" != "true" ]]; then
+        echo ""
+        warning "This script will:"
+        echo "  - rm -rf /tmp/* and /var/tmp/*"
+        echo "  - Truncate all files in /var/log/"
+        echo "  - Drop kernel page/dentry/inode caches"
+        echo "  - Run apt upgrade -y and apt autopurge -y"
+        echo ""
+        read -rp "Proceed? Pass --confirm to skip this prompt. [y/N] " reply
+        [[ "$reply" =~ ^[Yy]$ ]] || { log "Aborted by user."; exit 0; }
+    fi
+}
+
 check_distro() {
     if [[ ! -f /etc/os-release ]]; then
         warning "Could not determine distro, proceeding anyway..."
         return
     fi
-    
+
     . /etc/os-release
     log "Running on: $NAME ($VERSION_ID)"
 }
@@ -213,6 +235,8 @@ release_memory() {
     log "Syncing filesystem..."
     sync
     
+    # WARNING: drop_caches=3 frees pagecache+dentries+inodes; may cause I/O
+    # stalls or OOM-killer activity if the system is under memory pressure.
     log "Releasing page cache, dentries, and inodes..."
     echo 3 > /proc/sys/vm/drop_caches 2>/dev/null || warning "Could not drop caches"
     
@@ -278,7 +302,9 @@ main() {
     
     # Pre-flight checks
     check_sudo
+    check_wsl
     check_distro
+    confirm_destructive
     
     show_before_stats
     
@@ -336,6 +362,7 @@ WSL Cleanup & Optimization Script
 
 OPTIONS:
     --help, -h          Show this help message
+    --confirm           Skip interactive confirmation prompt
     --no-memory         Skip memory cache release
     --no-diagnostics    Skip diagnostic output
     --optimize-only     Only optimize, skip cleanup
@@ -349,6 +376,10 @@ EXAMPLES:
 
 EOF
         exit 0
+        ;;
+    --confirm)
+        CONFIRMED=true
+        main
         ;;
     --no-memory)
         MEMORY_RELEASE=false
