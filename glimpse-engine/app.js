@@ -1,7 +1,7 @@
-import { loadMasterConfig, parseMasterConfig, serializeMasterConfig, saveMasterConfigToHandle, downloadMasterConfig, createRulePreview } from "./master-config.js";
-import { parseCSV, runContextPipeline, buildSemanticHints, parseQueryIntent, compileRuleFromConversation, computeClusters, validateConfigWithRegistry } from "./engine.js";
-import { rankViews, renderView, VIEW_SPECS } from "./view-specs.js";
+import { buildSemanticHints, compileRuleFromConversation, computeClusters, parseCSV, parseQueryIntent, runContextPipeline, validateConfigWithRegistry } from "./core/engine.js";
+import { createRulePreview, downloadMasterConfig, loadMasterConfig, parseMasterConfig, saveMasterConfigToHandle, serializeMasterConfig } from "./master-config.js";
 import { buildPathwayEntry, logPathway } from "./pathway-logger.js";
+import { rankViews, renderView, VIEW_SPECS } from "./view-specs.js";
 
 const PHASES = [
   { num: 1, label: "Ingest" },
@@ -60,7 +60,7 @@ function restoreFocus(saved) {
   if (el) {
     el.focus();
     if (typeof el.selectionStart === "number" && saved.selStart != null) {
-      try { el.setSelectionRange(saved.selStart, saved.selEnd); } catch {}
+      try { el.setSelectionRange(saved.selStart, saved.selEnd); } catch { }
     }
   }
   window.scrollTo(0, saved.scrollY);
@@ -129,7 +129,7 @@ function runPipeline() {
   const entry = buildPathwayEntry(ctx, G.fileName || "unknown");
   logPathway(entry).then(result => {
     if (result?.logged) console.info("[pathway] Trace logged:", result.file);
-  }).catch(() => {});
+  }).catch(() => { });
 }
 
 function render() {
