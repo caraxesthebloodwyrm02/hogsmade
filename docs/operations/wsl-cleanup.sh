@@ -389,10 +389,30 @@ EOF
         SHOW_DIAGNOSTICS=false
         main
         ;;
-    --quick)
-        # Skip updates for faster run
+    --optimize-only)
         check_sudo
+        check_wsl
         check_distro
+        section "OPTIMIZE ONLY"
+        release_memory
+        optimize_swappiness
+        success "Optimization completed!"
+        ;;
+    --log-only)
+        check_sudo
+        check_wsl
+        check_distro
+        confirm_destructive
+        section "LOG CLEANUP ONLY"
+        clean_logs
+        success "Log cleanup completed!"
+        ;;
+    --quick)
+        # Skip package updates for faster run
+        check_sudo
+        check_wsl
+        check_distro
+        confirm_destructive
         show_before_stats
         clean_temp_files
         clean_logs

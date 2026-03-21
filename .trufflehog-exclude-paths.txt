@@ -14,9 +14,6 @@ GATE/.*\.ndjson$
 tests/fixtures/
 tests/unit/
 \.claude/worktrees/.*/tests/
-.*\.md$
-.*\.txt$
-docs/
 archival/
 pnpm-lock\.yaml$
 package-lock\.json$
