@@ -155,6 +155,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: npm
+          cache-dependency-path: glimpse-artifact/package-lock.json
+
+      - name: Install glimpse-artifact deps (provides js-yaml for glimpse-engine)
+        working-directory: glimpse-artifact
+        run: npm ci
 
       - name: Run root Glimpse tests
         run: node --test tests/glimpse-engine.test.mjs
