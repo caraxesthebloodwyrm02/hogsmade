@@ -6,6 +6,69 @@ Canonical shared rules sources:
 
 This file and `.cursor/rules/*.mdc` are the Cursor adapters for the shared Mangrove development rules. If a summary here drifts from `/home/caraxes/.dev-rules.md`, follow `/home/caraxes/.dev-rules.md`.
 
+## OS Guardrails Adapter
+
+When the task involves Arch Linux workstation hardening, sysctl tuning, nftables/firewall rules, auditd, service exposure, suspicious network activity, or reboot-persistence verification, load and follow:
+
+- `/home/caraxes/skills/os-guardrails/SKILL.md`
+- `/home/caraxes/skills/os-guardrails/references/guardrail-baseline.md`
+
+Apply the `os-guardrails` workflow:
+
+1. **Inspect first** — begin with read-only inspection across kernel/sysctl, firewall/network, and service/audit posture.
+2. **Classify risk** — separate findings into:
+   - 🟢 Safe: persistence, backups, already-active settings
+   - 🟡 Low risk: reversible runtime changes requiring approval
+   - 🔴 Excluded: `linux-hardened`, lockdown, `module.sig_enforce=1`, `hidepid=2`, `hardened_malloc`, AppArmor/SELinux, LKRG unless the user explicitly names the item
+3. **Harden in order** — sysctl → nftables → service posture → audit reserve layer.
+4. **Verify live state** — prefer runtime verification over config-only review.
+5. **Report by layer** — kernel, firewall, logging, filesystem, services, reserve/auditd.
+
+### Nftables Rule Discipline
+
+When editing `/home/caraxes/config/firewall-audit.nft` or related firewall audit rules:
+
+- Exclude loopback first: `oifname "lo" accept` / `iifname "lo" accept`
+- Whitelist known-good traffic before catch-all logging:
+  - `tcp dport { 80, 443 }`
+  - DNS to known resolvers
+  - DHCP / NTP
+  - LAN broadcast / multicast
+  - `ct state established,related`
+- Rate-limit every log rule
+- Use positive priority so audit rules run after the base firewall
+- Treat noisy journals as broken rules, not proof of attack
+
+Under normal operation, audit logs should be silent or near-silent. If HTTPS, DNS, loopback, or LAN discovery traffic is generating alerts, the rules need to be tightened.
+
+### Verification Targets
+
+Target references live in `/home/caraxes/skills/os-guardrails/references/guardrail-baseline.md`.
+
+Key expectations:
+- `kernel.randomize_va_space = 2`
+- `kernel.kptr_restrict = 2`
+- `kernel.yama.ptrace_scope = 2`
+- `kernel.unprivileged_bpf_disabled = 1`
+- `fs.protected_hardlinks = 1`
+- `fs.protected_symlinks = 1`
+- `fs.protected_fifos = 2`
+- `fs.protected_regular = 2`
+- `fs.suid_dumpable = 0`
+- `nftables` enabled
+- base `inet filter` input policy `drop`
+- audit table `inet audit_log` present when audit firewall logging is enabled
+- `sshd` disabled unless explicitly required
+- no externally-bound TCP listeners for local developer services
+
+### Constraints
+
+- Never weaken existing security controls without explicit request
+- Never touch excluded Tier 3 items unless the user names the exact item
+- Always prefer idempotent, reversible changes
+- Always back up before modifying system-facing config
+- Respect TUV-001 and tie every action to the stated security objective
+
 ## The Unbreakable Vow (TUV-001)
 
 1. **Fidelity** — watch over the work.

@@ -35,6 +35,59 @@ This is a multi-project monorepo. Key projects:
 
 15 servers defined in `mcp_config.json` (8 TypeScript MCP servers + 7 Python GRID servers). Python servers use GRID venv at `/home/caraxes/roots/GRID/.venv/bin/python`.
 
+## OS Guardrails Adapter
+
+Use the `os-guardrails` workflow for any OS-level security or workstation hardening task, especially:
+- sysctl kernel hardening
+- nftables or firewall audit rule review
+- auditd enable/disable and audit rules review
+- service exposure checks (`sshd`, loopback-only listeners, open ports)
+- post-update security verification after `pacman -Syu`
+- investigation of suspicious `AUDIT-*` journal entries
+
+When handling these tasks:
+1. Start with a **read-only inspection** first.
+2. Classify findings into:
+   - **Tier 1** — safe persistence / verification only
+   - **Tier 2** — low-risk, reversible changes requiring approval
+   - **Tier 3** — excluded/high-risk changes that must not be applied unless explicitly requested by name
+3. Prefer the existing workstation artifacts:
+   - `/home/caraxes/skills/os-guardrails/SKILL.md`
+   - `/home/caraxes/skills/os-guardrails/references/guardrail-baseline.md`
+   - `/home/caraxes/config/firewall-audit.nft`
+   - `/home/caraxes/config/finalize-guardrails.sh`
+   - `/home/caraxes/config/audit.rules`
+   - `/home/caraxes/docs/security-hardening-guide.md`
+
+### Guardrail Constraints
+
+Never propose or apply the following unless the user explicitly requests the exact item:
+- `linux-hardened`
+- kernel lockdown mode
+- `module.sig_enforce=1`
+- `hidepid=2` on `/proc`
+- `hardened_malloc` preload
+- AppArmor/SELinux rollout
+- LKRG
+
+Reason: this workstation uses NVIDIA and KVM, and those items can break graphics, modules, virtualization, or developer tooling.
+
+### nftables Rules Discipline
+
+When reviewing or editing firewall audit rules:
+- Exclude loopback first
+- Whitelist normal traffic before catch-all logging
+- Rate-limit every log rule
+- Use positive priority, not negative priority
+- Treat a noisy journal as a rule bug, not evidence of compromise
+
+Normal traffic that should usually be excluded from audit alerts:
+- loopback traffic
+- HTTPS/HTTP
+- DNS to known resolvers
+- LAN broadcast/multicast
+- established/related connections
+
 ## Safety
 
 - Never weaken validation in safety/, security/, boundaries/ modules
