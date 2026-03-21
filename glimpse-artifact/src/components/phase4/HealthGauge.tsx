@@ -61,15 +61,15 @@ export function HealthGauge({
     return (
       <div
         className={cn(
-          "flex flex-col items-center justify-center p-4 rounded-xl border border-border-color/50 bg-canvas-surface shadow-token-sm min-h-[180px]",
+          "flex flex-col items-center justify-center p-4 glass-panel min-h-[180px]",
           className,
         )}
         aria-busy="true"
         aria-label="Loading health score"
       >
-        <div className="w-[96px] h-[96px] rounded-full border-[3px] border-border-color/20 animate-pulse mb-3" />
-        <div className="h-3 bg-border-color/30 rounded w-2/3 animate-pulse mb-1" />
-        <div className="h-2 bg-border-color/20 rounded w-1/3 animate-pulse" />
+        <div className="w-[96px] h-[96px] rounded-full border-[3px] border-border-color/20 skeleton-shimmer mb-3" />
+        <div className="h-3 skeleton-shimmer rounded w-2/3 mb-1" />
+        <div className="h-2 skeleton-shimmer rounded w-1/3" />
       </div>
     );
   }
@@ -82,7 +82,7 @@ export function HealthGauge({
   return (
     <div
       className={cn(
-        "flex flex-col items-center p-4 rounded-xl border border-border-color/50 bg-canvas-surface shadow-token-sm min-h-[180px] card-glow",
+        "flex flex-col items-center p-4 glass-panel min-h-[180px]",
         className
       )}
       role="figure"

@@ -254,7 +254,14 @@ export function ScenarioCanvasView() {
         </svg>
       ),
       onClick: () => {
-        window.print();
+        const payload = { seeds, branches, snapshots, annotations, nodes, edges, exportedAt: new Date().toISOString() };
+        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `canvas-export-${Date.now()}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
       },
     },
   ];
@@ -268,8 +275,8 @@ export function ScenarioCanvasView() {
       {/* Seed shelf drawer (C2: low-tech, plain language) */}
       {showShelf && (
         <div className="fixed top-16 left-1/2 -translate-x-1/2 z-40 w-full max-w-2xl animate-fade-slide-up">
-          <div className="bg-canvas-surface/95 backdrop-blur-md border border-border-color rounded-xl shadow-token-md p-5 mx-4">
-            <h2 className="font-heading text-lg font-bold text-ink mb-2">
+          <div className="glass-panel shadow-token-md p-5 mx-4">
+            <h2 className="font-body text-[11px] font-medium uppercase tracking-[0.08em] text-ink mb-2">
               Choose a seed to start
             </h2>
             <p className="font-body text-sm text-ink-muted mb-5">
@@ -427,7 +434,7 @@ export function ScenarioCanvasView() {
       {/* Comparison tray (C3: side-by-side, max 3) */}
       {selectedGlimpses.size >= 2 && (
         <div className="fixed bottom-14 left-0 right-0 z-20 px-4">
-          <div className="max-w-5xl mx-auto bg-canvas-surface/95 backdrop-blur-md border border-border-color rounded-lg shadow-token-md p-4">
+          <div className="max-w-5xl mx-auto glass-panel shadow-token-md p-4">
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-heading text-sm font-bold text-ink">
                 Comparing {selectedGlimpses.size} glimpses

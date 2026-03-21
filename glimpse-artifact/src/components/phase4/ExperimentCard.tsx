@@ -79,15 +79,15 @@ export function ExperimentCard({
     return (
       <div
         className={cn(
-          "rounded-lg border border-border-color bg-canvas-surface p-4 animate-pulse",
+          "glass-panel p-4",
           className,
         )}
         aria-busy="true"
         aria-label="Loading experiment"
       >
-        <div className="h-4 bg-border-color rounded w-3/4 mb-3" />
-        <div className="h-3 bg-border-color rounded w-1/2 mb-2" />
-        <div className="h-8 bg-border-color rounded w-full" />
+        <div className="h-4 skeleton-shimmer rounded w-3/4 mb-3" />
+        <div className="h-3 skeleton-shimmer rounded w-1/2 mb-2" />
+        <div className="h-8 skeleton-shimmer rounded w-full" />
       </div>
     );
   }
@@ -103,15 +103,15 @@ export function ExperimentCard({
   return (
     <div
       className={cn(
-        "rounded-xl border border-border-color/50 bg-canvas-surface p-5 shadow-token-sm card-glow",
-        "transition-all duration-300 hover:shadow-token-md hover:border-border-color",
+        "glass-panel p-5",
+        "transition-all duration-300",
         className,
       )}
       role="article"
       aria-label={`Experiment: ${data.name}, status: ${statusCfg.label}`}
     >
       <div className="flex items-start justify-between gap-2 mb-3">
-        <h3 className="font-heading text-base font-bold text-ink leading-snug tracking-tight">
+        <h3 className="font-body text-[11px] font-medium uppercase tracking-[0.08em] text-ink">
           {data.name}
         </h3>
         <span
@@ -170,7 +170,7 @@ export function ExperimentCard({
               className="h-full rounded-full transition-all duration-slow shadow-sm"
               style={{
                 width: `${Math.max(2, currentPct)}%`,
-                backgroundImage: `linear-gradient(90deg, ${delta >= 0 ? "var(--teal-500), var(--emerald-400)" : "var(--rose-600), var(--rose-400)"
+                backgroundImage: `linear-gradient(90deg, ${delta >= 0 ? "var(--teal-500), var(--emerald-500)" : "var(--rose-600), var(--rose-500)"
                   })`,
               }}
             />

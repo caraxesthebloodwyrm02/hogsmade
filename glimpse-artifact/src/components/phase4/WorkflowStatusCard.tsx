@@ -89,18 +89,18 @@ export function WorkflowStatusCard({
     return (
       <div
         className={cn(
-          "rounded-lg border border-border-color bg-canvas-surface p-4 animate-pulse",
+          "glass-panel p-4",
           className,
         )}
         aria-busy="true"
         aria-label="Loading workflow"
       >
-        <div className="h-4 bg-border-color rounded w-1/2 mb-3" />
+        <div className="h-4 skeleton-shimmer rounded w-1/2 mb-3" />
         <div className="space-y-2">
           {Array.from({ length: 3 }).map((_, i) => (
             <div key={i} className="flex items-center gap-2">
-              <div className="w-5 h-5 rounded-full bg-border-color" />
-              <div className="h-3 bg-border-color rounded flex-1" />
+              <div className="w-5 h-5 rounded-full skeleton-shimmer" />
+              <div className="h-3 skeleton-shimmer rounded flex-1" />
             </div>
           ))}
         </div>
@@ -115,17 +115,17 @@ export function WorkflowStatusCard({
   return (
     <div
       className={cn(
-        "rounded-xl border p-5 shadow-token-sm transition-all duration-300",
+        "p-5 transition-all duration-300",
         statusCfg.alert
-          ? "border-rose-500/30 bg-rose-100 hover:border-rose-500/50 hover:shadow-glow-rose"
-          : "border-border-color/50 bg-canvas-surface hover:shadow-token-md hover:border-border-color card-glow",
+          ? "rounded-xl border border-rose-500/30 bg-rose-100 shadow-token-sm hover:border-rose-500/50 hover:shadow-glow-rose"
+          : "glass-panel",
         className,
       )}
       role="article"
       aria-label={`Workflow: ${data.workflowName}, status: ${statusCfg.label}`}
     >
       <div className="flex items-start justify-between gap-2 mb-3">
-        <h3 className="font-heading text-base font-bold text-ink leading-snug tracking-tight">
+        <h3 className="font-body text-[11px] font-medium uppercase tracking-[0.08em] text-ink">
           {data.workflowName}
         </h3>
         <span

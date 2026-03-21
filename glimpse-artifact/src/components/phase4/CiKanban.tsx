@@ -10,11 +10,11 @@ interface CiKanbanProps {
 type Lane = "pending" | "scanning" | "building" | "merged" | "fix-queue";
 
 const LANES: { id: Lane; label: string; color: string; bgClass: string }[] = [
-  { id: "pending", label: "Pending", color: "text-gray-600", bgClass: "bg-gray-50 border-gray-200" },
-  { id: "scanning", label: "Scanning", color: "text-amber-600", bgClass: "bg-amber-50 border-amber-200" },
-  { id: "building", label: "Building", color: "text-blue-600", bgClass: "bg-blue-50 border-blue-200" },
-  { id: "merged", label: "Merged", color: "text-emerald-600", bgClass: "bg-emerald-50 border-emerald-200" },
-  { id: "fix-queue", label: "Fix Queue", color: "text-rose-600", bgClass: "bg-rose-50 border-rose-200" },
+  { id: "pending", label: "Pending", color: "text-gray-400", bgClass: "bg-gray-500/10 border-gray-500/20" },
+  { id: "scanning", label: "Scanning", color: "text-amber-400", bgClass: "bg-amber-400/10 border-amber-400/20" },
+  { id: "building", label: "Building", color: "text-blue-400", bgClass: "bg-blue-400/10 border-blue-400/20" },
+  { id: "merged", label: "Merged", color: "text-emerald-400", bgClass: "bg-emerald-500/10 border-emerald-500/20" },
+  { id: "fix-queue", label: "Fix Queue", color: "text-rose-400", bgClass: "bg-rose-500/10 border-rose-500/20" },
 ];
 
 function timeAgo(ts: string): string {
@@ -25,11 +25,15 @@ function timeAgo(ts: string): string {
 }
 
 function PrCard({ pr }: { pr: PipelinePR }) {
+  const Wrapper = pr.url ? "a" : "div";
+  const linkProps = pr.url ? { href: pr.url, target: "_blank", rel: "noopener noreferrer" } : {};
   return (
-    <div
+    <Wrapper
+      {...linkProps}
       className={cn(
-        "rounded-lg border bg-canvas-surface p-3 shadow-token-sm space-y-2",
-        "hover:shadow-md transition-shadow",
+        "block glass-panel p-3 space-y-2",
+        "hover:border-teal-500/30 transition-all",
+        pr.url && "cursor-pointer",
       )}
     >
       <div className="flex items-start gap-2">
@@ -56,24 +60,29 @@ function PrCard({ pr }: { pr: PipelinePR }) {
             className={cn(
               "text-[10px] px-1.5 py-0.5 rounded-full font-medium",
               label === "agent:fix"
-                ? "bg-rose-100 text-rose-700"
+                ? "bg-rose-500/15 text-rose-400"
                 : label === "dependencies"
-                  ? "bg-blue-100 text-blue-700"
+                  ? "bg-blue-400/15 text-blue-400"
                   : label === "auto-merge"
-                    ? "bg-emerald-100 text-emerald-700"
-                    : "bg-gray-100 text-gray-700",
+                    ? "bg-emerald-500/15 text-emerald-400"
+                    : "bg-gray-500/15 text-gray-400",
             )}
           >
             {label}
           </span>
         ))}
         {pr.runnerType && (
-          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700 font-medium">
+          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-purple-500/15 text-purple-400 font-medium">
             {pr.runnerType}
           </span>
         )}
       </div>
-    </div>
+      {pr.repo && (
+        <div className="text-[10px] text-ink-muted font-mono truncate">
+          {pr.repo}
+        </div>
+      )}
+    </Wrapper>
   );
 }
 
@@ -83,8 +92,8 @@ export function CiKanban({ prs, loading }: CiKanbanProps) {
       <div className="grid grid-cols-5 gap-3">
         {LANES.map((lane) => (
           <div key={lane.id} className="space-y-2">
-            <div className="h-6 w-20 rounded bg-surface-raised animate-pulse" />
-            <div className="h-24 rounded-lg bg-surface-raised animate-pulse" />
+            <div className="h-6 w-20 rounded skeleton-shimmer" />
+            <div className="h-24 rounded-lg skeleton-shimmer" />
           </div>
         ))}
       </div>
@@ -97,7 +106,7 @@ export function CiKanban({ prs, loading }: CiKanbanProps) {
   return (
     <div className="space-y-4">
       {fixCount > 0 && (
-        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium">
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-medium">
           <AlertTriangle className="w-4 h-4" />
           {fixCount} PR{fixCount !== 1 ? "s" : ""} in fix queue awaiting agent:fix
         </div>

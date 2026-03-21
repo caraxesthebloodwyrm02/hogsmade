@@ -68,11 +68,11 @@ export function AuditTimeline({
         aria-label="Loading timeline"
       >
         {Array.from({ length: 3 }).map((_: unknown, i: number) => (
-          <div key={i} className="flex items-start gap-3 animate-pulse">
-            <div className="w-6 h-6 rounded-full bg-border-color shrink-0" />
+          <div key={i} className="flex items-start gap-3">
+            <div className="w-6 h-6 rounded-full skeleton-shimmer shrink-0" />
             <div className="flex-1 space-y-1.5">
-              <div className="h-3 bg-border-color rounded w-2/3" />
-              <div className="h-3 bg-border-color rounded w-1/3" />
+              <div className="h-3 skeleton-shimmer rounded w-2/3" />
+              <div className="h-3 skeleton-shimmer rounded w-1/3" />
             </div>
           </div>
         ))}
@@ -83,7 +83,7 @@ export function AuditTimeline({
   if (!events || events.length === 0) {
     return (
       <div className={cn("p-6 text-center", className)}>
-        <p className="font-heading text-lg font-medium text-ink">
+        <p className="font-body text-[11px] font-medium uppercase tracking-[0.08em] text-ink">
           No events yet
         </p>
         <p className="font-body text-sm text-ink-muted mt-1">

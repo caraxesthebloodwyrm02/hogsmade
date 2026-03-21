@@ -13,7 +13,7 @@ export function ScenarioSeedCard({ seed, onFork, className, style }: ScenarioSee
   return (
     <div
       className={cn(
-        'w-64 rounded-lg border-2 border-teal-500/50 bg-canvas-surface p-4 shadow-token-md card-glow',
+        'w-64 glass-panel border-2 border-teal-500/50 p-4 shadow-token-md card-glow',
         className
       )}
       style={style}

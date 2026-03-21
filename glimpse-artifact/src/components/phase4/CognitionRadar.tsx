@@ -94,8 +94,8 @@ export function CognitionRadar({ patterns, loading }: CognitionRadarProps) {
         {/* Filled area */}
         <polygon
           points={polyPoints}
-          fill="rgba(20, 184, 166, 0.15)"
-          stroke="#14b8a6"
+          fill="var(--teal-100)"
+          stroke="var(--teal-500)"
           strokeWidth={1.5}
           strokeLinejoin="round"
         />
@@ -119,8 +119,8 @@ export function CognitionRadar({ patterns, loading }: CognitionRadarProps) {
                 cx={pt.x}
                 cy={pt.y}
                 r={isHovered ? 6 : 4}
-                fill="#14b8a6"
-                stroke="#fff"
+                fill="var(--teal-500)"
+                stroke="var(--ink)"
                 strokeWidth={2}
                 className="transition-all duration-150"
               />

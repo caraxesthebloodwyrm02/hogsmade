@@ -24,6 +24,8 @@ export default {
         ink: {
           DEFAULT: "var(--ink)",
           muted: "var(--ink-muted)",
+          tertiary: "var(--ink-tertiary)",
+          ghost: "var(--ink-ghost)",
         },
         teal: {
           50: "var(--teal-50)",
@@ -36,6 +38,7 @@ export default {
         amber: {
           100: "var(--amber-100)",
           400: "var(--amber-400)",
+          500: "var(--amber-400)",
           600: "var(--amber-600)",
         },
         rose: {
@@ -48,6 +51,15 @@ export default {
           500: "var(--emerald-500)",
           600: "var(--emerald-600)",
           700: "var(--emerald-700)",
+        },
+        violet: {
+          400: "var(--violet-400)",
+          600: "var(--violet-600)",
+        },
+        sediment: {
+          dark: "var(--sediment-dark)",
+          mid: "var(--sediment-mid)",
+          light: "var(--sediment-light)",
         },
       },
       fontFamily: {
@@ -72,13 +84,16 @@ export default {
       transitionTimingFunction: {
         default: "var(--easing-default)",
         bounce: "var(--easing-bounce)",
+        surface: "var(--easing-surface)",
       },
       boxShadow: {
         "token-sm": "var(--shadow-sm)",
         "token-md": "var(--shadow-md)",
+        "token-lg": "var(--shadow-lg)",
         "glow-emerald": "var(--glow-emerald)",
         "glow-amber": "var(--glow-amber)",
         "glow-rose": "var(--glow-rose)",
+        "glow-signal": "var(--shadow-glow)",
       },
       borderRadius: {
         lg: "var(--radius-lg)",
@@ -88,6 +103,13 @@ export default {
       },
       borderColor: {
         "border-color": "var(--border-color)",
+        glass: "var(--glass-border)",
+      },
+      backdropBlur: {
+        glass: "var(--glass-blur)",
+      },
+      backgroundColor: {
+        glass: "var(--glass-fill)",
       },
     },
   },

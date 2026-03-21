@@ -20,10 +20,21 @@ const MOCK_PATTERNS: CognitionPattern[] = [
   { name: "Combination", activation: 0.42, recentQueries: 19 },
 ];
 
+interface CognitionApiResponse {
+  patterns: CognitionPattern[];
+  source: "live" | "mock";
+}
+
 export function useCognitionStats(): UseCognitionStatsResult {
-  // TODO(K1): Replace `mock` with `fetcher` calling GRID Mothership /cognition/stats
   const { data: patterns, loading, error, retry } = useDataSource<CognitionPattern[]>({
+    fetcher: async (signal) => {
+      const res = await fetch("/api/cognition/health", { signal });
+      if (!res.ok) throw new Error(`Cognition API error: ${res.status}`);
+      const data = (await res.json()) as CognitionApiResponse;
+      return data.patterns;
+    },
     mock: MOCK_PATTERNS,
+    pollMs: 60_000,
   });
 
   return { patterns, loading, error, retry };

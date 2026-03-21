@@ -48,10 +48,11 @@ export function AppShell() {
       {/* Navigation bar */}
       {activeView !== 'canvas' && (
         <nav
-          className="flex items-center gap-1 px-4 py-2 bg-canvas-surface/80 backdrop-blur-md border-b border-border-color shrink-0"
+          className="flex items-center gap-1 px-4 py-2 bg-[var(--glass-fill)] backdrop-blur-xl border-b border-border-color shrink-0 relative overflow-hidden"
           role="tablist"
           aria-label="Main navigation"
         >
+          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-teal-500/50 to-transparent" />
           {VIEWS.map((view) => (
             <button
               key={view.id}
@@ -65,7 +66,7 @@ export function AppShell() {
                 'transition-all duration-fast',
                 'focus:outline-none focus:ring-2 focus:ring-teal-500',
                 activeView === view.id
-                  ? 'bg-teal-500/15 text-teal-500 shadow-glow-emerald border border-teal-500/20'
+                  ? 'bg-teal-500/15 text-teal-500 shadow-glow-emerald border border-teal-500/20 breathe-glow'
                   : 'text-ink-muted hover:text-ink hover:bg-surface-raised border border-transparent'
               )}
             >
@@ -77,7 +78,8 @@ export function AppShell() {
 
       {/* Canvas gets its own nav button overlay since it's full-screen */}
       {activeView === 'canvas' && (
-        <div className="fixed top-4 right-4 z-50 flex items-center gap-1 bg-canvas-surface/80 backdrop-blur-md rounded-lg border border-border-color shadow-token-md px-2 py-1">
+        <div className="fixed top-4 right-4 z-50 flex items-center gap-1 bg-[var(--glass-fill)] backdrop-blur-xl rounded-lg border border-glass shadow-token-md px-2 py-1 relative overflow-hidden">
+          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-teal-500/40 to-transparent" />
           {VIEWS.map((view) => (
             <button
               key={view.id}
@@ -88,7 +90,7 @@ export function AppShell() {
                 'transition-all duration-fast',
                 'focus:outline-none focus:ring-2 focus:ring-teal-500',
                 activeView === view.id
-                  ? 'bg-teal-500/15 text-teal-500 shadow-glow-emerald border border-teal-500/20'
+                  ? 'bg-teal-500/15 text-teal-500 shadow-glow-emerald border border-teal-500/20 breathe-glow'
                   : 'text-ink-muted hover:text-ink hover:bg-surface-raised border border-transparent'
               )}
             >

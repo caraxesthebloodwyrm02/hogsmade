@@ -34,14 +34,26 @@ function layoutNodes(nodes: McpServerNode[]): LayoutNode[] {
 }
 
 const NODE_COLORS: Record<string, { fill: string; stroke: string; glow: string }> = {
-  "shared-types": { fill: "rgba(245, 158, 11, 0.15)", stroke: "#f59e0b", glow: "rgba(245, 158, 11, 0.3)" },
-  "grid-rag": { fill: "rgba(96, 165, 250, 0.15)", stroke: "#60a5fa", glow: "rgba(96, 165, 250, 0.3)" },
-  default: { fill: "rgba(52, 211, 153, 0.12)", stroke: "#34d399", glow: "rgba(52, 211, 153, 0.3)" },
+  "shared-types": { fill: "rgba(212, 162, 74, 0.12)", stroke: "var(--amber-400)", glow: "rgba(212, 162, 74, 0.2)" },
+  "grid-rag": { fill: "rgba(106, 140, 180, 0.12)", stroke: "#6a8cb4", glow: "rgba(106, 140, 180, 0.2)" },
+  default: { fill: "rgba(106, 174, 130, 0.10)", stroke: "var(--teal-500)", glow: "rgba(106, 174, 130, 0.2)" },
 };
 
 function nodeColor(id: string) {
   return NODE_COLORS[id] ?? NODE_COLORS.default;
 }
+
+// T4: Known tool registry for detail panel
+const SERVER_TOOLS: Record<string, string[]> = {
+  "afloat-server": ["workflow_list", "workflow_execute", "workflow_create", "workflow_status", "workflow_dryrun"],
+  "echoes-server": ["record_audit", "query_audit", "audit_summary", "audit_export"],
+  "grid-server": ["validate_envelope", "gate_status", "nonce_create", "nonce_burn", "deploy_check", "gate_audit"],
+  "lots-server": ["experiment_list", "experiment_create", "experiment_status"],
+  "maintain-server": ["system_check", "deps_audit", "health_scan", "diagnostics_run"],
+  "pulse-server": ["morning_briefing", "focus_start", "focus_end", "check_alerts", "daily_summary"],
+  "seeds-server": ["ecosystem_scan", "repo_health", "seed_list", "seed_create"],
+  "grid-rag": ["rag_query", "rag_ingest", "rag_status"],
+};
 
 export function McpGraph({ nodes, edges, loading }: McpGraphProps) {
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
@@ -108,7 +120,7 @@ export function McpGraph({ nodes, edges, loading }: McpGraphProps) {
                 y1={src.y}
                 x2={tgt.x}
                 y2={tgt.y}
-                stroke={isHighlighted ? "#34d399" : "var(--border-color)"}
+                stroke={isHighlighted ? "var(--teal-500)" : "var(--border-color)"}
                 strokeWidth={isHighlighted ? 2 : 1}
                 strokeDasharray={edge.type === "dataflow" ? "6 3" : undefined}
                 opacity={hoveredNode && !isHighlighted ? 0.15 : 0.6}
@@ -149,12 +161,12 @@ export function McpGraph({ nodes, edges, loading }: McpGraphProps) {
                 cy={node.y}
                 r={r + (isHovered ? 3 : 0)}
                 fill={colors.fill}
-                stroke={isSelected ? "#34d399" : colors.stroke}
+                stroke={isSelected ? "var(--teal-500)" : colors.stroke}
                 strokeWidth={isSelected ? 2.5 : 1.5}
                 className="transition-all duration-200"
               />
               {node.enabled && (
-                <circle cx={node.x + r - 4} cy={node.y - r + 4} r={4} fill="#34d399" stroke="var(--surface)" strokeWidth={1.5} />
+                <circle cx={node.x + r - 4} cy={node.y - r + 4} r={4} fill="var(--teal-500)" stroke="var(--surface)" strokeWidth={1.5} />
               )}
               <text
                 x={node.x}
@@ -192,9 +204,9 @@ export function McpGraph({ nodes, edges, loading }: McpGraphProps) {
 
       {/* Sidebar detail panel */}
       {selectedData && (
-        <div className="w-56 shrink-0 rounded-lg border border-border-color bg-canvas-surface p-4 space-y-3 self-start shadow-token-sm card-glow">
+        <div className="w-56 shrink-0 glass-panel p-4 space-y-3 self-start">
           <div>
-            <h3 className="font-heading text-sm font-bold text-ink">{selectedData.name}</h3>
+            <h3 className="font-body text-[11px] font-medium uppercase tracking-[0.08em] text-ink">{selectedData.name}</h3>
             <p className="text-xs text-ink-muted mt-1">{selectedData.description}</p>
           </div>
           <div className="space-y-1.5 text-xs font-mono">
@@ -227,6 +239,20 @@ export function McpGraph({ nodes, edges, loading }: McpGraphProps) {
               </span>
             </div>
           </div>
+          {/* T4: Tool list */}
+          {SERVER_TOOLS[selectedData.id] && (
+            <div className="border-t border-border-color/40 pt-3">
+              <span className="text-[10px] text-ink-muted font-body uppercase tracking-wider">Tools</span>
+              <div className="mt-1.5 space-y-1">
+                {SERVER_TOOLS[selectedData.id].map((tool) => (
+                  <div key={tool} className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/60 shrink-0" />
+                    <span className="text-[11px] font-mono text-ink">{tool}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

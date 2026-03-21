@@ -12,10 +12,10 @@ const STATUS_CONFIG: Record<
   EnvelopeStage["status"],
   { icon: typeof CheckCircle; color: string; bg: string; label: string }
 > = {
-  passed: { icon: CheckCircle, color: "text-emerald-600", bg: "bg-emerald-50 border-emerald-200", label: "Passed" },
-  failed: { icon: XCircle, color: "text-rose-600", bg: "bg-rose-50 border-rose-200", label: "Failed" },
-  pending: { icon: Clock, color: "text-gray-400", bg: "bg-gray-50 border-gray-200", label: "Pending" },
-  skipped: { icon: SkipForward, color: "text-amber-500", bg: "bg-amber-50 border-amber-200", label: "Skipped" },
+  passed: { icon: CheckCircle, color: "text-emerald-500", bg: "bg-emerald-500/10 border-emerald-500/20", label: "Passed" },
+  failed: { icon: XCircle, color: "text-rose-500", bg: "bg-rose-500/10 border-rose-500/20", label: "Failed" },
+  pending: { icon: Clock, color: "text-ink-muted", bg: "bg-surface-raised border-border-color", label: "Pending" },
+  skipped: { icon: SkipForward, color: "text-amber-400", bg: "bg-amber-400/10 border-amber-400/20", label: "Skipped" },
 };
 
 export function GateFlowDiagram({ stages, loading, envelopeId }: GateFlowDiagramProps) {
@@ -23,7 +23,7 @@ export function GateFlowDiagram({ stages, loading, envelopeId }: GateFlowDiagram
     return (
       <div className="space-y-3">
         {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="h-14 rounded-lg bg-surface-raised animate-pulse" />
+          <div key={i} className="h-14 rounded-lg skeleton-shimmer" />
         ))}
       </div>
     );
@@ -35,7 +35,7 @@ export function GateFlowDiagram({ stages, loading, envelopeId }: GateFlowDiagram
   return (
     <div className="space-y-4">
       {/* Summary bar */}
-      <div className="flex items-center justify-between px-4 py-3 rounded-lg bg-canvas-surface border border-border-color">
+      <div className="flex items-center justify-between px-4 py-3 glass-panel">
         <div className="flex items-center gap-3">
           {envelopeId && (
             <span className="text-xs font-mono text-ink-muted bg-surface-raised px-2 py-0.5 rounded">
@@ -81,11 +81,11 @@ export function GateFlowDiagram({ stages, loading, envelopeId }: GateFlowDiagram
                   )}
                   {/* Duration bar */}
                   {stage.durationMs !== undefined && stage.durationMs > 0 && (
-                    <div className="mt-1.5 h-1 rounded-full bg-white/60 overflow-hidden">
+                    <div className="mt-1.5 h-1 rounded-full bg-surface-raised overflow-hidden">
                       <div
                         className={cn(
                           "h-full rounded-full transition-all duration-500",
-                          stage.status === "passed" ? "bg-emerald-400" : "bg-rose-400",
+                          stage.status === "passed" ? "bg-emerald-500" : "bg-rose-500",
                         )}
                         style={{ width: `${barWidth}%` }}
                       />

@@ -111,6 +111,8 @@ export interface PipelinePR {
   runnerType?: 'self-hosted' | 'github';
   createdAt: string;
   updatedAt: string;
+  repo?: string;
+  url?: string;
 }
 
 // ── GATE Envelope Stages ──────────────────────────────────────────────
