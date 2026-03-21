@@ -32,7 +32,6 @@ import { promises as fs } from "fs";
 import path from "path";
 import { pathToFileURL } from "url";
 import * as z from "zod";
-import { emitAudit } from "@cascade/shared-types/audit-client";
 import { getConfig } from "./config.js";
 
 // ── Constants ──
