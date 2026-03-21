@@ -1,37 +1,17 @@
-    # integrated shared environment
+# integrated shared environment
 
 
 # [header]
-import datetime
 import time
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple
+from dataclasses import dataclass
+from typing import Dict, List, Optional, Tuple
 
-def current_time():
-    return datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-@dataclass
-class SculptureFrame:
-    """Represents a single frame in the sculpture timelapse"""
-    name: str
-    material: str
-    completion_percentage: float
-    timestamp: str = field(default_factory=current_time)
-    details: Dict[str, Any] = field(default_factory=dict)
-
-@dataclass
-class SculptureTimelapse:
-    """A timelapse sequence of a sculpture being created"""
-    title: str
-    artist: str
-    frames: List[SculptureFrame] = field(default_factory=list)
-    created_at: str = field(default_factory=current_time)
-
-    def add_frame(self, frame: SculptureFrame):
-        self.frames.append(frame)
-
-    def get_duration(self) -> int:
-        return len(self.frames)
+from control_room.constants import (
+    CADENCE,
+    MODULAR_PASS_INDEX,
+    RHYTHM_PASS_COUNT,
+    GatePassProfile,
+)
 
 
 @dataclass
@@ -53,20 +33,11 @@ class EpisodePart:
         return self.phase_one.duration_seconds + self.phase_two.duration_seconds
 
 
-@dataclass(frozen=True)
-class GatePassProfile:
-    pass_index: int
-    mode: str
-    cadence: Tuple[str, str, str, str] = ("map", "balance", "tighten", "verify")
-
-
 class InteractiveIterationTool:
     TOTAL_EXECUTION_SECONDS = 1800
     ISOLATION_BREAK_SECONDS = 240
     PHASE_ONE_SECONDS = 210
     PHASE_TWO_SECONDS = 180
-    RHYTHM_PASS_COUNT = 6
-    MODULAR_PASS_INDEX = 7
     STAGE_SEQUENCE: Tuple[str, str, str, str] = ("setup", "build", "mutation", "closure")
 
     def __init__(self, parts: Optional[List[EpisodePart]] = None) -> None:
@@ -77,8 +48,8 @@ class InteractiveIterationTool:
 
     def _build_gate_passes(self) -> List[GatePassProfile]:
         gate_passes: List[GatePassProfile] = []
-        for pass_index in range(1, self.MODULAR_PASS_INDEX + 1):
-            mode = "Rhythm" if pass_index <= self.RHYTHM_PASS_COUNT else "Modular"
+        for pass_index in range(1, MODULAR_PASS_INDEX + 1):
+            mode = "Rhythm" if pass_index <= RHYTHM_PASS_COUNT else "Modular"
             gate_passes.append(GatePassProfile(pass_index=pass_index, mode=mode))
         return gate_passes
 
@@ -96,7 +67,7 @@ class InteractiveIterationTool:
             "phase_lane": "phase_start_input_received",
             "countdown_lane": "countdown_tick_active",
             "break_lane": "part_index_equals_2",
-            "promotion_lane": f"completed_passes_reached_{self.RHYTHM_PASS_COUNT}",
+            "promotion_lane": f"completed_passes_reached_{RHYTHM_PASS_COUNT}",
             "exit_lane": "phase_completion_confirmed",
         }
 
@@ -118,7 +89,7 @@ class InteractiveIterationTool:
         print("Mode: Modular")
         print(f"Trigger Board: {trigger_board}")
         print(f"Auxiliary BUS Route: {bus_route}")
-        self.completed_passes = self.MODULAR_PASS_INDEX
+        self.completed_passes = MODULAR_PASS_INDEX
 
     def _default_parts(self) -> List[EpisodePart]:
         return [
@@ -200,6 +171,51 @@ class InteractiveIterationTool:
                 f"Active time must be {expected_active_seconds}s, found {active_seconds}s."
             )
 
+    def airflow_context(self, part_index: int) -> Dict[str, str]:
+        """Query control room for airflow+light context at this episode part."""
+        from control_room import airflow, light_control
+
+        wait_time_s = (part_index - 1) * 15
+        snapshot = airflow.get_airflow_snapshot(wait_time_s=wait_time_s)
+        dial_state = airflow.derive_dial_state(snapshot)
+        light_state = light_control.lightfunction_logic(snapshot)
+        orchestration = airflow.AirflowOrchestrator().run()
+
+        return {
+            "part_index": str(part_index),
+            "stage": self._stage_for_part(part_index),
+            "airflow_category": dial_state.category,
+            "light_phase": light_state.phase,
+            "beat_phase": orchestration["beat_phase"],
+            "fan_speed": str(snapshot.fan_speed),
+            "temperature": f"{snapshot.temperature:.1f}",
+        }
+
+    def episode_summary(self) -> Dict[str, object]:
+        """Build a summary of the episode structure with control room context."""
+        parts_summary: List[Dict[str, object]] = []
+        for part in self.parts:
+            context = self.airflow_context(part.index)
+            parts_summary.append({
+                "part_index": part.index,
+                "title": part.title,
+                "stage": context["stage"],
+                "airflow_category": context["airflow_category"],
+                "light_phase": context["light_phase"],
+                "beat_phase": context["beat_phase"],
+                "phase_one_duration_s": part.phase_one.duration_seconds,
+                "phase_two_duration_s": part.phase_two.duration_seconds,
+            })
+
+        return {
+            "total_parts": len(self.parts),
+            "total_execution_s": self.TOTAL_EXECUTION_SECONDS,
+            "isolation_break_s": self.ISOLATION_BREAK_SECONDS,
+            "completed_passes": self.completed_passes,
+            "gate_pass_count": len(self.gate_passes),
+            "parts": parts_summary,
+        }
+
     def _render_overview(self) -> None:
         print("\n=== INTERACTIVE ITERATION TOOL ===")
         print("TV short-episode architecture: 4 parts, 2 phases each")
@@ -207,9 +223,14 @@ class InteractiveIterationTool:
         print(f"Isolation break: {self.ISOLATION_BREAK_SECONDS}s (8 minutes)")
         print(f"Gate-pass cadence: {self.gate_passes[0].cadence}")
         print(
-            f"Mode promotion: Rhythm passes 1-{self.RHYTHM_PASS_COUNT}, "
-            f"Modular pass {self.MODULAR_PASS_INDEX}"
+            f"Mode promotion: Rhythm passes 1-{RHYTHM_PASS_COUNT}, "
+            f"Modular pass {MODULAR_PASS_INDEX}"
         )
+        try:
+            ctx = self.airflow_context(1)
+            print(f"Control room: {ctx['airflow_category']} | {ctx['light_phase']}")
+        except Exception:
+            print("Control room: offline")
         print("The second phase in each part is tighter for engagement and x-factor build-up.\n")
 
     def _run_countdown(self, seconds: int, label: str, speed_multiplier: float) -> None:
@@ -254,7 +275,7 @@ class InteractiveIterationTool:
                 )
                 input("Break complete. Press Enter to enter Part 3...\n")
 
-        self.completed_passes = self.RHYTHM_PASS_COUNT
+        self.completed_passes = RHYTHM_PASS_COUNT
         self._execute_modular_pass()
 
         print("\n=== EPISODE EXECUTION COMPLETE ===")
@@ -290,4 +311,3 @@ def run_iteration_episode() -> None:
 
 if __name__ == "__main__":
     run_iteration_episode()
-#

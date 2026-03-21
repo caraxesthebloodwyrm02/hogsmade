@@ -3,6 +3,11 @@ import importlib
 from typing import Callable, Dict, List, Optional, Tuple
 
 try:
+    from control_room.constants import CADENCE, RHYTHM_PASS_COUNT, MODULAR_PASS_INDEX, GatePassProfile
+except ImportError:
+    from constants import CADENCE, RHYTHM_PASS_COUNT, MODULAR_PASS_INDEX, GatePassProfile
+
+try:
     _measurement_module = importlib.import_module("measurement")
 except ModuleNotFoundError:
     _measurement_module = None
@@ -119,16 +124,7 @@ def evaluate_airflow(snapshot: AirflowSnapshot) -> str:
     return "Fan speed and temperature are within normal ranges."
 
 
-@dataclass(frozen=True)
-class GatePassProfile:
-    pass_index: int
-    mode: str
-    cadence: Tuple[str, str, str, str] = ("map", "balance", "tighten", "verify")
-
-
 class AirflowOrchestrator:
-    RHYTHM_PASS_COUNT = 6
-    MODULAR_PASS_INDEX = 7
 
     def __init__(self) -> None:
         self.completed_passes = 0
@@ -136,8 +132,8 @@ class AirflowOrchestrator:
 
     def _build_gate_passes(self) -> Tuple[GatePassProfile, ...]:
         gate_passes = []
-        for pass_index in range(1, self.MODULAR_PASS_INDEX + 1):
-            mode = "Rhythm" if pass_index <= self.RHYTHM_PASS_COUNT else "Modular"
+        for pass_index in range(1, MODULAR_PASS_INDEX + 1):
+            mode = "Rhythm" if pass_index <= RHYTHM_PASS_COUNT else "Modular"
             gate_passes.append(GatePassProfile(pass_index=pass_index, mode=mode))
         return tuple(gate_passes)
 
@@ -147,7 +143,7 @@ class AirflowOrchestrator:
             "phase_lane": "airflow_thresholds_evaluated",
             "countdown_lane": "status_broadcast",
             "break_lane": "line_balance_checkpoint",
-            "promotion_lane": f"completed_passes_reached_{self.RHYTHM_PASS_COUNT}",
+            "promotion_lane": f"completed_passes_reached_{RHYTHM_PASS_COUNT}",
             "exit_lane": "orchestration_reported",
         }
 
@@ -163,7 +159,7 @@ class AirflowOrchestrator:
         return " -> ".join(f"{lane}:{trigger_board[lane]}" for lane in lane_order)
 
     def _beat_phase_for_pass(self, pass_count: int) -> str:
-        cadence = self.gate_passes[0].cadence if self.gate_passes else ("map", "balance", "tighten", "verify")
+        cadence = self.gate_passes[0].cadence if self.gate_passes else CADENCE
         cadence_index = (max(pass_count, 1) - 1) % len(cadence)
         return cadence[cadence_index]
 
@@ -173,7 +169,7 @@ class AirflowOrchestrator:
 
         trigger_board = self._build_trigger_board()
         return {
-            "mode": "Modular" if self.completed_passes == self.MODULAR_PASS_INDEX else "Rhythm",
+            "mode": "Modular" if self.completed_passes == MODULAR_PASS_INDEX else "Rhythm",
             "pass_count": str(self.completed_passes),
             "trigger_board": str(trigger_board),
             "auxiliary_bus_route": self._auxiliary_bus_route(trigger_board),
@@ -187,7 +183,7 @@ def build_realtime_reference_graph(
     player_a: float = 0.0,
     player_b: float = 0.0,
 ) -> Dict[str, object]:
-    cadence = ("map", "balance", "tighten", "verify")
+    cadence = CADENCE
     nodes: List[Dict[str, object]] = []
 
     for index, wait_time_s in enumerate(intervals_s):
@@ -197,11 +193,11 @@ def build_realtime_reference_graph(
             player_b=player_b,
         )
         dial_state = derive_dial_state(snapshot)
-        pass_count = (index % AirflowOrchestrator.MODULAR_PASS_INDEX) + 1
+        pass_count = (index % MODULAR_PASS_INDEX) + 1
         beat_phase = cadence[(pass_count - 1) % len(cadence)]
         mode = (
             "Modular"
-            if pass_count == AirflowOrchestrator.MODULAR_PASS_INDEX
+            if pass_count == MODULAR_PASS_INDEX
             else "Rhythm"
         )
 

@@ -1,0 +1,13 @@
+[project]
+name = "dio"
+version = "0.1.0"
+description = "DIO — control room suite and interactive episode tool"
+requires-python = ">=3.13"
+dependencies = []
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["control_room"]

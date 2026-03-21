@@ -3,7 +3,12 @@ import calendar
 from datetime import date, timedelta
 from typing import Dict, List, Tuple
 
-import airflow
+try:
+    from control_room import airflow
+    from control_room.constants import CADENCE
+except ImportError:
+    import airflow
+    from constants import CADENCE
 
 
 @dataclass(frozen=True)
@@ -87,7 +92,7 @@ def airflow_to_lightfunction(
 def build_phase_calendar(
     year: int,
     month: int,
-    cadence: Tuple[str, str, str, str] = ("map", "balance", "tighten", "verify"),
+    cadence: Tuple[str, str, str, str] = CADENCE,
 ) -> Dict[str, object]:
     cal = calendar.Calendar(firstweekday=calendar.MONDAY)
     days: List[Dict[str, object]] = []
@@ -123,7 +128,7 @@ def build_phase_calendar(
 def build_phase_events_for_month(
     year: int,
     month: int,
-    cadence: Tuple[str, str, str, str] = ("map", "balance", "tighten", "verify"),
+    cadence: Tuple[str, str, str, str] = CADENCE,
 ) -> List[Dict[str, str]]:
     phase_calendar = build_phase_calendar(year=year, month=month, cadence=cadence)
     days_obj = phase_calendar.get("days", [])
@@ -198,7 +203,7 @@ def export_phase_events_to_ics(
 def build_gcal_ics_example(
     year: int,
     month: int,
-    cadence: Tuple[str, str, str, str] = ("map", "balance", "tighten", "verify"),
+    cadence: Tuple[str, str, str, str] = CADENCE,
 ) -> str:
     events = build_phase_events_for_month(year=year, month=month, cadence=cadence)
     return export_phase_events_to_ics(events=events)
