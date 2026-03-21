@@ -96,7 +96,11 @@ function normalizeAuditStatus(status: unknown): AuditEntry['status'] | null {
 
 const MAX_AUDIT_FILE_BYTES = 100 * 1024 * 1024; // 100 MB guard
 
-async function readAuditLog(limit: number, filter?: { tool?: string; status?: string; since?: string }): Promise<AuditEntry[]> {
+async function readAuditLog(
+  limit: number,
+  filter?: { tool?: string; status?: string; since?: string },
+  metadata?: { parseErrors?: number }
+): Promise<AuditEntry[]> {
   let content: string;
   try {
     const stat = await fs.stat(AUDIT_LOG_PATH);
@@ -154,7 +158,7 @@ async function readAuditLog(limit: number, filter?: { tool?: string; status?: st
     entries = entries.filter(e => new Date(e.timestamp).getTime() >= since);
   }
 
-  if (metadata) metadata.parseErrors = parseErrors;
+  if (metadata) metadata.parseErrors = corruptLineCount;
   return entries.slice(-limit).reverse();
 }
 
