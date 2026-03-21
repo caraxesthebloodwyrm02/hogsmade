@@ -46,7 +46,7 @@ This is a multi-project monorepo. Key projects:
 
 ## MCP Servers
 
-16 servers defined in `mcp_config.json`. Python servers use GRID venv at `/home/caraxes/roots/GRID/.venv/bin/python`.
+15 servers defined in `mcp_config.json` (8 TypeScript MCP servers + 7 Python GRID servers). Python servers use GRID venv at `/home/caraxes/roots/GRID/.venv/bin/python`.
 
 ## Safety
 

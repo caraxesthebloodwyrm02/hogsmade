@@ -97,7 +97,7 @@ Here's your full ecosystem, in plain language:
 **When to use it:** When you want to test a hypothesis, benchmark something, or try out a code snippet in a controlled way. Scripts are sandboxed to the experiments directory for security. Supports Python, Node, PowerShell, and Bash.
 
 ### 6. Seeds-Server (seeds-server)
-**What it does:** Cross-repository health monitor for your entire Seeds ecosystem (E:\Seeds). Scans all repos for git status, dependency health, test coverage, and activity freshness.
+**What it does:** Cross-repository health monitor for your entire Seeds ecosystem (`$SEEDS_ROOT`). Scans all repos for git status, dependency health, test coverage, and activity freshness.
 
 **Tools you can use:**
 - `health_check` — Data store status and detected repos
@@ -193,7 +193,7 @@ Based on a thorough read of all 6 existing servers plus the new pulse-server, he
 
 ### What to Be Aware Of
 
-**Hardcoded paths.** Several servers have Windows paths baked into the source code (e.g., `E:\Seeds`, `C:\Users\USER\CascadeProjects`). This isn't a security issue per se, but it means the servers won't work on a different machine without editing those paths. Consider moving these to environment variables.
+**Environment-specific paths.** Servers use environment variables (`CASCADE_WORKSPACE_ROOT`, `SEEDS_ROOT`, `ECHOES_AUDIT_PATH`) for machine-specific paths. These are configured in `mcp_config.json` and `.env.example`. Adjust for your machine if cloning.
 
 **Audit logs are plain text.** The NDJSON audit files in `~/.echoes` and `~/.pulse` are unencrypted files on disk. Anyone with access to your user account can read them. If you log sensitive metadata, it persists. The Afloat config specifies encryption-at-rest and append-only audit, but the TypeScript implementation stores JSON files without encryption.
 

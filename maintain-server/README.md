@@ -1,6 +1,6 @@
 # Maintain Server
 
-System optimization & maintenance MCP server for Windows development workstations.
+System optimization & maintenance MCP server for development workstations.
 
 ## Tools
 

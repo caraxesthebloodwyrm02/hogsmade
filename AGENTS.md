@@ -84,7 +84,7 @@ Add tests in the same package you change. Servers use Vitest with files such as 
 
 ### GRID-main
 
-Full AGENTS.md lives at `GRID-main/docs/project/AGENTS.md`. Additional rules in `GRID-main/.Codex/rules/`.
+Full AGENTS.md lives at `GRID-main/docs/project/AGENTS.md`. Additional rules in `GRID-main/.claude/rules/`.
 
 **Package manager**: `uv` only — never use `pip` directly.
 
@@ -101,7 +101,7 @@ uv run python -m application.mothership.main  # API server (port 8080)
 - Test env vars: `MOTHERSHIP_ENVIRONMENT=test`, `MOTHERSHIP_DATABASE_URL=sqlite:///:memory:`, `MOTHERSHIP_USE_DATABRICKS=false`
 - Local-first: use Ollama/ChromaDB, not external AI APIs, unless explicitly asked
 - Architecture: `Application → Service → Database → Core` (strict one-way deps)
-- Safety modules (`safety/`, `security/`, `boundaries/`) have strict rules — read `GRID-main/.Codex/rules/safety.md` before touching them
+- Safety modules (`safety/`, `security/`, `boundaries/`) have strict rules — read `GRID-main/.claude/rules/safety.md` before touching them
 
 ### mcp-tool-experiment/typescript-sdk
 

@@ -1,6 +1,6 @@
 # MCP Server Config Snapshot
-**Generated:** 2026-03-12
-**Source of truth:** `mcp_config.json` (workspace root)
+**Generated:** 2026-03-12 (historical — Windows-era paths below are superseded)
+**Current source of truth:** `mcp_config.json` (workspace root, updated 2026-03-21 with Linux paths)
 **Audit status:** All required env vars satisfied ✓
 
 ---

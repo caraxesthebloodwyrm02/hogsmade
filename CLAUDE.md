@@ -238,7 +238,7 @@ This workspace doubles as the operator's freelance portfolio and delivery infras
 | Tier            | Projects                                                     | Evidence                          |
 | --------------- | ------------------------------------------------------------ | --------------------------------- |
 | Flagship (T1)   | GRID (190k+ LOC, 438+ tests), APIGuard (100% coverage, PyPI) | Architecture, testing, publishing |
-| Strong (T2)     | MCP ecosystem (10 servers), GRID×APIGuard integration         | Protocol design, resilience       |
+| Strong (T2)     | MCP ecosystem (8 servers), GRID×APIGuard integration          | Protocol design, resilience       |
 | Supporting (T3) | Glimpse, Symphony, glimpse-artifact                          | React, real-time, breadth         |
 
 ### Custom Skills System (`.windsurf/skills/`)

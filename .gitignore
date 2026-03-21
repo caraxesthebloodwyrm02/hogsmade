@@ -170,8 +170,11 @@ projects/UPWORK_*.md
 # Unicode-named task files (local scratch)
 stripe*invoice*task.json
 
-# Glimpse engine duplicate docs (canonical in docs/)
+# Glimpse engine runtime data and duplicate docs
 glimpse-engine/GLIMPSE_BENCH.md
+glimpse-engine/.glimpse-traces.jsonl
+glimpse-engine/.glimpse-history.json
+glimpse-engine/.glimpse-activity.json
 
 # Personal / sensitive files (never track)
 resume.txt

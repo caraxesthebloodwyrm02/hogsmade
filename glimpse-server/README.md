@@ -27,23 +27,22 @@ npm start
 
 Communicates via JSON-RPC over stdio.
 
-## Register in Windsurf
+## Register in MCP config
 
-Add to `C:\Users\USER\.codeium\windsurf-next\mcp_config.json`:
+Add to your editor's MCP config (e.g. `mcp_config.json`):
 
 ```json
 {
   "mcpServers": {
     "glimpse": {
       "command": "npx",
-      "args": ["tsx", "src/server.ts"],
-      "cwd": "C:\\Users\\USER\\CascadeProjects\\glimpse-server"
+      "args": ["-y", "tsx", "/home/caraxes/CascadeProjects/glimpse-server/src/server.ts"]
     }
   }
 }
 ```
 
-Restart Windsurf after editing the config.
+Restart your editor after editing the config.
 
 ## Architecture
 
