@@ -63,7 +63,7 @@ describe("echoes-server smoke", () => {
 
     // Record an audit entry
     const recordResult = await invokeTool(server, "record_audit", {
-      source: "test-suite",
+      source: "echoes-server",
       tool: "test_tool",
       status: "success",
       durationMs: 42,
@@ -96,13 +96,13 @@ describe("echoes-server smoke", () => {
 
     // Record a few entries for stats
     await invokeTool(server, "record_audit", {
-      source: "stats-test",
+      source: "echoes-server",
       tool: "tool_a",
       status: "success",
       durationMs: 100,
     });
     await invokeTool(server, "record_audit", {
-      source: "stats-test",
+      source: "echoes-server",
       tool: "tool_b",
       status: "failure",
       durationMs: 200,
@@ -152,12 +152,12 @@ describe("echoes-server smoke", () => {
 
     // Record entries with different statuses
     await invokeTool(server, "record_audit", {
-      source: "filter-test",
+      source: "echoes-server",
       tool: "filter_tool",
       status: "blocked",
     });
     await invokeTool(server, "record_audit", {
-      source: "filter-test",
+      source: "echoes-server",
       tool: "filter_tool",
       status: "dry_run",
     });
@@ -183,7 +183,7 @@ describe("echoes-server smoke", () => {
 
     // Record an entry
     await invokeTool(server, "record_audit", {
-      source: "time-test",
+      source: "echoes-server",
       tool: "time_tool",
       status: "success",
     });
