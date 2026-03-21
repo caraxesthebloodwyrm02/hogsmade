@@ -852,6 +852,38 @@ export function buildServer(): McpServer {
 
 export async function startServer(): Promise<McpServer> {
   console.error(`[${SERVER_NAME}] v${VERSION} starting — GATE: ${GATE_DIR}`);
+
+  // Startup health probe for GRID backend API
+  const rawUrl = process.env.GRID_API_URL?.trim() || config.gridApiUrl || "";
+  if (rawUrl) {
+    const gridApiUrl = validateGridApiUrl(rawUrl);
+    if (gridApiUrl) {
+      try {
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), 5000);
+        const resp = await fetch(`${gridApiUrl}/api/v1/health`, { signal: ctrl.signal }).catch(() => null);
+        clearTimeout(timer);
+        if (resp && resp.ok) {
+          console.error(`[${SERVER_NAME}] GRID backend reachable at ${gridApiUrl}`);
+        } else {
+          console.error(
+            `[${SERVER_NAME}] WARNING: GRID backend at ${gridApiUrl} is NOT reachable (status=${resp?.status ?? 'unreachable'}). ` +
+            `Remote gate validation will fail-closed (approved=false) until backend is restored.`
+          );
+        }
+      } catch {
+        console.error(
+          `[${SERVER_NAME}] WARNING: GRID backend probe failed for ${gridApiUrl}. ` +
+          `Remote gate validation will fail-closed.`
+        );
+      }
+    } else {
+      console.error(`[${SERVER_NAME}] WARNING: GRID_API_URL configured but invalid — remote validation disabled.`);
+    }
+  } else {
+    console.error(`[${SERVER_NAME}] GRID_API_URL not set — remote gate validation disabled (local-only mode).`);
+  }
+
   const server = buildServer();
   await server.connect(new StdioServerTransport());
   return server;

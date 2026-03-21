@@ -13,11 +13,10 @@
 import { AuditIntegrityGuard } from '@cascade/shared-types/security-policy';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import * as z from 'zod';
 import { promises as fs } from 'fs';
-import os from 'os';
 import path from 'path';
 import { pathToFileURL } from 'url';
+import * as z from 'zod';
 import { getConfig } from './config.js';
 
 // ── Constants ──
@@ -50,12 +49,12 @@ interface TelemetrySnapshot {
 }
 
 async function ensureDataDir(): Promise<void> {
-  await fs.mkdir(DATA_DIR, { recursive: true });
-  await fs.mkdir(TELEMETRY_DIR, { recursive: true });
+  await fs.mkdir(DATA_DIR, { recursive: true, mode: 0o700 });
+  await fs.mkdir(TELEMETRY_DIR, { recursive: true, mode: 0o700 });
   try {
     await fs.access(AUDIT_LOG_PATH);
   } catch {
-    await fs.writeFile(AUDIT_LOG_PATH, '');
+    await fs.writeFile(AUDIT_LOG_PATH, '', { mode: 0o600 });
   }
 }
 
@@ -84,6 +83,13 @@ async function appendAuditEntry(entry: AuditEntry): Promise<void> {
       : undefined,
   };
   const line = JSON.stringify(sanitized) + '\n';
+  // Post-write validation: verify the serialized line round-trips as valid JSON
+  try {
+    JSON.parse(line);
+  } catch (err) {
+    console.error(`[${SERVER_NAME}] REFUSING to append malformed audit entry: ${err}`);
+    return;
+  }
   await fs.appendFile(AUDIT_LOG_PATH, line, 'utf-8');
 }
 
@@ -266,7 +272,7 @@ export function buildServer(): McpServer {
         content: [{
           type: 'text' as const,
           text: JSON.stringify({
-            status: 'ok',
+            status: auditCorruptLines > 0 ? 'degraded' : 'ok',
             server: SERVER_NAME,
             version: VERSION,
             dataDir: DATA_DIR,
@@ -274,6 +280,9 @@ export function buildServer(): McpServer {
             auditLogSizeMB: Math.round(auditSize / (1024 * 1024)),
             auditLineCount,
             auditCorruptLines,
+            auditIntegrityWarning: auditCorruptLines > 0
+              ? `${auditCorruptLines} corrupt lines detected — audit integrity degraded`
+              : null,
             telemetrySnapshots: telemetryCount,
             timestamp: new Date().toISOString(),
           }, null, 2),
