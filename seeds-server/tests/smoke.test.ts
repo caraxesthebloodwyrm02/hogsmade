@@ -71,6 +71,8 @@ describe("seeds-server smoke", () => {
     require("fs").writeFileSync(path.join(testRepo, "package.json"), '{"name": "test"}');
     require("fs").mkdirSync(path.join(testRepo, ".git"), { recursive: true });
     require("fs").writeFileSync(path.join(testRepo, ".git", "HEAD"), "ref: refs/heads/main\n");
+    require("fs").mkdirSync(path.join(seedsRoot, "archive"), { recursive: true });
+    require("fs").mkdirSync(path.join(seedsRoot, "templates"), { recursive: true });
     
     const result = await invokeTool(server, "ecosystem_scan", { saveSnapshot: false }) as { isError?: boolean; content?: Array<{ type: string; text?: string }> };
     expect(result.isError).not.toBe(true);
@@ -84,6 +86,8 @@ describe("seeds-server smoke", () => {
     const testRepoData = parsed.repos.find((r: any) => r.name === "test-project");
     expect(testRepoData).toBeDefined();
     expect(testRepoData.healthScore).toBeDefined();
+    expect(parsed.repos.find((r: any) => r.name === "archive")).toBeUndefined();
+    expect(parsed.repos.find((r: any) => r.name === "templates")).toBeUndefined();
   });
 
   it("runs ecosystem_trend and returns historical data", async () => {

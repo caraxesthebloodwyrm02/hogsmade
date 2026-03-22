@@ -67,7 +67,14 @@ const REPO_PATH_ALIASES: Record<string, string> = {
 };
 
 // Skip these discovered directory names in ecosystem_scan (no git or not tracked)
-const REPO_SKIP_LIST = new Set(["scratch", "grid", "glimpse-core", "scripts"]);
+const REPO_SKIP_LIST = new Set([
+  "scratch",
+  "grid",
+  "glimpse-core",
+  "scripts",
+  "archive",
+  "templates",
+]);
 
 // ── Types ──
 
@@ -224,7 +231,11 @@ async function checkRepoHealth(repoName: string): Promise<RepoHealth> {
 
   // Freshness bonus
   if (health.lastCommitAge) {
-    if (health.lastCommitAge.includes("hour") || health.lastCommitAge.includes("minute")) {
+    if (
+      health.lastCommitAge.includes("hour") ||
+      health.lastCommitAge.includes("minute") ||
+      health.lastCommitAge.includes("second")
+    ) {
       score += 20; // Very recent
     } else if (health.lastCommitAge.includes("day")) {
       const dayMatch = health.lastCommitAge.match(/(\d+)\s*day/);

@@ -1,0 +1,20 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "type": "command",
+        "command": "echo \"[Semantic Officer][PreToolUse] Scope-first: combined_space.py, control_room/*.py, and matching tests unless user expands scope.\"",
+        "windows": "powershell -NoProfile -Command \"Write-Output '[Semantic Officer][PreToolUse] Scope-first: combined_space.py, control_room/*.py, and matching tests unless user expands scope.'\"",
+        "timeout": 5
+      }
+    ],
+    "PostToolUse": [
+      {
+        "type": "command",
+        "command": "echo \"[Semantic Officer][PostToolUse] Report in order: Scope, Contract, Changes, Validation, Risk.\"",
+        "windows": "powershell -NoProfile -Command \"Write-Output '[Semantic Officer][PostToolUse] Report in order: Scope, Contract, Changes, Validation, Risk.'\"",
+        "timeout": 5
+      }
+    ]
+  }
+}

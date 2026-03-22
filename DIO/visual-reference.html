@@ -1,0 +1,1073 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DIO Control Room — Visual Reference</title>
+<style>
+  :root {
+    /* Core palette — derived from light_control color temperatures */
+    --warm-3600: #ff9f43;   /* Warm Shift — 3600K */
+    --cruise-4200: #feca57; /* Cruise — 4200K */
+    --vector-5000: #54a0ff; /* Vector Shift — 5000K */
+    --recovery-5400: #c8d6e5; /* Recovery — 5400K */
+
+    /* Category palette — from airflow dial states */
+    --smooth-flow: #00d2d3;
+    --thermal-drift: #ff6b6b;
+    --air-drift: #48dbfb;
+    --correction-zone: #ffa502;
+
+    /* Cadence palette — map/balance/tighten/verify */
+    --phase-map: #5f27cd;
+    --phase-balance: #01a3a4;
+    --phase-tighten: #f368e0;
+    --phase-verify: #10ac84;
+
+    /* Structure */
+    --bg-deep: #0a0a12;
+    --bg-surface: #12121e;
+    --bg-card: #1a1a2e;
+    --bg-elevated: #222240;
+    --text-primary: #e8e8f0;
+    --text-secondary: #8888a8;
+    --text-muted: #555570;
+    --border-subtle: #2a2a45;
+    --glow-intensity: 0.35;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'SF Mono', 'Fira Code', 'JetBrains Mono', monospace;
+    background: var(--bg-deep);
+    color: var(--text-primary);
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* ——— HEADER ——— */
+  .header {
+    padding: 3rem 2rem 2rem;
+    text-align: center;
+    border-bottom: 1px solid var(--border-subtle);
+    background: linear-gradient(180deg, #0e0e1a 0%, var(--bg-deep) 100%);
+    position: relative;
+    overflow: hidden;
+  }
+  .header::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(95,39,205,0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .header h1 {
+    font-size: 2rem;
+    font-weight: 300;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--text-primary);
+  }
+  .header h1 span { color: var(--phase-map); font-weight: 600; }
+  .header .subtitle {
+    margin-top: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    letter-spacing: 0.15em;
+  }
+  .build-tag {
+    display: inline-block;
+    margin-top: 1rem;
+    padding: 0.25rem 1rem;
+    border: 1px solid var(--border-subtle);
+    border-radius: 100px;
+    font-size: 0.65rem;
+    color: var(--text-secondary);
+    letter-spacing: 0.1em;
+  }
+
+  /* ——— LAYOUT ——— */
+  .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+
+  .section {
+    margin-bottom: 3rem;
+  }
+  .section-label {
+    font-size: 0.6rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+  }
+  .section-title {
+    font-size: 1.1rem;
+    font-weight: 400;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  /* ——— SYSTEM OVERVIEW GRID ——— */
+  .overview-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--border-subtle);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .overview-cell {
+    background: var(--bg-card);
+    padding: 1.5rem;
+  }
+  .overview-cell .cell-label {
+    font-size: 0.55rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 0.75rem;
+  }
+  .overview-cell .cell-value {
+    font-size: 1.4rem;
+    font-weight: 300;
+  }
+  .overview-cell .cell-detail {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    margin-top: 0.4rem;
+  }
+
+  /* ——— EPISODE ARCHITECTURE ——— */
+  .episode-strip {
+    display: flex;
+    gap: 2px;
+    background: var(--border-subtle);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .episode-part {
+    flex: 1;
+    background: var(--bg-card);
+    padding: 1.25rem;
+    position: relative;
+  }
+  .episode-part::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+  }
+  .episode-part:nth-child(1)::before { background: var(--phase-map); }
+  .episode-part:nth-child(2)::before { background: var(--phase-balance); }
+  .episode-part:nth-child(3)::before { background: var(--phase-tighten); }
+  .episode-part:nth-child(4)::before { background: var(--phase-verify); }
+
+  .part-number {
+    font-size: 0.55rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+  .part-title {
+    font-size: 0.9rem;
+    font-weight: 500;
+    margin: 0.4rem 0;
+  }
+  .part-stage {
+    font-size: 0.65rem;
+    color: var(--text-secondary);
+    padding: 0.15rem 0.5rem;
+    background: var(--bg-elevated);
+    border-radius: 3px;
+    display: inline-block;
+    margin-bottom: 0.75rem;
+  }
+  .phase-row {
+    display: flex;
+    gap: 4px;
+    margin-top: 0.5rem;
+  }
+  .phase-block {
+    flex: 1;
+    padding: 0.5rem;
+    background: var(--bg-elevated);
+    border-radius: 4px;
+    font-size: 0.6rem;
+  }
+  .phase-block .ph-label {
+    color: var(--text-muted);
+    font-size: 0.5rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+  .phase-block .ph-time {
+    color: var(--text-secondary);
+    margin-top: 0.2rem;
+  }
+  .phase-block .ph-focus {
+    color: var(--text-primary);
+    margin-top: 0.3rem;
+    font-size: 0.55rem;
+    line-height: 1.4;
+  }
+
+  .isolation-break {
+    text-align: center;
+    padding: 0.6rem;
+    background: var(--bg-surface);
+    border: 1px dashed var(--border-subtle);
+    border-radius: 4px;
+    margin: 1rem 0;
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    letter-spacing: 0.15em;
+  }
+
+  /* ——— AIRFLOW DIAL ——— */
+  .dial-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--border-subtle);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .dial-card {
+    background: var(--bg-card);
+    padding: 1.25rem;
+    text-align: center;
+    position: relative;
+  }
+  .dial-card::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 40px; height: 3px;
+    border-radius: 2px;
+  }
+  .dial-card:nth-child(1)::after { background: var(--smooth-flow); }
+  .dial-card:nth-child(2)::after { background: var(--thermal-drift); }
+  .dial-card:nth-child(3)::after { background: var(--air-drift); }
+  .dial-card:nth-child(4)::after { background: var(--correction-zone); }
+
+  .dial-category {
+    font-size: 0.85rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+  }
+  .dial-bands {
+    font-size: 0.6rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.75rem;
+  }
+  .dial-light-phase {
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    border-radius: 100px;
+    font-size: 0.6rem;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+  }
+  .dial-card:nth-child(1) .dial-light-phase { background: rgba(0,210,211,0.15); color: var(--smooth-flow); }
+  .dial-card:nth-child(2) .dial-light-phase { background: rgba(255,107,107,0.15); color: var(--thermal-drift); }
+  .dial-card:nth-child(3) .dial-light-phase { background: rgba(72,219,251,0.15); color: var(--air-drift); }
+  .dial-card:nth-child(4) .dial-light-phase { background: rgba(255,165,2,0.15); color: var(--correction-zone); }
+
+  .dial-specs {
+    margin-top: 0.75rem;
+    font-size: 0.55rem;
+    color: var(--text-muted);
+    line-height: 1.8;
+  }
+
+  /* ——— LIGHT SPECTRUM BAR ——— */
+  .spectrum-bar {
+    display: flex;
+    height: 48px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border-subtle);
+    margin-bottom: 1rem;
+  }
+  .spectrum-segment {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.6rem;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    color: var(--bg-deep);
+    position: relative;
+  }
+  .spectrum-segment .kelvin-tag {
+    position: absolute;
+    bottom: 4px;
+    font-size: 0.45rem;
+    opacity: 0.7;
+  }
+
+  /* ——— TRANSPORT FLOW ——— */
+  .transport-flow {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    padding: 1.5rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    overflow-x: auto;
+  }
+  .transport-node {
+    flex-shrink: 0;
+    width: 120px;
+    padding: 0.75rem;
+    background: var(--bg-elevated);
+    border-radius: 6px;
+    text-align: center;
+    border: 1px solid var(--border-subtle);
+  }
+  .transport-node .node-id {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--phase-map);
+  }
+  .transport-node .node-wait {
+    font-size: 0.55rem;
+    color: var(--text-muted);
+    margin-top: 0.2rem;
+  }
+  .transport-node .node-beat {
+    display: inline-block;
+    margin-top: 0.4rem;
+    padding: 0.15rem 0.4rem;
+    border-radius: 3px;
+    font-size: 0.5rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .beat-map { background: rgba(95,39,205,0.2); color: var(--phase-map); }
+  .beat-balance { background: rgba(1,163,164,0.2); color: var(--phase-balance); }
+  .beat-tighten { background: rgba(243,104,224,0.2); color: var(--phase-tighten); }
+  .beat-verify { background: rgba(16,172,132,0.2); color: var(--phase-verify); }
+
+  .transport-node .node-rpm {
+    font-size: 0.55rem;
+    color: var(--text-secondary);
+    margin-top: 0.3rem;
+  }
+  .transport-edge {
+    flex-shrink: 0;
+    width: 60px;
+    text-align: center;
+    position: relative;
+  }
+  .transport-edge::before {
+    content: '';
+    position: absolute;
+    top: 50%; left: 8px; right: 8px;
+    height: 1px;
+    background: linear-gradient(90deg, var(--border-subtle), var(--text-muted), var(--border-subtle));
+  }
+  .transport-edge .edge-label {
+    position: relative;
+    font-size: 0.45rem;
+    color: var(--text-muted);
+    background: var(--bg-card);
+    padding: 0 0.3rem;
+    display: inline-block;
+  }
+
+  /* ——— GATE PASS CADENCE ——— */
+  .cadence-track {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 1rem;
+  }
+  .cadence-step {
+    flex: 1;
+    padding: 0.75rem 0.5rem;
+    text-align: center;
+    border-radius: 6px;
+    position: relative;
+  }
+  .cadence-step .step-label {
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+  }
+  .cadence-step .step-desc {
+    font-size: 0.5rem;
+    margin-top: 0.3rem;
+    opacity: 0.7;
+  }
+  .cadence-map { background: rgba(95,39,205,0.12); color: var(--phase-map); border: 1px solid rgba(95,39,205,0.25); }
+  .cadence-balance { background: rgba(1,163,164,0.12); color: var(--phase-balance); border: 1px solid rgba(1,163,164,0.25); }
+  .cadence-tighten { background: rgba(243,104,224,0.12); color: var(--phase-tighten); border: 1px solid rgba(243,104,224,0.25); }
+  .cadence-verify { background: rgba(16,172,132,0.12); color: var(--phase-verify); border: 1px solid rgba(16,172,132,0.25); }
+
+  .cadence-arrow {
+    flex-shrink: 0;
+    width: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    font-size: 0.7rem;
+  }
+
+  /* ——— MODE PROGRESSION ——— */
+  .mode-progression {
+    display: flex;
+    gap: 2px;
+    background: var(--border-subtle);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 1rem;
+  }
+  .mode-pass {
+    flex: 1;
+    padding: 0.75rem 0.5rem;
+    text-align: center;
+    background: var(--bg-card);
+    position: relative;
+  }
+  .mode-pass .pass-num {
+    font-size: 1rem;
+    font-weight: 300;
+    color: var(--text-primary);
+  }
+  .mode-pass .pass-mode {
+    font-size: 0.5rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-top: 0.2rem;
+  }
+  .mode-pass.rhythm .pass-mode { color: var(--phase-balance); }
+  .mode-pass.modular .pass-mode { color: var(--correction-zone); }
+  .mode-pass.modular {
+    background: rgba(255,165,2,0.05);
+    border-left: 2px solid var(--correction-zone);
+  }
+
+  /* ——— CALENDAR PHASE MAP ——— */
+  .calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+    margin-bottom: 0.75rem;
+  }
+  .cal-header {
+    text-align: center;
+    font-size: 0.5rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    padding: 0.4rem 0;
+  }
+  .cal-day {
+    text-align: center;
+    padding: 0.5rem 0.25rem;
+    border-radius: 4px;
+    font-size: 0.65rem;
+    position: relative;
+  }
+  .cal-day .day-num {
+    font-weight: 500;
+    color: var(--text-primary);
+  }
+  .cal-day .day-phase {
+    font-size: 0.4rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-top: 0.15rem;
+  }
+  .cal-day.phase-map { background: rgba(95,39,205,0.08); }
+  .cal-day.phase-map .day-phase { color: var(--phase-map); }
+  .cal-day.phase-balance { background: rgba(1,163,164,0.08); }
+  .cal-day.phase-balance .day-phase { color: var(--phase-balance); }
+  .cal-day.phase-tighten { background: rgba(243,104,224,0.08); }
+  .cal-day.phase-tighten .day-phase { color: var(--phase-tighten); }
+  .cal-day.phase-verify { background: rgba(16,172,132,0.08); }
+  .cal-day.phase-verify .day-phase { color: var(--phase-verify); }
+  .cal-day.empty { background: transparent; }
+
+  /* ——— SERVERROOM PROTOCOLS ——— */
+  .protocol-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1px;
+    background: var(--border-subtle);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .protocol-card {
+    background: var(--bg-card);
+    padding: 1.25rem;
+  }
+  .protocol-card .proto-label {
+    font-size: 0.55rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+  }
+  .protocol-card .proto-title {
+    font-size: 0.85rem;
+    font-weight: 500;
+    margin-bottom: 0.4rem;
+  }
+  .protocol-card .proto-steps {
+    font-size: 0.6rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+  .proto-step-tag {
+    display: inline-block;
+    padding: 0.1rem 0.35rem;
+    border-radius: 2px;
+    font-size: 0.5rem;
+    font-weight: 500;
+    margin-right: 0.2rem;
+    letter-spacing: 0.05em;
+  }
+  .tag-contain { background: rgba(255,107,107,0.15); color: var(--thermal-drift); }
+  .tag-assess { background: rgba(255,165,2,0.15); color: var(--correction-zone); }
+  .tag-remediate { background: rgba(95,39,205,0.15); color: var(--phase-map); }
+  .tag-fortify { background: rgba(16,172,132,0.15); color: var(--phase-verify); }
+  .tag-document { background: rgba(1,163,164,0.15); color: var(--phase-balance); }
+
+  /* ——— SEMANTIC OFFICER ——— */
+  .officer-card {
+    padding: 1.5rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    position: relative;
+    overflow: hidden;
+  }
+  .officer-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px; height: 100%;
+    background: linear-gradient(180deg, var(--phase-map), var(--phase-verify));
+  }
+  .officer-title {
+    font-size: 1rem;
+    font-weight: 500;
+    margin-bottom: 0.3rem;
+    padding-left: 1rem;
+  }
+  .officer-desc {
+    font-size: 0.65rem;
+    color: var(--text-secondary);
+    padding-left: 1rem;
+    margin-bottom: 1rem;
+    line-height: 1.6;
+  }
+  .officer-method {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 4px;
+    padding-left: 1rem;
+  }
+  .method-step {
+    padding: 0.6rem 0.4rem;
+    background: var(--bg-elevated);
+    border-radius: 4px;
+    text-align: center;
+  }
+  .method-step .ms-num {
+    font-size: 0.9rem;
+    font-weight: 300;
+    color: var(--text-muted);
+  }
+  .method-step .ms-label {
+    font-size: 0.5rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    margin-top: 0.3rem;
+  }
+
+  /* ——— FILE MAP ——— */
+  .file-tree {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    padding: 1.25rem;
+    font-size: 0.65rem;
+    line-height: 2;
+    color: var(--text-secondary);
+  }
+  .file-tree .dir { color: var(--phase-balance); font-weight: 500; }
+  .file-tree .file { color: var(--text-secondary); }
+  .file-tree .agent-file { color: var(--phase-map); }
+  .file-tree .test-file { color: var(--phase-verify); }
+  .file-tree .doc-file { color: var(--text-muted); }
+
+  /* ——— FOOTER ——— */
+  .footer {
+    margin-top: 3rem;
+    padding: 2rem;
+    text-align: center;
+    border-top: 1px solid var(--border-subtle);
+    font-size: 0.55rem;
+    color: var(--text-muted);
+    letter-spacing: 0.1em;
+  }
+
+  /* ——— RESPONSIVE ——— */
+  @media (max-width: 900px) {
+    .overview-grid { grid-template-columns: 1fr; }
+    .episode-strip { flex-direction: column; }
+    .dial-grid { grid-template-columns: repeat(2, 1fr); }
+    .protocol-grid { grid-template-columns: 1fr; }
+    .officer-method { grid-template-columns: repeat(3, 1fr); }
+    .transport-flow { flex-wrap: wrap; justify-content: center; gap: 4px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════ HEADER ═══════════ -->
+<header class="header">
+  <h1><span>DIO</span> Control Room</h1>
+  <div class="subtitle">Semantic Officer Orchestration &amp; Control Room Suite</div>
+  <div class="build-tag">commit f3025f5 &middot; 2026-03-22 &middot; hogsmade</div>
+</header>
+
+<div class="container">
+
+  <!-- ═══════════ SYSTEM OVERVIEW ═══════════ -->
+  <div class="section">
+    <div class="section-label">System Overview</div>
+    <div class="section-title">Build Snapshot</div>
+    <div class="overview-grid">
+      <div class="overview-cell">
+        <div class="cell-label">Execution Model</div>
+        <div class="cell-value">30 min</div>
+        <div class="cell-detail">4 parts &middot; 2 phases each &middot; 8 min isolation break</div>
+      </div>
+      <div class="overview-cell">
+        <div class="cell-label">Gate-Pass System</div>
+        <div class="cell-value">7 passes</div>
+        <div class="cell-detail">Rhythm (1-6) &rarr; Modular (7) promotion</div>
+      </div>
+      <div class="overview-cell">
+        <div class="cell-label">Cadence</div>
+        <div class="cell-value" style="font-size:1rem; letter-spacing:0.05em;">map &rarr; balance &rarr; tighten &rarr; verify</div>
+        <div class="cell-detail">4-phase deterministic cycle</div>
+      </div>
+      <div class="overview-cell">
+        <div class="cell-label">Airflow Categories</div>
+        <div class="cell-value">4</div>
+        <div class="cell-detail">Smooth Flow &middot; Thermal Drift &middot; Air Drift &middot; Correction Zone</div>
+      </div>
+      <div class="overview-cell">
+        <div class="cell-label">Light Phases</div>
+        <div class="cell-value">4</div>
+        <div class="cell-detail">Cruise &middot; Warm Shift &middot; Vector Shift &middot; Recovery</div>
+      </div>
+      <div class="overview-cell">
+        <div class="cell-label">Calendar Export</div>
+        <div class="cell-value">ICS</div>
+        <div class="cell-detail">Google Calendar-compatible phase schedule</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ EPISODE ARCHITECTURE ═══════════ -->
+  <div class="section">
+    <div class="section-label">combined_space.py</div>
+    <div class="section-title">Episode Architecture — TV Short-Episode Structure</div>
+    <div class="episode-strip">
+      <div class="episode-part">
+        <div class="part-number">Part 1</div>
+        <div class="part-title">Cold Open</div>
+        <div class="part-stage">setup</div>
+        <div class="phase-row">
+          <div class="phase-block">
+            <div class="ph-label">Phase 1 &middot; 210s</div>
+            <div class="ph-time">single-thread focus</div>
+            <div class="ph-focus">Define a clear objective and one measurable win.</div>
+          </div>
+          <div class="phase-block">
+            <div class="ph-label">Phase 2 &middot; 180s</div>
+            <div class="ph-time">2-stream execution</div>
+            <div class="ph-focus">Compress scope and execute one high-impact pass.</div>
+          </div>
+        </div>
+      </div>
+      <div class="episode-part">
+        <div class="part-number">Part 2</div>
+        <div class="part-title">Pressure Build</div>
+        <div class="part-stage">build</div>
+        <div class="phase-row">
+          <div class="phase-block">
+            <div class="ph-label">Phase 1 &middot; 210s</div>
+            <div class="ph-time">single-thread focus</div>
+            <div class="ph-focus">Add a second tactic without losing narrative clarity.</div>
+          </div>
+          <div class="phase-block">
+            <div class="ph-label">Phase 2 &middot; 180s</div>
+            <div class="ph-time">high concurrency</div>
+            <div class="ph-focus">Run two quick micro-iterations in parallel.</div>
+          </div>
+        </div>
+      </div>
+      <div class="episode-part">
+        <div class="part-number">Part 3</div>
+        <div class="part-title">Evolution Scene</div>
+        <div class="part-stage">mutation</div>
+        <div class="phase-row">
+          <div class="phase-block">
+            <div class="ph-label">Phase 1 &middot; 210s</div>
+            <div class="ph-time">single-thread focus</div>
+            <div class="ph-focus">Introduce one bold variation to shift momentum.</div>
+          </div>
+          <div class="phase-block">
+            <div class="ph-label">Phase 2 &middot; 180s</div>
+            <div class="ph-time">high concurrency</div>
+            <div class="ph-focus">Narrow the window and orchestrate concurrent actions.</div>
+          </div>
+        </div>
+      </div>
+      <div class="episode-part">
+        <div class="part-number">Part 4</div>
+        <div class="part-title">Finale</div>
+        <div class="part-stage">closure</div>
+        <div class="phase-row">
+          <div class="phase-block">
+            <div class="ph-label">Phase 1 &middot; 210s</div>
+            <div class="ph-time">single-thread focus</div>
+            <div class="ph-focus">Stabilize what worked and remove loose edges.</div>
+          </div>
+          <div class="phase-block">
+            <div class="ph-label">Phase 2 &middot; 180s</div>
+            <div class="ph-time">high concurrency</div>
+            <div class="ph-focus">Deliver the sharpest version with compact timing.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="isolation-break">&#x23F8; ISOLATION BREAK &middot; 240s after Part 2 &middot; no new input, let the iteration settle</div>
+  </div>
+
+  <!-- ═══════════ CADENCE & MODE ═══════════ -->
+  <div class="section">
+    <div class="section-label">Orchestration</div>
+    <div class="section-title">Gate-Pass Cadence &amp; Mode Progression</div>
+
+    <div class="cadence-track">
+      <div class="cadence-step cadence-map">
+        <div class="step-label">map</div>
+        <div class="step-desc">scan flow lanes</div>
+      </div>
+      <div class="cadence-arrow">&rarr;</div>
+      <div class="cadence-step cadence-balance">
+        <div class="step-label">balance</div>
+        <div class="step-desc">detect pressure</div>
+      </div>
+      <div class="cadence-arrow">&rarr;</div>
+      <div class="cadence-step cadence-tighten">
+        <div class="step-label">tighten</div>
+        <div class="step-desc">compose structure</div>
+      </div>
+      <div class="cadence-arrow">&rarr;</div>
+      <div class="cadence-step cadence-verify">
+        <div class="step-label">verify</div>
+        <div class="step-desc">flow integrity</div>
+      </div>
+    </div>
+
+    <div class="mode-progression">
+      <div class="mode-pass rhythm"><div class="pass-num">1</div><div class="pass-mode">Rhythm</div></div>
+      <div class="mode-pass rhythm"><div class="pass-num">2</div><div class="pass-mode">Rhythm</div></div>
+      <div class="mode-pass rhythm"><div class="pass-num">3</div><div class="pass-mode">Rhythm</div></div>
+      <div class="mode-pass rhythm"><div class="pass-num">4</div><div class="pass-mode">Rhythm</div></div>
+      <div class="mode-pass rhythm"><div class="pass-num">5</div><div class="pass-mode">Rhythm</div></div>
+      <div class="mode-pass rhythm"><div class="pass-num">6</div><div class="pass-mode">Rhythm</div></div>
+      <div class="mode-pass modular"><div class="pass-num">7</div><div class="pass-mode">Modular</div></div>
+    </div>
+    <div style="font-size:0.6rem; color:var(--text-muted); text-align:center;">
+      Passes 1-6 process one file at a time in Rhythm mode &middot;
+      Pass 7 promotes to Modular with Trigger Board + Auxiliary BUS routing
+    </div>
+  </div>
+
+  <!-- ═══════════ AIRFLOW → LIGHT MAPPING ═══════════ -->
+  <div class="section">
+    <div class="section-label">control_room/</div>
+    <div class="section-title">Airflow &rarr; Light Coordination</div>
+
+    <div style="margin-bottom:1.5rem;">
+      <div style="font-size:0.55rem; letter-spacing:0.15em; text-transform:uppercase; color:var(--text-muted); margin-bottom:0.5rem;">Color Temperature Spectrum</div>
+      <div class="spectrum-bar">
+        <div class="spectrum-segment" style="background:var(--warm-3600);">
+          Warm Shift
+          <span class="kelvin-tag">3600K</span>
+        </div>
+        <div class="spectrum-segment" style="background:var(--cruise-4200);">
+          Cruise
+          <span class="kelvin-tag">4200K</span>
+        </div>
+        <div class="spectrum-segment" style="background:var(--vector-5000);">
+          Vector Shift
+          <span class="kelvin-tag">5000K</span>
+        </div>
+        <div class="spectrum-segment" style="background:var(--recovery-5400);">
+          Recovery
+          <span class="kelvin-tag">5400K</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="dial-grid">
+      <div class="dial-card">
+        <div class="dial-category">Smooth Flow</div>
+        <div class="dial-bands">centered + steady</div>
+        <div class="dial-light-phase">Cruise</div>
+        <div class="dial-specs">
+          Intensity: 55%<br>
+          Color: 4200K<br>
+          Fan: 880-920 RPM<br>
+          Temp: 25-27&deg;C
+        </div>
+      </div>
+      <div class="dial-card">
+        <div class="dial-category">Thermal Drift</div>
+        <div class="dial-bands">centered + swing</div>
+        <div class="dial-light-phase">Warm Shift</div>
+        <div class="dial-specs">
+          Intensity: 65%<br>
+          Color: 3600K<br>
+          Fan: 870-930 RPM<br>
+          Temp: 27-30&deg;C
+        </div>
+      </div>
+      <div class="dial-card">
+        <div class="dial-category">Air Drift</div>
+        <div class="dial-bands">drift + steady</div>
+        <div class="dial-light-phase">Vector Shift</div>
+        <div class="dial-specs">
+          Intensity: 75%<br>
+          Color: 5000K<br>
+          Fan: 920-960 RPM<br>
+          Temp: 24-27&deg;C
+        </div>
+      </div>
+      <div class="dial-card">
+        <div class="dial-category">Correction Zone</div>
+        <div class="dial-bands">drift + swing</div>
+        <div class="dial-light-phase">Recovery</div>
+        <div class="dial-specs">
+          Intensity: 85%<br>
+          Color: 5400K<br>
+          Fan: 930-980 RPM<br>
+          Temp: 27-31&deg;C
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ TRANSPORT FLOW ═══════════ -->
+  <div class="section">
+    <div class="section-label">Realtime Interval Transport</div>
+    <div class="section-title">Reference Graph — Sequential Interval Stream</div>
+    <div class="transport-flow">
+      <div class="transport-node">
+        <div class="node-id">t0</div>
+        <div class="node-wait">0s</div>
+        <div class="node-beat beat-map">map</div>
+        <div class="node-rpm">850 RPM &middot; 24.0&deg;C</div>
+      </div>
+      <div class="transport-edge"><span class="edge-label">15s</span></div>
+      <div class="transport-node">
+        <div class="node-id">t1</div>
+        <div class="node-wait">15s</div>
+        <div class="node-beat beat-balance">balance</div>
+        <div class="node-rpm">875 RPM &middot; 25.0&deg;C</div>
+      </div>
+      <div class="transport-edge"><span class="edge-label">15s</span></div>
+      <div class="transport-node">
+        <div class="node-id">t2</div>
+        <div class="node-wait">30s</div>
+        <div class="node-beat beat-tighten">tighten</div>
+        <div class="node-rpm">900 RPM &middot; 26.0&deg;C</div>
+      </div>
+      <div class="transport-edge"><span class="edge-label">15s</span></div>
+      <div class="transport-node">
+        <div class="node-id">t3</div>
+        <div class="node-wait">45s</div>
+        <div class="node-beat beat-verify">verify</div>
+        <div class="node-rpm">925 RPM &middot; 27.0&deg;C</div>
+      </div>
+      <div class="transport-edge"><span class="edge-label">15s</span></div>
+      <div class="transport-node">
+        <div class="node-id">t4</div>
+        <div class="node-wait">60s</div>
+        <div class="node-beat beat-map">map</div>
+        <div class="node-rpm">950 RPM &middot; 28.0&deg;C</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ CALENDAR PHASE MAP ═══════════ -->
+  <div class="section">
+    <div class="section-label">Phase Calendar &middot; ICS Export</div>
+    <div class="section-title">March 2026 — Cadence Phase Map</div>
+    <div class="calendar-grid">
+      <div class="cal-header">Mon</div>
+      <div class="cal-header">Tue</div>
+      <div class="cal-header">Wed</div>
+      <div class="cal-header">Thu</div>
+      <div class="cal-header">Fri</div>
+      <div class="cal-header">Sat</div>
+      <div class="cal-header">Sun</div>
+      <!-- Week 1: March starts on Sunday -->
+      <div class="cal-day empty"></div>
+      <div class="cal-day empty"></div>
+      <div class="cal-day empty"></div>
+      <div class="cal-day empty"></div>
+      <div class="cal-day empty"></div>
+      <div class="cal-day empty"></div>
+      <div class="cal-day phase-map"><div class="day-num">1</div><div class="day-phase">map</div></div>
+      <!-- Week 2 -->
+      <div class="cal-day phase-balance"><div class="day-num">2</div><div class="day-phase">balance</div></div>
+      <div class="cal-day phase-tighten"><div class="day-num">3</div><div class="day-phase">tighten</div></div>
+      <div class="cal-day phase-verify"><div class="day-num">4</div><div class="day-phase">verify</div></div>
+      <div class="cal-day phase-map"><div class="day-num">5</div><div class="day-phase">map</div></div>
+      <div class="cal-day phase-balance"><div class="day-num">6</div><div class="day-phase">balance</div></div>
+      <div class="cal-day phase-tighten"><div class="day-num">7</div><div class="day-phase">tighten</div></div>
+      <div class="cal-day phase-verify"><div class="day-num">8</div><div class="day-phase">verify</div></div>
+      <!-- Week 3 -->
+      <div class="cal-day phase-map"><div class="day-num">9</div><div class="day-phase">map</div></div>
+      <div class="cal-day phase-balance"><div class="day-num">10</div><div class="day-phase">balance</div></div>
+      <div class="cal-day phase-tighten"><div class="day-num">11</div><div class="day-phase">tighten</div></div>
+      <div class="cal-day phase-verify"><div class="day-num">12</div><div class="day-phase">verify</div></div>
+      <div class="cal-day phase-map"><div class="day-num">13</div><div class="day-phase">map</div></div>
+      <div class="cal-day phase-balance"><div class="day-num">14</div><div class="day-phase">balance</div></div>
+      <div class="cal-day phase-tighten"><div class="day-num">15</div><div class="day-phase">tighten</div></div>
+      <!-- Week 4 -->
+      <div class="cal-day phase-verify"><div class="day-num">16</div><div class="day-phase">verify</div></div>
+      <div class="cal-day phase-map"><div class="day-num">17</div><div class="day-phase">map</div></div>
+      <div class="cal-day phase-balance"><div class="day-num">18</div><div class="day-phase">balance</div></div>
+      <div class="cal-day phase-tighten"><div class="day-num">19</div><div class="day-phase">tighten</div></div>
+      <div class="cal-day phase-verify"><div class="day-num">20</div><div class="day-phase">verify</div></div>
+      <div class="cal-day phase-map"><div class="day-num">21</div><div class="day-phase">map</div></div>
+      <div class="cal-day phase-balance"><div class="day-num">22</div><div class="day-phase">balance</div></div>
+      <!-- Week 5 -->
+      <div class="cal-day phase-tighten"><div class="day-num">23</div><div class="day-phase">tighten</div></div>
+      <div class="cal-day phase-verify"><div class="day-num">24</div><div class="day-phase">verify</div></div>
+      <div class="cal-day phase-map"><div class="day-num">25</div><div class="day-phase">map</div></div>
+      <div class="cal-day phase-balance"><div class="day-num">26</div><div class="day-phase">balance</div></div>
+      <div class="cal-day phase-tighten"><div class="day-num">27</div><div class="day-phase">tighten</div></div>
+      <div class="cal-day phase-verify"><div class="day-num">28</div><div class="day-phase">verify</div></div>
+      <div class="cal-day phase-map"><div class="day-num">29</div><div class="day-phase">map</div></div>
+      <!-- Week 6 -->
+      <div class="cal-day phase-balance"><div class="day-num">30</div><div class="day-phase">balance</div></div>
+      <div class="cal-day phase-tighten"><div class="day-num">31</div><div class="day-phase">tighten</div></div>
+      <div class="cal-day empty"></div>
+      <div class="cal-day empty"></div>
+      <div class="cal-day empty"></div>
+      <div class="cal-day empty"></div>
+      <div class="cal-day empty"></div>
+    </div>
+    <div style="font-size:0.55rem; color:var(--text-muted); text-align:center;">
+      Deterministic 4-phase rotation &middot; exportable as .ics for Google Calendar import
+    </div>
+  </div>
+
+  <!-- ═══════════ SEMANTIC OFFICER ═══════════ -->
+  <div class="section">
+    <div class="section-label">Agent</div>
+    <div class="section-title">Semantic Officer</div>
+    <div class="officer-card">
+      <div class="officer-title">Semantic Officer</div>
+      <div class="officer-desc">
+        Organizes code under high concurrency. Interprets traffic-like execution flow,
+        maintains balance, and shapes routines into cinematic structured event sequences.
+        Primary target: <code>combined_space.py</code>.
+      </div>
+      <div class="officer-method">
+        <div class="method-step"><div class="ms-num">1</div><div class="ms-label">Scan &amp; Map</div></div>
+        <div class="method-step"><div class="ms-num">2</div><div class="ms-label">Detect Pressure</div></div>
+        <div class="method-step"><div class="ms-num">3</div><div class="ms-label">Compose Arc</div></div>
+        <div class="method-step"><div class="ms-num">4</div><div class="ms-label">Execute Edit</div></div>
+        <div class="method-step"><div class="ms-num">5</div><div class="ms-label">Verify Flow</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ SERVERROOM PROTOCOLS ═══════════ -->
+  <div class="section">
+    <div class="section-label">serverroom docs/</div>
+    <div class="section-title">Response Protocols &amp; Assessment</div>
+    <div class="protocol-grid">
+      <div class="protocol-card">
+        <div class="proto-label">Incident Response Pattern</div>
+        <div class="proto-title">5-Step Protocol</div>
+        <div class="proto-steps">
+          <span class="proto-step-tag tag-contain">Contain</span>
+          <span class="proto-step-tag tag-assess">Assess</span>
+          <span class="proto-step-tag tag-remediate">Remediate</span>
+          <span class="proto-step-tag tag-fortify">Fortify</span>
+          <span class="proto-step-tag tag-document">Document</span>
+          <br><br>
+          Applied across: Phishing, Compromised Account, Device Security, Social Engineering, Privacy Exposure
+        </div>
+      </div>
+      <div class="protocol-card">
+        <div class="proto-label">Assessment Rubric</div>
+        <div class="proto-title">7-Domain Scorecard</div>
+        <div class="proto-steps">
+          Accounts &amp; Auth &middot; Device Security &middot; Phishing Awareness &middot;
+          Social Engineering &middot; Browsing &amp; Downloads &middot; Privacy &amp; Data &middot; Backup &amp; Recovery
+          <br><br>
+          4-level scoring: Strong &middot; Fair &middot; Weak &middot; Critical
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ FILE MAP ═══════════ -->
+  <div class="section">
+    <div class="section-label">Source</div>
+    <div class="section-title">File Map</div>
+    <div class="file-tree">
+      <span class="dir">DIO/</span><br>
+      &ensp;&ensp;<span class="file">combined_space.py</span> &mdash; Interactive Iteration Tool (293 LOC)<br>
+      &ensp;&ensp;<span class="dir">control_room/</span><br>
+      &ensp;&ensp;&ensp;&ensp;<span class="file">airflow.py</span> &mdash; Airflow snapshot, dial state, orchestrator (329 LOC)<br>
+      &ensp;&ensp;&ensp;&ensp;<span class="file">light_control.py</span> &mdash; Light coordination, calendar, ICS export (302 LOC)<br>
+      &ensp;&ensp;&ensp;&ensp;<span class="test-file">test_airflow.py</span> &mdash; Airflow unit tests (193 LOC)<br>
+      &ensp;&ensp;&ensp;&ensp;<span class="test-file">test_light_control.py</span> &mdash; Light control unit tests (151 LOC)<br>
+      &ensp;&ensp;&ensp;&ensp;<span class="test-file">test_smoke.py</span> &mdash; Smoke tests (47 LOC)<br>
+      &ensp;&ensp;&ensp;&ensp;<span class="doc-file">README.md</span> &middot; <span class="doc-file">light_control_gcal_concept.md</span> &middot; <span class="doc-file">airflow_visual_reference.md</span><br>
+      &ensp;&ensp;&ensp;&ensp;<span class="dir">serverroom docs/</span><br>
+      &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;<span class="doc-file">assessment-rubric.md</span> &middot; <span class="doc-file">response-protocols.md</span><br>
+      &ensp;&ensp;<span class="dir">.github/agents/</span><br>
+      &ensp;&ensp;&ensp;&ensp;<span class="agent-file">semantic-officer.agent.md</span> &mdash; Orchestration agent definition<br>
+    </div>
+  </div>
+
+</div>
+
+<footer class="footer">
+  DIO CONTROL ROOM &middot; VISUAL REFERENCE &middot; GENERATED 2026-03-22 &middot; HOGSMADE
+</footer>
+
+</body>
+</html>

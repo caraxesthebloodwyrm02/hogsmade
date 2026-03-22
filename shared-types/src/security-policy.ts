@@ -109,7 +109,7 @@ export class MCPPolicyEngine {
     const triggered = this.evaluate(context);
     if (triggered.length === 0) return null;
     return triggered.reduce((most, r) =>
-      (VERDICT_PRIORITY[r.verdict] ?? 0) > (VERDICT_PRIORITY[most.verdict] ?? 0) ? r : most
+      (VERDICT_PRIORITY[r.verdict] ?? 0) > (VERDICT_PRIORITY[most.verdict] ?? 0) ? r : most,
     );
   }
 
@@ -320,6 +320,7 @@ export class AuditIntegrityGuard {
     "pulse-server",
     "seeds-server",
     "afloat-server",
+    "overview-server",
     "grid-main",
   ]);
 
@@ -391,10 +392,7 @@ export class AuditIntegrityGuard {
   /**
    * P-INT-003: Flag anomalous snapshot score deltas.
    */
-  static validateSnapshotDelta(
-    previousScore: number | null,
-    currentScore: number,
-  ): PolicyResult {
+  static validateSnapshotDelta(previousScore: number | null, currentScore: number): PolicyResult {
     if (previousScore !== null) {
       const delta = Math.abs(currentScore - previousScore);
       if (delta > AuditIntegrityGuard.MAX_SCORE_DELTA) {
@@ -443,8 +441,7 @@ export class AuditIntegrityGuard {
         policyId: "P-INT-003",
         description: "Flag anomalous snapshot score deltas",
         threatBasis: "TM-004",
-        condition: (ctx) =>
-          Math.abs((ctx["scoreDelta"] as number) ?? 0) > AuditIntegrityGuard.MAX_SCORE_DELTA,
+        condition: (ctx) => Math.abs((ctx["scoreDelta"] as number) ?? 0) > AuditIntegrityGuard.MAX_SCORE_DELTA,
         verdictOnMatch: "escalate",
         reasonTemplate: "Snapshot score delta exceeds threshold",
       },
@@ -469,10 +466,7 @@ export class GateSecurityPolicy {
   /**
    * P-INT-004: Nonce must be registered and not burned.
    */
-  static validateNonce(
-    nonce: string | undefined,
-    registry: Record<string, { burned?: boolean }>,
-  ): PolicyResult {
+  static validateNonce(nonce: string | undefined, registry: Record<string, { burned?: boolean }>): PolicyResult {
     if (!nonce) {
       return {
         policyId: "P-INT-004",
@@ -601,16 +595,10 @@ export class GateSecurityPolicy {
     declaredFingerprint: string,
   ): boolean {
     const message = `${payloadHash}:${machineFingerprint}:${nonce}`;
-    const expected = crypto
-      .createHmac("sha256", secret)
-      .update(message)
-      .digest("hex");
+    const expected = crypto.createHmac("sha256", secret).update(message).digest("hex");
 
     try {
-      return crypto.timingSafeEqual(
-        Buffer.from(expected, "hex"),
-        Buffer.from(declaredFingerprint, "hex"),
-      );
+      return crypto.timingSafeEqual(Buffer.from(expected, "hex"), Buffer.from(declaredFingerprint, "hex"));
     } catch {
       return false;
     }
@@ -622,8 +610,7 @@ export class GateSecurityPolicy {
         policyId: "P-INT-004",
         description: "Reject replayed or unregistered nonces",
         threatBasis: "TM-005",
-        condition: (ctx) =>
-          !ctx["nonceRegistered"] || ctx["nonceBurned"] === true,
+        condition: (ctx) => !ctx["nonceRegistered"] || ctx["nonceBurned"] === true,
         verdictOnMatch: "deny",
         reasonTemplate: "Nonce not registered or already burned",
       },
@@ -726,8 +713,7 @@ export class ReadScopePolicy {
         policyId: "P-MCP-004",
         description: "Throttle bulk read/scan operations",
         threatBasis: "TM-006",
-        condition: (ctx) =>
-          (ctx["readCallCount"] as number) > maxCallsPerWindow,
+        condition: (ctx) => (ctx["readCallCount"] as number) > maxCallsPerWindow,
         verdictOnMatch: "warn",
         reasonTemplate: "Bulk read activity exceeds threshold — possible reconnaissance",
       },
@@ -751,11 +737,7 @@ export class OwnershipGovernance {
   /**
    * P-GOV-001: Require additional review for sensitive path changes.
    */
-  static checkSensitivePR(
-    changedPaths: string[],
-    reviewerCount: number,
-    requiredReviewers = 2,
-  ): PolicyResult {
+  static checkSensitivePR(changedPaths: string[], reviewerCount: number, requiredReviewers = 2): PolicyResult {
     const sensitiveChanges = changedPaths.filter((p) =>
       OwnershipGovernance.SENSITIVE_PATHS.some((sp) => p.includes(sp)),
     );
@@ -774,9 +756,10 @@ export class OwnershipGovernance {
     return {
       policyId: "P-GOV-001",
       verdict: "allow",
-      reason: sensitiveChanges.length > 0
-        ? `Sensitive paths changed with sufficient review (${reviewerCount}/${requiredReviewers})`
-        : "No sensitive paths modified",
+      reason:
+        sensitiveChanges.length > 0
+          ? `Sensitive paths changed with sufficient review (${reviewerCount}/${requiredReviewers})`
+          : "No sensitive paths modified",
       threatBasis: "OWN-001",
       timestamp: new Date().toISOString(),
     };
@@ -785,15 +768,9 @@ export class OwnershipGovernance {
   /**
    * P-GOV-003: Require test coverage for security changes.
    */
-  static checkTestCoverage(
-    changedPaths: string[],
-  ): PolicyResult {
-    const securityChanges = changedPaths.filter(
-      (p) => p.includes("security/") || p.includes("auth/"),
-    );
-    const testChanges = changedPaths.filter(
-      (p) => p.includes("test") || p.includes("spec"),
-    );
+  static checkTestCoverage(changedPaths: string[]): PolicyResult {
+    const securityChanges = changedPaths.filter((p) => p.includes("security/") || p.includes("auth/"));
+    const testChanges = changedPaths.filter((p) => p.includes("test") || p.includes("spec"));
 
     if (securityChanges.length > 0 && testChanges.length === 0) {
       return {
@@ -809,9 +786,7 @@ export class OwnershipGovernance {
     return {
       policyId: "P-GOV-003",
       verdict: "allow",
-      reason: securityChanges.length > 0
-        ? "Security changes include test coverage"
-        : "No security paths modified",
+      reason: securityChanges.length > 0 ? "Security changes include test coverage" : "No security paths modified",
       threatBasis: "OWN-001",
       timestamp: new Date().toISOString(),
     };
@@ -826,9 +801,7 @@ export class OwnershipGovernance {
         condition: (ctx) => {
           const changed = ctx["changedPaths"] as string[] | undefined;
           if (!changed) return false;
-          const hasSensitive = changed.some((p) =>
-            OwnershipGovernance.SENSITIVE_PATHS.some((sp) => p.includes(sp)),
-          );
+          const hasSensitive = changed.some((p) => OwnershipGovernance.SENSITIVE_PATHS.some((sp) => p.includes(sp)));
           return hasSensitive && ((ctx["reviewerCount"] as number) ?? 0) < 2;
         },
         verdictOnMatch: "deny",
@@ -841,12 +814,8 @@ export class OwnershipGovernance {
         condition: (ctx) => {
           const changed = ctx["changedPaths"] as string[] | undefined;
           if (!changed) return false;
-          const hasSecurityChanges = changed.some(
-            (p) => p.includes("security/") || p.includes("auth/"),
-          );
-          const hasTestChanges = changed.some(
-            (p) => p.includes("test") || p.includes("spec"),
-          );
+          const hasSecurityChanges = changed.some((p) => p.includes("security/") || p.includes("auth/"));
+          const hasTestChanges = changed.some((p) => p.includes("test") || p.includes("spec"));
           return hasSecurityChanges && !hasTestChanges;
         },
         verdictOnMatch: "deny",
@@ -860,9 +829,7 @@ export class OwnershipGovernance {
 // Factory: Build default MCP policy engine
 // =============================================================================
 
-export function buildMCPPolicyEngine(
-  allowedRoots: string[] = [],
-): MCPPolicyEngine {
+export function buildMCPPolicyEngine(allowedRoots: string[] = []): MCPPolicyEngine {
   const engine = new MCPPolicyEngine();
   engine.registerMany(ExecutionPolicyEngine.getPolicyRules(allowedRoots));
   engine.registerMany(AuditIntegrityGuard.getPolicyRules());
@@ -894,7 +861,11 @@ export const SECURITY_TRIGGERS: SecurityTrigger[] = [
   },
   {
     event: "on_gate_validate",
-    hooks: ["GateSecurityPolicy.validateNonce", "GateSecurityPolicy.failClosedPolicy", "GateSecurityPolicy.validateSecret"],
+    hooks: [
+      "GateSecurityPolicy.validateNonce",
+      "GateSecurityPolicy.failClosedPolicy",
+      "GateSecurityPolicy.validateSecret",
+    ],
     description: "Full GATE envelope security validation",
   },
   {

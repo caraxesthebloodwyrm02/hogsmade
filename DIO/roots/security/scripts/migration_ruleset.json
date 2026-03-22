@@ -1,0 +1,62 @@
+{
+  "scope": "security-migration",
+  "version": "1.0.0",
+  "canonical_paths": [
+    "roots/security/firewall/firewall-audit.nft",
+    "roots/security/firewall/strict-firewall.nft",
+    "roots/security/maintenance/arch-advanced-maintenance.sh",
+    "roots/security/maintenance/arch-devtool-deep-clean.sh",
+    "roots/security/systemd/arch-advanced-maintenance.service",
+    "roots/security/systemd/arch-advanced-maintenance.timer",
+    "roots/security/audit/audit.rules",
+    "roots/security/scripts/finalize-guardrails.sh",
+    "roots/security/docs/security-hardening-guide.md"
+  ],
+  "legacy_paths": [
+    "/home/caraxes/config/firewall-audit.nft",
+    "/home/caraxes/strict-firewall.nft",
+    "/home/caraxes/arch-advanced-maintenance.sh",
+    "/home/caraxes/arch-devtool-deep-clean.sh",
+    "/home/caraxes/docs/security-hardening-guide.md"
+  ],
+  "active_scan_sources": [
+    "roots/security/**",
+    "skills/os-guardrails/**",
+    "/etc/nftables.conf",
+    "/etc/systemd/system/arch-advanced-maintenance.service"
+  ],
+  "historical_sources": [
+    "roots/security/docs/arch-linux-security-hardening-plan-review.md"
+  ],
+  "historical_patterns": [
+    "*/session*",
+    "*/transcript*",
+    "*plan-review*"
+  ],
+  "live_system_bindings": {
+    "/etc/nftables.conf": "/home/caraxes/config/firewall-audit.nft",
+    "/etc/systemd/system/arch-advanced-maintenance.service": "/home/caraxes/arch-advanced-maintenance.sh"
+  },
+  "expected_initial_findings": {
+    "live_cutover_blocker": [
+      {
+        "referrer": "/etc/nftables.conf",
+        "legacy": "/home/caraxes/config/firewall-audit.nft",
+        "canonical": "roots/security/firewall/firewall-audit.nft"
+      },
+      {
+        "referrer": "/etc/systemd/system/arch-advanced-maintenance.service",
+        "legacy": "/home/caraxes/arch-advanced-maintenance.sh",
+        "canonical": "roots/security/maintenance/arch-advanced-maintenance.sh"
+      }
+    ],
+    "active_stale_reference": [
+      "skills/os-guardrails/SKILL.md",
+      "skills/os-guardrails baseline reference doc",
+      "skills/os-guardrails bundled finalize script"
+    ],
+    "historical_reference": [
+      "roots/security/docs/arch-linux-security-hardening-plan-review.md"
+    ]
+  }
+}

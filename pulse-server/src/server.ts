@@ -51,6 +51,12 @@ const AFLOAT_WORKFLOWS = config.afloatWorkflowsDir;
 const AFLOAT_HISTORY = config.afloatHistoryDir;
 const SEEDS_SNAPSHOTS = config.seedsSnapshotsDir;
 
+// Canonical names for legacy repos found in older snapshots/audit metadata.
+const LEGACY_REPO_NAME_ALIASES: Record<string, string> = {
+  "grid-main": "GRID",
+  grid_main: "GRID",
+};
+
 // ── Types ──
 
 interface JournalEntry {
@@ -274,25 +280,6 @@ async function countRecentWorkflows(): Promise<number> {
   }
 }
 
-async function getLatestEcosystemScore(): Promise<number | null> {
-  try {
-    const files = await fs.readdir(SEEDS_SNAPSHOTS);
-    const latest = files
-      .filter((f: string) => f.endsWith(".json"))
-      .sort()
-      .reverse()[0];
-    if (!latest) return null;
-    const content = await fs.readFile(
-      path.join(SEEDS_SNAPSHOTS, latest),
-      "utf-8",
-    );
-    const snapshot = JSON.parse(content);
-    return snapshot.overallScore ?? null;
-  } catch {
-    return null;
-  }
-}
-
 async function getLatestTelemetry(): Promise<unknown | null> {
   try {
     const files = await fs.readdir(ECHOES_TELEMETRY);
@@ -328,22 +315,205 @@ function isFailureStatus(status?: string): boolean {
   return status === "failure" || status === "blocked" || status === "error";
 }
 
-async function getLatestSeedsSnapshot(): Promise<Record<string, any> | null> {
+type SnapshotMetadata = {
+  sourceFile: string | null;
+  snapshotTimestamp: string | null;
+  normalizedRepoNames: Record<string, string>;
+  deduplicatedEntries: number;
+};
+
+type SeedsSnapshotResult = {
+  snapshot: Record<string, any> | null;
+  metadata: SnapshotMetadata;
+};
+
+type SnapshotCandidate = {
+  file: string;
+  snapshot: Record<string, any>;
+  sortTimestampMs: number;
+};
+
+function defaultSnapshotMetadata(): SnapshotMetadata {
+  return {
+    sourceFile: null,
+    snapshotTimestamp: null,
+    normalizedRepoNames: {},
+    deduplicatedEntries: 0,
+  };
+}
+
+function canonicalRepoName(name: string): string {
+  const trimmed = name.trim();
+  if (!trimmed) return trimmed;
+  const alias = LEGACY_REPO_NAME_ALIASES[trimmed.toLowerCase()];
+  return alias ?? trimmed;
+}
+
+function scoreRepoEntry(repo: Record<string, any>): number {
+  let score = 0;
+  if (repo.exists === true) score += 1000;
+  if (repo.hasGit === true) score += 200;
+  if (repo.hasDependencyFile === true) score += 100;
+  if (repo.hasTests === true) score += 100;
+  if (typeof repo.healthScore === "number") score += repo.healthScore;
+  if (Array.isArray(repo.issues)) score -= repo.issues.length * 5;
+  return score;
+}
+
+function normalizeSeedsSnapshot(
+  snapshot: Record<string, any>,
+): {
+  snapshot: Record<string, any>;
+  metadata: Pick<
+    SnapshotMetadata,
+    "normalizedRepoNames" | "deduplicatedEntries" | "snapshotTimestamp"
+  >;
+} {
+  const repos = Array.isArray(snapshot.repos)
+    ? (snapshot.repos as Record<string, any>[])
+    : [];
+  const normalizedRepoNames: Record<string, string> = {};
+  let deduplicatedEntries = 0;
+
+  const canonicalRepos = new Map<string, Record<string, any>>();
+
+  for (const rawRepo of repos) {
+    if (!rawRepo || typeof rawRepo !== "object") continue;
+    const originalName =
+      typeof rawRepo.name === "string" ? rawRepo.name.trim() : "";
+    const canonicalName = originalName
+      ? canonicalRepoName(originalName)
+      : originalName;
+    const normalizedRepo =
+      canonicalName && canonicalName !== originalName
+        ? { ...rawRepo, name: canonicalName }
+        : rawRepo;
+
+    if (canonicalName && canonicalName !== originalName) {
+      normalizedRepoNames[originalName] = canonicalName;
+    }
+
+    const key = canonicalName || originalName;
+    if (!key) continue;
+
+    const current = canonicalRepos.get(key);
+    if (!current) {
+      canonicalRepos.set(key, normalizedRepo);
+      continue;
+    }
+
+    const keepNew = scoreRepoEntry(normalizedRepo) > scoreRepoEntry(current);
+    canonicalRepos.set(key, keepNew ? normalizedRepo : current);
+    deduplicatedEntries += 1;
+  }
+
+  const normalizedRepos = [...canonicalRepos.values()];
+  const existingRepos = normalizedRepos.filter((repo) => repo.exists === true);
+  const overallScore =
+    existingRepos.length > 0
+      ? Math.round(
+          existingRepos.reduce(
+            (sum, repo) => sum + (repo.healthScore ?? 0),
+            0,
+          ) / existingRepos.length,
+        )
+      : 0;
+  const activeCount = existingRepos.filter(
+    (repo) => (repo.healthScore ?? 0) >= 60,
+  ).length;
+  const staleCount = existingRepos.filter(
+    (repo) => (repo.healthScore ?? 0) < 40,
+  ).length;
+  const issueCount = normalizedRepos.reduce(
+    (sum, repo) => sum + (Array.isArray(repo.issues) ? repo.issues.length : 0),
+    0,
+  );
+
+  const normalizedSnapshot: Record<string, any> = {
+    ...snapshot,
+    repos: normalizedRepos,
+    overallScore,
+    activeCount,
+    staleCount,
+    issueCount,
+  };
+
+  return {
+    snapshot: normalizedSnapshot,
+    metadata: {
+      normalizedRepoNames,
+      deduplicatedEntries,
+      snapshotTimestamp:
+        typeof normalizedSnapshot.timestamp === "string"
+          ? normalizedSnapshot.timestamp
+          : null,
+    },
+  };
+}
+
+async function buildSnapshotCandidate(
+  file: string,
+): Promise<SnapshotCandidate | null> {
   try {
-    const files = await fs.readdir(SEEDS_SNAPSHOTS);
-    const latest = files
-      .filter((f: string) => f.endsWith(".json"))
-      .sort()
-      .reverse()[0];
-    if (!latest) return null;
-    const content = await fs.readFile(
-      path.join(SEEDS_SNAPSHOTS, latest),
-      "utf-8",
-    );
-    return JSON.parse(content) as Record<string, any>;
+    const content = await fs.readFile(path.join(SEEDS_SNAPSHOTS, file), "utf-8");
+    const snapshot = JSON.parse(content) as Record<string, any>;
+
+    let sortTimestampMs: number | null = null;
+    if (typeof snapshot.timestamp === "string") {
+      const parsed = Date.parse(snapshot.timestamp);
+      if (Number.isFinite(parsed)) sortTimestampMs = parsed;
+    }
+    if (sortTimestampMs === null) {
+      const stat = await fs.stat(path.join(SEEDS_SNAPSHOTS, file));
+      sortTimestampMs = stat.mtimeMs;
+    }
+
+    return {
+      file,
+      snapshot,
+      sortTimestampMs,
+    };
   } catch {
     return null;
   }
+}
+
+async function getLatestSeedsSnapshot(): Promise<SeedsSnapshotResult> {
+  const metadata = defaultSnapshotMetadata();
+  try {
+    const files = await fs.readdir(SEEDS_SNAPSHOTS);
+    const candidates: SnapshotCandidate[] = [];
+
+    for (const file of files.filter((f: string) => f.endsWith(".json"))) {
+      const candidate = await buildSnapshotCandidate(file);
+      if (candidate) candidates.push(candidate);
+    }
+
+    if (candidates.length === 0) {
+      return { snapshot: null, metadata };
+    }
+
+    candidates.sort((a, b) => b.sortTimestampMs - a.sortTimestampMs);
+    const latest = candidates[0];
+    const normalized = normalizeSeedsSnapshot(latest.snapshot);
+
+    return {
+      snapshot: normalized.snapshot,
+      metadata: {
+        sourceFile: latest.file,
+        snapshotTimestamp: normalized.metadata.snapshotTimestamp,
+        normalizedRepoNames: normalized.metadata.normalizedRepoNames,
+        deduplicatedEntries: normalized.metadata.deduplicatedEntries,
+      },
+    };
+  } catch {
+    return { snapshot: null, metadata };
+  }
+}
+
+async function getLatestEcosystemScore(): Promise<number | null> {
+  const latest = await getLatestSeedsSnapshot();
+  return latest.snapshot?.overallScore ?? null;
 }
 
 async function listRecentWorkflowExecutions(
@@ -389,6 +559,7 @@ function inferRelatedRepo(
   event: Record<string, any>,
   repoNames: string[],
 ): string | null {
+  const canonicalRepoNames = repoNames.map(canonicalRepoName);
   const metadata =
     event.metadata && typeof event.metadata === "object"
       ? (event.metadata as Record<string, unknown>)
@@ -398,18 +569,31 @@ function inferRelatedRepo(
     typeof metadata.relatedRepo === "string" &&
     metadata.relatedRepo.length > 0
   ) {
-    return metadata.relatedRepo;
+    const canonical = canonicalRepoName(metadata.relatedRepo);
+    return canonicalRepoNames.includes(canonical)
+      ? canonical
+      : metadata.relatedRepo;
   }
 
   const haystacks = [
     typeof metadata.name === "string" ? metadata.name : "",
     typeof event.tool === "string" ? event.tool : "",
     typeof event.source === "string" ? event.source : "",
-  ].filter(Boolean) as string[];
+  ]
+    .filter(Boolean)
+    .map((value) => value.toLowerCase()) as string[];
 
-  for (const repoName of repoNames) {
-    if (haystacks.some((value) => value.includes(repoName))) {
-      return repoName;
+  for (let i = 0; i < repoNames.length; i++) {
+    const repoName = repoNames[i];
+    const canonicalName = canonicalRepoNames[i];
+    const repoNameLower = repoName.toLowerCase();
+    const canonicalLower = canonicalName.toLowerCase();
+    if (
+      haystacks.some(
+        (value) => value.includes(repoNameLower) || value.includes(canonicalLower),
+      )
+    ) {
+      return canonicalName;
     }
   }
 
@@ -839,7 +1023,8 @@ export function buildServer(): McpServer {
       const recentAudit = (await readRecentAuditEntries(100)) as Array<
         Record<string, any>
       >;
-      const latestSnapshot = await getLatestSeedsSnapshot();
+      const latestSnapshotResult = await getLatestSeedsSnapshot();
+      const latestSnapshot = latestSnapshotResult.snapshot;
       const recentExecutions = await listRecentWorkflowExecutions(20);
       const workflowsToday = recentExecutions.filter((execution) =>
         execution.startedAt?.startsWith(todayKey()),
@@ -953,6 +1138,12 @@ export function buildServer(): McpServer {
           healthScore:
             ecosystemScore ?? "No snapshots yet — run ecosystem_scan",
           latestTelemetry: telemetry ? "Available" : "No telemetry snapshots",
+          snapshot: {
+            sourceFile: latestSnapshotResult.metadata.sourceFile,
+            timestamp: latestSnapshotResult.metadata.snapshotTimestamp,
+            normalizedRepoNames: latestSnapshotResult.metadata.normalizedRepoNames,
+            deduplicatedEntries: latestSnapshotResult.metadata.deduplicatedEntries,
+          },
           lowHealthRepos: lowHealthRepos.map((repo) => ({
             name: repo.name,
             healthScore: repo.healthScore,
@@ -998,6 +1189,8 @@ export function buildServer(): McpServer {
           warningCount: orderedWarnings.length,
           priorityCount: orderedPriorities.length,
           ecosystemScore: ecosystemScore ?? null,
+          snapshotTimestamp: latestSnapshotResult.metadata.snapshotTimestamp,
+          snapshotSourceFile: latestSnapshotResult.metadata.sourceFile,
         },
       });
 
@@ -1032,7 +1225,8 @@ export function buildServer(): McpServer {
     async (args: { healthThreshold?: number }) => {
       await ensureDataDir();
       const threshold = args.healthThreshold ?? 70;
-      const snapshot = await getLatestSeedsSnapshot();
+      const snapshotResult = await getLatestSeedsSnapshot();
+      const snapshot = snapshotResult.snapshot;
       const lowHealthRepos = getLowHealthRepos(snapshot, threshold);
       const recentFailures = (
         (await readRecentAuditEntries(100)) as Array<Record<string, any>>
@@ -1067,6 +1261,10 @@ export function buildServer(): McpServer {
               {
                 alertCount: alerts.length,
                 healthThreshold: threshold,
+                snapshot: {
+                  sourceFile: snapshotResult.metadata.sourceFile,
+                  timestamp: snapshotResult.metadata.snapshotTimestamp,
+                },
                 alerts,
               },
               null,
@@ -1103,7 +1301,8 @@ export function buildServer(): McpServer {
         const age = hoursSince(event.timestamp);
         return age !== null && age <= 24 && isFailureStatus(event.status);
       });
-      const latestSnapshot = await getLatestSeedsSnapshot();
+      const latestSnapshotResult = await getLatestSeedsSnapshot();
+      const latestSnapshot = latestSnapshotResult.snapshot;
       const lowHealthRepos = getLowHealthRepos(latestSnapshot, threshold);
       const failedWorkflows = (await listRecentWorkflowExecutions(20)).filter(
         (execution) => execution.status && execution.status !== "completed",
@@ -1159,6 +1358,14 @@ export function buildServer(): McpServer {
                 generatedAt: new Date().toISOString(),
                 ecosystemScore,
                 healthThreshold: threshold,
+                snapshot: {
+                  sourceFile: latestSnapshotResult.metadata.sourceFile,
+                  timestamp: latestSnapshotResult.metadata.snapshotTimestamp,
+                  normalizedRepoNames:
+                    latestSnapshotResult.metadata.normalizedRepoNames,
+                  deduplicatedEntries:
+                    latestSnapshotResult.metadata.deduplicatedEntries,
+                },
                 journalEntriesToday: journal.length,
                 summary,
                 items: finalItems,
