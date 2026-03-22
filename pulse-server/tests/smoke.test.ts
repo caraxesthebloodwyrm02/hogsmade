@@ -57,14 +57,30 @@ describe("pulse-server smoke", () => {
       })}\n`,
       "utf-8",
     );
+    const now = Date.now();
     writeFileSync(
-      path.join(seedsDataDir, "snapshots", "snapshot-1.json"),
+      path.join(seedsDataDir, "snapshots", "snapshot-zzzz-old.json"),
       JSON.stringify({
-        timestamp: new Date().toISOString(),
-        overallScore: 55,
+        timestamp: new Date(now - 24 * 60 * 60 * 1000).toISOString(),
+        overallScore: 10,
         repos: [
           {
             name: "GRID-main",
+            healthScore: 10,
+            issues: ["legacy stale snapshot"],
+          },
+        ],
+      }),
+      "utf-8",
+    );
+    writeFileSync(
+      path.join(seedsDataDir, "snapshots", "snapshot-0001-new.json"),
+      JSON.stringify({
+        timestamp: new Date(now).toISOString(),
+        overallScore: 55,
+        repos: [
+          {
+            name: "GRID",
             healthScore: 55,
             issues: ["stale branch", "uncommitted changes"],
           },
@@ -136,12 +152,15 @@ describe("pulse-server smoke", () => {
     expect(briefingPayload.correlations.length).toBeGreaterThan(0);
     expect(alertsPayload.alertCount).toBeGreaterThan(0);
     expect(prioritiesPayload.items.length).toBeGreaterThan(0);
+    expect(briefingPayload.ecosystem.snapshot.sourceFile).toBe(
+      "snapshot-0001-new.json",
+    );
     expect(prioritiesPayload.items).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           rank: 1,
           priority: "high",
-          title: expect.stringContaining("failure linked to GRID-main"),
+          title: expect.stringContaining("failure linked to GRID"),
         }),
       ]),
     );

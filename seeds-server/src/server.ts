@@ -67,7 +67,14 @@ const REPO_PATH_ALIASES: Record<string, string> = {
 };
 
 // Skip these discovered directory names in ecosystem_scan (no git or not tracked)
-const REPO_SKIP_LIST = new Set(["scratch", "grid", "glimpse-core", "scripts"]);
+const REPO_SKIP_LIST = new Set([
+  "scratch",
+  "grid",
+  "glimpse-core",
+  "scripts",
+  "archive",
+  "templates",
+]);
 
 // ── Types ──
 
