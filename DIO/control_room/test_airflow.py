@@ -6,6 +6,7 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import airflow  # noqa: E402
+from constants import CADENCE, MODULAR_PASS_INDEX, RHYTHM_PASS_COUNT  # noqa: E402
 
 
 class AirflowBehaviorTests(unittest.TestCase):
@@ -79,6 +80,19 @@ class AirflowBehaviorTests(unittest.TestCase):
             "Correction Zone",
         )
 
+    def test_gate_passes_follow_shared_constants_contract(self) -> None:
+        orchestrator = airflow.AirflowOrchestrator()
+
+        self.assertEqual(
+            [gate_pass.pass_index for gate_pass in orchestrator.gate_passes],
+            list(range(1, MODULAR_PASS_INDEX + 1)),
+        )
+        self.assertTrue(all(gate_pass.cadence == CADENCE for gate_pass in orchestrator.gate_passes))
+        self.assertTrue(
+            all(gate_pass.mode == "Rhythm" for gate_pass in orchestrator.gate_passes[:RHYTHM_PASS_COUNT])
+        )
+        self.assertEqual(orchestrator.gate_passes[-1].mode, "Modular")
+
     def test_rhythm_phase_mapping_and_final_mode(self) -> None:
         orchestrator = airflow.AirflowOrchestrator()
         expected_phases = {
@@ -93,7 +107,7 @@ class AirflowBehaviorTests(unittest.TestCase):
 
         for pass_count, expected_phase in expected_phases.items():
             self.assertEqual(
-                orchestrator._beat_phase_for_pass(pass_count),
+                orchestrator.beat_phase_for_pass(pass_count),
                 expected_phase,
             )
 
@@ -133,7 +147,7 @@ class AirflowBehaviorTests(unittest.TestCase):
         )
 
         for wait_time_s, expected_bucket in direct_interval_cases:
-            self.assertEqual(airflow._wait_bucket(wait_time_s), expected_bucket)
+            self.assertEqual(airflow.wait_bucket(wait_time_s), expected_bucket)
 
     def test_realtime_reference_graph_structure(self) -> None:
         with patch.object(airflow, "_measurement_module", None):

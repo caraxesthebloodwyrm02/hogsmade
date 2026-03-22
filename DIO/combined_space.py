@@ -7,10 +7,11 @@ from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple
 
 from control_room.constants import (
-    CADENCE,
     MODULAR_PASS_INDEX,
+    PHASE_LANE_ENVELOPE,
     RHYTHM_PASS_COUNT,
     GatePassProfile,
+    LaneValue,
 )
 
 
@@ -41,7 +42,7 @@ class InteractiveIterationTool:
     STAGE_SEQUENCE: Tuple[str, str, str, str] = ("setup", "build", "mutation", "closure")
 
     def __init__(self, parts: Optional[List[EpisodePart]] = None) -> None:
-        self.parts = parts if parts is not None else self._default_parts()
+        self.parts = parts if parts is not None else self.default_parts()
         self.gate_passes = self._build_gate_passes()
         self.completed_passes = 0
         self._validate_timing()
@@ -53,25 +54,25 @@ class InteractiveIterationTool:
             gate_passes.append(GatePassProfile(pass_index=pass_index, mode=mode))
         return gate_passes
 
-    def _stage_for_part(self, part_index: int) -> str:
+    def stage_for_part(self, part_index: int) -> str:
         stage_index = min(max(part_index - 1, 0), len(self.STAGE_SEQUENCE) - 1)
         return self.STAGE_SEQUENCE[stage_index]
 
-    def _phase_trigger(self, part_index: int, phase_name: str) -> str:
+    def phase_trigger(self, part_index: int, phase_name: str) -> str:
         phase_gate = "phase_one_gate" if "Phase 1" in phase_name else "phase_two_gate"
         return f"part_{part_index}_{phase_gate}"
 
-    def _build_trigger_board(self) -> Dict[str, str]:
+    def build_trigger_board(self) -> Dict[str, LaneValue]:
         return {
             "entry_lane": "user_confirmed_part_start",
-            "phase_lane": "phase_start_input_received",
+            "phase_lane": PHASE_LANE_ENVELOPE,
             "countdown_lane": "countdown_tick_active",
             "break_lane": "part_index_equals_2",
             "promotion_lane": f"completed_passes_reached_{RHYTHM_PASS_COUNT}",
             "exit_lane": "phase_completion_confirmed",
         }
 
-    def _auxiliary_bus_route(self, trigger_board: Dict[str, str]) -> str:
+    def auxiliary_bus_route(self, trigger_board: Dict[str, LaneValue]) -> str:
         route_order = [
             "entry_lane",
             "phase_lane",
@@ -82,16 +83,23 @@ class InteractiveIterationTool:
         ]
         return " -> ".join(f"{lane}:{trigger_board[lane]}" for lane in route_order)
 
-    def _execute_modular_pass(self) -> None:
-        trigger_board = self._build_trigger_board()
-        bus_route = self._auxiliary_bus_route(trigger_board)
+    def promote_to_modular(self) -> Dict[str, object]:
+        """Authoritative state transition: Rhythm -> Modular. Returns trigger context."""
+        self.completed_passes = MODULAR_PASS_INDEX
+        trigger_board = self.build_trigger_board()
+        return {
+            "trigger_board": trigger_board,
+            "bus_route": self.auxiliary_bus_route(trigger_board),
+        }
+
+    def execute_modular_pass(self) -> None:
+        context = self.promote_to_modular()
         print("\n===== PASS 7: MODULAR ORCHESTRATION =====")
         print("Mode: Modular")
-        print(f"Trigger Board: {trigger_board}")
-        print(f"Auxiliary BUS Route: {bus_route}")
-        self.completed_passes = MODULAR_PASS_INDEX
+        print(f"Trigger Board: {context['trigger_board']}")
+        print(f"Auxiliary BUS Route: {context['bus_route']}")
 
-    def _default_parts(self) -> List[EpisodePart]:
+    def default_parts(self) -> List[EpisodePart]:
         return [
             EpisodePart(
                 index=1,
@@ -183,7 +191,7 @@ class InteractiveIterationTool:
 
         return {
             "part_index": str(part_index),
-            "stage": self._stage_for_part(part_index),
+            "stage": self.stage_for_part(part_index),
             "airflow_category": dial_state.category,
             "light_phase": light_state.phase,
             "beat_phase": orchestration["beat_phase"],
@@ -233,7 +241,7 @@ class InteractiveIterationTool:
             print("Control room: offline")
         print("The second phase in each part is tighter for engagement and x-factor build-up.\n")
 
-    def _run_countdown(self, seconds: int, label: str, speed_multiplier: float) -> None:
+    def run_countdown(self, seconds: int, label: str, speed_multiplier: float) -> None:
         if speed_multiplier <= 0:
             raise ValueError("Speed multiplier must be greater than 0.")
 
@@ -248,11 +256,11 @@ class InteractiveIterationTool:
 
     def _run_phase(self, part_index: int, phase: EpisodePhase, speed_multiplier: float) -> None:
         print(f"\n{phase.name}")
-        print(f"Stage: {self._stage_for_part(part_index)} | Trigger: {self._phase_trigger(part_index, phase.name)}")
+        print(f"Stage: {self.stage_for_part(part_index)} | Trigger: {self.phase_trigger(part_index, phase.name)}")
         print(f"Focus: {phase.focus_prompt}")
         print(f"Concurrency: {phase.concurrency_level}")
         input("Press Enter to start this phase...")
-        self._run_countdown(phase.duration_seconds, phase.name, speed_multiplier)
+        self.run_countdown(phase.duration_seconds, phase.name, speed_multiplier)
         input("Phase complete. Press Enter to continue...\n")
 
     def run(self, speed_multiplier: float = 1.0) -> None:
@@ -260,7 +268,7 @@ class InteractiveIterationTool:
         input("Press Enter to launch Part 1...\n")
 
         for part in self.parts:
-            print(f"\n===== PART {part.index}: {part.title} [{self._stage_for_part(part.index)}] =====")
+            print(f"\n===== PART {part.index}: {part.title} [{self.stage_for_part(part.index)}] =====")
             self._run_phase(part.index, part.phase_one, speed_multiplier)
             self._run_phase(part.index, part.phase_two, speed_multiplier)
 
@@ -268,7 +276,7 @@ class InteractiveIterationTool:
                 print("\n===== ISOLATION BREAK SESSION =====")
                 print("Disconnect, no new input, let the previous iteration settle.")
                 input("Press Enter to begin the 240s isolation break...")
-                self._run_countdown(
+                self.run_countdown(
                     self.ISOLATION_BREAK_SECONDS,
                     "Isolation Break Session",
                     speed_multiplier,
@@ -276,7 +284,7 @@ class InteractiveIterationTool:
                 input("Break complete. Press Enter to enter Part 3...\n")
 
         self.completed_passes = RHYTHM_PASS_COUNT
-        self._execute_modular_pass()
+        self.execute_modular_pass()
 
         print("\n=== EPISODE EXECUTION COMPLETE ===")
         print("4-part structure complete across 30 minutes with an 8-minute isolation break.")

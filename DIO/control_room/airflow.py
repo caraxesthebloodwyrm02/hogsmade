@@ -3,9 +3,13 @@ import importlib
 from typing import Callable, Dict, List, Optional, Tuple
 
 try:
-    from control_room.constants import CADENCE, RHYTHM_PASS_COUNT, MODULAR_PASS_INDEX, GatePassProfile
+    from control_room.constants import (
+        CADENCE, RHYTHM_PASS_COUNT, MODULAR_PASS_INDEX, GatePassProfile, PHASE_LANE_ENVELOPE, LaneValue,
+    )
 except ImportError:
-    from constants import CADENCE, RHYTHM_PASS_COUNT, MODULAR_PASS_INDEX, GatePassProfile
+    from constants import (
+        CADENCE, RHYTHM_PASS_COUNT, MODULAR_PASS_INDEX, GatePassProfile, PHASE_LANE_ENVELOPE, LaneValue,
+    )
 
 try:
     _measurement_module = importlib.import_module("measurement")
@@ -32,7 +36,7 @@ def _clamp(value: float, lower: float, upper: float) -> float:
     return max(lower, min(value, upper))
 
 
-def _wait_bucket(wait_time_s: int) -> int:
+def wait_bucket(wait_time_s: int) -> int:
     return min(max(wait_time_s // 15, 0), 4)
 
 
@@ -43,7 +47,7 @@ def _build_fallback_snapshot(
 ) -> Tuple[AirflowSnapshot, int]:
     fan_offsets = (-50, -25, 0, 25, 50)
     temp_offsets = (-2.0, -1.0, 0.0, 1.0, 2.0)
-    bucket = _wait_bucket(wait_time_s)
+    bucket = wait_bucket(wait_time_s)
     collab = _clamp((player_a + player_b) / 2.0, -1.0, 1.0)
 
     fan_speed = 900 + fan_offsets[bucket] + round(collab * 10)
@@ -76,7 +80,7 @@ def resolve_airflow_snapshot(
     fan_speed, temperature = reader()
     return (
         AirflowSnapshot(fan_speed=int(fan_speed), temperature=float(temperature)),
-        _wait_bucket(wait_time_s),
+        wait_bucket(wait_time_s),
     )
 
 
@@ -137,17 +141,17 @@ class AirflowOrchestrator:
             gate_passes.append(GatePassProfile(pass_index=pass_index, mode=mode))
         return tuple(gate_passes)
 
-    def _build_trigger_board(self) -> Dict[str, str]:
+    def _build_trigger_board(self) -> Dict[str, LaneValue]:
         return {
             "entry_lane": "snapshot_collected",
-            "phase_lane": "airflow_thresholds_evaluated",
+            "phase_lane": PHASE_LANE_ENVELOPE,
             "countdown_lane": "status_broadcast",
             "break_lane": "line_balance_checkpoint",
             "promotion_lane": f"completed_passes_reached_{RHYTHM_PASS_COUNT}",
             "exit_lane": "orchestration_reported",
         }
 
-    def _auxiliary_bus_route(self, trigger_board: Dict[str, str]) -> str:
+    def _auxiliary_bus_route(self, trigger_board: Dict[str, LaneValue]) -> str:
         lane_order = [
             "entry_lane",
             "phase_lane",
@@ -158,7 +162,7 @@ class AirflowOrchestrator:
         ]
         return " -> ".join(f"{lane}:{trigger_board[lane]}" for lane in lane_order)
 
-    def _beat_phase_for_pass(self, pass_count: int) -> str:
+    def beat_phase_for_pass(self, pass_count: int) -> str:
         cadence = self.gate_passes[0].cadence if self.gate_passes else CADENCE
         cadence_index = (max(pass_count, 1) - 1) % len(cadence)
         return cadence[cadence_index]
@@ -174,7 +178,7 @@ class AirflowOrchestrator:
             "trigger_board": str(trigger_board),
             "auxiliary_bus_route": self._auxiliary_bus_route(trigger_board),
             "cadence": str(self.gate_passes[0].cadence),
-            "beat_phase": self._beat_phase_for_pass(self.completed_passes),
+            "beat_phase": self.beat_phase_for_pass(self.completed_passes),
         }
 
 

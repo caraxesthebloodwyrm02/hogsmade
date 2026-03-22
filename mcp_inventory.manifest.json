@@ -52,6 +52,12 @@
       "entryRelative": "maintain-server/src/server.ts"
     },
     {
+      "mcpServerKey": "overview-server",
+      "runtime": "typescript",
+      "bootstrapType": "mcp_sdk_stdio_ts",
+      "entryRelative": "overview-server/src/server.ts"
+    },
+    {
       "mcpServerKey": "grid-rag",
       "runtime": "python",
       "bootstrapType": "mcp_sdk_stdio_python",
