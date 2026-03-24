@@ -5,7 +5,7 @@ export const TelemetrySnapshotSchema = z.object({
   workspace: z.string(),
   projects: z.number(),
   activeServers: z.array(z.string()),
-  metrics: z.record(z.number()),
+  metrics: z.record(z.string(), z.number()),
 });
 
 export type TelemetrySnapshot = z.infer<typeof TelemetrySnapshotSchema>;

@@ -31,7 +31,7 @@
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
-    "zod": "^3.22.0"
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

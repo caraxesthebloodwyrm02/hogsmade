@@ -9,7 +9,7 @@ export const AuditEventSchema = z.object({
   tool: z.string(),
   status: AuditStatusSchema,
   durationMs: z.number().optional(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 export type AuditEvent = z.infer<typeof AuditEventSchema>;
