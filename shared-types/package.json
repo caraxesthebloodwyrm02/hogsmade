@@ -17,6 +17,10 @@
     "./security-policy": {
       "types": "./dist/security-policy.d.ts",
       "default": "./dist/security-policy.js"
+    },
+    "./session-rate-limit": {
+      "types": "./dist/session-rate-limit.d.ts",
+      "default": "./dist/session-rate-limit.js"
     }
   },
   "scripts": {

@@ -61,6 +61,7 @@ jobs:
           - grid-server
           - lots-server
           - maintain-server
+          - overview-server
           - pulse-server
           - seeds-server
     steps:

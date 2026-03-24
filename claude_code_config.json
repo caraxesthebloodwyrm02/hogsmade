@@ -155,6 +155,20 @@
         "SEEDS_ROOT": "/home/caraxes/seed",
         "ECHOES_AUDIT_PATH": "/home/caraxes/.echoes/audit.ndjson"
       }
+    },
+    "overview-server": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "tsx",
+        "/home/caraxes/CascadeProjects/overview-server/src/server.ts"
+      ],
+      "env": {
+        "CASCADE_WORKSPACE_ROOT": "/home/caraxes/CascadeProjects",
+        "SEEDS_ROOT": "/home/caraxes/seed",
+        "ECHOES_AUDIT_PATH": "/home/caraxes/.echoes/audit.ndjson",
+        "GATE_DIR": "/home/caraxes/CascadeProjects/GATE"
+      }
     }
   }
 }

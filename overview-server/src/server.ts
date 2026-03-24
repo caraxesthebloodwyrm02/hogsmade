@@ -15,19 +15,21 @@
  */
 
 import { emitAudit } from "@cascade/shared-types/audit-client";
+import { SessionRateLimiter } from "@cascade/shared-types/session-rate-limit";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { promises as fs } from "fs";
 import { pathToFileURL } from "url";
 import * as z from "zod";
-import { getConfig } from "./config.js";
 import { aggregateCheckpoint } from "./checkpoint.js";
+import { getConfig } from "./config.js";
 
 // ── Constants ──
 
 const SERVER_NAME = "overview-server";
 const VERSION = "1.0.0";
 const config = getConfig();
+const readLimiter = new SessionRateLimiter();
 
 // ── Data Layer ──
 
@@ -149,6 +151,8 @@ export function buildServer(): McpServer {
         ),
     },
     async ({ focus, since, depth }) => {
+      const rlMsg = readLimiter.check("checkpoint");
+      if (rlMsg) return { content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
       const startMs = Date.now();
 
       try {

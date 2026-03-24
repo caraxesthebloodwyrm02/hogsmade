@@ -14,6 +14,7 @@
 
 import { emitAudit } from "@cascade/shared-types/audit-client";
 import { ExecutionPolicyEngine } from "@cascade/shared-types/security-policy";
+import { SessionRateLimiter } from "@cascade/shared-types/session-rate-limit";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { execFile } from "child_process";
@@ -45,6 +46,7 @@ let lastPreview: { token: string; expiresAt: number; actionHash: string } | null
 // Rate limiting for expensive scans
 const SCAN_COOLDOWN_MS = 30_000; // 30 seconds between expensive scans
 const lastScanTimes = new Map<string, number>();
+const readLimiter = new SessionRateLimiter();
 
 function checkScanRateLimit(scanType: string): string | null {
   const now = Date.now();
@@ -1110,6 +1112,8 @@ export function buildServer(): McpServer {
       }),
     },
     async (args: { maxAgeDays?: number }) => {
+      const rlMsg = readLimiter.check("scan_temp");
+      if (rlMsg) return { content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
       const rateLimitMsg = checkScanRateLimit("scan_temp");
       if (rateLimitMsg) {
         return { content: [{ type: "text" as const, text: JSON.stringify({ error: rateLimitMsg }) }] };
@@ -1185,6 +1189,8 @@ export function buildServer(): McpServer {
       }),
     },
     async (args: { roots?: string[]; maxDepth?: number }) => {
+      const rlMsg = readLimiter.check("scan_workspaces");
+      if (rlMsg) return { content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
       const rateLimitMsg = checkScanRateLimit("scan_workspaces");
       if (rateLimitMsg) {
         return { content: [{ type: "text" as const, text: JSON.stringify({ error: rateLimitMsg }) }] };
@@ -1278,6 +1284,8 @@ export function buildServer(): McpServer {
       }),
     },
     async (args: { roots?: string[] }) => {
+      const rlMsg = readLimiter.check("scan_git_repos");
+      if (rlMsg) return { content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
       const rateLimitMsg = checkScanRateLimit("scan_git_repos");
       if (rateLimitMsg) {
         return { content: [{ type: "text" as const, text: JSON.stringify({ error: rateLimitMsg }) }] };
@@ -1359,6 +1367,8 @@ export function buildServer(): McpServer {
       }),
     },
     async (args: { topProcesses?: number }) => {
+      const rlMsg = readLimiter.check("scan_system");
+      if (rlMsg) return { content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
       await ensureDataDir();
       const metrics = await getSystemMetrics(args.topProcesses ?? 10);
 
@@ -1407,6 +1417,8 @@ export function buildServer(): McpServer {
       }),
     },
     async (args: { saveReport?: boolean; roots?: string[] }) => {
+      const rlMsg = readLimiter.check("full_diagnostic");
+      if (rlMsg) return { content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
       const rateLimitMsg = checkScanRateLimit("full_diagnostic");
       if (rateLimitMsg) {
         return { content: [{ type: "text" as const, text: JSON.stringify({ error: rateLimitMsg }) }] };
@@ -1863,6 +1875,8 @@ export function buildServer(): McpServer {
       }),
     },
     async (args: { limit?: number; metric?: string }) => {
+      const rlMsg = readLimiter.check("report_history");
+      if (rlMsg) return { content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
       await ensureDataDir();
       const reports = await loadReports(args.limit ?? 5);
 

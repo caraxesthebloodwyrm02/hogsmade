@@ -12,6 +12,7 @@
 
 import { emitAudit } from "@cascade/shared-types/audit-client";
 import { ExecutionPolicyEngine } from "@cascade/shared-types/security-policy";
+import { SessionRateLimiter } from "@cascade/shared-types/session-rate-limit";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { execFile } from "child_process";
@@ -28,6 +29,7 @@ const execFileAsync = promisify(execFile);
 
 const SERVER_NAME = "lots-server";
 const VERSION = "1.0.0";
+const readLimiter = new SessionRateLimiter();
 const config = getConfig();
 const EXPERIMENTS_DIR = config.experimentsDir;
 const CATALOG_PATH = path.join(EXPERIMENTS_DIR, ".catalog.json");
@@ -262,6 +264,26 @@ export function buildServer(): McpServer {
               isError: true,
             };
           }
+          // Security: reject symlinks at creation time (symlink traversal prevention)
+          try {
+            const scriptStat = await fs.lstat(resolved);
+            if (scriptStat.isSymbolicLink()) {
+              return {
+                content: [
+                  {
+                    type: "text" as const,
+                    text: JSON.stringify({
+                      error:
+                        "Script is a symlink — blocked for security (symlink traversal prevention)",
+                    }),
+                  },
+                ],
+                isError: true,
+              };
+            }
+          } catch {
+            // File doesn't exist yet — will fail at run time
+          }
           exp.script = resolved;
         } else {
           const ext =
@@ -313,6 +335,8 @@ export function buildServer(): McpServer {
       }),
     },
     async (args: { status?: string; tag?: string; limit?: number }) => {
+      const rlMsg = readLimiter.check("experiment_list");
+      if (rlMsg) return { content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
       await ensureDir();
       const catalog = await loadCatalog();
       let filtered = catalog.experiments;
@@ -416,35 +440,16 @@ export function buildServer(): McpServer {
         };
       }
 
-      // Security: reject symlinks, then validate path via ExecutionPolicyEngine
-      try {
-        const scriptStat = await fs.lstat(exp.script);
-        if (scriptStat.isSymbolicLink()) {
-          return {
-            content: [
-              {
-                type: "text" as const,
-                text: JSON.stringify({
-                  error:
-                    "Script is a symlink — blocked for security (symlink traversal prevention)",
-                }),
-              },
-            ],
-            isError: true,
-          };
-        }
-      } catch {
-        // File doesn't exist yet or not accessible — path check below will catch it
-      }
       // P-MCP-001: Validate script path against allowed roots
       const pathPolicy = executionPolicy.validateScriptPath(exp.script);
       if (pathPolicy.verdict === "deny") {
+        console.error(`[${SERVER_NAME}] policy denial: ${pathPolicy.policyId} — ${pathPolicy.reason}`);
         return {
           content: [
             {
               type: "text" as const,
               text: JSON.stringify({
-                error: `${pathPolicy.policyId}: ${pathPolicy.reason}`,
+                error: "Script path blocked by security policy",
               }),
             },
           ],
@@ -555,6 +560,8 @@ export function buildServer(): McpServer {
       }),
     },
     async (args: { experimentId: string }) => {
+      const rlMsg = readLimiter.check("experiment_get");
+      if (rlMsg) return { content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
       await ensureDir();
       const catalog = await loadCatalog();
       const exp = catalog.experiments.find((e) => e.id === args.experimentId);
@@ -592,6 +599,8 @@ export function buildServer(): McpServer {
       }),
     },
     async (args: { experimentA: string; experimentB: string }) => {
+      const rlMsg = readLimiter.check("experiment_compare");
+      if (rlMsg) return { content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
       await ensureDir();
       const catalog = await loadCatalog();
       const a = catalog.experiments.find((e) => e.id === args.experimentA);
@@ -1004,6 +1013,8 @@ export function buildServer(): McpServer {
       saveAsDraft?: boolean;
       maxProposals?: number;
     }) => {
+      const rlMsg = readLimiter.check("experiment_suggest");
+      if (rlMsg) return { content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
       await ensureDir();
       const maxProposals = args.maxProposals ?? 5;
       const { signals, degradation } = await detectLocalPatterns(args.repo, args.source);

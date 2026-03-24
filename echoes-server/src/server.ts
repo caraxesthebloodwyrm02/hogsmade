@@ -11,6 +11,7 @@
  */
 
 import { AuditIntegrityGuard } from '@cascade/shared-types/security-policy';
+import { SessionRateLimiter } from '@cascade/shared-types/session-rate-limit';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { promises as fs } from 'fs';
@@ -59,16 +60,18 @@ async function ensureDataDir(): Promise<void> {
 }
 
 /**
- * Sanitize values to prevent NDJSON injection — strips newlines from strings
- * so each JSON.stringify produces exactly one line.
+ * Sanitize values to prevent NDJSON injection — JSON-escapes control characters
+ * in strings so each JSON.stringify produces exactly one line.
+ * Uses JSON.stringify to properly escape \n, \r, \t, and other control chars
+ * instead of stripping them, preserving data fidelity.
  */
 function sanitizeForNdjson(value: unknown): unknown {
-  if (typeof value === 'string') return value.replace(/[\n\r]/g, ' ');
+  if (typeof value === 'string') return JSON.stringify(value).slice(1, -1);
   if (Array.isArray(value)) return value.map(sanitizeForNdjson);
   if (value !== null && typeof value === 'object') {
     const out: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
-      out[k.replace(/[\n\r]/g, ' ')] = sanitizeForNdjson(v);
+      out[JSON.stringify(k).slice(1, -1)] = sanitizeForNdjson(v);
     }
     return out;
   }
@@ -101,6 +104,7 @@ function normalizeAuditStatus(status: unknown): AuditEntry['status'] | null {
 }
 
 const MAX_AUDIT_FILE_BYTES = 100 * 1024 * 1024; // 100 MB guard
+const readLimiter = new SessionRateLimiter();
 
 async function readAuditLog(
   limit: number,
@@ -351,6 +355,8 @@ export function buildServer(): McpServer {
       }),
     },
     async (args) => {
+      const rlMsg = readLimiter.check('query_audit');
+      if (rlMsg) return { content: [{ type: 'text' as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
       await ensureDataDir();
       const metadata: { parseErrors?: number } = {};
       const entries = await readAuditLog(args.limit ?? 20, {
@@ -372,6 +378,8 @@ export function buildServer(): McpServer {
       inputSchema: z.object({}),
     },
     async () => {
+      const rlMsg = readLimiter.check('audit_stats');
+      if (rlMsg) return { content: [{ type: 'text' as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
       await ensureDataDir();
       const stats = await getAuditStats();
       return {
@@ -418,6 +426,8 @@ export function buildServer(): McpServer {
       }),
     },
     async (args) => {
+      const rlMsg = readLimiter.check('list_telemetry');
+      if (rlMsg) return { content: [{ type: 'text' as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
       await ensureDataDir();
       const snapshots = await listTelemetrySnapshots(args.limit ?? 10);
       return {

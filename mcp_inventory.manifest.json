@@ -85,13 +85,13 @@
     {
       "mcpServerKey": "code-analysis",
       "runtime": "python",
-      "bootstrapType": "custom_jsonrpc_stdio",
+      "bootstrapType": "mcp_sdk_stdio_python",
       "gridPythonScript": "mcp-setup/server/code_analysis_mcp_server.py"
     },
     {
       "mcpServerKey": "test-runner",
       "runtime": "python",
-      "bootstrapType": "custom_jsonrpc_stdio",
+      "bootstrapType": "mcp_sdk_stdio_python",
       "gridPythonScript": "mcp-setup/server/test_runner_mcp_server.py"
     },
     {
@@ -113,12 +113,9 @@
       "gridPythonScript": "mcp-setup/server/memory_mcp_server.py"
     },
     {
-      "id": "glimpse-server",
-      "mcpServerKey": null,
-      "status": "omitted_from_editor_canonical",
-      "reason": "Package exists under CascadeProjects/glimpse-server but is intentionally omitted from mcp_config.json; add only after governance sign-off.",
+      "mcpServerKey": "glimpse-server",
       "runtime": "typescript",
-      "bootstrapType": "nonstandard_ts_exports",
+      "bootstrapType": "mcp_sdk_stdio_ts",
       "entryRelative": "glimpse-server/src/server.ts"
     }
   ]

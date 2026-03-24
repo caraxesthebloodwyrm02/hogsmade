@@ -1,8 +1,7 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { mkdtempSync, rmSync } from "fs";
 import os from "os";
 import path from "path";
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 // Type assertion for testing - bypass private property access
 interface TestServer {
@@ -51,5 +50,112 @@ describe("afloat-server smoke", () => {
     const list = await invokeTool(server, "workflow_list", { limit: 5 }) as { isError?: boolean };
     expect(health.isError).not.toBe(true);
     expect(list.isError).not.toBe(true);
+  });
+
+  it("creates a workflow and retrieves it by ID", async () => {
+    const server = buildServer();
+    const create = (await invokeTool(server, "workflow_create", {
+      name: "deploy-check",
+      description: "validate deployment workflow",
+      steps: [
+        {
+          name: "lint",
+          description: "lint code",
+          command: "npm run lint",
+        },
+        {
+          name: "test",
+          description: "run tests",
+          command: "npm test",
+        },
+      ],
+    })) as { content: Array<{ text: string }>; isError?: boolean };
+
+    expect(create.isError).not.toBe(true);
+    const created = JSON.parse(create.content[0].text);
+    const workflowId = created.workflow.id as string;
+
+    const get = (await invokeTool(server, "workflow_get", {
+      workflowId,
+    })) as { content: Array<{ text: string }>; isError?: boolean };
+
+    expect(get.isError).not.toBe(true);
+    const wf = JSON.parse(get.content[0].text);
+    expect(wf.id).toBe(workflowId);
+    expect(wf.name).toBe("deploy-check");
+    expect(wf.steps).toHaveLength(2);
+  });
+
+  it("executes dry-run workflow and records it in workflow_history", async () => {
+    const server = buildServer();
+    const create = (await invokeTool(server, "workflow_create", {
+      name: "dryrun-flow",
+      description: "dry-run execution test",
+      steps: [
+        {
+          name: "build",
+          description: "build package",
+          command: "npm run build",
+        },
+      ],
+    })) as { content: Array<{ text: string }> };
+    const workflowId = JSON.parse(create.content[0].text).workflow.id as string;
+
+    const execute = (await invokeTool(server, "workflow_execute", {
+      workflowId,
+    })) as { content: Array<{ text: string }>; isError?: boolean };
+
+    expect(execute.isError).not.toBe(true);
+    const execution = JSON.parse(execute.content[0].text);
+    expect(execution.workflowId).toBe(workflowId);
+    expect(execution.dryRun).toBe(true);
+    expect(execution.status).toBe("completed");
+    expect(execution.stepResults[0].status).toBe("validated");
+
+    const history = (await invokeTool(server, "workflow_history", {
+      workflowId,
+      limit: 5,
+    })) as { content: Array<{ text: string }>; isError?: boolean };
+
+    expect(history.isError).not.toBe(true);
+    const payload = JSON.parse(history.content[0].text);
+    expect(payload.count).toBeGreaterThan(0);
+    expect(payload.executions).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          workflowId,
+          status: "completed",
+          dryRun: true,
+        }),
+      ]),
+    );
+  });
+
+  it("executes non-dry-run in simulated mode", async () => {
+    const server = buildServer();
+    const create = (await invokeTool(server, "workflow_create", {
+      name: "simulated-flow",
+      description: "simulated execution test",
+      steps: [
+        {
+          name: "release",
+          description: "ship release",
+          command: "npm run release",
+        },
+      ],
+    })) as { content: Array<{ text: string }> };
+    const workflowId = JSON.parse(create.content[0].text).workflow.id as string;
+
+    const execute = (await invokeTool(server, "workflow_execute", {
+      workflowId,
+      dryRun: false,
+    })) as { content: Array<{ text: string }>; isError?: boolean };
+
+    expect(execute.isError).not.toBe(true);
+    const execution = JSON.parse(execute.content[0].text);
+    expect(execution.dryRun).toBe(false);
+    expect(execution.status).toBe("completed");
+    expect(execution.stepResults[0].status).toBe("simulated");
+    expect(execution.stepResults[0].output).toContain("npm run release");
   });
 });

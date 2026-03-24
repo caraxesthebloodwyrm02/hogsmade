@@ -1,7 +1,7 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { mkdtempSync, rmSync } from "fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, utimesSync, writeFileSync } from "fs";
 import os from "os";
 import path from "path";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 type ToolHandler = (args: Record<string, unknown>, extra: unknown) => Promise<{ isError?: boolean; content?: Array<{ text?: string }> }>;
 
@@ -28,6 +28,7 @@ describe("maintain-server smoke", () => {
     process.env.CASCADE_WORKSPACE_ROOT = path.join(tempRoot, "workspace");
     process.env.SEEDS_ROOT = path.join(tempRoot, "seeds");
     process.env.ECHOES_AUDIT_PATH = path.join(tempRoot, "echoes", "audit.ndjson");
+    process.env.MAINTAIN_DATA_DIR = path.join(tempRoot, ".maintain-server");
     const mod = await import("../src/server.ts");
     buildServer = () => mod.buildServer() as unknown as TestServer;
     ({ getConfig } = await import("../src/config.ts"));
@@ -37,6 +38,7 @@ describe("maintain-server smoke", () => {
     delete process.env.CASCADE_WORKSPACE_ROOT;
     delete process.env.SEEDS_ROOT;
     delete process.env.ECHOES_AUDIT_PATH;
+    delete process.env.MAINTAIN_DATA_DIR;
     delete process.env.MAINTAIN_SCAN_ROOTS;
     rmSync(tempRoot, { recursive: true, force: true });
   });
@@ -87,5 +89,85 @@ describe("maintain-server smoke", () => {
     const noTokenText = (executeNoToken as { content?: Array<{ text?: string }> }).content?.[0]?.text;
     const noTokenJson = JSON.parse(noTokenText ?? "{}");
     expect(noTokenJson.error).toMatch(/Multi-step|previewToken|dry-run first/i);
+  });
+
+  it("cleanup_execute rejects incorrect confirm phrase for non-dry-run", async () => {
+    const server = buildServer();
+    const rejected = await invokeTool(server, "cleanup_execute", {
+      actions: [{ type: "temp_clean" }],
+      dryRun: false,
+      confirmPhrase: "NOPE",
+    });
+    const payload = JSON.parse(rejected.content?.[0]?.text ?? "{}");
+    expect(payload.error).toMatch(/Safety check failed/i);
+    expect(payload.message).toMatch(/CONFIRM-CLEANUP/);
+  });
+
+  it("cleanup_execute rejects mismatched preview token", async () => {
+    const server = buildServer();
+    const dryRun = await invokeTool(server, "cleanup_execute", {
+      actions: [{ type: "temp_clean" }],
+      dryRun: true,
+    });
+    const dryPayload = JSON.parse(dryRun.content?.[0]?.text ?? "{}");
+    expect(dryPayload.previewToken).toBeDefined();
+
+    const executeBadToken = await invokeTool(server, "cleanup_execute", {
+      actions: [{ type: "temp_clean" }],
+      dryRun: false,
+      confirmPhrase: "CONFIRM-CLEANUP",
+      previewToken: "deadbeef",
+    });
+    const payload = JSON.parse(executeBadToken.content?.[0]?.text ?? "{}");
+    expect(payload.error).toMatch(/Multi-step safety/i);
+  });
+
+  it("full_diagnostic persists a report and report_history returns trend data", { timeout: 20000 }, async () => {
+    const server = buildServer();
+    const diagnostic = await invokeTool(server, "full_diagnostic", {
+      saveReport: true,
+    });
+    const diagPayload = JSON.parse(diagnostic.content?.[0]?.text ?? "{}");
+    expect(diagPayload.overallScore).toBeDefined();
+
+    const history = await invokeTool(server, "report_history", { limit: 5 });
+    const historyPayload = JSON.parse(history.content?.[0]?.text ?? "{}");
+    expect(historyPayload.reportsAvailable).toBeGreaterThan(0);
+    expect(historyPayload.history.length).toBeGreaterThan(0);
+  });
+
+  it("cleanup_execute executes with valid preview token and appends cleanup log", async () => {
+    const server = buildServer();
+    const cleanupTarget = path.join(process.env.CASCADE_WORKSPACE_ROOT!, "cleanup-target");
+    mkdirSync(cleanupTarget, { recursive: true });
+    const staleFile = path.join(cleanupTarget, "old.log");
+    writeFileSync(staleFile, "stale");
+    const staleDate = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
+    utimesSync(staleFile, staleDate, staleDate);
+
+    const actions = [{ type: "temp_clean", target: cleanupTarget, maxAgeDays: 1 }];
+
+    const dry = await invokeTool(server, "cleanup_execute", {
+      actions,
+      dryRun: true,
+    });
+    const dryPayload = JSON.parse(dry.content?.[0]?.text ?? "{}");
+    const token = dryPayload.previewToken as string;
+    expect(typeof token).toBe("string");
+
+    const execute = await invokeTool(server, "cleanup_execute", {
+      actions,
+      dryRun: false,
+      confirmPhrase: "CONFIRM-CLEANUP",
+      previewToken: token,
+    });
+    const execPayload = JSON.parse(execute.content?.[0]?.text ?? "{}");
+    expect(execPayload.mode).toBe("executed");
+
+    const cleanupLogPath = path.join(process.env.MAINTAIN_DATA_DIR!, "cleanup-log.json");
+    expect(existsSync(cleanupLogPath)).toBe(true);
+    const logs = JSON.parse(readFileSync(cleanupLogPath, "utf-8")) as Array<{ dryRun: boolean; type: string }>;
+    expect(logs.length).toBeGreaterThan(0);
+    expect(logs.some((entry) => entry.type === "temp_clean" && entry.dryRun === false)).toBe(true);
   });
 });

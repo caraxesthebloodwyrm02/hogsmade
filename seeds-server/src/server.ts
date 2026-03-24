@@ -12,15 +12,15 @@
  */
 
 import { emitAudit } from "@cascade/shared-types/audit-client";
+import { SessionRateLimiter } from "@cascade/shared-types/session-rate-limit";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import * as z from "zod";
+import { execFile } from "child_process";
 import { promises as fs } from "fs";
 import path from "path";
-import os from "os";
-import { execFile } from "child_process";
 import { pathToFileURL } from "url";
 import { promisify } from "util";
+import * as z from "zod";
 import { getConfig } from "./config.js";
 
 const execFileAsync = promisify(execFile);
@@ -49,6 +49,7 @@ const KNOWN_REPOS: Record<string, { description: string; stack: string; path?: s
 // Rate limiting for expensive scans
 const SCAN_COOLDOWN_MS = 30_000;
 const lastScanTimes = new Map<string, number>();
+const readLimiter = new SessionRateLimiter();
 
 function checkScanRateLimit(scanType: string): string | null {
   const now = Date.now();
@@ -381,6 +382,8 @@ export function buildServer(): McpServer {
       }),
     },
     async (args: { saveSnapshot?: boolean }) => {
+      const rlMsg = readLimiter.check("ecosystem_scan");
+      if (rlMsg) return { content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
       if (process.env.NODE_ENV !== "test") {
         const rateLimitMsg = checkScanRateLimit("ecosystem_scan");
         if (rateLimitMsg) {
@@ -497,6 +500,8 @@ export function buildServer(): McpServer {
       }),
     },
     async (args: { repoName: string }) => {
+      const rlMsg = readLimiter.check("repo_detail");
+      if (rlMsg) return { content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
       const health = await checkRepoHealth(args.repoName);
       const knownInfo = KNOWN_REPOS[args.repoName];
 
@@ -587,6 +592,8 @@ export function buildServer(): McpServer {
       }),
     },
     async (args: { repo?: string; tag?: string; limit?: number }) => {
+      const rlMsg = readLimiter.check("bookmark_list");
+      if (rlMsg) return { content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
       await ensureDataDir();
       let bookmarks = await loadBookmarks();
 
@@ -627,6 +634,8 @@ export function buildServer(): McpServer {
       }),
     },
     async (args: { limit?: number }) => {
+      const rlMsg = readLimiter.check("ecosystem_trend");
+      if (rlMsg) return { content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
       await ensureDataDir();
       const snapshots = await listSnapshots(args.limit ?? 5);
 

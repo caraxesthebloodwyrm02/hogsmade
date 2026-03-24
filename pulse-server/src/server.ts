@@ -26,6 +26,7 @@
  */
 
 import { emitAudit } from "@cascade/shared-types/audit-client";
+import { SessionRateLimiter } from "@cascade/shared-types/session-rate-limit";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { promises as fs } from "fs";
@@ -38,6 +39,7 @@ import { getConfig } from "./config.js";
 
 const SERVER_NAME = "pulse-server";
 const VERSION = "1.0.0";
+const readLimiter = new SessionRateLimiter();
 const config = getConfig();
 const DATA_DIR = config.dataDir;
 const JOURNAL_DIR = config.journalDir;
@@ -412,11 +414,11 @@ function normalizeSeedsSnapshot(
   const overallScore =
     existingRepos.length > 0
       ? Math.round(
-          existingRepos.reduce(
-            (sum, repo) => sum + (repo.healthScore ?? 0),
-            0,
-          ) / existingRepos.length,
-        )
+        existingRepos.reduce(
+          (sum, repo) => sum + (repo.healthScore ?? 0),
+          0,
+        ) / existingRepos.length,
+      )
       : 0;
   const activeCount = existingRepos.filter(
     (repo) => (repo.healthScore ?? 0) >= 60,
@@ -1017,6 +1019,8 @@ export function buildServer(): McpServer {
       inputSchema: z.object({}),
     },
     async () => {
+      const rlMsg = readLimiter.check("morning_briefing");
+      if (rlMsg) return { content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
       await ensureDataDir();
 
       // Gather data from all sources
@@ -1160,9 +1164,9 @@ export function buildServer(): McpServer {
           journalEntriesToday: journal.length,
           activeFocusSession: activeFocus
             ? {
-                task: activeFocus.task,
-                startedAt: activeFocus.startedAt,
-              }
+              task: activeFocus.task,
+              startedAt: activeFocus.startedAt,
+            }
             : null,
         },
         preferences,
@@ -1223,6 +1227,8 @@ export function buildServer(): McpServer {
       }),
     },
     async (args: { healthThreshold?: number }) => {
+      const rlMsg = readLimiter.check("check_alerts");
+      if (rlMsg) return { content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
       await ensureDataDir();
       const threshold = args.healthThreshold ?? 70;
       const snapshotResult = await getLatestSeedsSnapshot();
@@ -1242,8 +1248,8 @@ export function buildServer(): McpServer {
         ...lowHealthRepos.map((repo) => `[repo] ${formatRepoIssue(repo)}`),
         ...(recentFailures.length > 3
           ? [
-              `[audit] ${recentFailures.length} failure/block events in the last 24 hours`,
-            ]
+            `[audit] ${recentFailures.length} failure/block events in the last 24 hours`,
+          ]
           : []),
         ...failedWorkflows
           .slice(0, 3)
@@ -1292,6 +1298,8 @@ export function buildServer(): McpServer {
       }),
     },
     async (args: { healthThreshold?: number }) => {
+      const rlMsg = readLimiter.check("what_should_i_work_on");
+      if (rlMsg) return { content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
       await ensureDataDir();
       const threshold = args.healthThreshold ?? 70;
       const recentAudit = (await readRecentAuditEntries(100)) as Array<
@@ -1331,23 +1339,23 @@ export function buildServer(): McpServer {
       const finalItems =
         items.length === 0
           ? [
-              {
-                rank: 1,
-                priority: "low" as const,
-                title: "All clear — no urgent items",
-                reasoning: [summary],
-                score: 0,
-                occurrenceCount: 0,
-              },
-            ]
+            {
+              rank: 1,
+              priority: "low" as const,
+              title: "All clear — no urgent items",
+              reasoning: [summary],
+              score: 0,
+              occurrenceCount: 0,
+            },
+          ]
           : items.map((item, index) => ({
-              rank: index + 1,
-              priority: item.priority,
-              title: item.title,
-              reasoning: item.reasoning,
-              score: Math.round(item.score * 10) / 10,
-              occurrenceCount: item.occurrenceCount,
-            }));
+            rank: index + 1,
+            priority: item.priority,
+            title: item.title,
+            reasoning: item.reasoning,
+            score: Math.round(item.score * 10) / 10,
+            occurrenceCount: item.occurrenceCount,
+          }));
 
       return {
         content: [
@@ -1508,13 +1516,14 @@ export function buildServer(): McpServer {
       }),
     },
     async (args: { date?: string }) => {
+      const rlMsg = readLimiter.check("journal_list");
+      if (rlMsg) return { content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
       await ensureDataDir();
       const dateKey = args.date ?? todayKey();
-      const filepath = path.join(JOURNAL_DIR, `${dateKey}.json`);
       let entries: JournalEntry[] = [];
       try {
-        const content = await fs.readFile(filepath, "utf-8");
-        entries = JSON.parse(content);
+        const content = await fs.readFile(path.join(JOURNAL_DIR, `${dateKey}.json`), "utf-8");
+        entries = JSON.parse(content) as JournalEntry[];
       } catch {
         /* no entries */
       }
@@ -1668,7 +1677,7 @@ export function buildServer(): McpServer {
       session.durationMinutes = Math.round(
         (new Date(session.endedAt).getTime() -
           new Date(session.startedAt).getTime()) /
-          60000,
+        60000,
       );
       session.outcome = args.outcome;
 
@@ -1743,6 +1752,8 @@ export function buildServer(): McpServer {
       }),
     },
     async (args: { date?: string; save?: boolean }) => {
+      const rlMsg = readLimiter.check("daily_digest");
+      if (rlMsg) return { content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
       await ensureDataDir();
       const dateKey = args.date ?? todayKey();
 

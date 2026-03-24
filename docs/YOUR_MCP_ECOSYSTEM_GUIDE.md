@@ -1,6 +1,8 @@
 # Your MCP Ecosystem — A Plain-English Guide
 
-**What this is:** A complete walkthrough of the 7 MCP servers in your CascadeProjects workspace, what they do, when to use each one, what to watch for regarding privacy and safety, and how to get the most out of them.
+**What this is:** A walkthrough of the 7 first-party TypeScript MCP servers in your CascadeProjects workspace, what they do, when to use each one, what to watch for regarding privacy and safety, and how to get the most out of them.
+
+This guide focuses on the 7 first-party TypeScript servers below. The canonical `mcp_config.json` also registers GRID-backed Python servers such as `code-analysis` and `test-runner`; in the current Cascade tool registry those surface as `mcp1_*` and `mcp14_*` tool names, while `code-analysis` and `test-runner` remain the canonical server keys.
 
 ---
 
@@ -20,9 +22,9 @@ When you open Windsurf and Cascade says "I have access to these tools…", those
 
 ---
 
-## Part 2: Your 7 Servers at a Glance
+## Part 2: Your 7 First-Party Servers at a Glance
 
-Here's your full ecosystem, in plain language:
+Here's that first-party slice of your ecosystem, in plain language:
 
 ### 1. Echoes (mcp-tool-experiment)
 **What it does:** The main safety-first productivity hub. Every tool call passes through an 8-stage pipeline: input validation, capability checking, rate limiting, network boundary enforcement, policy evaluation, execution, output filtering (scrubs PII and secrets), and audit logging.
@@ -177,7 +179,7 @@ The key insight: each server is independent but they share data through files on
 
 ## Part 5: Privacy and Safety Review
 
-Based on a thorough read of all 6 existing servers plus the new pulse-server, here is what you should know:
+Based on a thorough read of those 7 first-party servers, here is what you should know:
 
 ### What's Good (No Concerns)
 

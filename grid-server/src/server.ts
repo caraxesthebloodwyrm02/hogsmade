@@ -14,6 +14,7 @@
 import { ResiliencePolicy } from "@cascade/shared-resilience";
 import { emitAudit } from "@cascade/shared-types/audit-client";
 import { GateSecurityPolicy } from "@cascade/shared-types/security-policy";
+import { SessionRateLimiter } from "@cascade/shared-types/session-rate-limit";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import crypto from "crypto";
@@ -40,6 +41,8 @@ const DEPLOYMENT_TARGETS: Record<
   string,
   { path: string; port: number | null; permissions: string[] }
 > = config.deploymentTargets;
+
+const readLimiter = new SessionRateLimiter();
 
 // ── Resilience ──
 
@@ -354,6 +357,8 @@ export function buildServer(): McpServer {
       inputSchema: z.object({}),
     },
     async () => {
+      const rlMsg = readLimiter.check("list_targets");
+      if (rlMsg) return { content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
       const results: Record<string, unknown>[] = [];
       for (const [name, target] of Object.entries(DEPLOYMENT_TARGETS)) {
         const exists = await fileExists(target.path);
@@ -731,6 +736,8 @@ export function buildServer(): McpServer {
       }),
     },
     async (args: { limit?: number }) => {
+      const rlMsg = readLimiter.check("gate_audit");
+      if (rlMsg) return { content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
       const entries = await readNdjsonFile(AUDIT_PATH, args.limit ?? 20);
       return {
         content: [
@@ -752,6 +759,8 @@ export function buildServer(): McpServer {
       inputSchema: z.object({}),
     },
     async () => {
+      const rlMsg = readLimiter.check("nonce_status");
+      if (rlMsg) return { content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
       const registry =
         await readJsonFile<Record<string, unknown>>(NONCE_REGISTRY_PATH);
       if (!registry) {
@@ -810,6 +819,8 @@ export function buildServer(): McpServer {
       }),
     },
     async (args: { target: string; action: string }) => {
+      const rlMsg = readLimiter.check("check_permission");
+      if (rlMsg) return { content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
       const t = DEPLOYMENT_TARGETS[args.target];
       if (!t) {
         return {

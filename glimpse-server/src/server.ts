@@ -14,6 +14,7 @@
  * Runs via stdio transport. Register in mcp_config.json.
  */
 
+import { SessionRateLimiter } from '@cascade/shared-types/session-rate-limit';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import path from 'path';
@@ -44,6 +45,8 @@ async function loadEngine(): Promise<Record<string, any>> {
 
 // ── Server Setup ──
 
+const readLimiter = new SessionRateLimiter();
+
 const server = new McpServer({
   name: SERVER_NAME,
   version: VERSION,
@@ -62,6 +65,8 @@ server.tool(
     grounding: z.boolean().default(false).describe('Enable local-first grounding'),
   },
   async ({ data, fileType, config: userConfig, multiPass, grounding }) => {
+    const rlMsg = readLimiter.check('glimpse_analyze');
+    if (rlMsg) return { content: [{ type: 'text' as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
     try {
       const eng = await loadEngine();
 
@@ -138,6 +143,8 @@ server.tool(
     descriptorCount: z.number().default(0).describe('Number of profile descriptors'),
   },
   async ({ entities, relationCount, descriptorCount }) => {
+    const rlMsg = readLimiter.check('glimpse_complexity');
+    if (rlMsg) return { content: [{ type: 'text' as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
     try {
       const eng = await loadEngine();
 
@@ -184,6 +191,8 @@ server.tool(
     })).default([]).describe('Context lenses'),
   },
   async ({ insightText, evidences, lenses }) => {
+    const rlMsg = readLimiter.check('glimpse_compress');
+    if (rlMsg) return { content: [{ type: 'text' as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
     try {
       const eng = await loadEngine();
       const evidenceIds = evidences.map((e: any) => e.id);
@@ -212,6 +221,8 @@ server.tool(
     dimension: z.enum(['space', 'domain', 'time']).describe('Dimension type'),
   },
   async ({ a, b, dimension }) => {
+    const rlMsg = readLimiter.check('glimpse_similarity');
+    if (rlMsg) return { content: [{ type: 'text' as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
     try {
       const eng = await loadEngine();
       const result = eng.computeDimensionSimilarity(a, b, dimension);
@@ -253,6 +264,8 @@ server.tool(
     })).describe('Evidence array'),
   },
   async ({ entities, relations, evidences }) => {
+    const rlMsg = readLimiter.check('glimpse_confidence');
+    if (rlMsg) return { content: [{ type: 'text' as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
     try {
       const eng = await loadEngine();
 
@@ -291,6 +304,8 @@ server.tool(
     }).optional().describe('Pipeline options'),
   },
   async ({ records, config: userConfig, options }) => {
+    const rlMsg = readLimiter.check('glimpse_session');
+    if (rlMsg) return { content: [{ type: 'text' as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
     try {
       const eng = await loadEngine();
 
@@ -354,6 +369,8 @@ server.tool(
     sessionId: z.string().describe('Session identifier for state continuity'),
   },
   async ({ events, sessionId }) => {
+    const rlMsg = readLimiter.check('glimpse_track');
+    if (rlMsg) return { content: [{ type: 'text' as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
     try {
       const eng = await loadEngine();
 
@@ -449,6 +466,8 @@ server.tool(
     pathIds: z.array(z.string()).optional().describe('Specific path IDs to evaluate (default: all builtin)'),
   },
   async ({ data, pathIds }) => {
+    const rlMsg = readLimiter.check('glimpse_paths');
+    if (rlMsg) return { content: [{ type: 'text' as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
     try {
       const eng = await loadEngine();
 

@@ -31,9 +31,13 @@ Windsurf configuration was written to:
 | `maintain-server` | Cleanup, diagnostics, multi-step safety | `maintain-server/src/server.ts` |
 | `grid-rag` | Existing GRID RAG server | `e:\grid\mcp-setup\server\grid_rag_mcp_server.py` |
 | `grid-enhanced-tools` | Existing GRID tools server | `e:\grid\mcp-setup\server\enhanced_tools_mcp_server.py` |
-| `grid-code-analysis` | Existing GRID code analysis | `e:\grid\mcp-setup\server\code_analysis_mcp_server.py` |
-| `grid-test-runner` | Existing GRID test runner | `e:\grid\mcp-setup\server\test_runner_mcp_server.py` |
+| `code-analysis` | Existing GRID code analysis | `e:\grid\mcp-setup\server\code_analysis_mcp_server.py` |
+| `test-runner` | Existing GRID test runner | `e:\grid\mcp-setup\server\test_runner_mcp_server.py` |
 | `portfolio-safety-lens` | Existing GRID portfolio safety server | `e:\grid\mcp-setup\server\portfolio_safety_mcp_server.py` |
+
+Canonical editor server keys come from `mcp_config.json`: `code-analysis` and `test-runner`.
+Current Cascade tool names for those servers in this environment are `mcp1_analyze_code`, `mcp1_check_security`, `mcp1_get_complexity`, `mcp14_run_tests`, `mcp14_run_coverage`, `mcp14_discover_tests`, and `mcp14_get_test_summary`.
+The numeric `mcpN_` prefix is assigned by the host tool registry, not by the server key or `mcp_config.json`.
 
 ## Architecture
 
@@ -63,8 +67,8 @@ Ask Cascade:
 
 ```text
 Use health_check on echoes
-Use quick_status for C:\Users\USER\CascadeProjects
-Use productivity_pulse for C:\Users\USER\CascadeProjects
+Use quick_status for /home/caraxes/CascadeProjects
+Use productivity_pulse for /home/caraxes/CascadeProjects
 ```
 
 ### 2. Echoes persistent audit server
@@ -73,7 +77,7 @@ Use productivity_pulse for C:\Users\USER\CascadeProjects
 Use record_audit with source="echoes", tool="quick_status", status="success"
 Use query_audit with limit=10
 Use audit_stats
-Use save_telemetry with workspace="CascadeProjects", projects=10, activeServers=["echoes","grid-server"], metrics={"health":82,"focus":71}
+Use save_telemetry with workspace="CascadeProjects", projects=10, activeServers=["echoes","grid-server"]
 Use list_telemetry
 ```
 
@@ -82,7 +86,7 @@ Use list_telemetry
 ```text
 Use list_targets
 Use check_permission with target="echoes-server", action="deploy"
-Use validate_envelope
+Use validate_envelope with envelope={"targets":["echoes-server"],"actions":["deploy"]}
 Use gate_audit with limit=20
 Use nonce_status
 ```
@@ -117,6 +121,13 @@ Use experiment_list
 Use experiment_run with experimentId="<id>"
 Use experiment_get with experimentId="<id>"
 ```
+
+## How to use these MCP servers
+
+1. **Start with a status tool.** Use `health_check`, `morning_briefing`, `ecosystem_scan`, or `checkpoint` before deeper work.
+2. **Inspect before editing.** Search or read the relevant file first, then make the smallest targeted change.
+3. **Dry-run risky actions.** Use `workflow_execute` with `dryRun=true`, `validate_envelope`, or test-run tools before execution.
+4. **Keep examples local.** Use the canonical Linux paths from `mcp_config.json` and avoid copying Windows-style paths into new configs.
 
 ## CLI validation
 
@@ -154,5 +165,17 @@ If you want to record a short demo video, use this sequence:
 - All local TS MCP servers are registered using:
   - `command: "npx"`
   - `args: ["-y", "tsx", "<absolute path>"]`
-- The GRID Python MCPs still depend on `e:\grid` existing and being runnable
+- The GRID Python MCPs still depend on the GRID checkout referenced by `mcp_config.json` existing and being runnable
 - After editing `mcp_config.json`, you must restart Windsurf to reload MCP servers
+
+## Adding the Pulse-Server to Your Config
+
+To register the new pulse-server, add this entry to your `mcp_config.json`:
+
+```json
+{
+  "pulse-server": {
+    "command": "npx",
+    "args": ["-y", "tsx", "/home/caraxes/CascadeProjects/pulse-server/src/server.ts"]
+  }
+}

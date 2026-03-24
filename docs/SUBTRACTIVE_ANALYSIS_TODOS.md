@@ -1,6 +1,6 @@
 # Subtractive analysis — todo items
 
-**Source**: [SUBTRACTIVE_ANALYSIS_Afloat_SharedTypes.md](SUBTRACTIVE_ANALYSIS_Afloat_SharedTypes.md)  
+**Source**: [SUBTRACTIVE_ANALYSIS_Afloat_SharedTypes.md](SUBTRACTIVE_ANALYSIS_Afloat_SharedTypes.md)
 **Ingested**: 2026-03-09
 
 ## Definite (safe to do)
@@ -17,6 +17,8 @@
 - [ ] **Add pulse-server env** — Add `ECHOES_AUDIT_PATH` and `SEEDS_SNAPSHOTS_DIR` (or equivalent) to pulse-server in `.cursor/mcp.json` / `mcp_config.json` so briefings can read audit + seeds (per DATA_CONTRACTS).
 - [ ] **Document MCP sync** — In README or docs, add one line: "To use all Cascade MCP servers in Cursor, run `npm run sync-mcp` (or copy mcp_config.json mcpServers into .cursor/mcp.json)."
 - [ ] **Add sync-mcp-config script** — Add `scripts/sync-mcp-config.ts` or PowerShell that reads `mcp_config.json` and writes `.cursor/mcp.json` (first-party servers only, optional filter).
+- [ ] **Normalize historical MCP docs to current Linux paths** — Replace superseded Windows-era examples in active operator docs where they still conflict with current `mcp_config.json`.
+- [ ] **Reconcile Ruff formatter docs with installed editor support** — Current Windsurf Next schema on this machine accepts `ms-python.python` in settings, not `charliermarsh.ruff`; either install/enable the Ruff formatter extension where supported or update the documented aligned baseline.
 
 ## Future passes (scope for later)
 
@@ -27,3 +29,5 @@
 ## Done (reference)
 
 - [x] **Merge mcp_config → .cursor/mcp.json** — First-party Cascade servers (echoes-server, grid, afloat, lots, seeds, pulse, maintain) added to `.cursor/mcp.json`.
+- [x] **Correct `code-analysis` / `test-runner` naming drift in active docs** — `docs/MCP_SETUP_GUIDE.md` and `docs/YOUR_MCP_ECOSYSTEM_GUIDE.md` now use canonical server keys and note current host-assigned `mcp1_*` / `mcp14_*` tool names.
+- [x] **Refresh aligned editor settings snapshots** — `/home/caraxes/.config/Windsurf - Next/User/settings.json` and `CascadeProjects/.vscode/settings.json` were updated to the current cross-editor baseline.

@@ -217,4 +217,101 @@ describe("pulse-server smoke", () => {
       expect(ecosystemIndex).toBeLessThan(nonEcosystemIndex);
     }
   });
+
+  it("tracks focus lifecycle with interruption and archive behavior", async () => {
+    const server = buildServer() as TestServer;
+
+    const start = (await invokeTool(server, "focus_start", {
+      task: "Implement high-risk tests",
+      project: "CascadeProjects",
+    })) as { content: Array<{ text: string }>; isError?: boolean };
+    expect(start.isError).not.toBe(true);
+
+    const duplicateStart = (await invokeTool(server, "focus_start", {
+      task: "Should fail while active",
+    })) as { content: Array<{ text: string }>; isError?: boolean };
+    expect(duplicateStart.isError).toBe(true);
+
+    const interrupt = (await invokeTool(server, "focus_interrupt", {})) as {
+      content: Array<{ text: string }>;
+      isError?: boolean;
+    };
+    const interruptPayload = JSON.parse(interrupt.content[0].text);
+    expect(interruptPayload.recorded).toBe(true);
+    expect(interruptPayload.interruptions).toBe(1);
+
+    const end = (await invokeTool(server, "focus_end", {
+      outcome: "Added regression tests",
+    })) as { content: Array<{ text: string }>; isError?: boolean };
+    expect(end.isError).not.toBe(true);
+    const endPayload = JSON.parse(end.content[0].text);
+    expect(endPayload.completed).toBe(true);
+    expect(endPayload.session.interruptions).toBe(1);
+    expect(endPayload.journalUpdated).toBe(true);
+
+    const postEndInterrupt = (await invokeTool(server, "focus_interrupt", {})) as {
+      content: Array<{ text: string }>;
+      isError?: boolean;
+    };
+    expect(postEndInterrupt.isError).toBe(true);
+  });
+
+  it("persists journal entries and returns them via journal_list", async () => {
+    const server = buildServer() as TestServer;
+    const add = (await invokeTool(server, "journal_add", {
+      entry: "Hardened maintenance cleanup tests",
+      mood: "focused",
+      tags: ["test", "coverage"],
+      linkedServer: "maintain-server",
+    })) as { content: Array<{ text: string }>; isError?: boolean };
+
+    expect(add.isError).not.toBe(true);
+    const addPayload = JSON.parse(add.content[0].text);
+    expect(addPayload.recorded).toBe(true);
+    expect(addPayload.id).toBeTruthy();
+
+    const list = (await invokeTool(server, "journal_list", {})) as {
+      content: Array<{ text: string }>;
+      isError?: boolean;
+    };
+    expect(list.isError).not.toBe(true);
+    const listPayload = JSON.parse(list.content[0].text);
+    expect(listPayload.count).toBeGreaterThan(0);
+    expect(
+      listPayload.entries.some((entry: { id: string; entry: string }) =>
+        entry.id === addPayload.id && entry.entry.includes("Hardened"),
+      ),
+    ).toBe(true);
+  });
+
+  it("generates daily_digest including focus/journal activity", async () => {
+    const server = buildServer() as TestServer;
+
+    await invokeTool(server, "focus_start", {
+      task: "Digest prep session",
+      project: "pulse-server",
+    });
+    await invokeTool(server, "focus_end", {
+      outcome: "Prepared digest coverage",
+    });
+
+    await invokeTool(server, "journal_add", {
+      entry: "Encountered minor blocker and resolved it",
+      mood: "blocked",
+      tags: ["digest"],
+    });
+
+    const digest = (await invokeTool(server, "daily_digest", {
+      save: false,
+    })) as { content: Array<{ text: string }>; isError?: boolean };
+
+    expect(digest.isError).not.toBe(true);
+    const payload = JSON.parse(digest.content[0].text);
+    expect(payload.date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(payload.journalEntries).toBeGreaterThan(0);
+    expect(payload.focusSessions).toBeGreaterThan(0);
+    expect(payload.totalFocusMinutes).toBeGreaterThanOrEqual(0);
+    expect(Array.isArray(payload.highlights)).toBe(true);
+    expect(Array.isArray(payload.tomorrowSuggestions)).toBe(true);
+  });
 });

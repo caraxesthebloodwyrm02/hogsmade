@@ -37,6 +37,7 @@ This file provides guidance to Claude when working with code in this repository.
 | BDT                                     | Bangladeshi Taka (1 USD ≈ 122 BDT)                           |
 | turbo                                   | `// turbo` in workflows = safe to autorun                    |
 | UW                                      | Upwork · FVR = Fiverr · direct = no platform                 |
+| DIO                                     | Control room suite + interactive episode tool (Python)        |
 | CascadeProjects                         | /home/caraxes/CascadeProjects (hogsmade monorepo)            |
 | Seeds                                   | /home/caraxes/seed                                           |
 
@@ -77,6 +78,7 @@ This is a multi-project workspace. Each subdirectory is an independent project w
 | `shared-resilience/`                  | Resilience patterns (circuit breakers, retries, rate limiting)                                         | TypeScript, Vitest                           | Build dep for grid-server      |
 | `glimpse-server/`                     | MCP server exposing Glimpse cognitive engine                                                           | TypeScript, MCP SDK                          | Working                        |
 | `symphony-execution-performance/`     | Real-time performance dashboard (in `projects/`)                                                       | TypeScript 5.2, Express, WebSocket, chokidar | Active                         |
+| `DIO/`                                | Control room suite + interactive episode tool                                                          | Python 3.13+, hatchling                      | Active                         |
 | Other MCP servers                     | `echoes-server/`, `grid-server/`, `lots-server/`, `maintain-server/`, `pulse-server/`, `seeds-server/` | TypeScript, MCP SDK                          | See root [README](README.md)   |
 
 ## Per-Project Guidance
@@ -163,6 +165,27 @@ npm run lint     # eslint src --ext .ts
 **Data flow**: `ActivityInterceptor` emits `'activity'` events → `dashboard.ts` broadcasts to WebSocket clients + feeds `RuntimeContextAnalyzer` → on each `refreshRate` tick, `broadcastMetrics()` serializes `system`/`network` state → client updates canvas chart and metric cards.
 
 **Important**: `interceptor.ts` uses **mock data** for processes, network bandwidth, and system stats (random values). Only file system events via chokidar are real. The `performanceChart` canvas draws CPU (green `#00ff88`) and memory (blue `#00ccff`) lines.
+
+### DIO
+
+Control room suite (airflow/light coordination simulation) and interactive 30-minute episode tool with gate-pass cadence. Also contains security enforcement scripts. Full CLAUDE.md at `DIO/CLAUDE.md`.
+
+**Package manager**: `uv` only.
+
+```bash
+cd DIO
+uv sync --group dev
+uv run pytest                                                    # security script tests (pyproject.toml testpaths)
+uv run python -m unittest discover -s control_room -p 'test_*.py' -v  # control room tests
+uv run python -m pytest test_combined_space.py -q                # episode tool tests
+uv run python combined_space.py                                  # run episode interactively
+```
+
+- **Semantic Officer agent** (`.github/agents/semantic-officer.agent.md`): when editing the episode/control-room contract, follow response pattern: Scope → Contract → Changes → Validation → Risk
+- Source-of-truth files: `combined_space.py`, `control_room/constants.py`, `control_room/airflow.py`, `control_room/light_control.py`
+- Runtime contracts enforced by tests: `CADENCE == ("map", "balance", "tighten", "verify")`, `RHYTHM_PASS_COUNT == 6`, `MODULAR_PASS_INDEX == 7`, 4 parts with 1560s active time
+- Security scripts: `roots/security/scripts/check_underscore_isolation.py` (AST-based `_private` name enforcement), `roots/security/scripts/stale_inventory_audit.py` (migration remnant scanner, scan-only)
+- Two test systems: unittest-based (control room + episode) and pytest-based (security scripts in `pyproject.toml` testpaths)
 
 ### afloat-server
 
