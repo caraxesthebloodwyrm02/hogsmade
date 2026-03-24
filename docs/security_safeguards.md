@@ -179,7 +179,7 @@ Triggers detect security-relevant events. Hooks are the bound function calls tha
 | `on_snapshot_write` | Seeds snapshot saved to disk | `AuditIntegrityGuard.validate_snapshot()` |
 | `on_gate_validate` | GATE envelope submitted for validation | `GateSecurityPolicy.enforce()` |
 | `on_cleanup_execute` | Destructive cleanup initiated | `ExecutionPolicyEngine.require_approval()` |
-| `on_sensitive_pr` | PR touches sensitive paths | `OwnershipGovernance.enforce_review()` |
+| `on_sensitive_pr` | PR touches sensitive paths | `OwnershipGovernance.checkSensitivePR()`, `OwnershipGovernance.checkSoleOwnership()`, `OwnershipGovernance.checkTestCoverage()` |
 
 ---
 

@@ -311,7 +311,7 @@ All 7 TypeScript servers built 2026-03-21 02:19-02:20. Node modules current (~78
 | AuditIntegrityGuard | P-INT-001, 002, 003 | TM-004 (audit poisoning) | echoes, grid | **Active** |
 | GateSecurityPolicy | P-INT-004, 005, 006 | TM-005 (GATE bypass), SBP-001 (secrets) | grid | **Active** |
 | ReadScopePolicy | P-MCP-004 | TM-006 (reconnaissance) | **None** | **Dead code** |
-| OwnershipGovernance | P-GOV-001, 003 | OWN-001 (governance) | CI/CD only | N/A at runtime |
+| OwnershipGovernance | P-GOV-001, 002, 003 | OWN-001, OWN-002 (governance) | CI/CD (ownership-gate.yml) | **Active** |
 
 ### 6.2 Multi-Step Safety (Destructive Operations)
 
