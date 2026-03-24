@@ -1116,7 +1116,7 @@ export function buildServer(): McpServer {
       if (rlMsg) return { content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
       const rateLimitMsg = checkScanRateLimit("scan_temp");
       if (rateLimitMsg) {
-        return { content: [{ type: "text" as const, text: JSON.stringify({ error: rateLimitMsg }) }] };
+        return { content: [{ type: "text" as const, text: JSON.stringify({ error: rateLimitMsg }) }], isError: true };
       }
       await ensureDataDir();
       const config = await loadConfig();
