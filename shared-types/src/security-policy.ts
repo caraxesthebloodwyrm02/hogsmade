@@ -766,6 +766,45 @@ export class OwnershipGovernance {
   }
 
   /**
+   * P-GOV-002: Escalate when PR author is sole owner of sensitive path.
+   */
+  static checkSoleOwnership(
+    changedPaths: string[],
+    prAuthor: string,
+    ownershipMap: Record<string, string[]>,
+  ): PolicyResult {
+    const sensitiveChanges = changedPaths.filter((p) =>
+      OwnershipGovernance.SENSITIVE_PATHS.some((sp) => p.includes(sp)),
+    );
+
+    for (const changedPath of sensitiveChanges) {
+      for (const [ownedPath, owners] of Object.entries(ownershipMap)) {
+        if (changedPath.includes(ownedPath) && owners.length === 1 && owners[0] === prAuthor) {
+          return {
+            policyId: "P-GOV-002",
+            verdict: "escalate",
+            reason: `PR author '${prAuthor}' is sole owner of sensitive path matching '${ownedPath}'`,
+            threatBasis: "OWN-002",
+            metadata: { changedPath, ownedPath, prAuthor, owners },
+            timestamp: new Date().toISOString(),
+          };
+        }
+      }
+    }
+
+    return {
+      policyId: "P-GOV-002",
+      verdict: "allow",
+      reason:
+        sensitiveChanges.length > 0
+          ? "Sensitive paths have multiple owners or author is not sole owner"
+          : "No sensitive paths modified",
+      threatBasis: "OWN-002",
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  /**
    * P-GOV-003: Require test coverage for security changes.
    */
   static checkTestCoverage(changedPaths: string[]): PolicyResult {
@@ -806,6 +845,27 @@ export class OwnershipGovernance {
         },
         verdictOnMatch: "deny",
         reasonTemplate: "Sensitive paths require 2 reviewers",
+      },
+      {
+        policyId: "P-GOV-002",
+        description: "Escalate when PR author is sole owner of sensitive path",
+        threatBasis: "OWN-002",
+        condition: (ctx) => {
+          const changed = ctx["changedPaths"] as string[] | undefined;
+          const author = ctx["prAuthor"] as string | undefined;
+          const ownershipMap = ctx["ownershipMap"] as Record<string, string[]> | undefined;
+          if (!changed || !author || !ownershipMap) return false;
+          return changed
+            .filter((p) => OwnershipGovernance.SENSITIVE_PATHS.some((sp) => p.includes(sp)))
+            .some((changedPath) =>
+              Object.entries(ownershipMap).some(
+                ([ownedPath, owners]) =>
+                  changedPath.includes(ownedPath) && owners.length === 1 && owners[0] === author,
+              ),
+            );
+        },
+        verdictOnMatch: "escalate",
+        reasonTemplate: "PR author is sole owner of sensitive path — escalation required",
       },
       {
         policyId: "P-GOV-003",
@@ -875,7 +935,11 @@ export const SECURITY_TRIGGERS: SecurityTrigger[] = [
   },
   {
     event: "on_sensitive_pr",
-    hooks: ["OwnershipGovernance.checkSensitivePR", "OwnershipGovernance.checkTestCoverage"],
+    hooks: [
+      "OwnershipGovernance.checkSensitivePR",
+      "OwnershipGovernance.checkSoleOwnership",
+      "OwnershipGovernance.checkTestCoverage",
+    ],
     description: "Enforce review and test requirements on sensitive code changes",
   },
 ];
