@@ -3,7 +3,9 @@ name = "dio"
 version = "0.1.0"
 description = "DIO — control room suite and interactive episode tool"
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "fastapi>=0.135.2",
+]
 
 [dependency-groups]
 dev = ["pytest>=8.0"]

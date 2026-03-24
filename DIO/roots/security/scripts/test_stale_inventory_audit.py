@@ -6,21 +6,19 @@ import json
 from pathlib import Path
 
 import pytest
-
 from roots.security.scripts import stale_inventory_audit as audit_module
 from roots.security.scripts.stale_inventory_audit import (
+    DEFAULT_SUBJECT_ROOT,
     FindingType,
     RecommendedAction,
-    DEFAULT_SUBJECT_ROOT,
     Severity,
-    classify,
     build_summary_counts,
+    classify,
     generate_json_manifest,
     generate_markdown_report,
     resolve_subject_root,
     run_audit,
 )
-
 
 # ---------------------------------------------------------------------------
 # classify() unit tests — pure deterministic classifier
@@ -340,6 +338,8 @@ class TestGoldenOutput:
         canonical_maint.write_text("#!/bin/bash\n")
         canonical_duplicate = subject_root / "roots/security/firewall/strict-firewall.nft"
         canonical_duplicate.write_text("# canonical duplicate\n")
+        canonical_historical = subject_root / "roots/security/docs/security-hardening-guide.md"
+        canonical_historical.write_text("# canonical historical\n")
 
         live_legacy = subject_root / "config/firewall-audit.nft"
         live_legacy.parent.mkdir(parents=True)

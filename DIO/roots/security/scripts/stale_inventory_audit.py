@@ -183,6 +183,7 @@ class _ScanContext:
     legacy_exists: dict[str, bool] = field(default_factory=dict)
     canonical_exists: dict[str, bool] = field(default_factory=dict)
     active_consumers: set[str] = field(default_factory=set)
+    historical_consumers: set[str] = field(default_factory=set)
     _seq: int = field(default=0, repr=False)
     _seen: set[tuple[str, str, str, int | None]] = field(default_factory=set, repr=False)
 
@@ -277,7 +278,7 @@ def _scan_live_system_bindings(ctx: _ScanContext) -> None:
                     status=Status.REFERENCED,
                     historical=False,
                     recommended_action=RecommendedAction.UPDATE_LIVE_REFERENCE,
-                    notes=f"Live system config still points to legacy path.",
+                    notes="Live system config still points to legacy path.",
                 )
                 break  # one finding per binding
 
@@ -321,6 +322,7 @@ def _scan_text_references(ctx: _ScanContext) -> None:
                 canonical = _legacy_to_canonical(lp, rs)
 
                 if is_historical:
+                    ctx.historical_consumers.add(lp)
                     ctx.add(
                         finding_type=FindingType.HISTORICAL_REFERENCE,
                         severity=Severity.INFO,
@@ -396,6 +398,8 @@ def _emit_safe_duplicate_findings(ctx: _ScanContext) -> None:
             else False
         )
         if legacy_exists and canonical_exists and legacy_path not in ctx.active_consumers:
+            if legacy_path in ctx.historical_consumers:
+                continue
             ctx.add(
                 finding_type=FindingType.SAFE_DUPLICATE,
                 severity=Severity.LOW,
