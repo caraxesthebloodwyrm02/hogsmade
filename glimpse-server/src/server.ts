@@ -16,10 +16,9 @@
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { z } from 'zod';
-import { createRequire } from 'module';
 import path from 'path';
 import { pathToFileURL } from 'url';
+import { z } from 'zod';
 
 // ── Constants ──
 
@@ -512,16 +511,27 @@ server.tool(
   }
 );
 
-// ── Start ──
+// ── Exports for MCP SDK compatibility ──
 
-async function main() {
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
-  console.error(`[${SERVER_NAME}] v${VERSION} running on stdio`);
-  console.error(`[${SERVER_NAME}] Engine root: ${ENGINE_ROOT}`);
+export function buildServer(): McpServer {
+  return server;
 }
 
-main().catch((err) => {
-  console.error(`[${SERVER_NAME}] Fatal:`, err);
-  process.exit(1);
-});
+export async function startServer(): Promise<McpServer> {
+  console.error(`[${SERVER_NAME}] v${VERSION} starting — engine: ${ENGINE_ROOT}`);
+  const s = buildServer();
+  await s.connect(new StdioServerTransport());
+  return s;
+}
+
+// ── Entry-point guard ──
+
+const isEntrypoint = process.argv[1] != null
+  && pathToFileURL(process.argv[1]).href === import.meta.url;
+
+if (isEntrypoint) {
+  void startServer().catch((err) => {
+    console.error(`[${SERVER_NAME}] Fatal:`, err);
+    process.exitCode = 1;
+  });
+}
