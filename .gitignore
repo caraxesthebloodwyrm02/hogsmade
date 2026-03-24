@@ -58,12 +58,9 @@ Desktop.ini
 ownership-map-out/
 .tmp-ownership-venv/
 
-# Orphan submodule path (no .gitmodules entry); keep local copy untracked
-Atmosphere/
-
-# Optional: local hook stubs (if re-added, keep empty or use .cursor/hooks.json)
-hooks/
-scripts/hooks/
+# Windows migration debris (filesystem artifacts from dev-drive era)
+e:/
+E:\\*
 
 # Local Netlify folder
 .netlify
@@ -94,21 +91,9 @@ demo-*.md
 # MCP memory data (local-only, runtime-generated)
 memory/
 
-# Separate repos with their own .git (not submodules of this repo)
-apiguard/
-symphony-execution-performance/
-
 # Glimpse server runtime (node_modules covered above, but be explicit)
 glimpse-server/node_modules/
 glimpse-server/dist/
-
-# Shell dotfiles (WSL artifacts, not project files)
-.bash_profile
-.bashrc
-.profile
-.zprofile
-.zshrc
-.ripgreprc
 
 # IDE / editor
 .idea
@@ -120,7 +105,6 @@ glimpse-server/dist/
 # Local workspace data
 archive/
 data/
-patience/
 
 # Session progress and audit reports (local-only, not source)
 .claude-progress.md

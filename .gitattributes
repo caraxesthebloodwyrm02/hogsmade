@@ -1,7 +1,5 @@
 # Line endings: normalize to LF in repo; check out per OS.
 * text=auto eol=lf
-*.cmd text eol=crlf
-*.bat text eol=crlf
 *.sh text eol=lf
 
 # Binary / generated
