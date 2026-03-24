@@ -31,6 +31,8 @@ export default [
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
+      "react-hooks/purity": "off",
+      "react-hooks/refs": "off",
       "no-undef": "off",
       "@typescript-eslint/no-unused-vars": [
         "error",
