@@ -291,7 +291,7 @@
       "threat_basis": ["OWN-001", "OWN-002"],
       "hooks": [
         {
-          "function": "OwnershipGovernance.enforce_review",
+          "function": "OwnershipGovernance.checkSensitivePR",
           "module": "security-policy",
           "policy_rules": [
             {
@@ -299,13 +299,25 @@
               "if": "PR modifies any file in sensitive_paths",
               "then": "require_minimum_2_reviewers",
               "severity": "medium"
-            },
+            }
+          ]
+        },
+        {
+          "function": "OwnershipGovernance.checkSoleOwnership",
+          "module": "security-policy",
+          "policy_rules": [
             {
               "id": "P-GOV-002",
               "if": "PR author is sole owner of modified sensitive path",
               "then": "emit_review_escalation_alert",
               "severity": "medium"
-            },
+            }
+          ]
+        },
+        {
+          "function": "OwnershipGovernance.checkTestCoverage",
+          "module": "security-policy",
+          "policy_rules": [
             {
               "id": "P-GOV-003",
               "if": "PR touches security/ AND no corresponding test file changed",
