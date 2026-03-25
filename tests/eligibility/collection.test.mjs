@@ -4,7 +4,7 @@ import test from "node:test";
 import {
   evaluateRoutine,
   getFixtureCandidateById,
-} from "../../eligibility-server/src/index.js";
+} from "../../eligibility-server/dist/index.js";
 
 test("collection table retains provenance credit and formula-ready columns", () => {
   const result = evaluateRoutine(
