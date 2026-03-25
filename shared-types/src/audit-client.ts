@@ -1,7 +1,7 @@
-import { randomBytes } from "crypto";
-import { existsSync, mkdirSync, renameSync, unlinkSync, writeFileSync } from "fs";
-import { homedir } from "os";
+import { appendFileSync, mkdirSync, existsSync, writeFileSync, renameSync, unlinkSync } from "fs";
 import { dirname, resolve } from "path";
+import { homedir } from "os";
+import { randomBytes } from "crypto";
 import type { AuditEvent } from "./audit.js";
 
 const ECHOES_AUDIT_PATH = process.env.ECHOES_AUDIT_PATH
@@ -35,55 +35,52 @@ function sanitizeForNdjson(value: unknown): unknown {
 
 async function processWriteQueue(): Promise<void> {
   if (isWriting || writeQueue.length === 0) return;
-
+  
   isWriting = true;
   const { event, resolve } = writeQueue.shift()!;
-
+  
   const lockFile = `${ECHOES_AUDIT_PATH}.lock`;
-  const tempFile = `${ECHOES_AUDIT_PATH}.tmp.${randomBytes(4).toString('hex')}`;
-
+  
   try {
-    // Attempt to acquire lock with exponential backoff
+    // Simple lock mechanism with timeout
     let retries = 0;
-    const maxRetries = 50;
-
+    const maxRetries = 10;
+    
     while (existsSync(lockFile) && retries < maxRetries) {
-      await new Promise(r => setTimeout(r, Math.min(100 * Math.pow(1.1, retries), 1000)));
+      await new Promise(r => setTimeout(r, 50)); // 50ms wait
       retries++;
     }
-
+    
     if (existsSync(lockFile)) {
-      // Lock timeout - skip this write to prevent blocking
+      // Lock timeout - skip this write
       resolve(false);
       isWriting = false;
-      processWriteQueue();
+      setTimeout(processWriteQueue, 0);
       return;
     }
-
+    
     // Create lock
     writeFileSync(lockFile, process.pid.toString());
-
-    // Write to temp file then atomic rename
-    writeFileSync(tempFile, event, { flag: 'a' });
-    renameSync(tempFile, ECHOES_AUDIT_PATH);
-
+    
+    // Simple append with proper newline
+    appendFileSync(ECHOES_AUDIT_PATH, event);
+    
     // Release lock
     try {
       unlinkSync(lockFile);
     } catch {
-      // Lock may have been cleaned up by another process
+      // Lock may have been cleaned up
     }
-
+    
     resolve(true);
   } catch (err) {
     // Cleanup on error
     try {
-      if (existsSync(tempFile)) unlinkSync(tempFile);
       if (existsSync(lockFile)) unlinkSync(lockFile);
     } catch {
       // Ignore cleanup errors
     }
-
+    
     process.stderr.write(
       `[audit-client] write failed: ${err instanceof Error ? err.message : String(err)}\n`
     );
@@ -91,7 +88,7 @@ async function processWriteQueue(): Promise<void> {
   } finally {
     isWriting = false;
     // Process next item in queue
-    setImmediate(processWriteQueue);
+    setTimeout(processWriteQueue, 0);
   }
 }
 
@@ -119,10 +116,10 @@ export function emitAudit(event: Omit<AuditEvent, "timestamp">): Promise<boolean
     };
 
     const eventString = JSON.stringify(record) + "\n";
-
+    
     // Add to write queue
     writeQueue.push({ event: eventString, resolve });
-
+    
     // Trigger queue processing
     processWriteQueue();
   });
