@@ -44,4 +44,8 @@ done
 run_npm_package "glimpse-artifact" "npm run check"
 
 echo "== glimpse-engine =="
+(
+  cd "glimpse-engine"
+  npm ci
+)
 node --test tests/glimpse-engine.test.mjs
