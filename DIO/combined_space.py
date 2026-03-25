@@ -61,7 +61,6 @@ class InteractiveIterationTool:
         return f"part_{part_index}_{phase_gate}"
 
     def build_trigger_board(self) -> Dict[str, LaneValue]:
-        from control_room.constants import TRIGGER_BOARD_LANE_ORDER
         return {
             "entry_lane": "user_confirmed_part_start",
             "phase_lane": PHASE_LANE_ENVELOPE,

@@ -99,15 +99,15 @@ def derive_dial_state(snapshot: AirflowSnapshot) -> DialState:
     fan_angle = _clamp(((snapshot.fan_speed - 850) / 100.0) * 360.0, 0.0, 360.0)
     temp_angle = _clamp(((snapshot.temperature - 24.0) / 4.0) * 360.0, 0.0, 360.0)
 
-    flow_band = "centered" if abs(snapshot.fan_speed - 900) <= 50 else "drift"
-    heat_band = "steady" if abs(snapshot.temperature - 26.0) <= 2 else "swing"
-    category_map = {
+    flow_band: FlowBand = "centered" if abs(snapshot.fan_speed - 900) <= 50 else "drift"
+    heat_band: HeatBand = "steady" if abs(snapshot.temperature - 26.0) <= 2 else "swing"
+    category_map: Dict[Tuple[FlowBand, HeatBand], AirflowCategory] = {
         ("centered", "steady"): "Smooth Flow",
         ("centered", "swing"): "Thermal Drift",
         ("drift", "steady"): "Air Drift",
         ("drift", "swing"): "Correction Zone",
     }
-    category = category_map[(flow_band, heat_band)]
+    category: AirflowCategory = category_map[(flow_band, heat_band)]
 
     return DialState(
         fan_angle_deg=fan_angle,

@@ -1,14 +1,26 @@
-from dataclasses import dataclass
 import calendar
+from dataclasses import dataclass
 from datetime import date, timedelta
 from typing import Dict, List, Tuple
 
 try:
     from control_room import airflow
-    from control_room.constants import CADENCE, TRIGGER_BOARD_LANE_ORDER, LightPhase, TransferMode, TravelChannel
+    from control_room.constants import (
+        CADENCE,
+        AirflowCategory,
+        LightPhase,
+        TransferMode,
+        TravelChannel,
+    )
 except ImportError:
     import airflow
-    from constants import CADENCE, TRIGGER_BOARD_LANE_ORDER, LightPhase, TransferMode, TravelChannel
+    from constants import (
+        CADENCE,
+        AirflowCategory,
+        LightPhase,
+        TransferMode,
+        TravelChannel,
+    )
 
 
 @dataclass(frozen=True)
@@ -20,14 +32,14 @@ class LightFunctionState:
     travel_channel: TravelChannel
 
 
-_LIGHT_PROFILE_BY_CATEGORY: Dict[str, Tuple[str, int, int]] = {
+_LIGHT_PROFILE_BY_CATEGORY: Dict[AirflowCategory, Tuple[LightPhase, int, int]] = {
     "Smooth Flow": ("Cruise", 55, 4200),
     "Thermal Drift": ("Warm Shift", 65, 3600),
     "Air Drift": ("Vector Shift", 75, 5000),
     "Correction Zone": ("Recovery", 85, 5400),
 }
 
-_AIRFLOW_HINT_BY_PHASE: Dict[str, Dict[str, Tuple[float, float]]] = {
+_AIRFLOW_HINT_BY_PHASE: Dict[LightPhase, Dict[str, Tuple[float, float]]] = {
     "Cruise": {"fan_speed_range": (880.0, 920.0), "temperature_range": (25.0, 27.0)},
     "Warm Shift": {"fan_speed_range": (870.0, 930.0), "temperature_range": (27.0, 30.0)},
     "Vector Shift": {"fan_speed_range": (920.0, 960.0), "temperature_range": (24.0, 27.0)},
