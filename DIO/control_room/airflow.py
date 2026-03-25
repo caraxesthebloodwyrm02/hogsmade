@@ -133,11 +133,8 @@ def evaluate_airflow(snapshot: AirflowSnapshot) -> str:
 class AirflowOrchestrator:
 
     def __init__(self) -> None:
-        self.completed_passes = 0
         self.gate_passes = self._build_gate_passes()
-
-    def _build_gate_passes(self) -> Tuple[GatePassProfile, ...]:
-        return AirflowOrchestrator._build_gate_passes()
+        self.completed_passes = len(self.gate_passes)
 
     @staticmethod
     def _build_gate_passes() -> Tuple[GatePassProfile, ...]:
@@ -166,9 +163,6 @@ class AirflowOrchestrator:
         return cadence[cadence_index]
 
     def run(self) -> Dict[str, str]:
-        for gate_pass in self.gate_passes:
-            self.completed_passes = gate_pass.pass_index
-
         trigger_board = self._build_trigger_board()
         return {
             "mode": "Modular" if self.completed_passes == MODULAR_PASS_INDEX else "Rhythm",
@@ -232,8 +226,7 @@ def build_realtime_reference_graph(
                 "to": next_node["id"],
                 "transport": "realtime",
                 "channel": "interval_stream",
-                "delta_wait_s": int(next_node["wait_time_s"])
-                - int(current_node["wait_time_s"]),
+                "delta_wait_s": next_node["wait_time_s"] - current_node["wait_time_s"],
             }
         )
 

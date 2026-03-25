@@ -144,6 +144,7 @@ describe("lots-server smoke", () => {
         "health_check",
         "experiment_create",
         "experiment_list",
+        "experiment_dashboard_list",
         "experiment_run",
         "experiment_get",
         "experiment_compare",
@@ -202,6 +203,62 @@ describe("lots-server smoke", () => {
       e.tags?.includes("suggested"),
     );
     expect(suggestedDrafts.length).toBeGreaterThan(0);
+  });
+
+  it("normalizes legacy catalog entries for the dashboard list", async () => {
+    writeFileSync(
+      path.join(getConfig().experimentsDir, ".catalog.json"),
+      JSON.stringify(
+        {
+          experiments: [
+            {
+              id: "exp-complete",
+              name: "duration-check",
+              description: "legacy catalog entry",
+              status: "complete",
+              tags: [],
+              createdAt: "2026-03-20T10:00:00.000Z",
+              updatedAt: "2026-03-20T12:00:00.000Z",
+              results: {
+                exitCode: 0,
+                stdout: "",
+                stderr: "",
+                durationMs: 2450,
+              },
+            },
+            {
+              id: "exp-archived",
+              name: "archived",
+              description: "hidden from dashboard",
+              status: "archived",
+              tags: [],
+              createdAt: "2026-03-20T10:00:00.000Z",
+              updatedAt: "2026-03-20T12:00:00.000Z",
+            },
+          ],
+          lastUpdated: "2026-03-20T12:00:00.000Z",
+        },
+        null,
+        2,
+      ),
+      "utf-8",
+    );
+
+    const server = buildServer();
+    const result = (await invokeTool(server, "experiment_dashboard_list", {
+      limit: 10,
+    })) as { content: Array<{ text: string }> };
+    const payload = JSON.parse(result.content[0].text);
+
+    expect(payload.experiments).toHaveLength(1);
+    expect(payload.experiments[0]).toMatchObject({
+      id: "exp-complete",
+      status: "completed",
+      metric: "Run duration (ms)",
+      baselineValue: 2450,
+      currentValue: 2450,
+      completedAt: "2026-03-20T12:00:00.000Z",
+    });
   });
 
   // ── P1: Path confinement regression ──

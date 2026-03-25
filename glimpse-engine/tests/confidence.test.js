@@ -7,6 +7,8 @@ import {
   detectGaps,
   calibrateConfidence,
   summarizeConfidence,
+  recordOutcome,
+  calibrationScore,
   GAP_TYPES,
 } from "../core/confidence.js";
 
@@ -191,5 +193,78 @@ describe("summarizeConfidence", () => {
     assert.equal(summary.topGaps[0].description, "high");
     assert.equal(summary.topGaps[1].description, "mid");
     assert.equal(summary.topGaps[2].description, "low");
+  });
+});
+
+describe("recordOutcome", () => {
+  it("records predicted vs actual for existing entry", () => {
+    const frame = createConfidenceFrame();
+    recordInference(frame, { ruleId: "rule-1", confidence: 0.8 });
+    recordOutcome(frame, "rule-1", true);
+    assert.equal(frame.outcomes.length, 1);
+    assert.equal(frame.outcomes[0].ruleId, "rule-1");
+    assert.equal(frame.outcomes[0].predicted, 0.8);
+    assert.equal(frame.outcomes[0].actual, 1);
+  });
+
+  it("records 0.5 predicted when entry not found", () => {
+    const frame = createConfidenceFrame();
+    recordOutcome(frame, "missing-rule", false);
+    assert.equal(frame.outcomes[0].predicted, 0.5);
+    assert.equal(frame.outcomes[0].actual, 0);
+  });
+
+  it("initializes outcomes array on first call", () => {
+    const frame = createConfidenceFrame();
+    assert.equal(frame.outcomes, undefined);
+    recordOutcome(frame, "rule-1", true);
+    assert.ok(Array.isArray(frame.outcomes));
+  });
+
+  it("accumulates multiple outcomes", () => {
+    const frame = createConfidenceFrame();
+    recordInference(frame, { ruleId: "r-1", confidence: 0.9 });
+    recordInference(frame, { ruleId: "r-2", confidence: 0.3 });
+    recordOutcome(frame, "r-1", true);
+    recordOutcome(frame, "r-2", false);
+    assert.equal(frame.outcomes.length, 2);
+  });
+});
+
+describe("calibrationScore", () => {
+  it("returns null with fewer than 5 outcomes", () => {
+    const frame = createConfidenceFrame();
+    recordOutcome(frame, "r-1", true);
+    recordOutcome(frame, "r-2", false);
+    assert.equal(calibrationScore(frame), null);
+  });
+
+  it("returns null with no outcomes", () => {
+    const frame = createConfidenceFrame();
+    assert.equal(calibrationScore(frame), null);
+  });
+
+  it("computes Brier score with 5+ outcomes", () => {
+    const frame = createConfidenceFrame();
+    // Perfect predictions: predicted matches actual
+    for (let i = 0; i < 5; i++) {
+      recordInference(frame, { ruleId: `r-${i}`, confidence: 1.0 });
+      recordOutcome(frame, `r-${i}`, true);
+    }
+    const score = calibrationScore(frame);
+    assert.notEqual(score, null);
+    // Perfect predictions → Brier score = 0
+    assert.equal(score, 0);
+  });
+
+  it("returns higher score for worse predictions", () => {
+    const frame = createConfidenceFrame();
+    // Bad predictions: high confidence but wrong
+    for (let i = 0; i < 5; i++) {
+      recordInference(frame, { ruleId: `r-${i}`, confidence: 0.9 });
+      recordOutcome(frame, `r-${i}`, false);
+    }
+    const score = calibrationScore(frame);
+    assert.ok(score > 0.5, `Bad predictions should have high Brier score, got ${score}`);
   });
 });

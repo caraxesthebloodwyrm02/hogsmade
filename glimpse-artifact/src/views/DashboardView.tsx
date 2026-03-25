@@ -136,10 +136,20 @@ export function DashboardView() {
               </div>
               {focus.error
                 ? <DataError message={focus.error} onRetry={focus.retry} />
-                : <WorkflowStatusCard
-                  data={focus.session ?? undefined}
-                  loading={focus.loading}
-                />}
+                : focus.loading
+                  ? <WorkflowStatusCard loading />
+                  : focus.session
+                    ? <WorkflowStatusCard data={focus.session} loading={false} />
+                    : (
+                      <div className="glass-panel p-5">
+                        <div className="font-body text-[11px] font-medium uppercase tracking-[0.08em] text-ink mb-3">
+                          No active focus session
+                        </div>
+                        <p className="font-body text-sm text-ink-muted">
+                          `pulse-server` is idle. Start a new focus session there to populate this panel.
+                        </p>
+                      </div>
+                    )}
             </section>
           </div>
         </div>

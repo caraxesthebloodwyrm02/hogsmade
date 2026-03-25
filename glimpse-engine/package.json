@@ -26,5 +26,8 @@
     "demo:lending": "node cli.js lending",
     "demo:recommend": "node cli.js recommend",
     "demo:sales": "node examples/sales-lead-intelligence.mjs"
+  },
+  "dependencies": {
+    "js-yaml": "^4.1.1"
   }
 }

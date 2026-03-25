@@ -39,9 +39,25 @@ const MOCK_EXPERIMENTS: Experiment[] = [
   },
 ];
 
+export function parseExperimentDashboardResponse(payload: unknown): Experiment[] {
+  if (
+    !payload ||
+    typeof payload !== "object" ||
+    !Array.isArray((payload as { experiments?: unknown }).experiments)
+  ) {
+    throw new Error("Unexpected experiments payload");
+  }
+
+  return (payload as { experiments: Experiment[] }).experiments;
+}
+
 export function useExperiments(): UseExperimentsResult {
-  // TODO(D3): Replace `mock` with `fetcher` calling lots-server
   const { data: experiments, loading, error, retry } = useDataSource<Experiment[]>({
+    fetcher: async (signal) => {
+      const res = await fetch("/api/experiments", { signal });
+      if (!res.ok) throw new Error(`Experiments fetch failed (${res.status})`);
+      return parseExperimentDashboardResponse(await res.json());
+    },
     mock: MOCK_EXPERIMENTS,
   });
 

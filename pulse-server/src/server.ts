@@ -81,6 +81,21 @@ interface FocusSession {
   outcome?: string;
 }
 
+interface DashboardWorkflowStep {
+  name: string;
+  status: "pending" | "running" | "done";
+  durationMs?: number;
+}
+
+interface DashboardWorkflowRun {
+  id: string;
+  workflowName: string;
+  status: "running";
+  steps: DashboardWorkflowStep[];
+  startedAt: string;
+  elapsedMs: number;
+}
+
 interface DailyDigest {
   date: string;
   generatedAt: string;
@@ -213,6 +228,26 @@ async function archiveFocusSession(session: FocusSession): Promise<void> {
   }
   sessions.push(session);
   await atomicWriteJson(filepath, sessions);
+}
+
+function focusSessionToWorkflowRun(
+  session: FocusSession,
+  nowMs: number = Date.now(),
+): DashboardWorkflowRun {
+  return {
+    id: session.id,
+    workflowName: session.project
+      ? `${session.project} — ${session.task}`
+      : session.task,
+    status: "running",
+    steps: [
+      { name: "Declared focus", status: "done" },
+      { name: "Deep work", status: "running" },
+      { name: "Archive session", status: "pending" },
+    ],
+    startedAt: session.startedAt,
+    elapsedMs: Math.max(0, nowMs - new Date(session.startedAt).getTime()),
+  };
 }
 
 async function loadPreferences(): Promise<Preferences> {
@@ -1594,6 +1629,34 @@ export function buildServer(): McpServer {
                 started: true,
                 session,
                 tip: "Use focus_interrupt if you get pulled away. Use focus_end when done.",
+              },
+              null,
+              2,
+            ),
+          },
+        ],
+      };
+    },
+  );
+
+  server.registerTool(
+    "focus_status",
+    {
+      description:
+        "Return the current active focus session in the dashboard workflow shape",
+      inputSchema: z.object({}),
+    },
+    async () => {
+      await ensureDataDir();
+      const session = await getActiveFocus();
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(
+              {
+                active: !!session,
+                session: session ? focusSessionToWorkflowRun(session) : null,
               },
               null,
               2,

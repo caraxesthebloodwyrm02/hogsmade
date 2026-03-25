@@ -3,6 +3,8 @@
  *
  * Routes:
  *   GET /api/audit/events?limit=N      — reads ~/.echoes/audit.ndjson
+ *   GET /api/experiments               — reads lots experiment catalog and returns dashboard shape
+ *   GET /api/focus/session             — reads pulse active focus state and returns dashboard shape
  *   GET /api/health/ecosystem           — filesystem health scan of CascadeProjects repos
  *   GET /api/gate/status                — reads GATE nonce registry + envelope results
  *   GET /api/pipeline/prs               — real PR data from GitHub via `gh` CLI
@@ -29,6 +31,18 @@ const CASCADE_ROOT =
 const GATE_DIR =
     process.env["GATE_DIR"] ??
     path.join(CASCADE_ROOT, "GATE");
+
+const LOTS_EXPERIMENTS_DIR =
+    process.env["LOTS_EXPERIMENTS_DIR"] ??
+    path.join(CASCADE_ROOT, "experiments");
+
+const LOTS_CATALOG_PATH = path.join(LOTS_EXPERIMENTS_DIR, ".catalog.json");
+
+const PULSE_DATA_DIR =
+    process.env["PULSE_DATA_DIR"] ??
+    path.join(HOME, ".pulse");
+
+const PULSE_ACTIVE_FOCUS_PATH = path.join(PULSE_DATA_DIR, "focus", "active.json");
 
 const KNOWN_REPOS = [
     "GRID-main",
@@ -143,6 +157,168 @@ async function scanRepoHealth(repoName: string): Promise<RepoHealthResult> {
 
 async function scanEcosystem(): Promise<RepoHealthResult[]> {
     return Promise.all(KNOWN_REPOS.map(scanRepoHealth));
+}
+
+// ── Dashboard routes ────────────────────────────────────────────────
+
+interface LotsCatalogExperiment {
+    id: string;
+    name: string;
+    status: "draft" | "running" | "complete" | "failed" | "archived";
+    createdAt: string;
+    updatedAt: string;
+    results?: {
+        durationMs?: number;
+    };
+}
+
+interface DashboardExperiment {
+    id: string;
+    name: string;
+    status: "queued" | "running" | "completed" | "failed";
+    metric: string;
+    baselineValue: number;
+    currentValue: number;
+    startedAt: string;
+    completedAt?: string;
+}
+
+function toDashboardExperiment(
+    exp: LotsCatalogExperiment,
+): DashboardExperiment | null {
+    const statusMap = {
+        draft: "queued",
+        running: "running",
+        complete: "completed",
+        failed: "failed",
+        archived: null,
+    } as const;
+
+    const status = statusMap[exp.status];
+    if (!status) return null;
+
+    const durationMs = exp.results?.durationMs ?? 0;
+    return {
+        id: exp.id,
+        name: exp.name,
+        status,
+        metric: "Run duration (ms)",
+        baselineValue: durationMs,
+        currentValue: durationMs,
+        startedAt: exp.createdAt,
+        completedAt:
+            status === "completed" || status === "failed"
+                ? exp.updatedAt
+                : undefined,
+    };
+}
+
+async function readExperimentDashboard(limit: number): Promise<{
+    count: number;
+    experiments: DashboardExperiment[];
+}> {
+    let raw: string;
+    try {
+        raw = await readFile(LOTS_CATALOG_PATH, "utf-8");
+    } catch {
+        return { count: 0, experiments: [] };
+    }
+
+    let parsed: unknown;
+    try {
+        parsed = JSON.parse(raw);
+    } catch {
+        return { count: 0, experiments: [] };
+    }
+
+    const experiments = Array.isArray((parsed as { experiments?: unknown[] }).experiments)
+        ? (parsed as { experiments: LotsCatalogExperiment[] }).experiments
+            .map(toDashboardExperiment)
+            .filter(Boolean) as DashboardExperiment[]
+        : [];
+
+    const trimmed = experiments.slice(-limit).reverse();
+    return {
+        count: trimmed.length,
+        experiments: trimmed,
+    };
+}
+
+interface ActiveFocusSession {
+    id: string;
+    startedAt: string;
+    task: string;
+    project?: string;
+}
+
+interface DashboardWorkflowStep {
+    name: string;
+    status: "pending" | "running" | "done";
+}
+
+interface DashboardWorkflowRun {
+    id: string;
+    workflowName: string;
+    status: "running";
+    steps: DashboardWorkflowStep[];
+    startedAt: string;
+    elapsedMs: number;
+}
+
+interface FocusStatusPayload {
+    active: boolean;
+    session: DashboardWorkflowRun | null;
+}
+
+function focusSessionToWorkflowRun(
+    session: ActiveFocusSession,
+    nowMs: number = Date.now(),
+): DashboardWorkflowRun {
+    return {
+        id: session.id,
+        workflowName: session.project
+            ? `${session.project} — ${session.task}`
+            : session.task,
+        status: "running",
+        steps: [
+            { name: "Declared focus", status: "done" },
+            { name: "Deep work", status: "running" },
+            { name: "Archive session", status: "pending" },
+        ],
+        startedAt: session.startedAt,
+        elapsedMs: Math.max(0, nowMs - new Date(session.startedAt).getTime()),
+    };
+}
+
+async function readFocusStatus(): Promise<FocusStatusPayload> {
+    let raw: string;
+    try {
+        raw = await readFile(PULSE_ACTIVE_FOCUS_PATH, "utf-8");
+    } catch {
+        return { active: false, session: null };
+    }
+
+    let parsed: unknown;
+    try {
+        parsed = JSON.parse(raw);
+    } catch {
+        return { active: false, session: null };
+    }
+
+    if (
+        !parsed ||
+        typeof parsed !== "object" ||
+        typeof (parsed as ActiveFocusSession).id !== "string" ||
+        typeof (parsed as ActiveFocusSession).task !== "string" ||
+        typeof (parsed as ActiveFocusSession).startedAt !== "string"
+    ) {
+        return { active: false, session: null };
+    }
+
+    return {
+        active: true,
+        session: focusSessionToWorkflowRun(parsed as ActiveFocusSession),
+    };
 }
 
 // ── GATE endpoint ───────────────────────────────────────────────────
@@ -400,6 +576,21 @@ export function glimpseApiPlugin(): Plugin {
                     readAuditEvents(limit)
                         .then((events) => jsonResponse(res, events))
                         .catch(() => jsonResponse(res, { error: "Failed to read audit events" }, 500));
+                    return;
+                }
+
+                if (url.pathname === "/api/experiments") {
+                    const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get("limit") ?? "20", 10) || 20));
+                    readExperimentDashboard(limit)
+                        .then((payload) => jsonResponse(res, payload))
+                        .catch(() => jsonResponse(res, { error: "Failed to read experiment dashboard data" }, 500));
+                    return;
+                }
+
+                if (url.pathname === "/api/focus/session") {
+                    readFocusStatus()
+                        .then((payload) => jsonResponse(res, payload))
+                        .catch(() => jsonResponse(res, { error: "Failed to read focus session data" }, 500));
                     return;
                 }
 

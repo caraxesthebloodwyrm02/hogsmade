@@ -7,12 +7,12 @@ This document captures the key insights and improvements made during the code re
 ### 1. Code Duplication in Tests
 **Problem**: The `add` function was redefined in multiple test files instead of importing from the source module.
 - `tests/unit/test_add.py` had its own `add` function implementation
-- `tests/conftest.py` had a fixture that defined a local `add` function
+- `tests/conftest.py` still described fixture-based helpers that no longer matched the actual test suite
 
-**Solution**: 
+**Solution**:
 - Removed duplicate implementations
-- Added `from src import add` to both files
-- Updated the `add_function` fixture to return the imported function
+- Kept `from src import add` in the test modules that exercise the real implementation
+- Reduced `conftest.py` to a minimal package-level pytest configuration
 
 **Benefit**: Tests now validate the actual implementation, reducing maintenance overhead and preventing test-production drift.
 
@@ -53,7 +53,7 @@ This document captures the key insights and improvements made during the code re
 ### Test Organization
 - **Unit tests**: Fast, isolated tests for individual functions
 - **Integration tests**: End-to-end validation of documented use cases
-- **Fixtures**: Shared test data and setup in `conftest.py`
+- **Pytest config**: `conftest.py` is intentionally minimal until shared setup is needed
 - Clear separation of concerns with dedicated directories
 
 ### Documentation Alignment
@@ -77,7 +77,7 @@ python-basics/
 │   └── __init__.py          # Contains add() and subtract() functions
 ├── tests/
 │   ├── __init__.py          # Package initialization
-│   ├── conftest.py          # Shared fixtures (no duplicate implementations)
+│   ├── conftest.py          # Minimal package-level pytest configuration
 │   ├── unit/
 │   │   └── test_add.py      # Unit tests importing from src
 │   ├── integration/

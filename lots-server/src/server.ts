@@ -54,6 +54,17 @@ interface Experiment {
   };
 }
 
+interface DashboardExperiment {
+  id: string;
+  name: string;
+  status: "queued" | "running" | "completed" | "failed";
+  metric: string;
+  baselineValue: number;
+  currentValue: number;
+  startedAt: string;
+  completedAt?: string;
+}
+
 interface Catalog {
   experiments: Experiment[];
   lastUpdated: string;
@@ -137,6 +148,33 @@ async function saveCatalog(catalog: Catalog): Promise<void> {
 
 function generateId(): string {
   return `exp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function toDashboardStatus(
+  status: Experiment["status"],
+): DashboardExperiment["status"] | null {
+  if (status === "draft") return "queued";
+  if (status === "complete") return "completed";
+  if (status === "archived") return null;
+  return status;
+}
+
+function toDashboardExperiment(exp: Experiment): DashboardExperiment | null {
+  const status = toDashboardStatus(exp.status);
+  if (!status) return null;
+
+  const durationMs = exp.results?.durationMs ?? 0;
+  return {
+    id: exp.id,
+    name: exp.name,
+    status,
+    metric: "Run duration (ms)",
+    baselineValue: durationMs,
+    currentValue: durationMs,
+    startedAt: exp.createdAt,
+    completedAt:
+      status === "completed" || status === "failed" ? exp.updatedAt : undefined,
+  };
 }
 
 function isInsideDir(candidate: string, root: string): boolean {
@@ -366,6 +404,71 @@ export function buildServer(): McpServer {
                   updatedAt: e.updatedAt,
                   hasResults: !!e.results,
                 })),
+              },
+              null,
+              2,
+            ),
+          },
+        ],
+      };
+    },
+  );
+
+  server.registerTool(
+    "experiment_dashboard_list",
+    {
+      description:
+        "List experiments in the dashboard-friendly shape used by glimpse-artifact",
+      inputSchema: z.object({
+        status: z
+          .enum(["queued", "running", "completed", "failed"])
+          .optional()
+          .describe("Optional dashboard status filter"),
+        limit: z
+          .number()
+          .min(1)
+          .max(100)
+          .optional()
+          .default(20)
+          .describe("Max results"),
+      }),
+    },
+    async (args: {
+      status?: DashboardExperiment["status"];
+      limit?: number;
+    }) => {
+      const rlMsg = readLimiter.check("experiment_dashboard_list");
+      if (rlMsg) {
+        return {
+          content: [
+            { type: "text" as const, text: JSON.stringify({ error: rlMsg }) },
+          ],
+          isError: true,
+        };
+      }
+
+      await ensureDir();
+      const catalog = await loadCatalog();
+      let experiments = catalog.experiments
+        .map(toDashboardExperiment)
+        .filter(Boolean) as DashboardExperiment[];
+
+      if (args.status) {
+        experiments = experiments.filter((exp) => exp.status === args.status);
+      }
+
+      experiments = experiments
+        .slice(-(args.limit ?? 20))
+        .reverse();
+
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(
+              {
+                count: experiments.length,
+                experiments,
               },
               null,
               2,

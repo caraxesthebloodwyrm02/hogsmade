@@ -183,6 +183,16 @@
         "/home/caraxes/CascadeProjects/glimpse-server/src/server.ts"
       ],
       "env": {}
+    },
+    "grid-intelligence": {
+      "command": "/home/caraxes/roots/GRID/.venv/bin/python",
+      "args": [
+        "-m",
+        "grid.mcp.intelligence_server"
+      ],
+      "env": {
+        "PYTHONPATH": "/home/caraxes/roots/GRID/src:/home/caraxes/roots/GRID"
+      }
     }
   }
 }

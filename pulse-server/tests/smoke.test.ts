@@ -123,6 +123,7 @@ describe("pulse-server smoke", () => {
         "journal_add",
         "journal_list",
         "focus_start",
+        "focus_status",
         "focus_interrupt",
         "focus_end",
         "daily_digest",
@@ -254,6 +255,39 @@ describe("pulse-server smoke", () => {
       isError?: boolean;
     };
     expect(postEndInterrupt.isError).toBe(true);
+  });
+
+  it("reports focus status with and without an active session", async () => {
+    const server = buildServer() as TestServer;
+
+    const idle = (await invokeTool(server, "focus_status", {})) as {
+      content: Array<{ text: string }>;
+    };
+    const idlePayload = JSON.parse(idle.content[0].text);
+    expect(idlePayload.active).toBe(false);
+    expect(idlePayload.session).toBeNull();
+
+    await invokeTool(server, "focus_start", {
+      task: "Implement dashboard sync",
+      project: "glimpse-artifact",
+    });
+
+    const active = (await invokeTool(server, "focus_status", {})) as {
+      content: Array<{ text: string }>;
+    };
+    const activePayload = JSON.parse(active.content[0].text);
+    expect(activePayload.active).toBe(true);
+    expect(activePayload.session).toMatchObject({
+      workflowName: "glimpse-artifact — Implement dashboard sync",
+      status: "running",
+    });
+    expect(
+      activePayload.session.steps.map((step: { name: string }) => step.name),
+    ).toEqual(["Declared focus", "Deep work", "Archive session"]);
+
+    await invokeTool(server, "focus_end", {
+      outcome: "Completed dashboard wiring",
+    });
   });
 
   it("persists journal entries and returns them via journal_list", async () => {

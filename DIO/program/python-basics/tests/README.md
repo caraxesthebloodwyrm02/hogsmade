@@ -59,22 +59,21 @@ pytest tests/unit/test_add.py::TestAddFunction::test_add_positive_numbers
 |----------|----------|---------|
 | **Unit** | `tests/unit/` | Fast tests for individual functions |
 | **Integration** | `tests/integration/` | Tests for complete use case scenarios |
-| **Fixtures** | `conftest.py` | Reusable test data and setup |
+| **Pytest Config** | `conftest.py` | Minimal package-level pytest configuration |
 
 ## Key Concepts Demonstrated
 
 1. **Test Classes**: Group related tests using `class TestSomething:`
-2. **Fixtures**: Reusable setup with `@pytest.fixture`
+2. **Direct Imports**: Import from `src` directly so tests validate the real implementation
 3. **Assertions**: Using `assert` for validation
 4. **Type Hints**: Full typing in test functions
 5. **Docstrings**: Every test has a descriptive docstring
 
-## Fixtures Available
+## Shared Fixtures
 
-- `sample_numbers`: Returns `(10, 20)`
-- `large_numbers`: Returns `(1000000, 2000000)`
-- `negative_numbers`: Returns `(-5, -10)`
-- `add_function`: Returns the add function
+There are currently no shared fixtures in `conftest.py`.
+
+Add a fixture only when multiple tests need the same setup or teardown behavior.
 
 ## Adding New Tests
 

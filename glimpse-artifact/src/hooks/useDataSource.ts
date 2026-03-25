@@ -29,6 +29,31 @@ export interface DataSourceResult<T> {
     retry: () => void;
 }
 
+export interface DataSourceFailure<T> {
+    data?: T;
+    error: string | null;
+    usedMockFallback: boolean;
+}
+
+export function resolveDataSourceFailure<T>(
+    err: unknown,
+    mock?: T,
+): DataSourceFailure<T> {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    if (mock !== undefined) {
+        return {
+            data: mock,
+            error: null,
+            usedMockFallback: true,
+        };
+    }
+
+    return {
+        error: message,
+        usedMockFallback: false,
+    };
+}
+
 export function useDataSource<T>(config: DataSourceConfig<T>): DataSourceResult<T> {
     const { fetcher, mock, pollMs = 0, mockDelayMs = 200 } = config;
     const isMock = !fetcher;
@@ -64,8 +89,13 @@ export function useDataSource<T>(config: DataSourceConfig<T>): DataSourceResult<
             })
             .catch((err: unknown) => {
                 if (controller.signal.aborted) return;
-                const message = err instanceof Error ? err.message : "Unknown error";
-                setError(message);
+                const failure = resolveDataSourceFailure(err, mock);
+                if (failure.usedMockFallback) {
+                    setData(failure.data as T);
+                    setError(null);
+                } else {
+                    setError(failure.error);
+                }
                 setLoading(false);
             });
     }, []);

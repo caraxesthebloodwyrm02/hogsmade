@@ -3,43 +3,25 @@
  * Coordinates the full data processing pipeline.
  */
 
-import {
-  buildEntities,
-} from "../analysis/entities.js";
-import {
-  buildDataProfile,
-} from "../analysis/profiling.js";
+import { buildEntities } from "../analysis/entities.js";
+import { buildDataProfile } from "../analysis/profiling.js";
 import {
   buildBaseRelations,
   buildDatasetScope,
   createEvidence,
   createEvidenceIndex,
 } from "../analysis/relations.js";
-import {
-  applyRules,
-  summarizeLenses,
-} from "../functions/rules.js";
-import {
-  runMultiPassInference,
-} from "./multi-pass.js";
-import {
-  detectDataComplexity,
-  selectPipelineMode,
-} from "./modes.js";
-import {
-  findInvariantPatterns,
-  rankByDensity,
-} from "./compression.js";
+import { summarizeLenses } from "../functions/rules.js";
+import { runMultiPassInference } from "./multi-pass.js";
+import { detectDataComplexity, selectPipelineMode } from "./modes.js";
+import { findInvariantPatterns, rankByDensity } from "./compression.js";
 import {
   selectGroundingProvider,
   applyGrounding,
+  applyGroundingAsync,
 } from "./grounding.js";
-import {
-  normalizeRecords
-} from "../utils/parsing.js";
-import {
-  bucketYear,
-} from "../utils/utils.js";
+import { normalizeRecords } from "../utils/parsing.js";
+import { bucketYear } from "../utils/utils.js";
 import {
   bucketYearAdaptive,
   computeTemporalRange,
@@ -50,6 +32,60 @@ import {
   summarizeConfidence,
   recordOutcome,
 } from "./confidence.js";
+
+function buildGroundingInputs(rankedPatterns) {
+  return rankedPatterns.map((p) => ({
+    compressed: p.pattern,
+    original: p.pattern,
+    densityScore: p.densityScore,
+    supportingEvidence: [],
+    entityId: null,
+  }));
+}
+
+function buildGroundingContext(state) {
+  return {
+    entities: state.entities,
+    relations: state.relations,
+    evidences: state.evidences,
+    inferenceGaps: state.confidenceFrame.gaps,
+  };
+}
+
+function recordGroundingResults(confidenceFrame, groundedInsights) {
+  for (const insight of groundedInsights) {
+    if (insight.grounding) {
+      recordOutcome(confidenceFrame, "grounding", insight.grounding.confirmed);
+    }
+  }
+}
+
+function buildPipelineOutput(state, groundedInsights) {
+  return {
+    records: state.records,
+    profile: state.profile,
+    entities: state.entities,
+    relations: state.relations,
+    facts: state.facts,
+    evidences: state.evidences,
+    evidenceIndex: state.evidenceIndex,
+    contextLenses: state.contextLenses,
+    primaryLens: state.primaryLens,
+    secondaryLenses: state.secondaryLenses,
+    viewPreferences: state.viewPreferences,
+    clusterBy: state.clusterBy,
+    clusters: state.clusters,
+    ruleTraces: state.ruleTraces,
+    validationReport: state.validationReport,
+    functionInventory: state.functionInventory,
+    confidenceReport: state.confidenceReport,
+    inferenceGaps: state.inferenceGaps,
+    complexity: state.complexity,
+    modeSettings: state.modeSettings,
+    invariantPatterns: state.rankedPatterns,
+    groundedInsights,
+  };
+}
 
 export function computeClusters(context, dimension) {
   // Compute temporal range for adaptive bucketing
@@ -65,10 +101,20 @@ export function computeClusters(context, dimension) {
   const groups = {};
   context.entities.forEach((entity) => {
     let key = "Other";
-    if (dimension === "time") key = bucketYearAdaptive(entity.dimensions.time, timeRange) || bucketYear(entity.dimensions.time) || "Unknown";
+    if (dimension === "time")
+      key =
+        bucketYearAdaptive(entity.dimensions.time, timeRange) ||
+        bucketYear(entity.dimensions.time) ||
+        "Unknown";
     else if (dimension === "space") key = entity.dimensions.space || "Unknown";
-    else if (dimension === "domain") key = entity.dimensions.domain || context.contextLenses[0]?.label || entity.type || "General";
-    else if (dimension === "catalyst") key = entity.dimensions.catalyst || "Unknown";
+    else if (dimension === "domain")
+      key =
+        entity.dimensions.domain ||
+        context.contextLenses[0]?.label ||
+        entity.type ||
+        "General";
+    else if (dimension === "catalyst")
+      key = entity.dimensions.catalyst || "Unknown";
     else if (dimension === "type") key = entity.type || "Unknown";
     groups[key] ||= [];
     groups[key].push(entity.id);
@@ -79,19 +125,27 @@ export function computeClusters(context, dimension) {
       label,
       entities: entityIds,
       size: entityIds.length,
-      density: context.entities.length ? entityIds.length / context.entities.length : 0,
+      density: context.entities.length
+        ? entityIds.length / context.entities.length
+        : 0,
     }))
     .sort((a, b) => b.size - a.size);
 }
 
-export function runContextPipeline(rawData, fileType, config, options = {}) {
+function buildPipelineState(rawData, fileType, config, options = {}) {
   const records = normalizeRecords(rawData, fileType);
   if (!records.length) return null;
 
   const profile = buildDataProfile(records, config);
   const entities = buildEntities(records, profile, config);
   const base = buildBaseRelations(entities);
-  const datasetScope = buildDatasetScope(records, profile, entities, base.relations, config);
+  const datasetScope = buildDatasetScope(
+    records,
+    profile,
+    entities,
+    base.relations,
+    config,
+  );
 
   // Phase 3: Mode detection — adapt pipeline depth to data complexity
   const complexity = detectDataComplexity(profile, entities, base.relations);
@@ -99,17 +153,31 @@ export function runContextPipeline(rawData, fileType, config, options = {}) {
 
   // Phase 1C + 2: Confidence-tracked multi-pass inference
   const confidenceFrame = createConfidenceFrame();
-  const ruleState = runMultiPassInference(config, datasetScope, entities, base.relations, {
-    maxPasses: modeSettings.passCount,
-    confidenceFrame,
-  });
+  const ruleState = runMultiPassInference(
+    config,
+    datasetScope,
+    entities,
+    base.relations,
+    {
+      maxPasses: modeSettings.passCount,
+      confidenceFrame,
+    },
+  );
   const allEvidences = [...base.evidences, ...ruleState.evidences];
   const evidenceIndex = createEvidenceIndex(allEvidences);
-  const contextLenses = summarizeLenses(config, ruleState.lensBuckets, options.presetId || config.defaults?.active_preset || "analyst");
+  const contextLenses = summarizeLenses(
+    config,
+    ruleState.lensBuckets,
+    options.presetId || config.defaults?.active_preset || "analyst",
+  );
 
   const relations = base.relations.map((relation) => {
-    const sourceLens = Object.entries(ruleState.entityLensScores[relation.source] || {}).sort((a, b) => b[1] - a[1])[0]?.[0];
-    const targetLens = Object.entries(ruleState.entityLensScores[relation.target] || {}).sort((a, b) => b[1] - a[1])[0]?.[0];
+    const sourceLens = Object.entries(
+      ruleState.entityLensScores[relation.source] || {},
+    ).sort((a, b) => b[1] - a[1])[0]?.[0];
+    const targetLens = Object.entries(
+      ruleState.entityLensScores[relation.target] || {},
+    ).sort((a, b) => b[1] - a[1])[0]?.[0];
     if (sourceLens && targetLens && sourceLens !== targetLens) {
       relation.tags ||= [];
       relation.tags.push("cross-domain-bridge");
@@ -131,41 +199,29 @@ export function runContextPipeline(rawData, fileType, config, options = {}) {
   });
 
   const viewPreferences = ruleState.viewPreferences;
-  const clusterBy = profile.flags.has_space_dimension ? "space" : profile.flags.has_time_dimension ? "time" : "domain";
+  const clusterBy = profile.flags.has_space_dimension
+    ? "space"
+    : profile.flags.has_time_dimension
+      ? "time"
+      : "domain";
 
   // Confidence calibration & gap detection
-  detectGaps(confidenceFrame, { entities, relations, evidences: allEvidences, profile });
+  detectGaps(confidenceFrame, {
+    entities,
+    relations,
+    evidences: allEvidences,
+    profile,
+  });
   const confidenceReport = summarizeConfidence(confidenceFrame);
 
   // Phase 4A: Insight compression — find invariant patterns ranked by density
-  const invariantPatterns = findInvariantPatterns(allEvidences, entities, relations, contextLenses);
+  const invariantPatterns = findInvariantPatterns(
+    allEvidences,
+    entities,
+    relations,
+    contextLenses,
+  );
   const rankedPatterns = rankByDensity(invariantPatterns);
-
-  // Phase 4B: Grounding — local-first verification of top patterns
-  let groundedInsights = rankedPatterns;
-  if (modeSettings.groundingRecommended || options.grounding) {
-    const groundingMode = options.groundingMode || "local";
-    const provider = selectGroundingProvider(groundingMode, options);
-    groundedInsights = applyGrounding(provider, rankedPatterns.map((p) => ({
-      compressed: p.pattern,
-      original: p.pattern,
-      densityScore: p.densityScore,
-      supportingEvidence: [],
-      entityId: null,
-    })), {
-      entities,
-      relations,
-      evidences: allEvidences,
-      inferenceGaps: confidenceFrame.gaps,
-    });
-
-    // Wire grounding results back as outcomes for calibration
-    for (const insight of groundedInsights) {
-      if (insight.grounding) {
-        recordOutcome(confidenceFrame, "grounding", insight.grounding.confirmed);
-      }
-    }
-  }
 
   return {
     records,
@@ -191,9 +247,52 @@ export function runContextPipeline(rawData, fileType, config, options = {}) {
     inferenceGaps: confidenceFrame.gaps,
     complexity,
     modeSettings,
-    invariantPatterns: rankedPatterns,
-    groundedInsights,
+    rankedPatterns,
+    confidenceFrame,
   };
+}
+
+export function runContextPipeline(rawData, fileType, config, options = {}) {
+  const state = buildPipelineState(rawData, fileType, config, options);
+  if (!state) return null;
+
+  let groundedInsights = state.rankedPatterns;
+  if (state.modeSettings.groundingRecommended || options.grounding) {
+    const groundingMode = options.groundingMode || "local";
+    const provider = selectGroundingProvider(groundingMode, options);
+    groundedInsights = applyGrounding(
+      provider,
+      buildGroundingInputs(state.rankedPatterns),
+      buildGroundingContext(state),
+    );
+    recordGroundingResults(state.confidenceFrame, groundedInsights);
+  }
+
+  return buildPipelineOutput(state, groundedInsights);
+}
+
+export async function runContextPipelineAsync(
+  rawData,
+  fileType,
+  config,
+  options = {},
+) {
+  const state = buildPipelineState(rawData, fileType, config, options);
+  if (!state) return null;
+
+  let groundedInsights = state.rankedPatterns;
+  if (state.modeSettings.groundingRecommended || options.grounding) {
+    const groundingMode = options.groundingMode || "local";
+    const provider = selectGroundingProvider(groundingMode, options);
+    groundedInsights = await applyGroundingAsync(
+      provider,
+      buildGroundingInputs(state.rankedPatterns),
+      buildGroundingContext(state),
+    );
+    recordGroundingResults(state.confidenceFrame, groundedInsights);
+  }
+
+  return buildPipelineOutput(state, groundedInsights);
 }
 
 // Re-export for convenience
@@ -202,4 +301,3 @@ export { buildDataProfile } from "../analysis/profiling.js";
 export { getFunctionRegistryInventory } from "../functions/functions.js";
 export { validateConfigWithRegistry } from "../functions/rules.js";
 export { normalizeRecords, parseCSV } from "../utils/parsing.js";
-

@@ -23,9 +23,21 @@ const MOCK_SESSION: WorkflowRun = {
   elapsedMs: 5400000,
 };
 
+export function parseFocusStatusResponse(payload: unknown): WorkflowRun | null {
+  if (!payload || typeof payload !== "object" || !("session" in payload)) {
+    throw new Error("Unexpected focus status payload");
+  }
+
+  return (payload as { session: WorkflowRun | null }).session;
+}
+
 export function useFocusSession(): UseFocusSessionResult {
-  // TODO(D4): Replace `mock` with `fetcher` calling pulse-server
   const { data: session, loading, error, retry } = useDataSource<WorkflowRun | null>({
+    fetcher: async (signal) => {
+      const res = await fetch("/api/focus/session", { signal });
+      if (!res.ok) throw new Error(`Focus fetch failed (${res.status})`);
+      return parseFocusStatusResponse(await res.json());
+    },
     mock: MOCK_SESSION,
   });
 

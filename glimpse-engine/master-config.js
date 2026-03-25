@@ -1,4 +1,4 @@
-import { load as parseYaml, dump as dumpYaml } from "../glimpse-artifact/node_modules/js-yaml/dist/js-yaml.mjs";
+import { load as parseYaml, dump as dumpYaml } from "js-yaml";
 import { DEFAULT_MASTER_YAML } from "./default-master.js";
 
 function clone(value) {

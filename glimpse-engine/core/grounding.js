@@ -11,8 +11,6 @@
  * 3. WebGroundingProvider — external search (injected, low weight)
  */
 
-import { createEvidence } from "../analysis/relations.js";
-
 /**
  * Base grounding provider.
  */
@@ -32,7 +30,12 @@ export class GroundingProvider {
  */
 export class LocalGroundingProvider extends GroundingProvider {
   getCapabilities() {
-    return ["entity-cross-ref", "relation-validation", "pattern-corroboration", "gap-filling"];
+    return [
+      "entity-cross-ref",
+      "relation-validation",
+      "pattern-corroboration",
+      "gap-filling",
+    ];
   }
 
   /**
@@ -55,24 +58,30 @@ export class LocalGroundingProvider extends GroundingProvider {
 
     // Strategy 2: Check if the claim fills a known inference gap
     const fillsGap = (inferenceGaps || []).some((gap) =>
-      (gap.affectedIds || []).includes(claim.entityId)
+      (gap.affectedIds || []).includes(claim.entityId),
     );
 
     // Strategy 3: Cross-reference with relation topology
     const entityRelations = claim.entityId
       ? relations.filter(
-          (r) => r.source === claim.entityId || r.target === claim.entityId
+          (r) => r.source === claim.entityId || r.target === claim.entityId,
         )
       : [];
     const wellConnected = entityRelations.length >= 2;
 
     // Detect contradictions: evidence with conflicting relation types
     const contradictions = (claim.evidenceIds || [])
-        .map((id) => context.evidences.find((e) => e.id === id))
-        .filter(Boolean)
-        .filter((e) => e.payload?.relationType &&
-            supportingEvidence.some((se) => se.payload?.relationType &&
-                se.payload.relationType !== e.payload.relationType));
+      .map((id) => context.evidences.find((e) => e.id === id))
+      .filter(Boolean)
+      .filter(
+        (e) =>
+          e.payload?.relationType &&
+          supportingEvidence.some(
+            (se) =>
+              se.payload?.relationType &&
+              se.payload.relationType !== e.payload.relationType,
+          ),
+      );
 
     // Compute grounding confidence
     let confidence = 0.3; // base
@@ -80,33 +89,38 @@ export class LocalGroundingProvider extends GroundingProvider {
 
     // When NO supporting evidence AND NO entity relations → cap at 0.25
     if (supportingEvidence.length === 0 && entityRelations.length === 0) {
-        confidence = 0.25;
-        basis = "no-evidence";
+      confidence = 0.25;
+      basis = "no-evidence";
     } else {
-        if (multiSourced) {
-            confidence += 0.25;
-            basis = "multi-source-agreement";
-        }
-        if (wellConnected) {
-            confidence += 0.15;
-            basis = multiSourced ? "multi-source+connected" : "topology-connected";
-        }
-        if (fillsGap) {
-            confidence += 0.1;
-            basis += "+gap-filling";
-        }
+      if (multiSourced) {
+        confidence += 0.25;
+        basis = "multi-source-agreement";
+      }
+      if (wellConnected) {
+        confidence += 0.15;
+        basis = multiSourced ? "multi-source+connected" : "topology-connected";
+      }
+      if (fillsGap) {
+        confidence += 0.1;
+        basis += "+gap-filling";
+      }
 
-        // Contradiction penalty
-        if (contradictions.length > 0) {
-            confidence -= 0.15 * contradictions.length;
-            basis += "+contradictions";
-        }
+      // Contradiction penalty
+      if (contradictions.length > 0) {
+        confidence -= 0.15 * contradictions.length;
+        basis += "+contradictions";
+      }
     }
 
-    const avgEvConfidence = supportingEvidence.length > 0
-        ? supportingEvidence.reduce((s, e) => s + e.confidence, 0) / supportingEvidence.length
+    const avgEvConfidence =
+      supportingEvidence.length > 0
+        ? supportingEvidence.reduce((s, e) => s + e.confidence, 0) /
+          supportingEvidence.length
         : 0;
-    confidence = Math.max(0, Math.min(0.95, confidence + avgEvConfidence * 0.2));
+    confidence = Math.max(
+      0,
+      Math.min(0.95, confidence + avgEvConfidence * 0.2),
+    );
 
     return {
       confirmed: confidence >= 0.5,
@@ -135,7 +149,7 @@ export class ContextWindowGroundingProvider extends GroundingProvider {
     // Check session memory for corroboration
     const claimText = (claim.text || "").toLowerCase();
     const memoryHits = this.sessionMemory.filter((entry) =>
-      (entry.text || "").toLowerCase().includes(claimText.slice(0, 20))
+      (entry.text || "").toLowerCase().includes(claimText.slice(0, 20)),
     );
 
     const base = new LocalGroundingProvider().verify(claim, context);
@@ -198,6 +212,36 @@ function buildSearchQuery(claim) {
   return parts.join(" ").trim().slice(0, 100);
 }
 
+function isPromiseLike(value) {
+  return value != null && typeof value.then === "function";
+}
+
+function buildClaim(insight) {
+  return {
+    text: insight.compressed || insight.original || "",
+    type: "insight",
+    entityId: insight.entityId || null,
+    evidenceIds: insight.supportingEvidence || [],
+  };
+}
+
+function buildGroundedInsight(insight, result) {
+  return {
+    ...insight,
+    grounding: {
+      confirmed: result.confirmed,
+      confidence: result.confidence,
+      basis: result.basis,
+      details: result.details,
+    },
+    // Adjust insight confidence based on grounding
+    adjustedConfidence:
+      Math.round(
+        ((insight.densityScore || 0.5) * 0.7 + result.confidence * 0.3) * 1000,
+      ) / 1000,
+  };
+}
+
 /**
  * Select the appropriate grounding provider.
  *
@@ -225,27 +269,29 @@ export function selectGroundingProvider(mode, config) {
  */
 export function applyGrounding(provider, insights, context) {
   return insights.map((insight) => {
-    const claim = {
-      text: insight.compressed || insight.original || "",
-      type: "insight",
-      entityId: insight.entityId || null,
-      evidenceIds: insight.supportingEvidence || [],
-    };
-
-    const result = provider.verify(claim, context);
-
-    return {
-      ...insight,
-      grounding: {
-        confirmed: result.confirmed,
-        confidence: result.confidence,
-        basis: result.basis,
-        details: result.details,
-      },
-      // Adjust insight confidence based on grounding
-      adjustedConfidence: Math.round(
-        ((insight.densityScore || 0.5) * 0.7 + result.confidence * 0.3) * 1000
-      ) / 1000,
-    };
+    const result = provider.verify(buildClaim(insight), context);
+    if (isPromiseLike(result)) {
+      throw new Error(
+        "applyGrounding received an async grounding provider; use applyGroundingAsync instead.",
+      );
+    }
+    return buildGroundedInsight(insight, result);
   });
+}
+
+/**
+ * Apply grounding with support for async providers.
+ *
+ * @param {GroundingProvider} provider
+ * @param {Array} insights - Compressed insights from compression.js
+ * @param {object} context - Pipeline context
+ * @returns {Promise<Array>} Insights with grounding results attached
+ */
+export async function applyGroundingAsync(provider, insights, context) {
+  return Promise.all(
+    insights.map(async (insight) => {
+      const result = await provider.verify(buildClaim(insight), context);
+      return buildGroundedInsight(insight, result);
+    }),
+  );
 }
