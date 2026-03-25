@@ -1,12 +1,15 @@
-import { appendFileSync, mkdirSync } from "fs";
-import { resolve, dirname } from "path";
+import { randomBytes } from "crypto";
+import { existsSync, mkdirSync, renameSync, unlinkSync, writeFileSync } from "fs";
 import { homedir } from "os";
+import { dirname, resolve } from "path";
 import type { AuditEvent } from "./audit.js";
 
 const ECHOES_AUDIT_PATH = process.env.ECHOES_AUDIT_PATH
   || resolve(homedir(), ".echoes", "audit.ndjson");
 
 let dirEnsured = false;
+let writeQueue: Array<{ event: string; resolve: (value: boolean) => void }> = [];
+let isWriting = false;
 
 /**
  * Recursively sanitize values to prevent NDJSON injection.
@@ -30,24 +33,97 @@ function sanitizeForNdjson(value: unknown): unknown {
   return value;
 }
 
-export function emitAudit(event: Omit<AuditEvent, "timestamp">): void {
-  if (!dirEnsured) {
-    mkdirSync(dirname(ECHOES_AUDIT_PATH), { recursive: true });
-    dirEnsured = true;
-  }
+async function processWriteQueue(): Promise<void> {
+  if (isWriting || writeQueue.length === 0) return;
 
-  const record: AuditEvent = {
-    ...event,
-    metadata: event.metadata
-      ? sanitizeForNdjson(event.metadata) as Record<string, unknown>
-      : undefined,
-    timestamp: new Date().toISOString(),
-  };
+  isWriting = true;
+  const { event, resolve } = writeQueue.shift()!;
+
+  const lockFile = `${ECHOES_AUDIT_PATH}.lock`;
+  const tempFile = `${ECHOES_AUDIT_PATH}.tmp.${randomBytes(4).toString('hex')}`;
+
   try {
-    appendFileSync(ECHOES_AUDIT_PATH, JSON.stringify(record) + "\n");
+    // Attempt to acquire lock with exponential backoff
+    let retries = 0;
+    const maxRetries = 50;
+
+    while (existsSync(lockFile) && retries < maxRetries) {
+      await new Promise(r => setTimeout(r, Math.min(100 * Math.pow(1.1, retries), 1000)));
+      retries++;
+    }
+
+    if (existsSync(lockFile)) {
+      // Lock timeout - skip this write to prevent blocking
+      resolve(false);
+      isWriting = false;
+      processWriteQueue();
+      return;
+    }
+
+    // Create lock
+    writeFileSync(lockFile, process.pid.toString());
+
+    // Write to temp file then atomic rename
+    writeFileSync(tempFile, event, { flag: 'a' });
+    renameSync(tempFile, ECHOES_AUDIT_PATH);
+
+    // Release lock
+    try {
+      unlinkSync(lockFile);
+    } catch {
+      // Lock may have been cleaned up by another process
+    }
+
+    resolve(true);
   } catch (err) {
+    // Cleanup on error
+    try {
+      if (existsSync(tempFile)) unlinkSync(tempFile);
+      if (existsSync(lockFile)) unlinkSync(lockFile);
+    } catch {
+      // Ignore cleanup errors
+    }
+
     process.stderr.write(
       `[audit-client] write failed: ${err instanceof Error ? err.message : String(err)}\n`
     );
+    resolve(false);
+  } finally {
+    isWriting = false;
+    // Process next item in queue
+    setImmediate(processWriteQueue);
   }
+}
+
+export function emitAudit(event: Omit<AuditEvent, "timestamp">): Promise<boolean> {
+  return new Promise((resolve) => {
+    if (!dirEnsured) {
+      try {
+        mkdirSync(dirname(ECHOES_AUDIT_PATH), { recursive: true });
+        dirEnsured = true;
+      } catch (err) {
+        process.stderr.write(
+          `[audit-client] mkdir failed: ${err instanceof Error ? err.message : String(err)}\n`
+        );
+        resolve(false);
+        return;
+      }
+    }
+
+    const record: AuditEvent = {
+      ...event,
+      metadata: event.metadata
+        ? sanitizeForNdjson(event.metadata) as Record<string, unknown>
+        : undefined,
+      timestamp: new Date().toISOString(),
+    };
+
+    const eventString = JSON.stringify(record) + "\n";
+
+    // Add to write queue
+    writeQueue.push({ event: eventString, resolve });
+
+    // Trigger queue processing
+    processWriteQueue();
+  });
 }
