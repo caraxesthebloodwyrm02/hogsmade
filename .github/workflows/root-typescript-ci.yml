@@ -166,10 +166,16 @@ jobs:
         with:
           node-version: '22'
           cache: npm
-          cache-dependency-path: glimpse-artifact/package-lock.json
+          cache-dependency-path: |
+            glimpse-artifact/package-lock.json
+            glimpse-engine/package-lock.json
 
-      - name: Install glimpse-artifact deps (provides js-yaml for glimpse-engine)
+      - name: Install glimpse-artifact deps
         working-directory: glimpse-artifact
+        run: npm ci
+
+      - name: Install glimpse-engine deps
+        working-directory: glimpse-engine
         run: npm ci
 
       - name: Run root Glimpse tests
