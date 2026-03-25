@@ -1,7 +1,6 @@
-import { appendFileSync, mkdirSync, existsSync, writeFileSync, renameSync, unlinkSync } from "fs";
-import { dirname, resolve } from "path";
+import { appendFileSync, existsSync, mkdirSync, unlinkSync, writeFileSync } from "fs";
 import { homedir } from "os";
-import { randomBytes } from "crypto";
+import { dirname, resolve } from "path";
 import type { AuditEvent } from "./audit.js";
 
 const ECHOES_AUDIT_PATH = process.env.ECHOES_AUDIT_PATH
@@ -35,22 +34,22 @@ function sanitizeForNdjson(value: unknown): unknown {
 
 async function processWriteQueue(): Promise<void> {
   if (isWriting || writeQueue.length === 0) return;
-  
+
   isWriting = true;
   const { event, resolve } = writeQueue.shift()!;
-  
+
   const lockFile = `${ECHOES_AUDIT_PATH}.lock`;
-  
+
   try {
     // Simple lock mechanism with timeout
     let retries = 0;
     const maxRetries = 10;
-    
+
     while (existsSync(lockFile) && retries < maxRetries) {
       await new Promise(r => setTimeout(r, 50)); // 50ms wait
       retries++;
     }
-    
+
     if (existsSync(lockFile)) {
       // Lock timeout - skip this write
       resolve(false);
@@ -58,20 +57,20 @@ async function processWriteQueue(): Promise<void> {
       setTimeout(processWriteQueue, 0);
       return;
     }
-    
+
     // Create lock
     writeFileSync(lockFile, process.pid.toString());
-    
+
     // Simple append with proper newline
     appendFileSync(ECHOES_AUDIT_PATH, event);
-    
+
     // Release lock
     try {
       unlinkSync(lockFile);
     } catch {
       // Lock may have been cleaned up
     }
-    
+
     resolve(true);
   } catch (err) {
     // Cleanup on error
@@ -80,7 +79,7 @@ async function processWriteQueue(): Promise<void> {
     } catch {
       // Ignore cleanup errors
     }
-    
+
     process.stderr.write(
       `[audit-client] write failed: ${err instanceof Error ? err.message : String(err)}\n`
     );
@@ -116,10 +115,10 @@ export function emitAudit(event: Omit<AuditEvent, "timestamp">): Promise<boolean
     };
 
     const eventString = JSON.stringify(record) + "\n";
-    
+
     // Add to write queue
     writeQueue.push({ event: eventString, resolve });
-    
+
     // Trigger queue processing
     processWriteQueue();
   });
