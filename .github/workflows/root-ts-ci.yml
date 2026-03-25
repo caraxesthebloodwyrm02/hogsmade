@@ -5,6 +5,8 @@ on:
     branches: ["**"]
     paths:
       - "shared-types/**"
+      - "shared-pipeline/**"
+      - "eligibility-server/**"
       - "afloat-server/**"
       - "echoes-server/**"
       - "grid-server/**"
@@ -26,6 +28,8 @@ on:
   pull_request:
     paths:
       - "shared-types/**"
+      - "shared-pipeline/**"
+      - "eligibility-server/**"
       - "afloat-server/**"
       - "echoes-server/**"
       - "grid-server/**"
@@ -67,6 +71,8 @@ jobs:
           cache: "npm"
           cache-dependency-path: |
             shared-types/package-lock.json
+            shared-pipeline/package-lock.json
+            eligibility-server/package-lock.json
             afloat-server/package-lock.json
             echoes-server/package-lock.json
             grid-server/package-lock.json

@@ -28,6 +28,8 @@ run_npm_package() {
 
 run_npm_package "shared-types" "npm run build"
 run_npm_package "shared-resilience" "npm run build"
+run_npm_package "shared-pipeline" "npm run build"
+run_npm_package "eligibility-server" "npm run build" "npm test"
 
 for dir in \
   "afloat-server" \
