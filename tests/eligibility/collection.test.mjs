@@ -1,10 +1,10 @@
-import test from "node:test";
 import assert from "node:assert/strict";
+import test from "node:test";
 
 import {
   evaluateRoutine,
   getFixtureCandidateById,
-} from "../../eligibility-server/dist/index.js";
+} from "../../eligibility-server/src/index.js";
 
 test("collection table retains provenance credit and formula-ready columns", () => {
   const result = evaluateRoutine(
