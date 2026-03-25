@@ -51,11 +51,10 @@ This file provides guidance to Claude when working with code in this repository.
 | GRID×APIGuard integration      | Complete          | T2 Strong      |
 | glimpse-artifact               | Complete          | T3 Supporting  |
 | symphony-execution-performance | Active            | T3 Supporting  |
-| mcp-tool-experiment            | Pre-alpha         | T3 Supporting  |
 
 ### Preferences
 
-- Package managers: `uv` for Python (GRID-main), `pnpm` for mcp-tool-experiment, `npm` elsewhere
+- Package managers: `uv` for Python (GRID-main), `npm` elsewhere
 - Shell: bash on Arch Linux — standard `&&` chaining
 - Tests: always run full suite before commit, 0 regressions target
 - Commits: conventional (`feat(scope):`, `fix(scope):`, `refactor(scope):`)
@@ -71,7 +70,6 @@ This is a multi-project workspace. Each subdirectory is an independent project w
 | Project                               | Type                                                                                                   | Language / Stack                             | Status                         |
 | ------------------------------------- | ------------------------------------------------------------------------------------------------------ | -------------------------------------------- | ------------------------------ |
 | `GRID-main/`                          | Full-stack AI framework                                                                                | Python 3.13+, FastAPI, ChromaDB, Ollama      | Production (v2.7.0)            |
-| `mcp-tool-experiment/typescript-sdk/` | MCP TypeScript SDK v2                                                                                  | TypeScript 5.2, pnpm, Vitest, Zod v4         | Pre-alpha                      |
 | `glimpse-artifact/`                   | React component library                                                                                | React 18, TypeScript, Vite, TailwindCSS      | Complete                       |
 | `afloat-server/`                      | Workflow orchestration MCP server                                                                      | TypeScript, MCP SDK                          | Working                        |
 | `shared-types/`                       | Shared types and audit client                                                                          | TypeScript                                   | Build before dependent servers |
@@ -103,27 +101,6 @@ uv run python -m application.mothership.main  # API server (port 8080)
 - Local-first: use Ollama/ChromaDB, not external AI APIs, unless explicitly asked
 - Architecture: `Application → Service → Database → Core` (strict one-way deps)
 - Safety modules (`safety/`, `security/`, `boundaries/`) have strict rules — read `GRID-main/.claude/rules/safety.md` before touching them
-
-### mcp-tool-experiment/typescript-sdk
-
-Full CLAUDE.md lives at `mcp-tool-experiment/typescript-sdk/CLAUDE.md`.
-
-**Package manager**: `pnpm` (workspace monorepo).
-
-```bash
-cd mcp-tool-experiment/typescript-sdk
-pnpm install
-pnpm build:all
-pnpm test:all
-pnpm --filter @modelcontextprotocol/core test         # single package
-pnpm --filter @modelcontextprotocol/core test -- -t "test name"  # single test
-pnpm lint:fix:all
-pnpm sync:snippets   # sync JSDoc @example blocks from .examples.ts files
-```
-
-- JSDoc examples live in companion `.examples.ts` files, not inline
-- Middleware packages (`express`, `hono`, `node`) are thin adapters — don't add MCP logic there
-- Breaking changes go in both `docs/migration.md` and `docs/migration-SKILL.md`
 
 ### glimpse-artifact
 
