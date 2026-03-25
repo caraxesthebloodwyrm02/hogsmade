@@ -43,5 +43,11 @@ export function emitAudit(event: Omit<AuditEvent, "timestamp">): void {
       : undefined,
     timestamp: new Date().toISOString(),
   };
-  appendFileSync(ECHOES_AUDIT_PATH, JSON.stringify(record) + "\n");
+  try {
+    appendFileSync(ECHOES_AUDIT_PATH, JSON.stringify(record) + "\n");
+  } catch (err) {
+    process.stderr.write(
+      `[audit-client] write failed: ${err instanceof Error ? err.message : String(err)}\n`
+    );
+  }
 }
