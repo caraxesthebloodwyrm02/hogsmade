@@ -14,7 +14,19 @@
 import type { Plugin } from "vite";
 import { readFile, stat, readdir } from "node:fs/promises";
 import { execFile } from "node:child_process";
+import type { IncomingMessage } from "node:http";
 import path from "node:path";
+import {
+    advanceCycleHandler,
+    evaluatePromotionGateHandler,
+    getCycleSnapshotHandler,
+    listActiveCyclesHandler,
+    openEvolutionCaseHandler,
+    recordCycleSignalHandler,
+    recordHandoffHandler,
+    upsertEndpointSpecHandler,
+} from "../../eligibility-server/dist/index.js";
+import { runContextSearch, runContextSearchWorkflow, type ContextSearchRequest } from "./context-search";
 
 // ── Config ──────────────────────────────────────────────────────────
 
@@ -557,6 +569,17 @@ function jsonResponse(res: import("http").ServerResponse, data: unknown, status 
     res.end(JSON.stringify(data));
 }
 
+async function readJsonBody<T>(req: IncomingMessage): Promise<T> {
+    const chunks: Uint8Array[] = [];
+    for await (const chunk of req) {
+        chunks.push(typeof chunk === "string" ? Buffer.from(chunk) : chunk);
+    }
+
+    const raw = Buffer.concat(chunks).toString("utf8").trim();
+    if (!raw) throw new Error("Request body is required");
+    return JSON.parse(raw) as T;
+}
+
 export function glimpseApiPlugin(): Plugin {
     return {
         name: "glimpse-api",
@@ -619,6 +642,211 @@ export function glimpseApiPlugin(): Plugin {
                     fetchCognitionData()
                         .then((data) => jsonResponse(res, data))
                         .catch(() => jsonResponse(res, { error: "Failed to fetch cognition data" }, 500));
+                    return;
+                }
+
+                if (url.pathname === "/api/context-search/keywords" && req.method === "POST") {
+                    readJsonBody<ContextSearchRequest>(req)
+                        .then((body) => runContextSearchWorkflow({ ...body, stage: "keywords", printJson: false }, CASCADE_ROOT))
+                        .then((result) => jsonResponse(res, {
+                            definition: result.definition,
+                            observation: result.observation,
+                            prints: result.prints,
+                            keywords: result.keywords,
+                            summary: result.summary,
+                        }))
+                        .catch((error: unknown) => {
+                            const message = error instanceof Error ? error.message : "Failed to synthesize keywords";
+                            jsonResponse(res, { error: message }, 400);
+                        });
+                    return;
+                }
+
+                if (url.pathname === "/api/context-search/query" && req.method === "POST") {
+                    readJsonBody<ContextSearchRequest>(req)
+                        .then((body) => runContextSearchWorkflow({ ...body, stage: "query", printJson: false }, CASCADE_ROOT))
+                        .then((result) => jsonResponse(res, {
+                            definition: result.definition,
+                            observation: result.observation,
+                            prints: result.prints,
+                            keywords: result.keywords,
+                            hits: result.hits,
+                            graph: result.graph,
+                            clusters: result.clusters,
+                            heatmap: result.heatmap,
+                            summary: result.summary,
+                        }))
+                        .catch((error: unknown) => {
+                            const message = error instanceof Error ? error.message : "Failed to query context search";
+                            jsonResponse(res, { error: message }, 400);
+                        });
+                    return;
+                }
+
+                if (url.pathname === "/api/context-search/interview" && req.method === "POST") {
+                    readJsonBody<ContextSearchRequest>(req)
+                        .then((body) => runContextSearch(body, CASCADE_ROOT))
+                        .then((result) => jsonResponse(res, result))
+                        .catch((error: unknown) => {
+                            const message = error instanceof Error ? error.message : "Failed to build interview artifacts";
+                            jsonResponse(res, { error: message }, 400);
+                        });
+                    return;
+                }
+
+                if (url.pathname === "/api/evolution/cases" && req.method === "GET") {
+                    try {
+                        jsonResponse(res, listActiveCyclesHandler());
+                    } catch (error: unknown) {
+                        const message = error instanceof Error ? error.message : "Failed to list evolution cases";
+                        jsonResponse(res, { error: message }, 500);
+                    }
+                    return;
+                }
+
+                if (url.pathname === "/api/evolution/open" && req.method === "POST") {
+                    readJsonBody<{
+                        candidate?: unknown;
+                        fixtureId?: string;
+                        fixtureIds?: string[];
+                        args?: Record<string, unknown>;
+                        caseId?: string;
+                        label?: string;
+                        owner?: string;
+                    }>(req)
+                        .then((body) => openEvolutionCaseHandler(body))
+                        .then((payload) => jsonResponse(res, payload))
+                        .catch((error: unknown) => {
+                            const message = error instanceof Error ? error.message : "Failed to open evolution case";
+                            jsonResponse(res, { error: message }, 400);
+                        });
+                    return;
+                }
+
+                const cycleSnapshotMatch = url.pathname.match(/^\/api\/evolution\/cases\/([^/]+)$/);
+                if (cycleSnapshotMatch && req.method === "GET") {
+                    try {
+                        const caseId = decodeURIComponent(cycleSnapshotMatch[1] ?? "");
+                        jsonResponse(res, getCycleSnapshotHandler({ caseId }));
+                    } catch (error: unknown) {
+                        const message = error instanceof Error ? error.message : "Failed to load evolution snapshot";
+                        jsonResponse(res, { error: message }, 404);
+                    }
+                    return;
+                }
+
+                const cycleSignalMatch = url.pathname.match(/^\/api\/evolution\/cases\/([^/]+)\/signal$/);
+                if (cycleSignalMatch && req.method === "POST") {
+                    readJsonBody<{ type: string; note?: string; weight?: number; source?: string }>(req)
+                        .then((body) => recordCycleSignalHandler({
+                            caseId: decodeURIComponent(cycleSignalMatch[1] ?? ""),
+                            type: body.type as Parameters<typeof recordCycleSignalHandler>[0]["type"],
+                            note: body.note,
+                            weight: body.weight,
+                            source: body.source,
+                        }))
+                        .then((payload) => jsonResponse(res, payload))
+                        .catch((error: unknown) => {
+                            const message = error instanceof Error ? error.message : "Failed to record evolution signal";
+                            jsonResponse(res, { error: message }, 400);
+                        });
+                    return;
+                }
+
+                const cycleHandoffMatch = url.pathname.match(/^\/api\/evolution\/cases\/([^/]+)\/handoff$/);
+                if (cycleHandoffMatch && req.method === "POST") {
+                    readJsonBody<{ from: string; to: string; status: "submitted" | "accepted" | "rejected"; summary: string }>(req)
+                        .then((body) => recordHandoffHandler({
+                            caseId: decodeURIComponent(cycleHandoffMatch[1] ?? ""),
+                            from: body.from,
+                            to: body.to,
+                            status: body.status,
+                            summary: body.summary,
+                        }))
+                        .then((payload) => jsonResponse(res, payload))
+                        .catch((error: unknown) => {
+                            const message = error instanceof Error ? error.message : "Failed to record handoff";
+                            jsonResponse(res, { error: message }, 400);
+                        });
+                    return;
+                }
+
+                const cycleEndpointMatch = url.pathname.match(/^\/api\/evolution\/cases\/([^/]+)\/endpoint$/);
+                if (cycleEndpointMatch && req.method === "POST") {
+                    readJsonBody<{
+                        endpointId: string;
+                        label: string;
+                        owner?: string;
+                        contract?: string;
+                        status: "draft" | "ready" | "blocked" | "verified";
+                        required?: boolean;
+                        readiness?: number;
+                        notes?: string;
+                    }>(req)
+                        .then((body) => upsertEndpointSpecHandler({
+                            caseId: decodeURIComponent(cycleEndpointMatch[1] ?? ""),
+                            endpointId: body.endpointId,
+                            label: body.label,
+                            owner: body.owner,
+                            contract: body.contract,
+                            status: body.status,
+                            required: body.required,
+                            readiness: body.readiness,
+                            notes: body.notes,
+                        }))
+                        .then((payload) => jsonResponse(res, payload))
+                        .catch((error: unknown) => {
+                            const message = error instanceof Error ? error.message : "Failed to upsert endpoint spec";
+                            jsonResponse(res, { error: message }, 400);
+                        });
+                    return;
+                }
+
+                const cycleAdvanceMatch = url.pathname.match(/^\/api\/evolution\/cases\/([^/]+)\/advance$/);
+                if (cycleAdvanceMatch && req.method === "POST") {
+                    readJsonBody<{ direction?: "forward" | "return"; reason?: string }>(req)
+                        .then((body) => advanceCycleHandler({
+                            caseId: decodeURIComponent(cycleAdvanceMatch[1] ?? ""),
+                            direction: body.direction,
+                            reason: body.reason,
+                        }))
+                        .then((payload) => jsonResponse(res, payload))
+                        .catch((error: unknown) => {
+                            const message = error instanceof Error ? error.message : "Failed to advance evolution cycle";
+                            jsonResponse(res, { error: message }, 400);
+                        });
+                    return;
+                }
+
+                const shaderDataMatch = url.pathname.match(/^\/api\/evolution\/cases\/([^/]+)\/shader-data$/);
+                if (shaderDataMatch && req.method === "GET") {
+                    try {
+                        const caseId = decodeURIComponent(shaderDataMatch[1] ?? "");
+                        const snapshot = getCycleSnapshotHandler({ caseId });
+                        const caseRecord = (snapshot as { snapshot?: { caseRecord?: { latestPromotionDecision?: unknown; momentum?: unknown } } }).snapshot?.caseRecord;
+                        jsonResponse(res, {
+                            snapshot: (snapshot as { snapshot?: unknown }).snapshot,
+                            promotionGate: caseRecord?.latestPromotionDecision ?? null,
+                            momentum: caseRecord?.momentum ?? null,
+                        });
+                    } catch (error: unknown) {
+                        const message = error instanceof Error ? error.message : "Failed to load shader data";
+                        jsonResponse(res, { error: message }, 404);
+                    }
+                    return;
+                }
+
+                const cyclePromotionMatch = url.pathname.match(/^\/api\/evolution\/cases\/([^/]+)\/promotion$/);
+                if (cyclePromotionMatch && req.method === "POST") {
+                    try {
+                        const payload = evaluatePromotionGateHandler({
+                            caseId: decodeURIComponent(cyclePromotionMatch[1] ?? ""),
+                        });
+                        jsonResponse(res, payload);
+                    } catch (error: unknown) {
+                        const message = error instanceof Error ? error.message : "Failed to evaluate promotion gate";
+                        jsonResponse(res, { error: message }, 400);
+                    }
                     return;
                 }
 

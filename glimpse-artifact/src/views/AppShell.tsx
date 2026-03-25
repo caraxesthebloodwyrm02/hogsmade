@@ -2,13 +2,16 @@ import { cn } from '@/lib/utils';
 import { useCallback, useEffect, useState } from 'react';
 import { AuditStreamView } from './AuditStreamView';
 import { CognitionView } from './CognitionView';
+import { ContextSearchView } from './ContextSearchView';
 import { DashboardView } from './DashboardView';
+import { EvolutionCycleView } from './EvolutionCycleView';
 import { GateView } from './GateView';
 import { PipelineView } from './PipelineView';
 import { ScenarioCanvasView } from './ScenarioCanvasView';
 import { TopologyView } from './TopologyView';
+import { EligibilityShaderViewPage } from './EligibilityShaderViewPage';
 
-type View = 'dashboard' | 'canvas' | 'gate' | 'audit' | 'topology' | 'cognition' | 'pipeline';
+type View = 'dashboard' | 'canvas' | 'gate' | 'audit' | 'topology' | 'cognition' | 'pipeline' | 'context' | 'evolution' | 'shader';
 
 const VIEWS: { id: View; label: string; description: string }[] = [
   { id: 'canvas', label: 'Canvas', description: 'Scenario exploration' },
@@ -16,12 +19,15 @@ const VIEWS: { id: View; label: string; description: string }[] = [
   { id: 'gate', label: 'GATE', description: 'Deployment pipeline' },
   { id: 'audit', label: 'Audit', description: 'Live event stream' },
   { id: 'topology', label: 'Topology', description: 'MCP graph & health' },
+  { id: 'context', label: 'Context', description: 'Keyword search & interview' },
+  { id: 'evolution', label: 'Evolution', description: 'Eligibility promotion control room' },
   { id: 'cognition', label: 'Cognition', description: 'Pattern radar & GATE flow' },
   { id: 'pipeline', label: 'Pipeline', description: 'CI/CD kanban' },
+  { id: 'shader', label: 'Shader', description: 'GPU eligibility pipeline' },
 ];
 
 const VALID_VIEWS = new Set<View>([
-  'dashboard', 'canvas', 'gate', 'audit', 'topology', 'cognition', 'pipeline',
+  'dashboard', 'canvas', 'gate', 'audit', 'topology', 'cognition', 'pipeline', 'context', 'evolution', 'shader',
 ]);
 
 function viewFromHash(): View {
@@ -107,8 +113,11 @@ export function AppShell() {
         {activeView === 'gate' && <GateView />}
         {activeView === 'audit' && <AuditStreamView />}
         {activeView === 'topology' && <TopologyView />}
+        {activeView === 'context' && <ContextSearchView />}
+        {activeView === 'evolution' && <EvolutionCycleView />}
         {activeView === 'cognition' && <CognitionView />}
         {activeView === 'pipeline' && <PipelineView />}
+        {activeView === 'shader' && <EligibilityShaderViewPage />}
       </div>
     </div>
   );

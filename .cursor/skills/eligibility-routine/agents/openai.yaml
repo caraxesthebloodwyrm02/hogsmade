@@ -1,0 +1,4 @@
+interface:
+  display_name: "Eligibility Routine"
+  short_description: "Evaluate candidates into weighted forms"
+  default_prompt: "Use $eligibility-routine to evaluate a candidate into server, rule, agent, skill, and table outputs."

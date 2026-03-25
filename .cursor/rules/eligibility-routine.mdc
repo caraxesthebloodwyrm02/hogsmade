@@ -1,0 +1,23 @@
+---
+description: Eligibility routine rule surface for weighted integration triage and provenance-aware collection output
+globs: **/*
+alwaysApply: false
+---
+
+# Eligibility routine
+
+Use the runtime-backed eligibility result as the truth layer when reasoning about candidates, forms, or collection tables.
+
+## Rules
+
+- Keep governance and user-facing usability in parallel rather than letting one silently erase the other.
+- Keep analog weighting reproducible; seed and argv shape must explain the hierarchy.
+- Treat observations as annotations on top of the hierarchy, not as substitutes for it.
+- Credit each collection row to its source pass and source artifact.
+- Keep server responsibility exclusive; do not let form compilation turn the package into a general alignment layer.
+
+## Output discipline
+
+- Show the seed and argv signature when summarizing a run.
+- Keep row and column output formula-ready.
+- Keep rule, agent, and skill projections clearly marked as projections.
