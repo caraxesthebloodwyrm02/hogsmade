@@ -4,11 +4,13 @@ from typing import Callable, Dict, List, Optional, Tuple
 
 try:
     from control_room.constants import (
-        CADENCE, RHYTHM_PASS_COUNT, MODULAR_PASS_INDEX, GatePassProfile, PHASE_LANE_ENVELOPE, LaneValue,
+        CADENCE, RHYTHM_PASS_COUNT, MODULAR_PASS_INDEX, GatePassProfile, PHASE_LANE_ENVELOPE, LaneValue, TRIGGER_BOARD_LANE_ORDER,
+        FlowBand, HeatBand, AirflowCategory,
     )
 except ImportError:
     from constants import (
-        CADENCE, RHYTHM_PASS_COUNT, MODULAR_PASS_INDEX, GatePassProfile, PHASE_LANE_ENVELOPE, LaneValue,
+        CADENCE, RHYTHM_PASS_COUNT, MODULAR_PASS_INDEX, GatePassProfile, PHASE_LANE_ENVELOPE, LaneValue, TRIGGER_BOARD_LANE_ORDER,
+        FlowBand, HeatBand, AirflowCategory,
     )
 
 try:
@@ -27,9 +29,9 @@ class AirflowSnapshot:
 class DialState:
     fan_angle_deg: float
     temp_angle_deg: float
-    flow_band: str
-    heat_band: str
-    category: str
+    flow_band: FlowBand
+    heat_band: HeatBand
+    category: AirflowCategory
 
 
 def _clamp(value: float, lower: float, upper: float) -> float:
@@ -135,6 +137,10 @@ class AirflowOrchestrator:
         self.gate_passes = self._build_gate_passes()
 
     def _build_gate_passes(self) -> Tuple[GatePassProfile, ...]:
+        return AirflowOrchestrator._build_gate_passes()
+
+    @staticmethod
+    def _build_gate_passes() -> Tuple[GatePassProfile, ...]:
         gate_passes = []
         for pass_index in range(1, MODULAR_PASS_INDEX + 1):
             mode = "Rhythm" if pass_index <= RHYTHM_PASS_COUNT else "Modular"
@@ -152,15 +158,7 @@ class AirflowOrchestrator:
         }
 
     def _auxiliary_bus_route(self, trigger_board: Dict[str, LaneValue]) -> str:
-        lane_order = [
-            "entry_lane",
-            "phase_lane",
-            "countdown_lane",
-            "break_lane",
-            "promotion_lane",
-            "exit_lane",
-        ]
-        return " -> ".join(f"{lane}:{trigger_board[lane]}" for lane in lane_order)
+        return " -> ".join(f"{lane}:{trigger_board[lane]}" for lane in TRIGGER_BOARD_LANE_ORDER)
 
     def beat_phase_for_pass(self, pass_count: int) -> str:
         cadence = self.gate_passes[0].cadence if self.gate_passes else CADENCE

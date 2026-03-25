@@ -1,11 +1,30 @@
 """Shared constants for the DIO control room and episode tool."""
 
 from dataclasses import dataclass
-from typing import Tuple, Union
+from typing import Literal, Tuple, Union
 
 CADENCE: Tuple[str, str, str, str] = ("map", "balance", "tighten", "verify")
 RHYTHM_PASS_COUNT: int = 6
 MODULAR_PASS_INDEX: int = 7
+
+# Duplicated string values centralized
+CATEGORY_VALUES: Tuple[str, str, str, str] = ("Smooth Flow", "Thermal Drift", "Air Drift", "Correction Zone")
+LIGHT_PHASE_VALUES: Tuple[str, str, str, str] = ("Cruise", "Warm Shift", "Vector Shift", "Recovery")
+FLOW_BAND_VALUES: Tuple[str, str] = ("centered", "drift")
+HEAT_BAND_VALUES: Tuple[str, str] = ("steady", "swing")
+TRANSFER_MODE_VALUES: Tuple[str, str] = ("instant", "staged")
+TRAVEL_CHANNEL_VALUES: Tuple[str, str] = ("instant_transit_lane", "staged_transit_lane")
+TRIGGER_BOARD_LANE_ORDER: Tuple[str, ...] = ("entry_lane", "phase_lane", "countdown_lane", "break_lane", "promotion_lane", "exit_lane")
+
+# Literal type aliases for type safety
+FlowBand = Literal["centered", "drift"]
+HeatBand = Literal["steady", "swing"]
+AirflowCategory = Literal["Smooth Flow", "Thermal Drift", "Air Drift", "Correction Zone"]
+LightPhase = Literal["Cruise", "Warm Shift", "Vector Shift", "Recovery"]
+TransferMode = Literal["instant", "staged"]
+TravelChannel = Literal["instant_transit_lane", "staged_transit_lane"]
+BeatPhase = Literal["map", "balance", "tighten", "verify"]
+StageName = Literal["setup", "build", "mutation", "closure"]
 
 
 @dataclass(frozen=True)

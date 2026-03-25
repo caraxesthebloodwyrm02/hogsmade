@@ -48,11 +48,9 @@ class InteractiveIterationTool:
         self._validate_timing()
 
     def _build_gate_passes(self) -> List[GatePassProfile]:
-        gate_passes: List[GatePassProfile] = []
-        for pass_index in range(1, MODULAR_PASS_INDEX + 1):
-            mode = "Rhythm" if pass_index <= RHYTHM_PASS_COUNT else "Modular"
-            gate_passes.append(GatePassProfile(pass_index=pass_index, mode=mode))
-        return gate_passes
+        # Delegate to canonical implementation in airflow.py
+        from control_room.airflow import AirflowOrchestrator
+        return list(AirflowOrchestrator._build_gate_passes())
 
     def stage_for_part(self, part_index: int) -> str:
         stage_index = min(max(part_index - 1, 0), len(self.STAGE_SEQUENCE) - 1)
@@ -63,6 +61,7 @@ class InteractiveIterationTool:
         return f"part_{part_index}_{phase_gate}"
 
     def build_trigger_board(self) -> Dict[str, LaneValue]:
+        from control_room.constants import TRIGGER_BOARD_LANE_ORDER
         return {
             "entry_lane": "user_confirmed_part_start",
             "phase_lane": PHASE_LANE_ENVELOPE,
@@ -73,15 +72,8 @@ class InteractiveIterationTool:
         }
 
     def auxiliary_bus_route(self, trigger_board: Dict[str, LaneValue]) -> str:
-        route_order = [
-            "entry_lane",
-            "phase_lane",
-            "countdown_lane",
-            "break_lane",
-            "promotion_lane",
-            "exit_lane",
-        ]
-        return " -> ".join(f"{lane}:{trigger_board[lane]}" for lane in route_order)
+        from control_room.constants import TRIGGER_BOARD_LANE_ORDER
+        return " -> ".join(f"{lane}:{trigger_board[lane]}" for lane in TRIGGER_BOARD_LANE_ORDER)
 
     def promote_to_modular(self) -> Dict[str, object]:
         """Authoritative state transition: Rhythm -> Modular. Returns trigger context."""

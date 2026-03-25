@@ -5,19 +5,19 @@ from typing import Dict, List, Tuple
 
 try:
     from control_room import airflow
-    from control_room.constants import CADENCE
+    from control_room.constants import CADENCE, TRIGGER_BOARD_LANE_ORDER, LightPhase, TransferMode, TravelChannel
 except ImportError:
     import airflow
-    from constants import CADENCE
+    from constants import CADENCE, TRIGGER_BOARD_LANE_ORDER, LightPhase, TransferMode, TravelChannel
 
 
 @dataclass(frozen=True)
 class LightFunctionState:
-    phase: str
+    phase: LightPhase
     intensity_pct: int
     color_temp_k: int
-    transfer_mode: str
-    travel_channel: str
+    transfer_mode: TransferMode
+    travel_channel: TravelChannel
 
 
 _LIGHT_PROFILE_BY_CATEGORY: Dict[str, Tuple[str, int, int]] = {
