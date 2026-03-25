@@ -117,6 +117,13 @@
       "runtime": "typescript",
       "bootstrapType": "mcp_sdk_stdio_ts",
       "entryRelative": "glimpse-server/src/server.ts"
+    },
+    {
+      "mcpServerKey": "grid-intelligence",
+      "runtime": "python",
+      "bootstrapType": "mcp_sdk_stdio_python",
+      "pythonModule": "grid.mcp.intelligence_server",
+      "gridPythonScript": null
     }
   ]
 }
