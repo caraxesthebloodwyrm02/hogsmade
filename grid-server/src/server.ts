@@ -856,6 +856,399 @@ export function buildServer(): McpServer {
     },
   );
 
+  // ── Admission Gate Enforcement Tools ──
+  // These proxy to the Mothership /admission/* endpoints, making penalty
+  // enforcement and policy compliance checking available as MCP tool calls.
+
+  /**
+   * Helper: call a Mothership /admission/* endpoint via the GRID API.
+   * Fails closed — returns error result if GRID backend is unreachable.
+   */
+  async function callAdmission<T>(
+    method: "GET" | "POST",
+    path: string,
+    body?: Record<string, unknown>,
+  ): Promise<T> {
+    const rawUrl = process.env.GRID_API_URL?.trim() || config.gridApiUrl || "";
+    const gridApiUrl = rawUrl ? validateGridApiUrl(rawUrl) : null;
+    if (!gridApiUrl) {
+      throw new Error("GRID_API_URL not configured or invalid — admission tools unavailable");
+    }
+
+    const result = await gridApiPolicy.execute<T>("admission", async () => {
+      const opts: RequestInit = {
+        method,
+        headers: { "Content-Type": "application/json" },
+      };
+      if (body) opts.body = JSON.stringify(body);
+
+      const resp = await fetch(`${gridApiUrl}${path}`, opts);
+      if (!resp.ok) {
+        const text = await resp.text().catch(() => "");
+        throw new Error(`Mothership ${path} responded ${resp.status}: ${text}`);
+      }
+      return (await resp.json()) as T;
+    });
+
+    return result;
+  }
+
+  // admission_policy — Get the current policy billboard
+  server.registerTool(
+    "admission_policy",
+    {
+      description:
+        "Get the GRID admission gate policy billboard — ethical participation contract, " +
+        "penalty tiers, dos/don'ts, and zero-tolerance caution. Every entity sees this " +
+        "before entering the pipeline.",
+      inputSchema: z.object({}),
+    },
+    async () => {
+      const rlMsg = readLimiter.check("admission_policy");
+      if (rlMsg) return { content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
+
+      try {
+        const result = await callAdmission<Record<string, unknown>>("GET", "/admission/policy");
+
+        emitAudit({
+          source: SERVER_NAME,
+          tool: "admission_policy",
+          status: "success",
+          metadata: { billboard_version: result["billboard_version"] },
+        });
+
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
+        };
+      } catch (error) {
+        emitAudit({
+          source: SERVER_NAME,
+          tool: "admission_policy",
+          status: "failure",
+          metadata: { error: String(error) },
+        });
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({ success: false, error: String(error) }) }],
+          isError: true,
+        };
+      }
+    },
+  );
+
+  // admission_entity_report — Get entity violation history and penalty tier
+  server.registerTool(
+    "admission_entity_report",
+    {
+      description:
+        "Get the full report for an entity in the admission gate — violation history, " +
+        "accumulated penalty points, banner status, and classified penalty tier " +
+        "(runtime_mistake / environment_pollution / intentional_scheming).",
+      inputSchema: z.object({
+        entity_id: z
+          .string()
+          .min(1)
+          .describe("Entity identifier (X-Entity-Id header value, api:key prefix, or ip:address)"),
+      }),
+    },
+    async (args: { entity_id: string }) => {
+      const rlMsg = readLimiter.check("admission_entity_report");
+      if (rlMsg) return { content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
+
+      try {
+        const result = await callAdmission<Record<string, unknown>>(
+          "GET",
+          `/admission/entity/${encodeURIComponent(args.entity_id)}`,
+        );
+
+        emitAudit({
+          source: SERVER_NAME,
+          tool: "admission_entity_report",
+          status: "success",
+          metadata: {
+            entity_id: args.entity_id,
+            found: result["found"],
+            bannered: result["bannered"],
+          },
+        });
+
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
+        };
+      } catch (error) {
+        emitAudit({
+          source: SERVER_NAME,
+          tool: "admission_entity_report",
+          status: "failure",
+          metadata: { entity_id: args.entity_id, error: String(error) },
+        });
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({ success: false, error: String(error) }) }],
+          isError: true,
+        };
+      }
+    },
+  );
+
+  // admission_compliance_check — Dry-run payload compliance check
+  server.registerTool(
+    "admission_compliance_check",
+    {
+      description:
+        "Dry-run a payload against the admission policy without sending it through " +
+        "the pipeline. Reports profit-mask signals, context token estimate, structural " +
+        "conformance, and entity penalty context. Use before submission to pre-validate.",
+      inputSchema: z.object({
+        payload: z
+          .record(z.unknown())
+          .describe("Request payload body to check"),
+        headers: z
+          .record(z.string())
+          .optional()
+          .describe("Request headers to scan for profit-mask signals"),
+        entity_id: z
+          .string()
+          .optional()
+          .describe("Entity ID for penalty context lookup"),
+        target_path: z
+          .string()
+          .optional()
+          .default("/api/v1/intelligence/process")
+          .describe("Simulated request path for structure checks"),
+      }),
+    },
+    async (args: {
+      payload: Record<string, unknown>;
+      headers?: Record<string, string>;
+      entity_id?: string;
+      target_path?: string;
+    }) => {
+      const rlMsg = readLimiter.check("admission_compliance_check");
+      if (rlMsg) return { content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
+
+      try {
+        const result = await callAdmission<Record<string, unknown>>(
+          "POST",
+          "/admission/compliance/check",
+          {
+            payload: args.payload,
+            headers: args.headers ?? {},
+            entity_id: args.entity_id ?? null,
+            target_path: args.target_path ?? "/api/v1/intelligence/process",
+          },
+        );
+
+        emitAudit({
+          source: SERVER_NAME,
+          tool: "admission_compliance_check",
+          status: "success",
+          metadata: {
+            compliant: result["compliant"],
+            violations: result["violations"],
+            entity_id: args.entity_id,
+          },
+        });
+
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
+        };
+      } catch (error) {
+        emitAudit({
+          source: SERVER_NAME,
+          tool: "admission_compliance_check",
+          status: "failure",
+          metadata: { error: String(error) },
+        });
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({ success: false, error: String(error) }) }],
+          isError: true,
+        };
+      }
+    },
+  );
+
+  // admission_apply_penalty — Manually apply penalty to entity
+  server.registerTool(
+    "admission_apply_penalty",
+    {
+      description:
+        "Apply a penalty to an entity in the admission gate. For out-of-band enforcement " +
+        "when violations are detected by external systems. Set profit_masked=true for " +
+        "the 3x accelerated multiplier. Violation types: budget_exceeded, origin_denied, " +
+        "context_overflow, invalid_body, missing_structure, profit_masking.",
+      inputSchema: z.object({
+        entity_id: z
+          .string()
+          .min(1)
+          .describe("Entity to penalize"),
+        violation_type: z
+          .enum([
+            "budget_exceeded",
+            "origin_denied",
+            "context_overflow",
+            "invalid_body",
+            "missing_structure",
+            "profit_masking",
+          ])
+          .describe("Type of violation"),
+        profit_masked: z
+          .boolean()
+          .optional()
+          .default(false)
+          .describe("Apply 3x penalty multiplier for profit-masking"),
+        reason: z
+          .string()
+          .optional()
+          .default("mcp_enforcement")
+          .describe("Human-readable reason for the penalty"),
+        metadata: z
+          .record(z.unknown())
+          .optional()
+          .describe("Additional context metadata"),
+      }),
+    },
+    async (args: {
+      entity_id: string;
+      violation_type: string;
+      profit_masked?: boolean;
+      reason?: string;
+      metadata?: Record<string, unknown>;
+    }) => {
+      const rlMsg = readLimiter.check("admission_apply_penalty");
+      if (rlMsg) return { content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
+
+      try {
+        const result = await callAdmission<Record<string, unknown>>(
+          "POST",
+          "/admission/penalty/apply",
+          {
+            entity_id: args.entity_id,
+            violation_type: args.violation_type,
+            profit_masked: args.profit_masked ?? false,
+            reason: args.reason ?? "mcp_enforcement",
+            metadata: args.metadata ?? {},
+          },
+        );
+
+        emitAudit({
+          source: SERVER_NAME,
+          tool: "admission_apply_penalty",
+          status: "success",
+          metadata: {
+            entity_id: args.entity_id,
+            violation_type: args.violation_type,
+            profit_masked: args.profit_masked,
+            penalty_applied: result["penalty_points_applied"],
+            total: result["total_penalty_points"],
+            bannered: result["bannered"],
+          },
+        });
+
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
+        };
+      } catch (error) {
+        emitAudit({
+          source: SERVER_NAME,
+          tool: "admission_apply_penalty",
+          status: "failure",
+          metadata: { entity_id: args.entity_id, error: String(error) },
+        });
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({ success: false, error: String(error) }) }],
+          isError: true,
+        };
+      }
+    },
+  );
+
+  // admission_bannered_entities — List all bannered entities
+  server.registerTool(
+    "admission_bannered_entities",
+    {
+      description:
+        "List all entities currently bannered (hard-blocked) by the admission gate. " +
+        "Returns full violation history, penalty points, and tier classification for each.",
+      inputSchema: z.object({}),
+    },
+    async () => {
+      const rlMsg = readLimiter.check("admission_bannered_entities");
+      if (rlMsg) return { content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
+
+      try {
+        const result = await callAdmission<Record<string, unknown>>(
+          "GET",
+          "/admission/entities/bannered",
+        );
+
+        emitAudit({
+          source: SERVER_NAME,
+          tool: "admission_bannered_entities",
+          status: "success",
+          metadata: { count: result["count"] },
+        });
+
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
+        };
+      } catch (error) {
+        emitAudit({
+          source: SERVER_NAME,
+          tool: "admission_bannered_entities",
+          status: "failure",
+          metadata: { error: String(error) },
+        });
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({ success: false, error: String(error) }) }],
+          isError: true,
+        };
+      }
+    },
+  );
+
+  // admission_stats — Get gate operational statistics
+  server.registerTool(
+    "admission_stats",
+    {
+      description:
+        "Get admission gate operational statistics — total admitted/rejected, " +
+        "rejection reason breakdown, tracked entity count, and bannered entity count.",
+      inputSchema: z.object({}),
+    },
+    async () => {
+      const rlMsg = readLimiter.check("admission_stats");
+      if (rlMsg) return { content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
+
+      try {
+        const result = await callAdmission<Record<string, unknown>>("GET", "/admission/stats");
+
+        emitAudit({
+          source: SERVER_NAME,
+          tool: "admission_stats",
+          status: "success",
+          metadata: {
+            admitted: result["total_admitted"],
+            rejected: result["total_rejected"],
+          },
+        });
+
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
+        };
+      } catch (error) {
+        emitAudit({
+          source: SERVER_NAME,
+          tool: "admission_stats",
+          status: "failure",
+          metadata: { error: String(error) },
+        });
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({ success: false, error: String(error) }) }],
+          isError: true,
+        };
+      }
+    },
+  );
+
   // ── Start ──
 
   return server;
