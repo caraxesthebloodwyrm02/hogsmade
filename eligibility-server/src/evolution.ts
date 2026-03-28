@@ -668,7 +668,7 @@ function promotionDecision(
   };
 }
 
-export async function openEvolutionCase(
+export function openEvolutionCase(
   input: OpenEvolutionCaseInput,
   store: EvolutionCycleStore = getEvolutionCycleStore(),
 ) {
@@ -737,8 +737,8 @@ export async function openEvolutionCase(
     candidateIds: stored.candidateIds,
   });
 
-  // Trigger hook for cross-server routing
-  await onEvolutionCaseOpened(stored);
+  // Trigger hook for cross-server routing (fire-and-forget to preserve sync API)
+  void onEvolutionCaseOpened(stored);
 
   return {
     validation,
@@ -758,7 +758,7 @@ export function getCycleSnapshot(caseId: string, store: EvolutionCycleStore = ge
   return buildSnapshot(caseRecord);
 }
 
-export async function recordCycleSignal(
+export function recordCycleSignal(
   input: RecordCycleSignalInput,
   store: EvolutionCycleStore = getEvolutionCycleStore(),
 ) {
@@ -788,8 +788,8 @@ export async function recordCycleSignal(
     weight: signal.weight,
   });
 
-  // Trigger hook for cross-server routing
-  await onCycleSignalRecorded(stored.caseId, signal);
+  // Trigger hook for cross-server routing (fire-and-forget to preserve sync API)
+  void onCycleSignalRecorded(stored.caseId, signal);
 
   return {
     signal,
@@ -920,7 +920,7 @@ export function advanceCycle(
   return buildSnapshot(stored);
 }
 
-export async function evaluatePromotionGate(
+export function evaluatePromotionGate(
   caseId: string,
   store: EvolutionCycleStore = getEvolutionCycleStore(),
 ) {
@@ -971,8 +971,8 @@ export async function evaluatePromotionGate(
   refreshCaseRecord(caseRecord, timestamp);
   const stored = store.upsertCase(caseRecord);
 
-  // Trigger hook for cross-server routing
-  await onPromotionGateEvaluated(caseRecord, gate);
+  // Trigger hook for cross-server routing (fire-and-forget to preserve sync API)
+  void onPromotionGateEvaluated(caseRecord, gate);
 
   return {
     gate,

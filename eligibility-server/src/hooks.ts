@@ -19,7 +19,7 @@ export async function onEvolutionCaseOpened(caseRecord: EvolutionCase): Promise<
   const timestamp = new Date().toISOString();
 
   // Echoes audit
-  await emitAudit({
+  const ok = await emitAudit({
     source: "eligibility-server",
     tool: "openEvolutionCase",
     status: "success",
@@ -33,10 +33,13 @@ export async function onEvolutionCaseOpened(caseRecord: EvolutionCase): Promise<
       timestamp,
     },
   });
+  if (!ok) {
+    console.error(`[eligibility-server] audit write failed for tool=openEvolutionCase`);
+  }
 
   // Seeds bookmark for tracking
   // Note: In real implementation, this would call seeds-server MCP tool
-  console.log(`[SEEDS_HOOK] Would bookmark evolution case ${caseRecord.caseId} in repo: eligibility-server`);
+  console.error(`[SEEDS_HOOK] Would bookmark evolution case ${caseRecord.caseId} in repo: eligibility-server`);
 }
 
 /**
@@ -49,7 +52,7 @@ export async function onCycleSignalRecorded(
   const timestamp = new Date().toISOString();
 
   // Echoes audit
-  await emitAudit({
+  const ok = await emitAudit({
     source: "eligibility-server",
     tool: "recordCycleSignal",
     status: "success",
@@ -61,11 +64,14 @@ export async function onCycleSignalRecorded(
       timestamp,
     },
   });
+  if (!ok) {
+    console.error(`[eligibility-server] audit write failed for tool=recordCycleSignal`);
+  }
 
   // Pulse journal for significant signals
   if (signal.type === "condition_escalated" || signal.type === "integration_call_failed") {
     // Note: In real implementation, this would call pulse-server MCP tool
-    console.log(`[PULSE_HOOK] Would journal ${signal.type} signal for case ${caseId}: ${signal.note}`);
+    console.error(`[PULSE_HOOK] Would journal ${signal.type} signal for case ${caseId}: ${signal.note}`);
   }
 }
 
@@ -80,7 +86,7 @@ export async function onPromotionGateEvaluated(
   const decision = gate.decision;
 
   // Echoes audit (already emitted in evolution.ts, but we add context)
-  await emitAudit({
+  const ok = await emitAudit({
     source: "eligibility-server",
     tool: "promotionGateHook",
     status: "success",
@@ -95,17 +101,20 @@ export async function onPromotionGateEvaluated(
       timestamp,
     },
   });
+  if (!ok) {
+    console.error(`[eligibility-server] audit write failed for tool=promotionGateHook`);
+  }
 
   // Pulse focus session tracking for blocked promotions
   if (decision === "hold_for_tighten" || decision === "return_to_balance") {
     // Note: In real implementation, this would call pulse-server MCP tool
-    console.log(`[PULSE_HOOK] Would start focus session for blocked promotion case ${caseRecord.caseId}`);
+    console.error(`[PULSE_HOOK] Would start focus session for blocked promotion case ${caseRecord.caseId}`);
   }
 
   // Seeds ecosystem scan trigger for major decisions
   if (decision === "allow_promotion") {
     // Note: In real implementation, this would call seeds-server MCP tool
-    console.log(`[SEEDS_HOOK] Would trigger ecosystem scan after promotion of case ${caseRecord.caseId}`);
+    console.error(`[SEEDS_HOOK] Would trigger ecosystem scan after promotion of case ${caseRecord.caseId}`);
   }
 }
 
@@ -119,7 +128,7 @@ export async function onCaseStatusChanged(
   const timestamp = new Date().toISOString();
 
   // Echoes audit
-  await emitAudit({
+  const ok = await emitAudit({
     source: "eligibility-server",
     tool: "caseStatusChanged",
     status: "success",
@@ -132,11 +141,14 @@ export async function onCaseStatusChanged(
       timestamp,
     },
   });
+  if (!ok) {
+    console.error(`[eligibility-server] audit write failed for tool=caseStatusChanged`);
+  }
 
   // Seeds snapshot for major transitions
   if (caseRecord.status === "promoted") {
     // Note: In real implementation, this would call seeds-server MCP tool
-    console.log(`[SEEDS_HOOK] Would create ecosystem snapshot for promoted case ${caseRecord.caseId}`);
+    console.error(`[SEEDS_HOOK] Would create ecosystem snapshot for promoted case ${caseRecord.caseId}`);
   }
 }
 

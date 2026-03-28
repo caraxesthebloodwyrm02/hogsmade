@@ -364,7 +364,7 @@ export class EligibilityRouter {
         const normalizedArgs = normalizeRoutineArgs(scenario.args);
         const result = evaluateRoutine(scenario.candidates, normalizedArgs);
 
-        const opened = await openEvolutionCase(
+        const opened = openEvolutionCase(
             {
                 caseId: scenario.cycle.caseId,
                 label: scenario.cycle.label,
@@ -394,7 +394,7 @@ export class EligibilityRouter {
             store,
         ).snapshot;
 
-        const signalSnapshots = (await Promise.all(scenario.cycle.signals.map((signal) =>
+        const signalSnapshots = scenario.cycle.signals.map((signal) =>
             recordCycleSignal(
                 {
                     caseId: scenario.cycle.caseId,
@@ -404,7 +404,7 @@ export class EligibilityRouter {
                 },
                 store,
             ),
-        ))).map(result => result.snapshot);
+        ).map(result => result.snapshot);
 
         const handoffAccepted = recordHandoff(
             {
@@ -423,7 +423,7 @@ export class EligibilityRouter {
             advanceCycle({ caseId: scenario.cycle.caseId }, store),
         ];
 
-        const promotion = await evaluatePromotionGate(scenario.cycle.caseId, store);
+        const promotion = evaluatePromotionGate(scenario.cycle.caseId, store);
         const cycleSnapshots = {
             opened: opened.snapshot,
             endpointReady,

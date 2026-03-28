@@ -248,7 +248,7 @@ export function explainHierarchyHandler(input: {
   };
 }
 
-export async function openEvolutionCaseHandler(input: {
+export function openEvolutionCaseHandler(input: {
   candidate?: EligibilityCandidate;
   fixtureId?: string;
   fixtureIds?: string[];
@@ -258,7 +258,7 @@ export async function openEvolutionCaseHandler(input: {
   owner?: string;
 }) {
   const candidates = ensureCandidates(input);
-  const result = await openEvolutionCase({
+  const result = openEvolutionCase({
     caseId: input.caseId,
     label: input.label,
     owner: input.owner,
@@ -290,14 +290,14 @@ export function getCycleSnapshotHandler(input: { caseId: string }) {
   return { snapshot };
 }
 
-export async function recordCycleSignalHandler(input: {
+export function recordCycleSignalHandler(input: {
   caseId: string;
   type: CycleSignalKind;
   source?: string;
   note?: string;
   weight?: number;
 }) {
-  const result = await recordCycleSignal(input);
+  const result = recordCycleSignal(input);
   // Emit audit event for the cycle signal operation
   void emitEligibilityAudit("record_cycle_signal", "success", {
     caseId: input.caseId,
@@ -364,8 +364,8 @@ export function advanceCycleHandler(input: {
   return { snapshot: result };
 }
 
-export async function evaluatePromotionGateHandler(input: { caseId: string }) {
-  const result = await evaluatePromotionGate(input.caseId);
+export function evaluatePromotionGateHandler(input: { caseId: string }) {
+  const result = evaluatePromotionGate(input.caseId);
   // Emit audit event for the promotion gate evaluation
   void emitEligibilityAudit("evaluate_promotion_gate", "success", {
     caseId: input.caseId,
@@ -500,6 +500,23 @@ export function buildServer(): McpServer {
         fixedCount: result.fixedCount,
       } as Record<string, unknown>);
       return toJsonText(result);
+    },
+  );
+
+  server.tool(
+    "health_check",
+    "Check eligibility-server health, data directory status, and active cycle count.",
+    {},
+    async () => {
+      const cycles = listActiveCycles();
+      return toJsonText({
+        status: "ok",
+        server: SERVER_NAME,
+        version: VERSION,
+        dataDir: process.env.ELIGIBILITY_DATA_DIR ?? "~/.eligibility-server",
+        activeCycles: cycles.cases.length,
+        timestamp: new Date().toISOString(),
+      });
     },
   );
 
