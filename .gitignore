@@ -27,6 +27,7 @@ snapshot.json
 # Cursor hooks and local hook config (project-level hooks disabled; do not track)
 .cursor/hooks/
 .cursor/hooks.json
+.codex
 .windsurf/
 .windsurf-next/
 .antigravity/
