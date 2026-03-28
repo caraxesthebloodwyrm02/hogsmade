@@ -14,11 +14,14 @@ import {
   upsertEndpointSpec,
 } from "./evolution.js";
 import { getFixtureCandidates } from "./examples.js";
+import { initializeHooks } from "./hooks.js";
+import { checkTheLine, holdTheLine } from "./line-audit.js";
 import {
   explainHierarchy,
   resolveCandidates,
   safeEvaluateRoutine,
 } from "./pipeline.js";
+import { emitEligibilityAudit } from "./routing.js";
 import type {
   CycleSignalKind,
   EligibilityCandidate,
@@ -173,14 +176,16 @@ function ensureCandidates(input: {
 }
 
 export function listAttributeCatalogHandler() {
-  return {
-    attributes: getDefaultAttributeCatalog(),
-    fixtures: getFixtureCandidates().map((candidate) => ({
-      id: candidate.id,
-      label: candidate.label,
-      summary: candidate.summary,
-    })),
-  };
+  const attributes = getDefaultAttributeCatalog();
+  const fixtures = getFixtureCandidates().map((candidate) => ({
+    id: candidate.id,
+    label: candidate.label,
+    summary: candidate.summary,
+  }));
+  void emitEligibilityAudit("list_attribute_catalog", "success", {
+    candidateCount: fixtures.length,
+  } as Record<string, unknown>);
+  return { attributes, fixtures };
 }
 
 export function evaluateCandidateHandler(input: {
@@ -190,7 +195,11 @@ export function evaluateCandidateHandler(input: {
   args?: Partial<RoutineArgs>;
 }) {
   const candidates = ensureCandidates(input);
-  return safeEvaluateRoutine(candidates, shapeArgs(input.args));
+  const evaluation = safeEvaluateRoutine(candidates, shapeArgs(input.args));
+  void emitEligibilityAudit("evaluate_candidate", evaluation.validation.ok ? "success" : "failure", {
+    candidateCount: candidates.length,
+  } as Record<string, unknown>);
+  return evaluation;
 }
 
 export function compileFormsHandler(input: {
@@ -200,10 +209,11 @@ export function compileFormsHandler(input: {
   args?: Partial<RoutineArgs>;
 }) {
   const evaluation = evaluateCandidateHandler(input);
-  return {
-    validation: evaluation.validation,
-    forms: evaluation.result?.forms ?? [],
-  };
+  const forms = evaluation.result?.forms ?? [];
+  void emitEligibilityAudit("compile_forms", evaluation.validation.ok ? "success" : "failure", {
+    candidateCount: evaluation.validation.candidateCount,
+  } as Record<string, unknown>);
+  return { validation: evaluation.validation, forms };
 }
 
 export function collectTableHandler(input: {
@@ -213,6 +223,9 @@ export function collectTableHandler(input: {
   args?: Partial<RoutineArgs>;
 }) {
   const evaluation = evaluateCandidateHandler(input);
+  void emitEligibilityAudit("collect_table", evaluation.validation.ok ? "success" : "failure", {
+    candidateCount: evaluation.validation.candidateCount,
+  } as Record<string, unknown>);
   return {
     validation: evaluation.validation,
     table: evaluation.result?.table ?? null,
@@ -226,13 +239,16 @@ export function explainHierarchyHandler(input: {
   args?: Partial<RoutineArgs>;
 }) {
   const evaluation = evaluateCandidateHandler(input);
+  void emitEligibilityAudit("explain_hierarchy", evaluation.validation.ok ? "success" : "failure", {
+    candidateCount: evaluation.validation.candidateCount,
+  } as Record<string, unknown>);
   return {
     validation: evaluation.validation,
     explanation: evaluation.result ? explainHierarchy(evaluation.result) : null,
   };
 }
 
-export function openEvolutionCaseHandler(input: {
+export async function openEvolutionCaseHandler(input: {
   candidate?: EligibilityCandidate;
   fixtureId?: string;
   fixtureIds?: string[];
@@ -242,33 +258,54 @@ export function openEvolutionCaseHandler(input: {
   owner?: string;
 }) {
   const candidates = ensureCandidates(input);
-  return openEvolutionCase({
+  const result = await openEvolutionCase({
     caseId: input.caseId,
     label: input.label,
     owner: input.owner,
     candidates,
     args: input.args,
   });
+  // Emit audit event for the evolution case operation
+  void emitEligibilityAudit("open_evolution_case", result.created ? "success" : "dry_run", {
+    caseId: input.caseId,
+    candidateCount: candidates.length,
+    created: result.created,
+  } as Record<string, unknown>);
+  return result;
 }
 
 export function listActiveCyclesHandler() {
-  return listActiveCycles();
+  const result = listActiveCycles();
+  void emitEligibilityAudit("list_active_cycles", "success", {
+    candidateCount: result.cases.length,
+  } as Record<string, unknown>);
+  return result;
 }
 
 export function getCycleSnapshotHandler(input: { caseId: string }) {
-  return {
-    snapshot: getCycleSnapshot(input.caseId),
-  };
+  const snapshot = getCycleSnapshot(input.caseId);
+  void emitEligibilityAudit("get_cycle_snapshot", "success", {
+    caseId: input.caseId,
+  } as Record<string, unknown>);
+  return { snapshot };
 }
 
-export function recordCycleSignalHandler(input: {
+export async function recordCycleSignalHandler(input: {
   caseId: string;
   type: CycleSignalKind;
   source?: string;
   note?: string;
   weight?: number;
 }) {
-  return recordCycleSignal(input);
+  const result = await recordCycleSignal(input);
+  // Emit audit event for the cycle signal operation
+  void emitEligibilityAudit("record_cycle_signal", "success", {
+    caseId: input.caseId,
+    signalType: input.type,
+    source: input.source,
+    weight: input.weight,
+  } as Record<string, unknown>);
+  return result;
 }
 
 export function recordHandoffHandler(input: {
@@ -278,7 +315,15 @@ export function recordHandoffHandler(input: {
   status: HandoffStatus;
   summary: string;
 }) {
-  return recordHandoff(input);
+  const result = recordHandoff(input);
+  // Emit audit event for the handoff operation
+  void emitEligibilityAudit("record_handoff", "success", {
+    caseId: input.caseId,
+    handoffFrom: input.from,
+    handoffTo: input.to,
+    status: input.status,
+  } as Record<string, unknown>);
+  return result;
 }
 
 export function upsertEndpointSpecHandler(input: {
@@ -292,7 +337,15 @@ export function upsertEndpointSpecHandler(input: {
   readiness?: number;
   notes?: string;
 }) {
-  return upsertEndpointSpec(input);
+  const result = upsertEndpointSpec(input);
+  // Emit audit event for the endpoint spec operation
+  void emitEligibilityAudit("upsert_endpoint_spec", "success", {
+    caseId: input.caseId,
+    endpointId: input.endpointId,
+    label: input.label,
+    status: input.status,
+  } as Record<string, unknown>);
+  return result;
 }
 
 export function advanceCycleHandler(input: {
@@ -300,13 +353,27 @@ export function advanceCycleHandler(input: {
   direction?: "forward" | "return";
   reason?: string;
 }) {
-  return {
-    snapshot: advanceCycle(input),
-  };
+  const result = advanceCycle(input);
+  // Emit audit event for the cycle advance operation
+  void emitEligibilityAudit("advance_cycle", "success", {
+    caseId: input.caseId,
+    direction: input.direction ?? "forward",
+    reason: input.reason,
+    currentBeat: result.caseRecord.currentBeat,
+  } as Record<string, unknown>);
+  return { snapshot: result };
 }
 
-export function evaluatePromotionGateHandler(input: { caseId: string }) {
-  return evaluatePromotionGate(input.caseId);
+export async function evaluatePromotionGateHandler(input: { caseId: string }) {
+  const result = await evaluatePromotionGate(input.caseId);
+  // Emit audit event for the promotion gate evaluation
+  void emitEligibilityAudit("evaluate_promotion_gate", "success", {
+    caseId: input.caseId,
+    gateDecision: result.gate.decision,
+    gatePassed: result.gate.passed,
+    score: result.gate.metrics.overallScore,
+  } as Record<string, unknown>);
+  return result;
 }
 
 export function buildServer(): McpServer {
@@ -406,11 +473,45 @@ export function buildServer(): McpServer {
     async (input) => toJsonText(evaluatePromotionGateHandler(input)),
   );
 
+  server.tool(
+    "check_the_line",
+    "Read-only structural audit: detect import mismatches, specifier drift, barrel gaps, mock alignment, audit coverage, and circular imports.",
+    {},
+    async () => {
+      const result = checkTheLine();
+      void emitEligibilityAudit("check_the_line", result.clean ? "success" : "failure", {
+        errorCount: result.errorCount,
+        warningCount: result.warningCount,
+        fixableCount: result.fixableCount,
+      } as Record<string, unknown>);
+      return toJsonText(result);
+    },
+  );
+
+  server.tool(
+    "hold_the_line",
+    "Detect and auto-fix structural mismatches: rewrites bad specifiers, closes barrel gaps, aligns mock paths. Re-scans after fixing.",
+    {},
+    async () => {
+      const result = holdTheLine();
+      void emitEligibilityAudit("hold_the_line", result.clean ? "success" : "failure", {
+        errorCount: result.errorCount,
+        warningCount: result.warningCount,
+        fixedCount: result.fixedCount,
+      } as Record<string, unknown>);
+      return toJsonText(result);
+    },
+  );
+
   return server;
 }
 
 export async function startServer(): Promise<McpServer> {
   console.error(`[${SERVER_NAME}] v${VERSION} starting`);
+
+  // Initialize trigger routing hooks
+  initializeHooks();
+
   const server = buildServer();
   await server.connect(new StdioServerTransport());
   return server;

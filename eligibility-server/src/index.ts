@@ -86,4 +86,17 @@ export {
   upsertEndpointSpecHandler
 } from "./server.js";
 export { buildCollectionTable } from "./table.js";
-
+export {
+  emitEligibilityAudit,
+  withAudit,
+  emitCaseOpenedSignal,
+  emitSignalRecordedSignal,
+  emitHandoffRecordedSignal,
+  emitEndpointUpsertedSignal,
+  emitBeatAdvancedSignal,
+  emitPromotionGateEvaluatedSignal,
+} from "./routing.js";
+export type { EligibilityAuditMetadata } from "./routing.js";
+export { checkTheLine, holdTheLine } from "./line-audit.js";
+export type { LineFinding, LineAuditResult } from "./line-audit.js";
+export { onEvolutionCaseOpened, onCycleSignalRecorded, onPromotionGateEvaluated, onCaseStatusChanged, initializeHooks } from "./hooks.js";

@@ -43,9 +43,9 @@ function openBalancedCase(store: EvolutionCycleStore, caseId = "balanced-case") 
 }
 
 describe("evolution cycle", () => {
-  it("opens with a deterministic initial snapshot and lists as active", () => {
+  it("opens with a deterministic initial snapshot and lists as active", async () => {
     const store = createStore();
-    const opened = openBalancedCase(store, "deterministic-cycle");
+    const opened = await openBalancedCase(store, "deterministic-cycle");
 
     expect(opened.validation.ok).toBe(true);
     expect(opened.created).toBe(true);
@@ -58,10 +58,10 @@ describe("evolution cycle", () => {
     expect(listed.cases[0]?.status).toBe("active");
   });
 
-  it("reproduces identical momentum and gate outcomes for the same event sequence", () => {
-    const executeSequence = () => {
+  it("reproduces identical momentum and gate outcomes for the same event sequence", async () => {
+    const executeSequence = async () => {
       const store = createStore();
-      openBalancedCase(store, "sequence-cycle");
+      await openBalancedCase(store, "sequence-cycle");
       upsertEndpointSpec({
         caseId: "sequence-cycle",
         endpointId: "gateway",
@@ -72,8 +72,8 @@ describe("evolution cycle", () => {
         required: true,
         readiness: 0.85,
       }, store);
-      recordCycleSignal({ caseId: "sequence-cycle", type: "integration_call_succeeded" }, store);
-      recordCycleSignal({ caseId: "sequence-cycle", type: "test_passed" }, store);
+      await recordCycleSignal({ caseId: "sequence-cycle", type: "integration_call_succeeded" }, store);
+      await recordCycleSignal({ caseId: "sequence-cycle", type: "test_passed" }, store);
       recordHandoff({
         caseId: "sequence-cycle",
         from: "mapper",
@@ -84,11 +84,11 @@ describe("evolution cycle", () => {
       advanceCycle({ caseId: "sequence-cycle" }, store);
       advanceCycle({ caseId: "sequence-cycle" }, store);
       advanceCycle({ caseId: "sequence-cycle" }, store);
-      return evaluatePromotionGate("sequence-cycle", store);
+      return await evaluatePromotionGate("sequence-cycle", store);
     };
 
-    const first = executeSequence();
-    const second = executeSequence();
+    const first = await executeSequence();
+    const second = await executeSequence();
 
     expect(first.gate).toEqual(second.gate);
     expect(first.snapshot.caseRecord.momentum).toEqual(second.snapshot.caseRecord.momentum);
@@ -115,11 +115,11 @@ describe("evolution cycle", () => {
     expect(returned.caseRecord.returnHistory).toHaveLength(1);
   });
 
-  it("blocks promotion before verify and when required endpoint fields are missing", () => {
+  it("blocks promotion before verify and when required endpoint fields are missing", async () => {
     const store = createStore();
-    openBalancedCase(store, "gate-cycle");
+    await openBalancedCase(store, "gate-cycle");
 
-    const earlyGate = evaluatePromotionGate("gate-cycle", store);
+    const earlyGate = await evaluatePromotionGate("gate-cycle", store);
     expect(earlyGate.gate.decision).toBe("deny_promotion");
 
     advanceCycle({ caseId: "gate-cycle" }, store);
@@ -135,18 +135,18 @@ describe("evolution cycle", () => {
       readiness: 0.5,
     }, store);
 
-    const blocked = evaluatePromotionGate("gate-cycle", store);
+    const blocked = await evaluatePromotionGate("gate-cycle", store);
     expect(blocked.gate.passed).toBe(false);
     expect(["hold_for_tighten", "return_to_balance", "deny_promotion"]).toContain(blocked.gate.decision);
   });
 
-  it("accumulates repeated calls, signals, and handoffs into one rolling case", () => {
+  it("accumulates repeated calls, signals, and handoffs into one rolling case", async () => {
     const store = createStore();
-    openBalancedCase(store, "rolling-cycle");
+    await openBalancedCase(store, "rolling-cycle");
 
-    recordCycleSignal({ caseId: "rolling-cycle", type: "integration_call_succeeded" }, store);
-    recordCycleSignal({ caseId: "rolling-cycle", type: "integration_call_failed" }, store);
-    recordCycleSignal({ caseId: "rolling-cycle", type: "heartbeat_stale" }, store);
+    await recordCycleSignal({ caseId: "rolling-cycle", type: "integration_call_succeeded" }, store);
+    await recordCycleSignal({ caseId: "rolling-cycle", type: "integration_call_failed" }, store);
+    await recordCycleSignal({ caseId: "rolling-cycle", type: "heartbeat_stale" }, store);
     recordHandoff({
       caseId: "rolling-cycle",
       from: "retriever",

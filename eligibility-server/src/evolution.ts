@@ -1,7 +1,12 @@
+import { emitAudit } from "@cascade/shared-types/audit-client";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import path from "node:path";
-import { emitAudit } from "../../shared-types/dist/index.js";
+import {
+  onCycleSignalRecorded,
+  onEvolutionCaseOpened,
+  onPromotionGateEvaluated
+} from "./hooks.js";
 import {
   buildDeterministicTimestamp,
   evaluateRoutine,
@@ -16,8 +21,8 @@ import type {
   CycleSignalKind,
   CycleSnapshot,
   CycleTimelineEntry,
-  EndpointSpec,
   EligibilityCandidate,
+  EndpointSpec,
   EvolutionCase,
   EvolutionCaseSummary,
   HandoffRecord,
@@ -516,7 +521,7 @@ function emitCycleAudit(caseRecord: EvolutionCase, event: CycleTimelineEntry["ev
 export class EvolutionCycleStore {
   private cache: EvolutionStoreData | null = null;
 
-  constructor(private readonly filePath = defaultStorePath()) {}
+  constructor(private readonly filePath = defaultStorePath()) { }
 
   private ensureLoaded(): EvolutionStoreData {
     if (this.cache) return this.cache;
@@ -663,7 +668,7 @@ function promotionDecision(
   };
 }
 
-export function openEvolutionCase(
+export async function openEvolutionCase(
   input: OpenEvolutionCaseInput,
   store: EvolutionCycleStore = getEvolutionCycleStore(),
 ) {
@@ -732,6 +737,9 @@ export function openEvolutionCase(
     candidateIds: stored.candidateIds,
   });
 
+  // Trigger hook for cross-server routing
+  await onEvolutionCaseOpened(stored);
+
   return {
     validation,
     created: true,
@@ -750,7 +758,7 @@ export function getCycleSnapshot(caseId: string, store: EvolutionCycleStore = ge
   return buildSnapshot(caseRecord);
 }
 
-export function recordCycleSignal(
+export async function recordCycleSignal(
   input: RecordCycleSignalInput,
   store: EvolutionCycleStore = getEvolutionCycleStore(),
 ) {
@@ -779,6 +787,9 @@ export function recordCycleSignal(
     signalType: input.type,
     weight: signal.weight,
   });
+
+  // Trigger hook for cross-server routing
+  await onCycleSignalRecorded(stored.caseId, signal);
 
   return {
     signal,
@@ -909,7 +920,7 @@ export function advanceCycle(
   return buildSnapshot(stored);
 }
 
-export function evaluatePromotionGate(
+export async function evaluatePromotionGate(
   caseId: string,
   store: EvolutionCycleStore = getEvolutionCycleStore(),
 ) {
@@ -959,6 +970,9 @@ export function evaluatePromotionGate(
 
   refreshCaseRecord(caseRecord, timestamp);
   const stored = store.upsertCase(caseRecord);
+
+  // Trigger hook for cross-server routing
+  await onPromotionGateEvaluated(caseRecord, gate);
 
   return {
     gate,

@@ -102,7 +102,7 @@ export interface ExecuteReport {
         signalSnapshots: CycleSnapshot[];
         handoffAccepted: CycleSnapshot;
         beats: CycleSnapshot[];
-        promotion: ReturnType<typeof evaluatePromotionGate>;
+        promotion: Awaited<ReturnType<typeof evaluatePromotionGate>>;
     };
 }
 
@@ -364,7 +364,7 @@ export class EligibilityRouter {
         const normalizedArgs = normalizeRoutineArgs(scenario.args);
         const result = evaluateRoutine(scenario.candidates, normalizedArgs);
 
-        const opened = openEvolutionCase(
+        const opened = await openEvolutionCase(
             {
                 caseId: scenario.cycle.caseId,
                 label: scenario.cycle.label,
@@ -394,7 +394,7 @@ export class EligibilityRouter {
             store,
         ).snapshot;
 
-        const signalSnapshots = scenario.cycle.signals.map((signal) =>
+        const signalSnapshots = (await Promise.all(scenario.cycle.signals.map((signal) =>
             recordCycleSignal(
                 {
                     caseId: scenario.cycle.caseId,
@@ -403,8 +403,8 @@ export class EligibilityRouter {
                     note: signal.note,
                 },
                 store,
-            ).snapshot,
-        );
+            ),
+        ))).map(result => result.snapshot);
 
         const handoffAccepted = recordHandoff(
             {
@@ -423,7 +423,7 @@ export class EligibilityRouter {
             advanceCycle({ caseId: scenario.cycle.caseId }, store),
         ];
 
-        const promotion = evaluatePromotionGate(scenario.cycle.caseId, store);
+        const promotion = await evaluatePromotionGate(scenario.cycle.caseId, store);
         const cycleSnapshots = {
             opened: opened.snapshot,
             endpointReady,
