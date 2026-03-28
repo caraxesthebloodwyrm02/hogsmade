@@ -11,6 +11,7 @@
  */
 
 import { emitAudit } from "@cascade/shared-types/audit-client";
+import { generateId } from "@cascade/shared-types/id";
 import { ExecutionPolicyEngine } from "@cascade/shared-types/security-policy";
 import { SessionRateLimiter } from "@cascade/shared-types/session-rate-limit";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
@@ -146,8 +147,8 @@ async function saveCatalog(catalog: Catalog): Promise<void> {
   await atomicWriteJson(CATALOG_PATH, catalog);
 }
 
-function generateId(): string {
-  return `exp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+function generateExpId(): string {
+  return generateId("exp");
 }
 
 function toDashboardStatus(
@@ -274,7 +275,7 @@ export function buildServer(): McpServer {
       const catalog = await loadCatalog();
       const now = new Date().toISOString();
       const exp: Experiment = {
-        id: generateId(),
+        id: generateExpId(),
         name: args.name,
         description: args.description,
         status: "draft",
@@ -1129,7 +1130,7 @@ export function buildServer(): McpServer {
         for (const proposal of proposals) {
           const now = new Date().toISOString();
           const exp: Experiment = {
-            id: generateId(),
+            id: generateExpId(),
             name: proposal.title,
             description: `[auto-suggested] ${proposal.description}`,
             status: "draft",

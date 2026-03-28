@@ -26,6 +26,7 @@
  */
 
 import { emitAudit } from "@cascade/shared-types/audit-client";
+import { generateId } from "@cascade/shared-types/id";
 import { SessionRateLimiter } from "@cascade/shared-types/session-rate-limit";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
@@ -165,9 +166,7 @@ function todayKey(): string {
   return new Date().toISOString().slice(0, 10); // YYYY-MM-DD
 }
 
-function generateId(prefix: string): string {
-  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-}
+// generateId imported from @cascade/shared-types/id (CSPRNG-based)
 
 async function getTodayJournal(): Promise<JournalEntry[]> {
   const filepath = path.join(JOURNAL_DIR, `${todayKey()}.json`);

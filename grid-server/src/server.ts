@@ -13,6 +13,7 @@
 
 import { ResiliencePolicy } from "@cascade/shared-resilience";
 import { emitAudit } from "@cascade/shared-types/audit-client";
+import { McpLogger } from "@cascade/shared-types/mcp-logger";
 import { GateSecurityPolicy } from "@cascade/shared-types/security-policy";
 import { SessionRateLimiter } from "@cascade/shared-types/session-rate-limit";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
@@ -28,6 +29,7 @@ import { getConfig } from "./config.js";
 
 const SERVER_NAME = "grid-server";
 const VERSION = "1.0.0";
+const logger = new McpLogger(SERVER_NAME);
 const config = getConfig();
 const GATE_DIR = config.gateDir;
 const INCOMING_DIR = path.join(GATE_DIR, "incoming");
@@ -217,18 +219,67 @@ function validateGridApiUrl(raw: string): string | null {
   try {
     const parsed = new URL(raw);
     if (!ALLOWED_GRID_HOSTS.has(parsed.hostname)) {
-      console.error(`[${SERVER_NAME}] GRID_API_URL host '${parsed.hostname}' not in allowlist — ignoring`);
+      logger.warn(`GRID_API_URL host '${parsed.hostname}' not in allowlist — ignoring`);
       return null;
     }
     if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
-      console.error(`[${SERVER_NAME}] GRID_API_URL protocol '${parsed.protocol}' not allowed`);
+      logger.warn(`GRID_API_URL protocol '${parsed.protocol}' not allowed`);
       return null;
     }
     return parsed.origin;
   } catch {
-    console.error(`[${SERVER_NAME}] GRID_API_URL is not a valid URL: '${raw}'`);
+    logger.warn(`GRID_API_URL is not a valid URL: '${raw}'`);
     return null;
   }
+}
+
+type BackendProbeResult = {
+  reachable: boolean;
+  endpoint: string | null;
+  status: number | null;
+  error: string | null;
+};
+
+export async function probeGridBackend(
+  gridApiUrl: string,
+  timeoutMs = 5000,
+): Promise<BackendProbeResult> {
+  const endpoints = ["/health", "/api/v1/health"];
+  let lastEndpoint: string | null = null;
+  let lastStatus: number | null = null;
+  let lastError: string | null = null;
+
+  for (const endpoint of endpoints) {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+    try {
+      const resp = await fetch(`${gridApiUrl}${endpoint}`, { signal: ctrl.signal });
+      if (resp.ok) {
+        return {
+          reachable: true,
+          endpoint,
+          status: resp.status,
+          error: null,
+        };
+      }
+      lastEndpoint = endpoint;
+      lastStatus = resp.status;
+      lastError = `HTTP ${resp.status}`;
+    } catch (error) {
+      lastEndpoint = endpoint;
+      lastStatus = null;
+      lastError = error instanceof Error ? error.message : String(error);
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  return {
+    reachable: false,
+    endpoint: lastEndpoint,
+    status: lastStatus,
+    error: lastError,
+  };
 }
 
 async function getEnhancedValidation(
@@ -1255,7 +1306,7 @@ export function buildServer(): McpServer {
 }
 
 export async function startServer(): Promise<McpServer> {
-  console.error(`[${SERVER_NAME}] v${VERSION} starting — GATE: ${GATE_DIR}`);
+  logger.info(`v${VERSION} starting — GATE: ${GATE_DIR}`);
 
   // Startup health probe for GRID backend API
   const rawUrl = process.env.GRID_API_URL?.trim() || config.gridApiUrl || "";
@@ -1263,29 +1314,29 @@ export async function startServer(): Promise<McpServer> {
     const gridApiUrl = validateGridApiUrl(rawUrl);
     if (gridApiUrl) {
       try {
-        const ctrl = new AbortController();
-        const timer = setTimeout(() => ctrl.abort(), 5000);
-        const resp = await fetch(`${gridApiUrl}/api/v1/health`, { signal: ctrl.signal }).catch(() => null);
-        clearTimeout(timer);
-        if (resp && resp.ok) {
-          console.error(`[${SERVER_NAME}] GRID backend reachable at ${gridApiUrl}`);
+        const probe = await probeGridBackend(gridApiUrl, 5000);
+        if (probe.reachable) {
+          logger.info(
+            `GRID backend reachable at ${gridApiUrl}${probe.endpoint} (status=${probe.status})`,
+          );
         } else {
-          console.error(
-            `[${SERVER_NAME}] WARNING: GRID backend at ${gridApiUrl} is NOT reachable (status=${resp?.status ?? 'unreachable'}). ` +
+          logger.warn(
+            `GRID backend at ${gridApiUrl} is NOT reachable ` +
+            `(lastEndpoint=${probe.endpoint ?? "none"}, status=${probe.status ?? "unreachable"}, error=${probe.error ?? "unknown"}). ` +
             `Remote gate validation will fail-closed (approved=false) until backend is restored.`
           );
         }
       } catch {
-        console.error(
-          `[${SERVER_NAME}] WARNING: GRID backend probe failed for ${gridApiUrl}. ` +
+        logger.warn(
+          `GRID backend probe failed for ${gridApiUrl}. ` +
           `Remote gate validation will fail-closed.`
         );
       }
     } else {
-      console.error(`[${SERVER_NAME}] WARNING: GRID_API_URL configured but invalid — remote validation disabled.`);
+      logger.warn(`GRID_API_URL configured but invalid — remote validation disabled.`);
     }
   } else {
-    console.error(`[${SERVER_NAME}] GRID_API_URL not set — remote gate validation disabled (local-only mode).`);
+    logger.info(`GRID_API_URL not set — remote gate validation disabled (local-only mode).`);
   }
 
   const server = buildServer();
@@ -1299,7 +1350,7 @@ const isEntrypoint =
 
 if (isEntrypoint) {
   void startServer().catch((error) => {
-    console.error(`[${SERVER_NAME}] failed to start`, error);
+    logger.error(`failed to start`, { error: String(error) });
     process.exitCode = 1;
   });
 }

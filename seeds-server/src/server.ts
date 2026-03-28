@@ -12,6 +12,8 @@
  */
 
 import { emitAudit } from "@cascade/shared-types/audit-client";
+import { generateId } from "@cascade/shared-types/id";
+import { McpLogger } from "@cascade/shared-types/mcp-logger";
 import { SessionRateLimiter } from "@cascade/shared-types/session-rate-limit";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
@@ -29,6 +31,7 @@ const execFileAsync = promisify(execFile);
 
 const SERVER_NAME = "seeds-server";
 const VERSION = "1.0.0";
+const logger = new McpLogger(SERVER_NAME);
 const config = getConfig();
 const SEEDS_ROOT = config.seedsRoot;
 const DATA_DIR = config.dataDir;
@@ -277,7 +280,7 @@ async function saveBookmarks(bookmarks: Bookmark[]): Promise<void> {
 }
 
 async function saveSnapshot(snapshot: EcosystemSnapshot): Promise<string> {
-  const filename = `snapshot-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.json`;
+  const filename = `${generateId("snapshot")}.json`;
   const filepath = path.join(SNAPSHOTS_DIR, filename);
   await atomicWriteJson(filepath, snapshot);
   return filepath;
@@ -553,7 +556,7 @@ export function buildServer(): McpServer {
       await ensureDataDir();
       const bookmarks = await loadBookmarks();
       const bookmark: Bookmark = {
-        id: `bk-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        id: generateId("bk"),
         repo: args.repo,
         filepath: args.filepath,
         note: args.note,
@@ -714,7 +717,7 @@ export function buildServer(): McpServer {
 
 export async function startServer(): Promise<McpServer> {
   await ensureDataDir();
-  console.error(`[${SERVER_NAME}] v${VERSION} starting — seeds: ${SEEDS_ROOT}`);
+  logger.info(`v${VERSION} starting — seeds: ${SEEDS_ROOT}`);
   const server = buildServer();
   await server.connect(new StdioServerTransport());
   return server;
@@ -725,7 +728,7 @@ const isEntrypoint = process.argv[1] != null
 
 if (isEntrypoint) {
   void startServer().catch((error) => {
-    console.error(`[${SERVER_NAME}] failed to start`, error);
+    logger.error(`failed to start`, { error: String(error) });
     process.exitCode = 1;
   });
 }

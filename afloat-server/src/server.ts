@@ -10,6 +10,7 @@
  * Port: 3000 (per GATE/agent_schema.json)
  */
 
+import { generateId } from "@cascade/shared-types/id";
 import { SessionRateLimiter } from "@cascade/shared-types/session-rate-limit";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
@@ -151,9 +152,7 @@ async function listExecutions(
   }
 }
 
-function generateId(prefix: string): string {
-  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-}
+// generateId imported from @cascade/shared-types/id (CSPRNG-based)
 
 // ── Server ──
 
