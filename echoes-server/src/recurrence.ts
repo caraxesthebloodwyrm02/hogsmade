@@ -42,11 +42,14 @@ export function checkRecurrence(
   store: PrecedentStore,
   event: FingerprintInput & { sessionId?: string },
   isMutating = false,
+  persist = true,
 ): RecurrenceCheckResult {
   const isFailure = PRECEDENT_TRIGGER_STATUSES.has(event.status);
 
   if (!isFailure) {
-    store.recordSuccess(event.source, event.tool);
+    if (persist) {
+      store.recordSuccess(event.source, event.tool);
+    }
     return {
       isRecurrence: false,
       precedentId: null,
@@ -68,6 +71,17 @@ export function checkRecurrence(
   };
 
   if (!existing) {
+    if (!persist) {
+      return {
+        isRecurrence: false,
+        precedentId: null,
+        occurrenceNumber: 1,
+        previousLevel: null,
+        currentLevel: "observed",
+        action: "log",
+        message: `New precedent would be created: ${fp.source}/${fp.tool} [${fp.category}]`,
+      };
+    }
     const record = store.upsert(fp, "observed", occurrence);
     return {
       isRecurrence: false,
@@ -81,11 +95,23 @@ export function checkRecurrence(
   }
 
   // Recurrence found — check cooldown
-  const inCooldown = existing.resolution?.cooldownUntil
-    && new Date(existing.resolution.cooldownUntil).getTime() > Date.now();
+  const inCooldown =
+    existing.resolution?.cooldownUntil &&
+    new Date(existing.resolution.cooldownUntil).getTime() > Date.now();
 
   if (existing.resolution && !inCooldown) {
     // Resolved and cooldown expired — treat as fresh
+    if (!persist) {
+      return {
+        isRecurrence: false,
+        precedentId: existing.id,
+        occurrenceNumber: existing.occurrenceCount + 1,
+        previousLevel: null,
+        currentLevel: "observed",
+        action: "log",
+        message: `Pattern would recur after cooldown expired. Precedent would reset: ${fp.source}/${fp.tool}`,
+      };
+    }
     const record = store.upsert(fp, "observed", occurrence);
     return {
       isRecurrence: false,
@@ -104,12 +130,33 @@ export function checkRecurrence(
   let newLevel = computeEscalationLevel(newCount);
 
   // If in cooldown, resume from previous level instead of resetting
-  if (inCooldown && escalationSeverity(previousLevel) > escalationSeverity(newLevel)) {
+  if (
+    inCooldown &&
+    escalationSeverity(previousLevel) > escalationSeverity(newLevel)
+  ) {
     newLevel = previousLevel;
   }
 
-  const record = store.upsert(fp, newLevel, occurrence);
   const action = levelToAction(newLevel, isMutating);
+  if (!persist) {
+    return {
+      isRecurrence: true,
+      precedentId: existing.id,
+      occurrenceNumber: existing.occurrenceCount + 1,
+      previousLevel,
+      currentLevel: newLevel,
+      action,
+      message: formatEscalationMessage(
+        fp.source,
+        fp.tool,
+        fp.category,
+        existing.occurrenceCount + 1,
+        newLevel,
+        action,
+      ),
+    };
+  }
+  const record = store.upsert(fp, newLevel, occurrence);
 
   return {
     isRecurrence: true,
@@ -118,7 +165,14 @@ export function checkRecurrence(
     previousLevel,
     currentLevel: newLevel,
     action,
-    message: formatEscalationMessage(fp.source, fp.tool, fp.category, record.occurrenceCount, newLevel, action),
+    message: formatEscalationMessage(
+      fp.source,
+      fp.tool,
+      fp.category,
+      record.occurrenceCount,
+      newLevel,
+      action,
+    ),
   };
 }
 
@@ -134,8 +188,16 @@ export function applyTimeDecay(store: PrecedentStore): number {
 
   for (const record of active) {
     const lastSeenAge = now - new Date(record.lastSeen).getTime();
-    if (lastSeenAge >= DECAY_THRESHOLD_MS && escalationSeverity(record.escalationLevel) > 0) {
-      const levels: EscalationLevel[] = ["observed", "flagged", "restricted", "blocked"];
+    if (
+      lastSeenAge >= DECAY_THRESHOLD_MS &&
+      escalationSeverity(record.escalationLevel) > 0
+    ) {
+      const levels: EscalationLevel[] = [
+        "observed",
+        "flagged",
+        "restricted",
+        "blocked",
+      ];
       const currentIdx = levels.indexOf(record.escalationLevel);
       if (currentIdx > 0) {
         record.escalationLevel = levels[currentIdx - 1];
@@ -158,10 +220,15 @@ export function applySuccessDeescalation(store: PrecedentStore): number {
 
   for (const record of active) {
     if (
-      record.consecutiveSuccesses >= SUCCESS_DEESCALATION_THRESHOLD
-      && escalationSeverity(record.escalationLevel) > 0
+      record.consecutiveSuccesses >= SUCCESS_DEESCALATION_THRESHOLD &&
+      escalationSeverity(record.escalationLevel) > 0
     ) {
-      const levels: EscalationLevel[] = ["observed", "flagged", "restricted", "blocked"];
+      const levels: EscalationLevel[] = [
+        "observed",
+        "flagged",
+        "restricted",
+        "blocked",
+      ];
       const currentIdx = levels.indexOf(record.escalationLevel);
       if (currentIdx > 0) {
         record.escalationLevel = levels[currentIdx - 1];

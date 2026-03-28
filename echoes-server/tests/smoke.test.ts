@@ -1,21 +1,36 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { mkdtempSync, rmSync, mkdirSync, writeFileSync, readFileSync } from "fs";
+import {
+  mkdtempSync,
+  rmSync,
+  mkdirSync,
+  writeFileSync,
+  readFileSync,
+} from "fs";
 import os from "os";
 import path from "path";
 
 // Type assertion for testing - bypass private property access
 interface TestServer {
-  _registeredTools: Record<string, { inputSchema?: unknown; handler: (...args: any[]) => unknown }>;
+  _registeredTools: Record<
+    string,
+    { inputSchema?: unknown; handler: (...args: any[]) => unknown }
+  >;
 }
 
 function getToolNames(server: TestServer): string[] {
   return Object.keys(server._registeredTools);
 }
 
-async function invokeTool(server: TestServer, name: string, args: Record<string, unknown> = {}) {
+async function invokeTool(
+  server: TestServer,
+  name: string,
+  args: Record<string, unknown> = {},
+) {
   const tool = server._registeredTools[name];
   expect(tool).toBeDefined();
-  return tool.inputSchema ? await tool.handler(args, {} as any) : await tool.handler({} as any);
+  return tool.inputSchema
+    ? await tool.handler(args, {} as any)
+    : await tool.handler({} as any);
 }
 
 describe("echoes-server smoke", () => {
@@ -37,19 +52,28 @@ describe("echoes-server smoke", () => {
   });
 
   it("registers expected tools", () => {
-    expect(getToolNames(buildServer())).toEqual(expect.arrayContaining([
-      "health_check",
-      "record_audit",
-      "query_audit",
-      "audit_stats",
-      "save_telemetry",
-      "list_telemetry",
-    ]));
+    expect(getToolNames(buildServer())).toEqual(
+      expect.arrayContaining([
+        "health_check",
+        "record_audit",
+        "query_audit",
+        "audit_stats",
+        "save_telemetry",
+        "list_telemetry",
+        "check_recurrence",
+        "query_precedents",
+        "resolve_precedent",
+        "enforcement_status",
+      ]),
+    );
   });
 
   it("runs health_check successfully", async () => {
     const server = buildServer();
-    const result = await invokeTool(server, "health_check") as { isError?: boolean; content?: Array<{ type: string; text?: string }> };
+    const result = (await invokeTool(server, "health_check")) as {
+      isError?: boolean;
+      content?: Array<{ type: string; text?: string }>;
+    };
     expect(result.isError).not.toBe(true);
     const text = result.content?.[0]?.text;
     expect(text).toBeDefined();
@@ -62,13 +86,17 @@ describe("echoes-server smoke", () => {
     const server = buildServer();
 
     // Record an audit entry
-    const recordResult = await invokeTool(server, "record_audit", {
+    const recordResult = (await invokeTool(server, "record_audit", {
       source: "echoes-server",
       tool: "test_tool",
       status: "success",
       durationMs: 42,
       metadata: { test: true },
-    }) as { isError?: boolean; content?: Array<{ type: string; text?: string }> };
+      runMode: "live",
+    })) as {
+      isError?: boolean;
+      content?: Array<{ type: string; text?: string }>;
+    };
     expect(recordResult.isError).not.toBe(true);
 
     const recordText = recordResult.content?.[0]?.text;
@@ -77,11 +105,14 @@ describe("echoes-server smoke", () => {
     expect(recordParsed.id).toBeDefined();
 
     // Query the audit log
-    const queryResult = await invokeTool(server, "query_audit", {
+    const queryResult = (await invokeTool(server, "query_audit", {
       limit: 10,
       tool: "test_tool",
       status: "success",
-    }) as { isError?: boolean; content?: Array<{ type: string; text?: string }> };
+    })) as {
+      isError?: boolean;
+      content?: Array<{ type: string; text?: string }>;
+    };
     expect(queryResult.isError).not.toBe(true);
 
     const queryText = queryResult.content?.[0]?.text;
@@ -100,15 +131,20 @@ describe("echoes-server smoke", () => {
       tool: "tool_a",
       status: "success",
       durationMs: 100,
+      runMode: "live",
     });
     await invokeTool(server, "record_audit", {
       source: "echoes-server",
       tool: "tool_b",
       status: "failure",
       durationMs: 200,
+      runMode: "live",
     });
 
-    const statsResult = await invokeTool(server, "audit_stats", {}) as { isError?: boolean; content?: Array<{ type: string; text?: string }> };
+    const statsResult = (await invokeTool(server, "audit_stats", {})) as {
+      isError?: boolean;
+      content?: Array<{ type: string; text?: string }>;
+    };
     expect(statsResult.isError).not.toBe(true);
 
     const statsText = statsResult.content?.[0]?.text;
@@ -123,12 +159,16 @@ describe("echoes-server smoke", () => {
     const server = buildServer();
 
     // Save a telemetry snapshot
-    const saveResult = await invokeTool(server, "save_telemetry", {
+    const saveResult = (await invokeTool(server, "save_telemetry", {
       workspace: "test-workspace",
       projects: 5,
       activeServers: ["echoes", "grid"],
       metrics: { healthScore: 95, commitCount: 42 },
-    }) as { isError?: boolean; content?: Array<{ type: string; text?: string }> };
+      runMode: "live",
+    })) as {
+      isError?: boolean;
+      content?: Array<{ type: string; text?: string }>;
+    };
     expect(saveResult.isError).not.toBe(true);
 
     const saveText = saveResult.content?.[0]?.text;
@@ -137,7 +177,12 @@ describe("echoes-server smoke", () => {
     expect(saveParsed.path).toBeDefined();
 
     // List telemetry snapshots
-    const listResult = await invokeTool(server, "list_telemetry", { limit: 5 }) as { isError?: boolean; content?: Array<{ type: string; text?: string }> };
+    const listResult = (await invokeTool(server, "list_telemetry", {
+      limit: 5,
+    })) as {
+      isError?: boolean;
+      content?: Array<{ type: string; text?: string }>;
+    };
     expect(listResult.isError).not.toBe(true);
 
     const listText = listResult.content?.[0]?.text;
@@ -155,19 +200,24 @@ describe("echoes-server smoke", () => {
       source: "echoes-server",
       tool: "filter_tool",
       status: "blocked",
+      runMode: "live",
     });
     await invokeTool(server, "record_audit", {
       source: "echoes-server",
       tool: "filter_tool",
       status: "dry_run",
+      runMode: "live",
     });
 
     // Query for blocked only
-    const blockedResult = await invokeTool(server, "query_audit", {
+    const blockedResult = (await invokeTool(server, "query_audit", {
       limit: 10,
       tool: "filter_tool",
       status: "blocked",
-    }) as { isError?: boolean; content?: Array<{ type: string; text?: string }> };
+    })) as {
+      isError?: boolean;
+      content?: Array<{ type: string; text?: string }>;
+    };
 
     const blockedText = blockedResult.content?.[0]?.text;
     const blockedParsed = JSON.parse(blockedText as string);
@@ -186,15 +236,80 @@ describe("echoes-server smoke", () => {
       source: "echoes-server",
       tool: "time_tool",
       status: "success",
+      runMode: "live",
     });
 
     // Query with since filter (1 hour ago should include it)
     const since = new Date(Date.now() - 3600000).toISOString();
-    const queryResult = await invokeTool(server, "query_audit", {
+    const queryResult = (await invokeTool(server, "query_audit", {
       limit: 10,
       since,
-    }) as { isError?: boolean; content?: Array<{ type: string; text?: string }> };
+    })) as {
+      isError?: boolean;
+      content?: Array<{ type: string; text?: string }>;
+    };
 
     expect(queryResult.isError).not.toBe(true);
+  });
+
+  it("does not mutate precedents when using check_recurrence", async () => {
+    const server = buildServer();
+    const source = "echoes-server-check";
+    const tool = "read_only_probe";
+
+    const before = (await invokeTool(server, "query_precedents", {
+      source,
+      tool,
+      limit: 10,
+    })) as { content?: Array<{ text?: string }> };
+    const beforeParsed = JSON.parse(before.content?.[0]?.text as string);
+
+    const probe = (await invokeTool(server, "check_recurrence", {
+      source,
+      tool,
+      status: "error",
+      metadata: { reason: "probe" },
+      isMutating: true,
+      runMode: "sandbox",
+    })) as { isError?: boolean; content?: Array<{ text?: string }> };
+    expect(probe.isError).not.toBe(true);
+
+    const after = (await invokeTool(server, "query_precedents", {
+      source,
+      tool,
+      limit: 10,
+    })) as { content?: Array<{ text?: string }> };
+    const afterParsed = JSON.parse(after.content?.[0]?.text as string);
+
+    expect(afterParsed.count).toBe(beforeParsed.count);
+  });
+
+  it("filters status=error without including failure rows", async () => {
+    const server = buildServer();
+    const tool = "error_filter_probe";
+
+    await invokeTool(server, "record_audit", {
+      source: "echoes-server",
+      tool,
+      status: "error",
+      runMode: "live",
+    });
+    await invokeTool(server, "record_audit", {
+      source: "echoes-server",
+      tool,
+      status: "failure",
+      runMode: "live",
+    });
+
+    const errorOnly = (await invokeTool(server, "query_audit", {
+      limit: 20,
+      tool,
+      status: "error",
+    })) as { content?: Array<{ text?: string }> };
+    const parsed = JSON.parse(errorOnly.content?.[0]?.text as string);
+    expect(parsed.count).toBeGreaterThanOrEqual(1);
+    for (const entry of parsed.entries) {
+      expect(entry.status).toBe("error");
+    }
   });
 });

@@ -4,7 +4,7 @@
  * Follows the EvolutionCycleStore pattern from eligibility-server:
  * JSON file with in-memory cache, sync read/write.
  *
- * Storage: ~/.echoes/precedents/precedent-store.json
+ * Storage: <configured-dir>/precedent-store.json
  */
 
 import { generateId } from "@cascade/shared-types/id";
@@ -21,7 +21,6 @@ import {
   fingerprintKey,
 } from "@cascade/shared-types/precedent";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { homedir } from "node:os";
 import path from "node:path";
 
 interface PrecedentStoreData {
@@ -29,13 +28,11 @@ interface PrecedentStoreData {
   precedents: PrecedentRecord[];
 }
 
-const DEFAULT_DIR = path.join(homedir(), ".echoes", "precedents");
-
 export class PrecedentStore {
   private cache: PrecedentStoreData | null = null;
   private readonly filePath: string;
 
-  constructor(dataDir: string = DEFAULT_DIR) {
+  constructor(dataDir: string) {
     this.filePath = path.join(dataDir, "precedent-store.json");
   }
 
@@ -53,7 +50,7 @@ export class PrecedentStore {
 
     const raw = readFileSync(this.filePath, "utf8");
     this.cache = raw.trim()
-      ? JSON.parse(raw) as PrecedentStoreData
+      ? (JSON.parse(raw) as PrecedentStoreData)
       : { schemaVersion: "1.0.0", precedents: [] };
     this.cache.precedents ||= [];
     return this.cache;
@@ -68,11 +65,11 @@ export class PrecedentStore {
 
   findByFingerprint(fp: PrecedentFingerprint): PrecedentRecord | undefined {
     const key = fingerprintKey(fp);
-    return this.ensureLoaded().precedents.find(r => r.fingerprintKey === key);
+    return this.ensureLoaded().precedents.find((r) => r.fingerprintKey === key);
   }
 
   findById(id: string): PrecedentRecord | undefined {
-    return this.ensureLoaded().precedents.find(r => r.id === id);
+    return this.ensureLoaded().precedents.find((r) => r.id === id);
   }
 
   upsert(
@@ -82,7 +79,7 @@ export class PrecedentStore {
   ): PrecedentRecord {
     const data = this.ensureLoaded();
     const key = fingerprintKey(fp);
-    const existing = data.precedents.find(r => r.fingerprintKey === key);
+    const existing = data.precedents.find((r) => r.fingerprintKey === key);
 
     if (existing) {
       existing.lastSeen = occurrence.timestamp;
@@ -91,7 +88,9 @@ export class PrecedentStore {
       existing.consecutiveSuccesses = 0;
       existing.occurrences.push(occurrence);
       if (existing.occurrences.length > MAX_OCCURRENCES_PER_RECORD) {
-        existing.occurrences = existing.occurrences.slice(-MAX_OCCURRENCES_PER_RECORD);
+        existing.occurrences = existing.occurrences.slice(
+          -MAX_OCCURRENCES_PER_RECORD,
+        );
       }
       this.save();
       return existing;
@@ -114,9 +113,12 @@ export class PrecedentStore {
     return record;
   }
 
-  resolve(id: string, resolution: PrecedentResolution): PrecedentRecord | undefined {
+  resolve(
+    id: string,
+    resolution: PrecedentResolution,
+  ): PrecedentRecord | undefined {
     const data = this.ensureLoaded();
-    const record = data.precedents.find(r => r.id === id);
+    const record = data.precedents.find((r) => r.id === id);
     if (!record) return undefined;
 
     record.resolution = resolution;
@@ -129,7 +131,10 @@ export class PrecedentStore {
     const data = this.ensureLoaded();
     let changed = false;
     for (const record of data.precedents) {
-      if (record.fingerprint.source === source && record.fingerprint.tool === tool) {
+      if (
+        record.fingerprint.source === source &&
+        record.fingerprint.tool === tool
+      ) {
         record.consecutiveSuccesses += 1;
         changed = true;
       }
@@ -138,15 +143,15 @@ export class PrecedentStore {
   }
 
   listActive(limit = 50): PrecedentRecord[] {
-    return this.ensureLoaded().precedents
-      .filter(r => r.resolution === null || this.isInCooldown(r))
+    return this.ensureLoaded()
+      .precedents.filter((r) => r.resolution === null || this.isInCooldown(r))
       .sort((a, b) => b.lastSeen.localeCompare(a.lastSeen))
       .slice(0, limit);
   }
 
   listByLevel(level: EscalationLevel): PrecedentRecord[] {
-    return this.ensureLoaded().precedents
-      .filter(r => r.escalationLevel === level)
+    return this.ensureLoaded()
+      .precedents.filter((r) => r.escalationLevel === level)
       .sort((a, b) => b.lastSeen.localeCompare(a.lastSeen));
   }
 
@@ -158,11 +163,13 @@ export class PrecedentStore {
     const data = this.ensureLoaded();
     const now = Date.now();
     const before = data.precedents.length;
-    data.precedents = data.precedents.filter(r => {
+    data.precedents = data.precedents.filter((r) => {
       if (!r.resolution) return true;
       const resolvedAge = now - new Date(r.resolution.resolvedAt).getTime();
       const lastSeenAge = now - new Date(r.lastSeen).getTime();
-      return resolvedAge < ARCHIVE_THRESHOLD_MS || lastSeenAge < ARCHIVE_THRESHOLD_MS;
+      return (
+        resolvedAge < ARCHIVE_THRESHOLD_MS || lastSeenAge < ARCHIVE_THRESHOLD_MS
+      );
     });
     const removed = before - data.precedents.length;
     if (removed > 0) this.save();
