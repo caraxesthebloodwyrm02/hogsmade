@@ -11,7 +11,13 @@
  */
 
 import { AuditIntegrityGuard } from '@cascade/shared-types/security-policy';
+import { generateId } from '@cascade/shared-types/id';
+import { McpLogger } from '@cascade/shared-types/mcp-logger';
+import { DEFAULT_COOLDOWN_MS, PRECEDENT_TRIGGER_STATUSES } from '@cascade/shared-types/precedent';
+import type { RecurrenceCheckResult } from '@cascade/shared-types/precedent';
 import { SessionRateLimiter } from '@cascade/shared-types/session-rate-limit';
+import { PrecedentStore } from './precedent-store.js';
+import { applySuccessDeescalation, applyTimeDecay, checkRecurrence } from './recurrence.js';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { promises as fs } from 'fs';
@@ -24,6 +30,7 @@ import { getConfig } from './config.js';
 
 const SERVER_NAME = 'echoes-server';
 const VERSION = '1.0.0';
+const logger = new McpLogger(SERVER_NAME);
 const config = getConfig();
 const DATA_DIR = config.dataDir;
 const AUDIT_LOG_PATH = config.auditLogPath;
@@ -90,7 +97,7 @@ async function appendAuditEntry(entry: AuditEntry): Promise<void> {
   try {
     JSON.parse(line);
   } catch (err) {
-    console.error(`[${SERVER_NAME}] REFUSING to append malformed audit entry: ${err}`);
+    logger.error(`REFUSING to append malformed audit entry: ${err}`);
     return;
   }
   await fs.appendFile(AUDIT_LOG_PATH, line, 'utf-8');
@@ -105,6 +112,7 @@ function normalizeAuditStatus(status: unknown): AuditEntry['status'] | null {
 
 const MAX_AUDIT_FILE_BYTES = 100 * 1024 * 1024; // 100 MB guard
 const readLimiter = new SessionRateLimiter();
+const precedentStore = new PrecedentStore();
 
 async function readAuditLog(
   limit: number,
@@ -128,12 +136,13 @@ async function readAuditLog(
     try {
       const parsed = JSON.parse(line) as Partial<AuditEntry>;
       const status = normalizeAuditStatus(parsed.status);
-      if (!status || !parsed.id || !parsed.timestamp || !parsed.source || !parsed.tool) {
+      if (!status || !parsed.timestamp || !parsed.source || !parsed.tool) {
         corruptLineCount++;
         return null;
       }
       return {
         ...parsed,
+        id: parsed.id ?? `synth-${parsed.timestamp}`,
         status,
       } as AuditEntry;
     } catch {
@@ -142,7 +151,7 @@ async function readAuditLog(
     }
   }).filter(Boolean) as AuditEntry[];
   if (corruptLineCount > 0) {
-    console.error(`[${SERVER_NAME}] ${corruptLineCount} corrupt/malformed lines skipped in audit log`);
+    logger.warn(`${corruptLineCount} corrupt/malformed lines skipped in audit log`);
   }
 
   if (filter?.tool) {
@@ -327,7 +336,7 @@ export function buildServer(): McpServer {
       }
 
       const entry: AuditEntry = {
-        id: `aud-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        id: generateId("aud"),
         timestamp: now,
         source: args.source,
         tool: args.tool,
@@ -336,8 +345,29 @@ export function buildServer(): McpServer {
         metadata: args.metadata as Record<string, unknown> | undefined,
       };
       await appendAuditEntry(entry);
+
+      // Feed recurrence detector for failure/blocked/error events
+      let recurrence: RecurrenceCheckResult | null = null;
+      if (PRECEDENT_TRIGGER_STATUSES.has(entry.status)) {
+        recurrence = checkRecurrence(precedentStore, {
+          source: entry.source,
+          tool: entry.tool,
+          status: entry.status,
+          metadata: entry.metadata,
+        });
+      } else if (entry.status === 'success') {
+        precedentStore.recordSuccess(entry.source, entry.tool);
+      }
+
       return {
-        content: [{ type: 'text' as const, text: JSON.stringify({ recorded: true, id: entry.id }) }],
+        content: [{
+          type: 'text' as const,
+          text: JSON.stringify({
+            recorded: true,
+            id: entry.id,
+            ...(recurrence ? { recurrence } : {}),
+          }),
+        }],
       };
     }
   );
@@ -436,6 +466,181 @@ export function buildServer(): McpServer {
     }
   );
 
+  // ── Precedent Enforcement ──
+
+  server.registerTool(
+    'check_recurrence',
+    {
+      description: 'Check if a tool+source+status pattern would be a recurrence and what enforcement level it would trigger. Read-only — does not record.',
+      inputSchema: z.object({
+        source: z.string().min(1).describe('Server name'),
+        tool: z.string().min(1).describe('Tool name'),
+        status: z.enum(['success', 'failure', 'blocked', 'dry_run', 'error']).describe('Status to check'),
+        metadata: z.record(z.unknown()).optional().describe('Metadata for fingerprint matching'),
+        isMutating: z.boolean().optional().default(false).describe('Whether the tool is mutating (affects block vs restrict)'),
+      }),
+    },
+    async (args) => {
+      const result = checkRecurrence(precedentStore, {
+        source: args.source,
+        tool: args.tool,
+        status: args.status,
+        metadata: args.metadata as Record<string, unknown> | undefined,
+      }, args.isMutating ?? false);
+      return {
+        content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }],
+      };
+    }
+  );
+
+  server.registerTool(
+    'query_precedents',
+    {
+      description: 'Query active precedents with optional filters by escalation level, source, or tool.',
+      inputSchema: z.object({
+        level: z.enum(['observed', 'flagged', 'restricted', 'blocked']).optional().describe('Filter by escalation level'),
+        source: z.string().optional().describe('Filter by source server'),
+        tool: z.string().optional().describe('Filter by tool name'),
+        limit: z.number().min(1).max(100).optional().default(20).describe('Max records to return'),
+      }),
+    },
+    async (args) => {
+      const rlMsg = readLimiter.check('query_precedents');
+      if (rlMsg) return { content: [{ type: 'text' as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
+
+      let records = args.level
+        ? precedentStore.listByLevel(args.level)
+        : precedentStore.listActive(args.limit ?? 20);
+
+      if (args.source) {
+        records = records.filter(r => r.fingerprint.source === args.source);
+      }
+      if (args.tool) {
+        records = records.filter(r => r.fingerprint.tool === args.tool);
+      }
+
+      records = records.slice(0, args.limit ?? 20);
+
+      return {
+        content: [{
+          type: 'text' as const,
+          text: JSON.stringify({
+            count: records.length,
+            precedents: records.map(r => ({
+              id: r.id,
+              source: r.fingerprint.source,
+              tool: r.fingerprint.tool,
+              category: r.fingerprint.category,
+              status: r.fingerprint.status,
+              occurrenceCount: r.occurrenceCount,
+              escalationLevel: r.escalationLevel,
+              firstSeen: r.firstSeen,
+              lastSeen: r.lastSeen,
+              consecutiveSuccesses: r.consecutiveSuccesses,
+              resolved: !!r.resolution,
+            })),
+          }, null, 2),
+        }],
+      };
+    }
+  );
+
+  server.registerTool(
+    'resolve_precedent',
+    {
+      description: 'Mark a precedent as resolved. Resets escalation to observed and starts a 7-day cooldown. If the pattern recurs during cooldown, escalation resumes.',
+      inputSchema: z.object({
+        precedentId: z.string().min(1).describe('Precedent ID to resolve'),
+        action: z.string().min(1).describe('What was done to fix the root cause'),
+        resolvedBy: z.string().optional().default('manual').describe('Who resolved it (session ID, "auto", or label)'),
+        cooldownDays: z.number().min(1).max(30).optional().default(7).describe('Days before escalation fully resets'),
+      }),
+    },
+    async (args) => {
+      const cooldownMs = (args.cooldownDays ?? 7) * 24 * 60 * 60 * 1000;
+      const resolution = {
+        resolvedAt: new Date().toISOString(),
+        resolvedBy: args.resolvedBy ?? 'manual',
+        action: args.action,
+        cooldownUntil: new Date(Date.now() + cooldownMs).toISOString(),
+      };
+      const record = precedentStore.resolve(args.precedentId, resolution);
+      if (!record) {
+        return {
+          content: [{ type: 'text' as const, text: JSON.stringify({ error: `Precedent ${args.precedentId} not found` }) }],
+          isError: true,
+        };
+      }
+      return {
+        content: [{
+          type: 'text' as const,
+          text: JSON.stringify({
+            resolved: true,
+            id: record.id,
+            source: record.fingerprint.source,
+            tool: record.fingerprint.tool,
+            previousOccurrences: record.occurrenceCount,
+            cooldownUntil: resolution.cooldownUntil,
+          }, null, 2),
+        }],
+      };
+    }
+  );
+
+  server.registerTool(
+    'enforcement_status',
+    {
+      description: 'Get a summary of the precedent enforcement system — active counts by level, recent escalations, and decay/de-escalation status.',
+      inputSchema: z.object({}),
+    },
+    async () => {
+      // Apply decay and de-escalation on read
+      const decayed = applyTimeDecay(precedentStore);
+      const deescalated = applySuccessDeescalation(precedentStore);
+      const pruned = precedentStore.prune();
+
+      const active = precedentStore.listActive(1000);
+      const byLevel = {
+        observed: 0,
+        flagged: 0,
+        restricted: 0,
+        blocked: 0,
+      };
+      for (const r of active) {
+        byLevel[r.escalationLevel]++;
+      }
+
+      const recent = active.slice(0, 5).map(r => ({
+        id: r.id,
+        source: r.fingerprint.source,
+        tool: r.fingerprint.tool,
+        category: r.fingerprint.category,
+        occurrences: r.occurrenceCount,
+        level: r.escalationLevel,
+        lastSeen: r.lastSeen,
+      }));
+
+      return {
+        content: [{
+          type: 'text' as const,
+          text: JSON.stringify({
+            status: byLevel.blocked > 0 ? 'enforcing' : byLevel.restricted > 0 ? 'elevated' : 'normal',
+            totalActive: active.length,
+            byLevel,
+            maintenance: {
+              decayed,
+              deescalated,
+              pruned,
+            },
+            recentPrecedents: recent,
+            storePath: precedentStore.storePath,
+            timestamp: new Date().toISOString(),
+          }, null, 2),
+        }],
+      };
+    }
+  );
+
   // ── Start ──
 
   return server;
@@ -443,7 +648,7 @@ export function buildServer(): McpServer {
 
 export async function startServer(): Promise<McpServer> {
   await ensureDataDir();
-  console.error(`[${SERVER_NAME}] v${VERSION} starting — data: ${DATA_DIR}`);
+  logger.info(`v${VERSION} starting — data: ${DATA_DIR}`);
   const server = buildServer();
   await server.connect(new StdioServerTransport());
   return server;
@@ -454,7 +659,7 @@ const isEntrypoint = process.argv[1] != null
 
 if (isEntrypoint) {
   void startServer().catch((error) => {
-    console.error(`[${SERVER_NAME}] failed to start`, error);
+    logger.error(`failed to start`, { error: String(error) });
     process.exitCode = 1;
   });
 }
