@@ -80,7 +80,7 @@
         "RAG_EMBEDDING_PROVIDER": "ollama",
         "RAG_EMBEDDING_MODEL": "nomic-embed-text-v2-moe:latest",
         "RAG_LLM_MODE": "local",
-        "RAG_LLM_MODEL_LOCAL": "ministral:latest",
+        "RAG_LLM_MODEL_LOCAL": "ministral-3:latest",
         "RAG_VECTOR_STORE_PROVIDER": "chromadb",
         "RAG_VECTOR_STORE_PATH": "/home/caraxes/roots/GRID/.rag_db",
         "OLLAMA_BASE_URL": "http://localhost:11434"
@@ -131,6 +131,60 @@
       "cwd": "/home/caraxes/roots/GRID",
       "env": {
         "PYTHONPATH": "/home/caraxes/roots/GRID/src:/home/caraxes/roots/GRID"
+      }
+    },
+    "eligibility-server": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "tsx",
+        "/home/caraxes/CascadeProjects/eligibility-server/src/server.ts"
+      ],
+      "env": {
+        "ECHOES_AUDIT_PATH": "/home/caraxes/.echoes/audit.ndjson",
+        "ELIGIBILITY_DATA_DIR": "/home/caraxes/.eligibility-server"
+      }
+    },
+    "grid-enhanced-tools": {
+      "command": "/home/caraxes/roots/GRID/.venv/bin/python",
+      "args": [
+        "mcp-setup/server/enhanced_tools_mcp_server.py"
+      ],
+      "cwd": "/home/caraxes/roots/GRID",
+      "env": {
+        "PYTHONPATH": "/home/caraxes/roots/GRID/src:/home/caraxes/roots/GRID"
+      }
+    },
+    "code-analysis": {
+      "command": "/home/caraxes/roots/GRID/.venv/bin/python",
+      "args": [
+        "mcp-setup/server/code_analysis_mcp_server.py"
+      ],
+      "cwd": "/home/caraxes/roots/GRID",
+      "env": {
+        "PYTHONPATH": "/home/caraxes/roots/GRID/src:/home/caraxes/roots/GRID",
+        "EXTRA_ALLOWED_ROOTS": "/home/caraxes/CascadeProjects"
+      }
+    },
+    "test-runner": {
+      "command": "/home/caraxes/roots/GRID/.venv/bin/python",
+      "args": [
+        "mcp-setup/server/test_runner_mcp_server.py"
+      ],
+      "cwd": "/home/caraxes/roots/GRID",
+      "env": {
+        "PYTHONPATH": "/home/caraxes/roots/GRID/src:/home/caraxes/roots/GRID",
+        "EXTRA_ALLOWED_ROOTS": "/home/caraxes/CascadeProjects"
+      }
+    },
+    "portfolio-safety-lens": {
+      "command": "/home/caraxes/roots/GRID/.venv/bin/python",
+      "args": [
+        "mcp-setup/server/portfolio_safety_mcp_server.py"
+      ],
+      "cwd": "/home/caraxes/roots/GRID",
+      "env": {
+        "PYTHONPATH": "/home/caraxes/roots/GRID/src:/home/caraxes/roots/GRID:/home/caraxes/seed/archive/Coinbase_from_zip"
       }
     }
   }

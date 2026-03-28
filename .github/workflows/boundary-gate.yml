@@ -15,6 +15,7 @@ on:
       - 'GRID-main/**/boundaries/**'
       - 'GRID-main/.claude/rules/safety.md'
       - 'GRID-main/.claude/rules/behavioral-shield.md'
+      - 'GRID-main/mcp-setup/server/**'
 
 permissions:
   pull-requests: write
