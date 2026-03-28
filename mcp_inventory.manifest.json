@@ -124,6 +124,12 @@
       "bootstrapType": "mcp_sdk_stdio_python",
       "pythonModule": "grid.mcp.intelligence_server",
       "gridPythonScript": null
+    },
+    {
+      "mcpServerKey": "eligibility-server",
+      "runtime": "typescript",
+      "bootstrapType": "mcp_sdk_stdio_ts",
+      "entryRelative": "eligibility-server/src/server.ts"
     }
   ]
 }

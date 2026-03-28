@@ -193,6 +193,18 @@
       "env": {
         "PYTHONPATH": "/home/caraxes/roots/GRID/src:/home/caraxes/roots/GRID"
       }
+    },
+    "eligibility-server": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "tsx",
+        "/home/caraxes/CascadeProjects/eligibility-server/src/server.ts"
+      ],
+      "env": {
+        "ECHOES_AUDIT_PATH": "/home/caraxes/.echoes/audit.ndjson",
+        "ELIGIBILITY_DATA_DIR": "/home/caraxes/.eligibility-server"
+      }
     }
   }
 }
