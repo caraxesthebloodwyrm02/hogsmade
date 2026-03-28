@@ -21,6 +21,18 @@
     "./session-rate-limit": {
       "types": "./dist/session-rate-limit.d.ts",
       "default": "./dist/session-rate-limit.js"
+    },
+    "./id": {
+      "types": "./dist/id.d.ts",
+      "default": "./dist/id.js"
+    },
+    "./mcp-logger": {
+      "types": "./dist/mcp-logger.d.ts",
+      "default": "./dist/mcp-logger.js"
+    },
+    "./precedent": {
+      "types": "./dist/precedent.d.ts",
+      "default": "./dist/precedent.js"
     }
   },
   "scripts": {

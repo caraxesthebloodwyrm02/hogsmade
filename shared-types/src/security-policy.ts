@@ -322,6 +322,8 @@ export class AuditIntegrityGuard {
     "afloat-server",
     "overview-server",
     "grid-main",
+    "eligibility-server",
+    "glimpse-server",
   ]);
 
   static readonly MAX_TIMESTAMP_DRIFT_MS = 86_400_000; // 24 hours
