@@ -878,7 +878,8 @@ function topKey(obj) {
  * Infer project name from a list of directories.
  * Maps directory prefixes to known project names.
  */
-function inferProject(dirs) {
+function inferProject(rawDirs) {
+  const dirs = (rawDirs || []).filter(d => d != null);
   const projectPrefixes = [
     { prefix: "glimpse-engine", project: "glimpse-engine" },
     { prefix: "apiguard", project: "apiguard" },
