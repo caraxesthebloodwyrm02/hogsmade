@@ -1,4 +1,5 @@
-import { appendFileSync, existsSync, mkdirSync, unlinkSync, writeFileSync } from "fs";
+import { appendFileSync, closeSync, existsSync, mkdirSync, openSync, unlinkSync } from "fs";
+import { constants } from "fs";
 import { homedir } from "os";
 import { dirname, resolve } from "path";
 import type { AuditEvent } from "./audit.js";
@@ -41,25 +42,35 @@ async function processWriteQueue(): Promise<void> {
   const lockFile = `${ECHOES_AUDIT_PATH}.lock`;
 
   try {
-    // Simple lock mechanism with timeout
+    // Atomic lock acquisition via O_CREAT | O_EXCL — prevents TOCTOU race
+    // between checking lock existence and creating it.
     let retries = 0;
     const maxRetries = 10;
+    let lockFd: number | null = null;
 
-    while (existsSync(lockFile) && retries < maxRetries) {
-      await new Promise(r => setTimeout(r, 50)); // 50ms wait
-      retries++;
+    while (retries < maxRetries) {
+      try {
+        lockFd = openSync(lockFile, constants.O_CREAT | constants.O_EXCL | constants.O_WRONLY);
+        closeSync(lockFd);
+        break;
+      } catch (e: unknown) {
+        if ((e as NodeJS.ErrnoException).code === "EEXIST") {
+          // Lock held by another process — wait and retry
+          await new Promise(r => setTimeout(r, 50));
+          retries++;
+        } else {
+          throw e;
+        }
+      }
     }
 
-    if (existsSync(lockFile)) {
-      // Lock timeout - skip this write
+    if (lockFd === null) {
+      // Lock timeout — skip this write
       resolve(false);
       isWriting = false;
       setTimeout(processWriteQueue, 0);
       return;
     }
-
-    // Create lock
-    writeFileSync(lockFile, process.pid.toString());
 
     // Simple append with proper newline
     appendFileSync(ECHOES_AUDIT_PATH, event);
