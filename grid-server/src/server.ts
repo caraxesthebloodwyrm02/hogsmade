@@ -50,10 +50,10 @@ const readLimiter = new SessionRateLimiter();
 
 const gridApiPolicy = new ResiliencePolicy("grid-api", {
   circuitBreaker: {
-    failureThreshold: 3,
+    failureThreshold: 5,
     successThreshold: 2,
     timeoutMs: 30_000,
-    halfOpenMaxCalls: 1,
+    halfOpenMaxCalls: 2,
   },
   retry: {
     maxAttempts: 2,
@@ -219,7 +219,9 @@ function validateGridApiUrl(raw: string): string | null {
   try {
     const parsed = new URL(raw);
     if (!ALLOWED_GRID_HOSTS.has(parsed.hostname)) {
-      logger.warn(`GRID_API_URL host '${parsed.hostname}' not in allowlist — ignoring`);
+      logger.warn(
+        `GRID_API_URL host '${parsed.hostname}' not in allowlist — ignoring`,
+      );
       return null;
     }
     if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
@@ -253,7 +255,9 @@ export async function probeGridBackend(
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), timeoutMs);
     try {
-      const resp = await fetch(`${gridApiUrl}${endpoint}`, { signal: ctrl.signal });
+      const resp = await fetch(`${gridApiUrl}${endpoint}`, {
+        signal: ctrl.signal,
+      });
       if (resp.ok) {
         return {
           reachable: true,
@@ -295,8 +299,8 @@ async function getEnhancedValidation(
     return {
       consulted: true,
       approved: false,
-      flags: ['grid_url_invalid'],
-      reasoning: 'GRID_API_URL failed host allowlist validation',
+      flags: ["grid_url_invalid"],
+      reasoning: "GRID_API_URL failed host allowlist validation",
     };
   }
 
@@ -409,7 +413,13 @@ export function buildServer(): McpServer {
     },
     async () => {
       const rlMsg = readLimiter.check("list_targets");
-      if (rlMsg) return { content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
+      if (rlMsg)
+        return {
+          content: [
+            { type: "text" as const, text: JSON.stringify({ error: rlMsg }) },
+          ],
+          isError: true,
+        };
       const results: Record<string, unknown>[] = [];
       for (const [name, target] of Object.entries(DEPLOYMENT_TARGETS)) {
         const exists = await fileExists(target.path);
@@ -634,11 +644,11 @@ export function buildServer(): McpServer {
         const expected =
           payloadHash != null && machineFp != null && nonceVal != null
             ? computeUserFingerprint(
-              config.gateUserSecret,
-              payloadHash,
-              machineFp,
-              nonceVal,
-            )
+                config.gateUserSecret,
+                payloadHash,
+                machineFp,
+                nonceVal,
+              )
             : "";
         const bufDeclared =
           typeof userFp === "string" && /^[a-f0-9]+$/i.test(userFp)
@@ -670,7 +680,10 @@ export function buildServer(): McpServer {
 
       // Nonce: must be registered and not already burned (replay protection)
       const nonceRegistry = await readNonceRegistry();
-      const noncePolicy = GateSecurityPolicy.validateNonce(nonceVal, nonceRegistry);
+      const noncePolicy = GateSecurityPolicy.validateNonce(
+        nonceVal,
+        nonceRegistry,
+      );
       const nonceEntry = nonceVal != null ? nonceRegistry[nonceVal] : undefined;
       const nonceRegistered = nonceVal != null && nonceEntry != null;
       const nonceNotReused = nonceRegistered && nonceEntry.burned !== true;
@@ -706,7 +719,9 @@ export function buildServer(): McpServer {
         ? await getEnhancedValidation(envelope)
         : null;
       // P-INT-005: Fail closed when remote validation unavailable for production targets
-      const targetPartition = envelope["target_partition"] as string | undefined;
+      const targetPartition = envelope["target_partition"] as
+        | string
+        | undefined;
       if (enhancedValidation && enhancedValidation["approved"] === false) {
         const failClosedPolicy = GateSecurityPolicy.failClosedPolicy(
           !enhancedValidation["flags"]?.toString().includes("grid_unavailable"),
@@ -788,7 +803,13 @@ export function buildServer(): McpServer {
     },
     async (args: { limit?: number }) => {
       const rlMsg = readLimiter.check("gate_audit");
-      if (rlMsg) return { content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
+      if (rlMsg)
+        return {
+          content: [
+            { type: "text" as const, text: JSON.stringify({ error: rlMsg }) },
+          ],
+          isError: true,
+        };
       const entries = await readNdjsonFile(AUDIT_PATH, args.limit ?? 20);
       return {
         content: [
@@ -811,7 +832,13 @@ export function buildServer(): McpServer {
     },
     async () => {
       const rlMsg = readLimiter.check("nonce_status");
-      if (rlMsg) return { content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
+      if (rlMsg)
+        return {
+          content: [
+            { type: "text" as const, text: JSON.stringify({ error: rlMsg }) },
+          ],
+          isError: true,
+        };
       const registry =
         await readJsonFile<Record<string, unknown>>(NONCE_REGISTRY_PATH);
       if (!registry) {
@@ -871,7 +898,13 @@ export function buildServer(): McpServer {
     },
     async (args: { target: string; action: string }) => {
       const rlMsg = readLimiter.check("check_permission");
-      if (rlMsg) return { content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
+      if (rlMsg)
+        return {
+          content: [
+            { type: "text" as const, text: JSON.stringify({ error: rlMsg }) },
+          ],
+          isError: true,
+        };
       const t = DEPLOYMENT_TARGETS[args.target];
       if (!t) {
         return {
@@ -923,7 +956,9 @@ export function buildServer(): McpServer {
     const rawUrl = process.env.GRID_API_URL?.trim() || config.gridApiUrl || "";
     const gridApiUrl = rawUrl ? validateGridApiUrl(rawUrl) : null;
     if (!gridApiUrl) {
-      throw new Error("GRID_API_URL not configured or invalid — admission tools unavailable");
+      throw new Error(
+        "GRID_API_URL not configured or invalid — admission tools unavailable",
+      );
     }
 
     const result = await gridApiPolicy.execute<T>("admission", async () => {
@@ -956,10 +991,19 @@ export function buildServer(): McpServer {
     },
     async () => {
       const rlMsg = readLimiter.check("admission_policy");
-      if (rlMsg) return { content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
+      if (rlMsg)
+        return {
+          content: [
+            { type: "text" as const, text: JSON.stringify({ error: rlMsg }) },
+          ],
+          isError: true,
+        };
 
       try {
-        const result = await callAdmission<Record<string, unknown>>("GET", "/admission/policy");
+        const result = await callAdmission<Record<string, unknown>>(
+          "GET",
+          "/admission/policy",
+        );
 
         emitAudit({
           source: SERVER_NAME,
@@ -969,7 +1013,9 @@ export function buildServer(): McpServer {
         });
 
         return {
-          content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
+          content: [
+            { type: "text" as const, text: JSON.stringify(result, null, 2) },
+          ],
         };
       } catch (error) {
         emitAudit({
@@ -979,7 +1025,12 @@ export function buildServer(): McpServer {
           metadata: { error: String(error) },
         });
         return {
-          content: [{ type: "text" as const, text: JSON.stringify({ success: false, error: String(error) }) }],
+          content: [
+            {
+              type: "text" as const,
+              text: JSON.stringify({ success: false, error: String(error) }),
+            },
+          ],
           isError: true,
         };
       }
@@ -998,12 +1049,20 @@ export function buildServer(): McpServer {
         entity_id: z
           .string()
           .min(1)
-          .describe("Entity identifier (X-Entity-Id header value, api:key prefix, or ip:address)"),
+          .describe(
+            "Entity identifier (X-Entity-Id header value, api:key prefix, or ip:address)",
+          ),
       }),
     },
     async (args: { entity_id: string }) => {
       const rlMsg = readLimiter.check("admission_entity_report");
-      if (rlMsg) return { content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
+      if (rlMsg)
+        return {
+          content: [
+            { type: "text" as const, text: JSON.stringify({ error: rlMsg }) },
+          ],
+          isError: true,
+        };
 
       try {
         const result = await callAdmission<Record<string, unknown>>(
@@ -1023,7 +1082,9 @@ export function buildServer(): McpServer {
         });
 
         return {
-          content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
+          content: [
+            { type: "text" as const, text: JSON.stringify(result, null, 2) },
+          ],
         };
       } catch (error) {
         emitAudit({
@@ -1033,7 +1094,12 @@ export function buildServer(): McpServer {
           metadata: { entity_id: args.entity_id, error: String(error) },
         });
         return {
-          content: [{ type: "text" as const, text: JSON.stringify({ success: false, error: String(error) }) }],
+          content: [
+            {
+              type: "text" as const,
+              text: JSON.stringify({ success: false, error: String(error) }),
+            },
+          ],
           isError: true,
         };
       }
@@ -1074,7 +1140,13 @@ export function buildServer(): McpServer {
       target_path?: string;
     }) => {
       const rlMsg = readLimiter.check("admission_compliance_check");
-      if (rlMsg) return { content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
+      if (rlMsg)
+        return {
+          content: [
+            { type: "text" as const, text: JSON.stringify({ error: rlMsg }) },
+          ],
+          isError: true,
+        };
 
       try {
         const result = await callAdmission<Record<string, unknown>>(
@@ -1100,7 +1172,9 @@ export function buildServer(): McpServer {
         });
 
         return {
-          content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
+          content: [
+            { type: "text" as const, text: JSON.stringify(result, null, 2) },
+          ],
         };
       } catch (error) {
         emitAudit({
@@ -1110,7 +1184,12 @@ export function buildServer(): McpServer {
           metadata: { error: String(error) },
         });
         return {
-          content: [{ type: "text" as const, text: JSON.stringify({ success: false, error: String(error) }) }],
+          content: [
+            {
+              type: "text" as const,
+              text: JSON.stringify({ success: false, error: String(error) }),
+            },
+          ],
           isError: true,
         };
       }
@@ -1127,10 +1206,7 @@ export function buildServer(): McpServer {
         "the 3x accelerated multiplier. Violation types: budget_exceeded, origin_denied, " +
         "context_overflow, invalid_body, missing_structure, profit_masking.",
       inputSchema: z.object({
-        entity_id: z
-          .string()
-          .min(1)
-          .describe("Entity to penalize"),
+        entity_id: z.string().min(1).describe("Entity to penalize"),
         violation_type: z
           .enum([
             "budget_exceeded",
@@ -1165,7 +1241,13 @@ export function buildServer(): McpServer {
       metadata?: Record<string, unknown>;
     }) => {
       const rlMsg = readLimiter.check("admission_apply_penalty");
-      if (rlMsg) return { content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
+      if (rlMsg)
+        return {
+          content: [
+            { type: "text" as const, text: JSON.stringify({ error: rlMsg }) },
+          ],
+          isError: true,
+        };
 
       try {
         const result = await callAdmission<Record<string, unknown>>(
@@ -1195,7 +1277,9 @@ export function buildServer(): McpServer {
         });
 
         return {
-          content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
+          content: [
+            { type: "text" as const, text: JSON.stringify(result, null, 2) },
+          ],
         };
       } catch (error) {
         emitAudit({
@@ -1205,7 +1289,12 @@ export function buildServer(): McpServer {
           metadata: { entity_id: args.entity_id, error: String(error) },
         });
         return {
-          content: [{ type: "text" as const, text: JSON.stringify({ success: false, error: String(error) }) }],
+          content: [
+            {
+              type: "text" as const,
+              text: JSON.stringify({ success: false, error: String(error) }),
+            },
+          ],
           isError: true,
         };
       }
@@ -1223,7 +1312,13 @@ export function buildServer(): McpServer {
     },
     async () => {
       const rlMsg = readLimiter.check("admission_bannered_entities");
-      if (rlMsg) return { content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
+      if (rlMsg)
+        return {
+          content: [
+            { type: "text" as const, text: JSON.stringify({ error: rlMsg }) },
+          ],
+          isError: true,
+        };
 
       try {
         const result = await callAdmission<Record<string, unknown>>(
@@ -1239,7 +1334,9 @@ export function buildServer(): McpServer {
         });
 
         return {
-          content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
+          content: [
+            { type: "text" as const, text: JSON.stringify(result, null, 2) },
+          ],
         };
       } catch (error) {
         emitAudit({
@@ -1249,7 +1346,12 @@ export function buildServer(): McpServer {
           metadata: { error: String(error) },
         });
         return {
-          content: [{ type: "text" as const, text: JSON.stringify({ success: false, error: String(error) }) }],
+          content: [
+            {
+              type: "text" as const,
+              text: JSON.stringify({ success: false, error: String(error) }),
+            },
+          ],
           isError: true,
         };
       }
@@ -1267,10 +1369,19 @@ export function buildServer(): McpServer {
     },
     async () => {
       const rlMsg = readLimiter.check("admission_stats");
-      if (rlMsg) return { content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
+      if (rlMsg)
+        return {
+          content: [
+            { type: "text" as const, text: JSON.stringify({ error: rlMsg }) },
+          ],
+          isError: true,
+        };
 
       try {
-        const result = await callAdmission<Record<string, unknown>>("GET", "/admission/stats");
+        const result = await callAdmission<Record<string, unknown>>(
+          "GET",
+          "/admission/stats",
+        );
 
         emitAudit({
           source: SERVER_NAME,
@@ -1283,7 +1394,9 @@ export function buildServer(): McpServer {
         });
 
         return {
-          content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
+          content: [
+            { type: "text" as const, text: JSON.stringify(result, null, 2) },
+          ],
         };
       } catch (error) {
         emitAudit({
@@ -1293,7 +1406,12 @@ export function buildServer(): McpServer {
           metadata: { error: String(error) },
         });
         return {
-          content: [{ type: "text" as const, text: JSON.stringify({ success: false, error: String(error) }) }],
+          content: [
+            {
+              type: "text" as const,
+              text: JSON.stringify({ success: false, error: String(error) }),
+            },
+          ],
           isError: true,
         };
       }
@@ -1322,21 +1440,25 @@ export async function startServer(): Promise<McpServer> {
         } else {
           logger.warn(
             `GRID backend at ${gridApiUrl} is NOT reachable ` +
-            `(lastEndpoint=${probe.endpoint ?? "none"}, status=${probe.status ?? "unreachable"}, error=${probe.error ?? "unknown"}). ` +
-            `Remote gate validation will fail-closed (approved=false) until backend is restored.`
+              `(lastEndpoint=${probe.endpoint ?? "none"}, status=${probe.status ?? "unreachable"}, error=${probe.error ?? "unknown"}). ` +
+              `Remote gate validation will fail-closed (approved=false) until backend is restored.`,
           );
         }
       } catch {
         logger.warn(
           `GRID backend probe failed for ${gridApiUrl}. ` +
-          `Remote gate validation will fail-closed.`
+            `Remote gate validation will fail-closed.`,
         );
       }
     } else {
-      logger.warn(`GRID_API_URL configured but invalid — remote validation disabled.`);
+      logger.warn(
+        `GRID_API_URL configured but invalid — remote validation disabled.`,
+      );
     }
   } else {
-    logger.info(`GRID_API_URL not set — remote gate validation disabled (local-only mode).`);
+    logger.info(
+      `GRID_API_URL not set — remote gate validation disabled (local-only mode).`,
+    );
   }
 
   const server = buildServer();
