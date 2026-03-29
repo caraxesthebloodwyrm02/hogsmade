@@ -39,8 +39,8 @@ export async function aggregateCheckpoint(
   // 3. Detect drift
   const drift = detectDrift(data);
 
-  // 4. Compute trust signal
-  const trust = computeTrust(data, drift);
+  // 4. Compute relational trust
+  const trust = computeTrust(data, drift, clusters);
 
   // 5. Compute trajectory
   const trajectory = computeTrajectory(data);

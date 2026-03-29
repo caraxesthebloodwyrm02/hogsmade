@@ -630,6 +630,217 @@ async function fetchCognitionData(): Promise<CognitionResult> {
   };
 }
 
+// ── Session Entry endpoint ───────────────────────────────────────────
+
+const SEEDS_SNAPSHOTS_DIR =
+  process.env["SEEDS_SNAPSHOTS_DIR"] ??
+  path.join(HOME, ".seeds-server", "snapshots");
+
+const PROGRESS_FILE = path.join(HOME, ".claude-progress.md");
+
+// Cluster definitions (mirrors overview-server/src/clusters.ts)
+const CLUSTER_IDS = [
+  "grid-family",
+  "mcp-infrastructure",
+  "canopy-apps",
+  "glimpse-family",
+  "deployment-pipeline",
+  "seed-archive",
+] as const;
+
+const CLUSTER_LABELS: Record<string, string> = {
+  "grid-family": "GRID Family",
+  "mcp-infrastructure": "MCP Infrastructure",
+  "canopy-apps": "Canopy Apps",
+  "glimpse-family": "Glimpse Family",
+  "deployment-pipeline": "Deployment Pipeline",
+  "seed-archive": "Seed & Archive",
+};
+
+const CLUSTER_REPOS: Record<string, string[]> = {
+  "grid-family": ["GRID", "GRID-main"],
+  "mcp-infrastructure": ["hogsmade", "shared-types", "shared-resilience"],
+  "canopy-apps": ["afloat", "echoes"],
+  "glimpse-family": ["glimpse-engine", "glimpse-artifact"],
+  "deployment-pipeline": ["GATE", "apiguard"],
+  "seed-archive": ["seed", "Vision"],
+};
+
+interface SeedsRepo {
+  name: string;
+  exists: boolean;
+  healthScore: number;
+  issues: string[];
+  uncommittedChanges?: number;
+  branch?: string;
+}
+
+interface SeedsSnapshot {
+  timestamp: string;
+  repos: SeedsRepo[];
+}
+
+async function readLatestSnapshot(): Promise<SeedsSnapshot | null> {
+  try {
+    const files = await readdir(SEEDS_SNAPSHOTS_DIR);
+    const jsonFiles = files.filter((f: string) => f.endsWith(".json")).sort().reverse();
+    if (jsonFiles.length === 0) return null;
+    const raw = await readFile(path.join(SEEDS_SNAPSHOTS_DIR, jsonFiles[0]), "utf-8");
+    return JSON.parse(raw) as SeedsSnapshot;
+  } catch {
+    return null;
+  }
+}
+
+async function readLastPosition(): Promise<string | null> {
+  try {
+    const raw = await readFile(PROGRESS_FILE, "utf-8");
+    // Extract the first substantive line after any "## What was done" or similar
+    const lines = raw.split("\n").filter((l) => l.trim() && !l.startsWith("#"));
+    return lines[0]?.trim() ?? null;
+  } catch {
+    return null;
+  }
+}
+
+async function readHistoryWhisper(): Promise<string | null> {
+  // Read last 5 audit events for a meaningful history moment
+  try {
+    const raw = await readFile(AUDIT_NDJSON_PATH, "utf-8");
+    const lines = raw.trim().split("\n").filter(Boolean);
+    if (lines.length < 5) return null;
+    // Pick a line from ~20 events ago for a "history whisper"
+    const idx = Math.max(0, lines.length - 20);
+    const entry = JSON.parse(lines[idx]) as {
+      timestamp?: string;
+      source?: string;
+      tool?: string;
+      status?: string;
+    };
+    if (entry.source && entry.tool) {
+      const date = entry.timestamp ? new Date(entry.timestamp).toLocaleDateString() : "a while ago";
+      return `On ${date}, ${entry.source} ran ${entry.tool} — ${entry.status ?? "completed"}.`;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+async function buildSessionEntryPayload(): Promise<Record<string, unknown>> {
+  const [snapshot, auditEvents, focusStatus, lastPosition, historyWhisper] =
+    await Promise.all([
+      readLatestSnapshot(),
+      readAuditEvents(50),
+      readFocusStatus(),
+      readLastPosition(),
+      readHistoryWhisper(),
+    ]);
+
+  // Compute per-cluster health from snapshot
+  const repoMap = new Map<string, SeedsRepo>();
+  if (snapshot) {
+    for (const r of snapshot.repos) {
+      repoMap.set(r.name.toLowerCase(), r);
+    }
+  }
+
+  const clusters = CLUSTER_IDS.map((id) => {
+    const repos = CLUSTER_REPOS[id] ?? [];
+    const scores = repos
+      .map((name) => repoMap.get(name.toLowerCase())?.healthScore)
+      .filter((s): s is number => s !== undefined);
+    const health = scores.length > 0
+      ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)
+      : 0;
+    const issues = repos.reduce((sum, name) => {
+      const r = repoMap.get(name.toLowerCase());
+      return sum + (r?.issues?.length ?? 0);
+    }, 0);
+
+    return { id, label: CLUSTER_LABELS[id], clusterHealth: health, issueCount: issues, entities: [] };
+  });
+
+  // Ecosystem score
+  const allScores = clusters.map((c) => c.clusterHealth).filter((s) => s > 0);
+  const ecosystemScore = allScores.length > 0
+    ? Math.round(allScores.reduce((a, b) => a + b, 0) / allScores.length)
+    : null;
+
+  // Audit failures for drift
+  const failures = auditEvents.filter(
+    (e) => e.status === "failure" || e.status === "error",
+  );
+  const driftCount = failures.length;
+  const driftSeverity = driftCount > 5 ? "high" : driftCount > 0 ? "moderate" : "none";
+
+  // Simple trust relationships (builder perspective)
+  const relationships = clusters.map((c) => {
+    const confidence = c.clusterHealth > 0 ? c.clusterHealth / 100 : null;
+    return {
+      observer: "builder",
+      subject: c.id,
+      confidence,
+      basis: [],
+    };
+  });
+
+  // Ecosystem self-trust
+  const availableSources = [snapshot !== null, auditEvents.length > 0, focusStatus.active].filter(Boolean).length;
+  relationships.push({
+    observer: "ecosystem",
+    subject: "self",
+    confidence: Math.min(1, availableSources / 3),
+    basis: [],
+  });
+
+  // Newcomer
+  relationships.push({
+    observer: "newcomer",
+    subject: "ecosystem",
+    confidence: availableSources >= 2 ? (ecosystemScore ?? 50) / 100 : null,
+    basis: [],
+  });
+
+  // Trust narrative
+  const strongClusters = clusters.filter((c) => c.clusterHealth >= 80);
+  const weakClusters = clusters.filter((c) => c.clusterHealth > 0 && c.clusterHealth < 60);
+  const narrativeParts: string[] = [];
+  if (strongClusters.length > 0) {
+    narrativeParts.push(`${strongClusters[0].label} is solid.`);
+  }
+  if (weakClusters.length > 0) {
+    narrativeParts.push(`${weakClusters[0].label} needs attention.`);
+  }
+  if (driftSeverity === "none") {
+    narrativeParts.push("No drift — the garden is quiet.");
+  }
+  const trustNarrative = narrativeParts.join(" ");
+
+  return {
+    trajectory: {
+      direction: ecosystemScore !== null && ecosystemScore >= 75 ? "stable" : "unknown",
+      ecosystemScore,
+      previousScore: null,
+      scoreDelta: null,
+      evidence: [],
+    },
+    trust: {
+      relationships,
+      narrative: trustNarrative,
+      legacyScore: ecosystemScore ?? 50,
+    },
+    drift: {
+      totalDriftItems: driftCount,
+      severity: driftSeverity,
+      items: [],
+    },
+    clusters,
+    lastPosition,
+    historyWhisper,
+  };
+}
+
 // ── Plugin ──────────────────────────────────────────────────────────
 
 function jsonResponse(
@@ -754,6 +965,19 @@ export function glimpseApiPlugin(): Plugin {
               jsonResponse(
                 res,
                 { error: "Failed to fetch cognition data" },
+                500,
+              ),
+            );
+          return;
+        }
+
+        if (url.pathname === "/api/session-entry") {
+          buildSessionEntryPayload()
+            .then((payload) => jsonResponse(res, payload))
+            .catch(() =>
+              jsonResponse(
+                res,
+                { error: "Failed to build session entry" },
                 500,
               ),
             );

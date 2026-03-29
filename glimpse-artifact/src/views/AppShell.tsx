@@ -11,8 +11,10 @@ import { ResolutionWorkbenchView } from "./ResolutionWorkbenchView";
 import { ScenarioCanvasView } from "./ScenarioCanvasView";
 import { TopologyView } from "./TopologyView";
 import { EligibilityShaderViewPage } from "./EligibilityShaderViewPage";
+import { MoodSurface } from "./MoodSurface";
 
 type View =
+  | "mood"
   | "dashboard"
   | "canvas"
   | "gate"
@@ -26,6 +28,7 @@ type View =
   | "shader";
 
 const VIEWS: { id: View; label: string; description: string }[] = [
+  { id: "mood", label: "Mood", description: "Session entry surface" },
   { id: "canvas", label: "Canvas", description: "Scenario exploration" },
   { id: "dashboard", label: "Dashboard", description: "Ecosystem overview" },
   { id: "gate", label: "GATE", description: "Deployment pipeline" },
@@ -52,6 +55,7 @@ const VIEWS: { id: View; label: string; description: string }[] = [
 ];
 
 const VALID_VIEWS = new Set<View>([
+  "mood",
   "dashboard",
   "canvas",
   "gate",
@@ -67,7 +71,7 @@ const VALID_VIEWS = new Set<View>([
 
 function viewFromHash(): View {
   const hash = window.location.hash.slice(1) as View;
-  return VALID_VIEWS.has(hash) ? hash : "canvas";
+  return VALID_VIEWS.has(hash) ? hash : "mood";
 }
 
 export function AppShell() {
@@ -87,7 +91,7 @@ export function AppShell() {
   return (
     <div className="h-screen flex flex-col bg-canvas-bg">
       {/* Navigation bar */}
-      {activeView !== "canvas" && (
+      {activeView !== "canvas" && activeView !== "mood" && (
         <nav
           className="flex items-center gap-1 px-4 py-2 bg-[var(--glass-fill)] backdrop-blur-xl border-b border-border-color shrink-0 relative overflow-hidden"
           role="tablist"
@@ -117,8 +121,8 @@ export function AppShell() {
         </nav>
       )}
 
-      {/* Canvas gets its own nav button overlay since it's full-screen */}
-      {activeView === "canvas" && (
+      {/* Full-screen views get floating nav overlay */}
+      {(activeView === "canvas" || activeView === "mood") && (
         <div className="fixed top-4 right-4 z-50 flex items-center gap-1 bg-[var(--glass-fill)] backdrop-blur-xl rounded-lg border border-glass shadow-token-md px-2 py-1 relative overflow-hidden">
           <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-teal-500/40 to-transparent" />
           {VIEWS.map((view) => (
@@ -147,6 +151,7 @@ export function AppShell() {
         id={`panel-${activeView}`}
         role="tabpanel"
       >
+        {activeView === "mood" && <MoodSurface />}
         {activeView === "dashboard" && <DashboardView />}
         {activeView === "canvas" && <ScenarioCanvasView />}
         {activeView === "gate" && <GateView />}

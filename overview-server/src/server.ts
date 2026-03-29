@@ -166,8 +166,8 @@ export function buildServer(): McpServer {
           metadata: {
             focus: focus ?? null,
             depth: depth ?? "standard",
-            trustScore: checkpoint.trust.score,
-            trustConfidence: checkpoint.trust.confidence,
+            trustLegacyScore: checkpoint.trust.legacyScore,
+            trustRelationshipCount: checkpoint.trust.relationships.length,
             driftSeverity: checkpoint.drift.severity,
             trajectory: checkpoint.trajectory.direction,
           },

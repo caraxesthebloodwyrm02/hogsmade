@@ -23,7 +23,7 @@ export interface Checkpoint {
   trajectory: Trajectory;
   clusters: ClusterInsight[];
   drift: DriftReport;
-  trust: TrustSignal;
+  trust: TrustAssessment;
   rawSources?: RawSources; // only when depth === "deep"
 }
 
@@ -95,12 +95,22 @@ export interface DriftItem {
   firstDetected: string | null;
 }
 
-// ── Trust ──
+// ── Trust (Relational) ──
 
-export interface TrustSignal {
-  confidence: Confidence;
-  score: number; // 0-100
+export type TrustObserver = "builder" | "ecosystem" | "newcomer";
+
+export interface TrustRelationship {
+  observer: TrustObserver;
+  subject: string; // cluster ID or "self"
+  confidence: number | null; // 0-1, null = not enough signal
   basis: TrustBasisItem[];
+}
+
+export interface TrustAssessment {
+  relationships: TrustRelationship[];
+  narrative: string;
+  /** @deprecated Legacy flat score — use relationships instead */
+  legacyScore: number;
 }
 
 export interface TrustBasisItem {

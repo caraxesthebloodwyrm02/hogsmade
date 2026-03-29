@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { computeTrust } from "../src/trust.js";
-import type { AggregatedData, DriftReport, DataSourceStatus } from "../src/types.js";
+import type { AggregatedData, ClusterInsight, DriftReport } from "../src/types.js";
 
 function makeData(overrides: Partial<AggregatedData> = {}): AggregatedData {
   return {
@@ -23,33 +23,81 @@ function emptyDrift(): DriftReport {
   return { totalDriftItems: 0, severity: "none", items: [] };
 }
 
-describe("trust computation", () => {
-  it("healthy ecosystem produces high confidence", () => {
+function makeClusters(overrides: Partial<ClusterInsight>[] = []): ClusterInsight[] {
+  const defaults: ClusterInsight[] = [
+    {
+      id: "grid-family",
+      label: "GRID Family",
+      entities: [
+        {
+          name: "GRID", type: "repo", healthScore: 90, branch: "main",
+          uncommittedChanges: 0, lastActivity: new Date().toISOString(), issues: [],
+          auditSummary: { eventsInWindow: 5, failures: 0, lastStatus: "success" },
+        },
+      ],
+      clusterHealth: 90,
+      issueCount: 0,
+      driftItems: [],
+    },
+    {
+      id: "mcp-infrastructure",
+      label: "MCP Infrastructure",
+      entities: [
+        {
+          name: "hogsmade", type: "repo", healthScore: 80, branch: "hogsmade",
+          uncommittedChanges: 0, lastActivity: new Date().toISOString(), issues: [],
+          auditSummary: { eventsInWindow: 3, failures: 0, lastStatus: "success" },
+        },
+      ],
+      clusterHealth: 80,
+      issueCount: 0,
+      driftItems: [],
+    },
+  ];
+
+  return defaults.map((cluster, i) => ({
+    ...cluster,
+    ...(overrides[i] ?? {}),
+  }));
+}
+
+describe("relational trust computation", () => {
+  it("returns relationships for each cluster + ecosystem + newcomer", () => {
+    const clusters = makeClusters();
+    const trust = computeTrust(makeData(), emptyDrift(), clusters);
+
+    // builder relationships (one per cluster) + ecosystem self + newcomer
+    expect(trust.relationships.length).toBe(clusters.length + 2);
+
+    const observers = trust.relationships.map((r) => r.observer);
+    expect(observers).toContain("builder");
+    expect(observers).toContain("ecosystem");
+    expect(observers).toContain("newcomer");
+  });
+
+  it("healthy clusters produce high builder confidence", () => {
     const data = makeData({
       latestSnapshot: {
         timestamp: new Date().toISOString(),
         repos: [],
         overallScore: 85,
       },
-      previousSnapshot: {
-        timestamp: new Date().toISOString(),
-        repos: [],
-        overallScore: 80,
-      },
       auditEvents: [
         { timestamp: new Date().toISOString(), source: "seeds-server", tool: "scan", status: "success" },
       ],
-      focusSessionActive: true,
-      journalEntryCount: 3,
     });
 
-    const trust = computeTrust(data, emptyDrift());
-    expect(trust.score).toBeGreaterThanOrEqual(75);
-    expect(trust.confidence).toBe("high");
-    expect(trust.basis.length).toBeGreaterThan(0);
+    const clusters = makeClusters();
+    const trust = computeTrust(data, emptyDrift(), clusters);
+
+    const gridTrust = trust.relationships.find(
+      (r) => r.observer === "builder" && r.subject === "grid-family",
+    );
+    expect(gridTrust).toBeDefined();
+    expect(gridTrust!.confidence).toBeGreaterThanOrEqual(0.7);
   });
 
-  it("no data sources produces insufficient-data", () => {
+  it("newcomer gets null confidence with insufficient data sources", () => {
     const data = makeData({
       dataSources: [
         { name: "echoes-audit", available: false, lastModified: null, recordCount: null, stale: true },
@@ -57,97 +105,133 @@ describe("trust computation", () => {
       ],
     });
 
-    const trust = computeTrust(data, emptyDrift());
-    // Score starts at 50, -10 for no snapshot, -10 for audit unavailable = 30
-    // With < 2 available sources → insufficient-data
-    expect(trust.confidence).toBe("insufficient-data");
+    const trust = computeTrust(data, emptyDrift(), makeClusters());
+    const newcomer = trust.relationships.find((r) => r.observer === "newcomer");
+    expect(newcomer).toBeDefined();
+    expect(newcomer!.confidence).toBeNull();
   });
 
-  it("critical ecosystem score produces negative sentiment", () => {
-    const data = makeData({
-      latestSnapshot: {
-        timestamp: new Date().toISOString(),
-        repos: [],
-        overallScore: 30,
-      },
-    });
-
-    const trust = computeTrust(data, emptyDrift());
-    expect(trust.score).toBeLessThan(50);
-    const negativeBasis = trust.basis.filter((b) => b.sentiment === "negative");
-    expect(negativeBasis.length).toBeGreaterThan(0);
-  });
-
-  it("audit failures reduce trust score", () => {
-    const now = new Date().toISOString();
-    const data = makeData({
-      latestSnapshot: {
-        timestamp: now,
-        repos: [],
-        overallScore: 70,
-      },
-      auditEvents: [
-        { timestamp: now, source: "grid-server", tool: "test", status: "failure" },
-        { timestamp: now, source: "grid-server", tool: "test", status: "failure" },
-        { timestamp: now, source: "grid-server", tool: "test", status: "failure" },
-      ],
-    });
-
-    const trustWithFailures = computeTrust(data, emptyDrift());
-    const cleanData = makeData({
-      latestSnapshot: { timestamp: now, repos: [], overallScore: 70 },
-      auditEvents: [
-        { timestamp: now, source: "grid-server", tool: "test", status: "success" },
-      ],
-    });
-    const trustClean = computeTrust(cleanData, emptyDrift());
-
-    expect(trustWithFailures.score).toBeLessThan(trustClean.score);
-  });
-
-  it("critical drift items reduce trust score", () => {
-    const data = makeData({
-      latestSnapshot: {
-        timestamp: new Date().toISOString(),
-        repos: [],
-        overallScore: 70,
-      },
-    });
-
-    const driftWithCritical: DriftReport = {
-      totalDriftItems: 3,
+  it("critical drift items reduce builder confidence for affected cluster", () => {
+    const clusters = makeClusters();
+    const drift: DriftReport = {
+      totalDriftItems: 2,
       severity: "high",
       items: [
         { entity: "GRID", type: "uncommitted-changes", detail: "30 uncommitted", severity: "critical", firstDetected: null },
-        { entity: "grid-server", type: "audit-anomaly", detail: "burst", severity: "critical", firstDetected: null },
-        { entity: "ecosystem", type: "snapshot-score-drop", detail: "dropped 30", severity: "critical", firstDetected: null },
+        { entity: "GRID", type: "audit-anomaly", detail: "burst", severity: "critical", firstDetected: null },
       ],
     };
 
-    const trustWithDrift = computeTrust(data, driftWithCritical);
-    const trustClean = computeTrust(data, emptyDrift());
+    const trustWithDrift = computeTrust(makeData(), drift, clusters);
+    const trustClean = computeTrust(makeData(), emptyDrift(), clusters);
 
-    expect(trustWithDrift.score).toBeLessThan(trustClean.score);
+    const gridDrift = trustWithDrift.relationships.find(
+      (r) => r.observer === "builder" && r.subject === "grid-family",
+    );
+    const gridClean = trustClean.relationships.find(
+      (r) => r.observer === "builder" && r.subject === "grid-family",
+    );
+
+    expect(gridDrift!.confidence!).toBeLessThan(gridClean!.confidence!);
   });
 
-  it("basis items explain every signal", () => {
-    const data = makeData({
-      latestSnapshot: {
-        timestamp: new Date().toISOString(),
-        repos: [],
-        overallScore: 85,
-      },
-      focusSessionActive: true,
-      journalEntryCount: 2,
+  it("audit failures reduce builder confidence", () => {
+    const now = new Date().toISOString();
+    const dataWithFailures = makeData({
+      auditEvents: [
+        { timestamp: now, source: "grid-server", tool: "test", status: "failure" },
+        { timestamp: now, source: "grid-server", tool: "test", status: "failure" },
+      ],
     });
 
-    const trust = computeTrust(data, emptyDrift());
-    // Should have basis items for: high score, zero failures, focus, journal
-    expect(trust.basis.length).toBeGreaterThanOrEqual(3);
-    for (const item of trust.basis) {
-      expect(item.signal).toBeTruthy();
-      expect(typeof item.weight).toBe("number");
-      expect(["positive", "neutral", "negative"]).toContain(item.sentiment);
+    const clusters: ClusterInsight[] = [{
+      id: "grid-family",
+      label: "GRID Family",
+      entities: [{
+        name: "grid-server", type: "mcp-server", healthScore: 70, branch: null,
+        uncommittedChanges: null, lastActivity: now, issues: [],
+        auditSummary: { eventsInWindow: 2, failures: 2, lastStatus: "failure" },
+      }],
+      clusterHealth: 70,
+      issueCount: 0,
+      driftItems: [],
+    }];
+
+    const cleanClusters: ClusterInsight[] = [{
+      id: "grid-family",
+      label: "GRID Family",
+      entities: [{
+        name: "grid-server", type: "mcp-server", healthScore: 70, branch: null,
+        uncommittedChanges: null, lastActivity: now, issues: [],
+        auditSummary: { eventsInWindow: 2, failures: 0, lastStatus: "success" },
+      }],
+      clusterHealth: 70,
+      issueCount: 0,
+      driftItems: [],
+    }];
+
+    const withFailures = computeTrust(dataWithFailures, emptyDrift(), clusters);
+    const clean = computeTrust(makeData(), emptyDrift(), cleanClusters);
+
+    const failGrid = withFailures.relationships.find(
+      (r) => r.observer === "builder" && r.subject === "grid-family",
+    );
+    const cleanGrid = clean.relationships.find(
+      (r) => r.observer === "builder" && r.subject === "grid-family",
+    );
+
+    expect(failGrid!.confidence!).toBeLessThan(cleanGrid!.confidence!);
+  });
+
+  it("generates a narrative string", () => {
+    const trust = computeTrust(makeData(), emptyDrift(), makeClusters());
+    expect(trust.narrative).toBeTruthy();
+    expect(typeof trust.narrative).toBe("string");
+    expect(trust.narrative.length).toBeGreaterThan(10);
+  });
+
+  it("legacyScore is a number 0-100", () => {
+    const trust = computeTrust(makeData(), emptyDrift(), makeClusters());
+    expect(trust.legacyScore).toBeGreaterThanOrEqual(0);
+    expect(trust.legacyScore).toBeLessThanOrEqual(100);
+  });
+
+  it("basis items on every relationship have required fields", () => {
+    const trust = computeTrust(makeData(), emptyDrift(), makeClusters());
+
+    for (const rel of trust.relationships) {
+      for (const item of rel.basis) {
+        expect(item.signal).toBeTruthy();
+        expect(typeof item.weight).toBe("number");
+        expect(["positive", "neutral", "negative"]).toContain(item.sentiment);
+      }
     }
+  });
+
+  it("ecosystem self-trust reflects data source availability", () => {
+    const goodData = makeData({
+      latestSnapshot: { timestamp: new Date().toISOString(), repos: [], overallScore: 85 },
+      dataSources: [
+        { name: "echoes-audit", available: true, lastModified: new Date().toISOString(), recordCount: 10, stale: false },
+        { name: "seeds-snapshots", available: true, lastModified: new Date().toISOString(), recordCount: 5, stale: false },
+        { name: "pulse-journal", available: true, lastModified: new Date().toISOString(), recordCount: 2, stale: false },
+      ],
+    });
+
+    const poorData = makeData({
+      dataSources: [
+        { name: "echoes-audit", available: false, lastModified: null, recordCount: null, stale: true },
+        { name: "seeds-snapshots", available: false, lastModified: null, recordCount: null, stale: true },
+        { name: "pulse-journal", available: false, lastModified: null, recordCount: null, stale: true },
+      ],
+    });
+
+    const goodTrust = computeTrust(goodData, emptyDrift(), makeClusters());
+    const poorTrust = computeTrust(poorData, emptyDrift(), makeClusters());
+
+    const goodEco = goodTrust.relationships.find((r) => r.observer === "ecosystem");
+    const poorEco = poorTrust.relationships.find((r) => r.observer === "ecosystem");
+
+    expect(goodEco!.confidence!).toBeGreaterThan(poorEco!.confidence!);
   });
 });
