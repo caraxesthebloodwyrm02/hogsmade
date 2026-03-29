@@ -8,7 +8,7 @@ import {
 } from "fs";
 import os from "os";
 import path from "path";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 type TestServer = {
   _registeredTools: Record<
@@ -85,6 +85,81 @@ describe("grid-server smoke", () => {
     };
     expect(health.isError).not.toBe(true);
     expect(targets.isError).not.toBe(true);
+  });
+
+  it("admission_compliance_check falls back locally on SAFETY_UNAVAILABLE", async () => {
+    process.env.GRID_API_URL = "http://127.0.0.1:8080";
+    const originalFetch = globalThis.fetch;
+
+    globalThis.fetch = vi.fn(async (input: string | URL | Request) => {
+      const url = String(input);
+      if (url.endsWith("/admission/compliance/check")) {
+        return new Response(
+          JSON.stringify({
+            refused: true,
+            reason_code: "SAFETY_UNAVAILABLE",
+            explanation: "request denied",
+            support_ticket_id: "audit-test",
+          }),
+          {
+            status: 503,
+            headers: { "Content-Type": "application/json" },
+          },
+        );
+      }
+
+      if (url.endsWith("/admission/entity/ip%3A127.0.0.1")) {
+        return new Response(
+          JSON.stringify({
+            entity_id: "ip:127.0.0.1",
+            total_penalty_points: 3,
+            bannered: false,
+            banner_reason: "",
+          }),
+          {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          },
+        );
+      }
+
+      if (url.endsWith("/admission/policy")) {
+        return new Response(
+          JSON.stringify({ billboard_version: "1.0.0" }),
+          {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          },
+        );
+      }
+
+      throw new Error(`unexpected fetch: ${url}`);
+    }) as typeof fetch;
+
+    try {
+      const server = buildServer();
+      const result = (await invokeTool(server, "admission_compliance_check", {
+        payload: { strategy: "cost_cutting" },
+        entity_id: "ip:127.0.0.1",
+        target_path: "/api/v1/intelligence/process",
+      })) as {
+        isError?: boolean;
+        content?: Array<{ type: string; text?: string }>;
+      };
+
+      expect(result.isError).not.toBe(true);
+      const text = result.content?.[0]?.text;
+      expect(text).toBeDefined();
+      const parsed = JSON.parse(text as string);
+      expect(parsed.fallback_used).toBe(true);
+      expect(parsed.backend_status).toBe("degraded");
+      expect(parsed.compliant).toBe(false);
+      expect(parsed.profit_mask_signals).toContain("cost_cutting");
+      expect(parsed.entity_penalty_points).toBe(3);
+      expect(parsed.policy.billboard_version).toBe("1.0.0");
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
   });
 
   it("validate_envelope succeeds with local checks when GRID_API_URL is unset and nonce is registered", async () => {

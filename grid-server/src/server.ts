@@ -212,8 +212,31 @@ async function writeNonceRegistry(
   await atomicWriteJson(NONCE_REGISTRY_PATH, registry);
 }
 
+/** Best-effort append to GATE-local audit log (audit.ndjson). */
+async function writeGateAudit(
+  entry: Record<string, unknown>,
+): Promise<void> {
+  try {
+    await fs.appendFile(AUDIT_PATH, JSON.stringify(entry) + "\n", "utf-8");
+  } catch {
+    // Best-effort — audit write failure must not break validation
+  }
+}
+
 /** Allowed hosts for GRID_API_URL — prevents redirect to malicious servers. */
 const ALLOWED_GRID_HOSTS = new Set(["localhost", "127.0.0.1", "::1"]);
+const LOCAL_PROFIT_MASK_SIGNALS = [
+  "cost_cutting",
+  "cost_optimization",
+  "efficiency_override",
+  "budget_override",
+  "maximize_throughput",
+  "skip_validation",
+  "bypass_safety",
+  "fast_track",
+  "bulk_override",
+  "unlimited_quota",
+] as const;
 
 function validateGridApiUrl(raw: string): string | null {
   try {
@@ -752,6 +775,15 @@ export function buildServer(): McpServer {
         },
       });
 
+      writeGateAudit({
+        timestamp: new Date().toISOString(),
+        envelope_id: envelope.envelope_id,
+        valid,
+        checksRun: checks.length,
+        checksFailed: checks.filter((c) => !c.passed).map((c) => c.check),
+        enhancedConsulted: enhancedValidation != null,
+      }).catch(() => {});
+
       // On success, burn the nonce so it cannot be reused (replay protection).
       if (valid && nonceVal != null && nonceRegistry[nonceVal]) {
         const updated = { ...nonceRegistry };
@@ -979,6 +1011,97 @@ export function buildServer(): McpServer {
     return result;
   }
 
+  function findProfitMaskSignals(
+    payload: Record<string, unknown>,
+    headers: Record<string, string> = {},
+  ): string[] {
+    const searchSpace = JSON.stringify({ payload, headers }).toLowerCase();
+    return LOCAL_PROFIT_MASK_SIGNALS.filter((signal) =>
+      searchSpace.includes(signal),
+    );
+  }
+
+  async function buildLocalComplianceFallback(args: {
+    payload: Record<string, unknown>;
+    headers?: Record<string, string>;
+    entity_id?: string;
+    target_path?: string;
+  }): Promise<Record<string, unknown>> {
+    const targetPath = args.target_path ?? "/api/v1/intelligence/process";
+    const payload = args.payload;
+    const headers = args.headers ?? {};
+    const profitMaskSignals = findProfitMaskSignals(payload, headers);
+    const violations: string[] = [];
+
+    if (profitMaskSignals.length > 0) {
+      violations.push(`profit_masking: ${profitMaskSignals.join(", ")}`);
+    }
+
+    const payloadBytes = Buffer.byteLength(JSON.stringify(payload), "utf8");
+    const estimatedTokens = Math.floor(payloadBytes / 4);
+    const contextCeiling = 25_000;
+    const contextCeilingExceeded = estimatedTokens > contextCeiling;
+    if (contextCeilingExceeded) {
+      violations.push(
+        `context_overflow: ${estimatedTokens} tokens > ceiling ${contextCeiling}`,
+      );
+    }
+
+    let hasRequiredStructure = true;
+    if (targetPath.includes("/intelligence/") && !("data" in payload)) {
+      hasRequiredStructure = false;
+      violations.push("missing_structure: 'data' key required for intelligence paths");
+    }
+
+    let entityPenaltyPoints = 0;
+    let entityBannered = false;
+    if (args.entity_id) {
+      try {
+        const entityReport = await callAdmission<Record<string, unknown>>(
+          "GET",
+          `/admission/entity/${encodeURIComponent(args.entity_id)}`,
+        );
+        entityPenaltyPoints = Number(entityReport["total_penalty_points"] ?? 0);
+        entityBannered = entityReport["bannered"] === true;
+        if (entityBannered) {
+          const bannerReason =
+            typeof entityReport["banner_reason"] === "string"
+              ? entityReport["banner_reason"]
+              : "entity is bannered";
+          violations.push(`entity_bannered: ${bannerReason}`);
+        }
+      } catch {
+        // Keep the fallback best-effort; entity context is optional.
+      }
+    }
+
+    let policy: Record<string, unknown> = {};
+    try {
+      policy = await callAdmission<Record<string, unknown>>(
+        "GET",
+        "/admission/policy",
+      );
+    } catch {
+      // Leave policy empty when the backend is broadly unavailable.
+    }
+
+    return {
+      compliant: violations.length === 0,
+      violations,
+      profit_mask_signals: profitMaskSignals,
+      estimated_tokens: estimatedTokens,
+      context_ceiling_exceeded: contextCeilingExceeded,
+      has_required_structure: hasRequiredStructure,
+      entity_penalty_points: entityPenaltyPoints,
+      entity_bannered: entityBannered,
+      policy,
+      timestamp: new Date().toISOString(),
+      fallback_used: true,
+      fallback_reason: "remote compliance check unavailable; local dry-run heuristics applied",
+      backend_status: "degraded",
+    };
+  }
+
   // admission_policy — Get the current policy billboard
   server.registerTool(
     "admission_policy",
@@ -1177,17 +1300,41 @@ export function buildServer(): McpServer {
           ],
         };
       } catch (error) {
+        const errorMessage = String(error);
+        if (errorMessage.includes("SAFETY_UNAVAILABLE")) {
+          const fallback = await buildLocalComplianceFallback(args);
+
+          emitAudit({
+            source: SERVER_NAME,
+            tool: "admission_compliance_check",
+            status: "success",
+            metadata: {
+              fallback_used: true,
+              compliant: fallback["compliant"],
+              violations: fallback["violations"],
+              entity_id: args.entity_id,
+              upstream_error: errorMessage,
+            },
+          });
+
+          return {
+            content: [
+              { type: "text" as const, text: JSON.stringify(fallback, null, 2) },
+            ],
+          };
+        }
+
         emitAudit({
           source: SERVER_NAME,
           tool: "admission_compliance_check",
           status: "failure",
-          metadata: { error: String(error) },
+          metadata: { error: errorMessage },
         });
         return {
           content: [
             {
               type: "text" as const,
-              text: JSON.stringify({ success: false, error: String(error) }),
+              text: JSON.stringify({ success: false, error: errorMessage }),
             },
           ],
           isError: true,
