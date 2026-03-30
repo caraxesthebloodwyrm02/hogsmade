@@ -14,7 +14,7 @@
   "dependencies": {
     "@cascade/shared-resilience": "file:../shared-resilience",
     "@cascade/shared-types": "file:../shared-types",
-    "@modelcontextprotocol/sdk": "^1.27.1",
+    "@modelcontextprotocol/sdk": "^1.28.0",
     "zod": "^3.22.0"
   },
   "devDependencies": {
