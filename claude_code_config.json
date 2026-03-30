@@ -130,6 +130,17 @@
         "GATE_DIR": "/home/caraxes/CascadeProjects/GATE"
       }
     },
+    "mangrove-server": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "tsx",
+        "/home/caraxes/CascadeProjects/mangrove-server/src/server.ts"
+      ],
+      "env": {
+        "MANGROVE_DIO_ROOT": "/home/caraxes/CascadeProjects/DIO"
+      }
+    },
     "glimpse-server": {
       "command": "npx",
       "args": [

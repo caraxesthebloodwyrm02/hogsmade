@@ -119,6 +119,12 @@
       "entryRelative": "glimpse-server/src/server.ts"
     },
     {
+      "mcpServerKey": "mangrove-server",
+      "runtime": "typescript",
+      "bootstrapType": "mcp_sdk_stdio_ts",
+      "entryRelative": "mangrove-server/src/server.ts"
+    },
+    {
       "mcpServerKey": "grid-intelligence",
       "runtime": "python",
       "bootstrapType": "mcp_sdk_stdio_python",
