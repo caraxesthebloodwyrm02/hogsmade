@@ -1,21 +1,326 @@
-# Dependencies
+# ============================================================================
+# CASCADEPROJECTS ROOT .GITIGNORE
+# ============================================================================
+# Tightened for MCP monorepo deployment hygiene
+# ============================================================================
+
+# ==========================
+# DEPENDENCIES
+# ==========================
 node_modules/
 __pycache__/
 *.pyc
+.pyc
 .venv/
 venv/
+.pnpm-store/
+.yarn/
+!.yarn/patches/
+!.yarn/plugins/
+!.yarn/releases/
+!.yarn/sdks/
+!.yarn/versions/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
 
-# Build artifacts
+# ==========================
+# BUILD ARTIFACTS - TypeScript Monorepo
+# ==========================
+# Root-level build outputs
 dist/
 build/
 *.tsbuildinfo
+*.tsbuildinfo.*
+.tscache/
+.parcel-cache/
+.rollup.cache/
 
-# Generated or local-only outputs (keep status clean)
+# MCP Server build outputs (explicit per-server for safety)
+*/dist/
+*/build/
+*/coverage/
+*/.coverage/
+*/coverage-unit/
+*/coverage-integration/
+
+# Shared package build outputs
+shared-types/dist/
+shared-types/build/
+shared-resilience/dist/
+shared-resilience/build/
+shared-pipeline/dist/
+shared-pipeline/build/
+
+# Glimpse artifact build outputs
+glimpse-artifact/dist/
+glimpse-artifact/build/
+glimpse-artifact/.cache/
+
+# Glimpse engine outputs
+glimpse-engine/.glimpse-traces.jsonl
+glimpse-engine/.glimpse-history.jsonl
+glimpse-engine/.glimpse-activity.json
+
+# ==========================
+# GENERATED / LOCAL-ONLY OUTPUTS
+# ==========================
 output/
 tmp/
+.tmp/
+*.tmp
+temp/
+*.temp
 chart.csv
 metadata.txt
 snapshot.json
+*.snapshot.json
+benchmarks/
+
+# Test outputs
+**/test-output/
+**/test-results/
+**/test-reports/
+**/junit.xml
+**/vitest.config.ts.timestamp-*
+*.test-results.json
+
+# ==========================
+# ENVIRONMENT & SECRETS
+# ==========================
+.env
+.env.local
+.env.*
+!.env.example
+!.env.template
+!.env.ci
+*.local
+
+# API Keys and tokens (comprehensive)
+*.apikey
+*.api_key
+**/*_api_key*
+**/*_apikey*
+api_keys.json
+api_keys.yaml
+api_keys.yml
+tokens.json
+tokens.yaml
+token*.json
+access_token*
+refresh_token*
+auth_token*
+auth_tokens*
+
+# JWT secrets
+jwt_secret*
+jwt.key
+
+# Private keys
+*.pem
+*.key
+*.p12
+*.pfx
+*.pk8
+
+# OAuth
+**/oauth_*.json
+**/.oauth/
+
+# Service account keys
+**/service_account*.json
+**/serviceaccount*.json
+**/*credentials*.json
+
+# MCP-specific secrets
+.mcp.json
+**/mcp-config*.json
+
+# ==========================
+# LOGS
+# ==========================
+*.log
+*.log.*
+logs/
+!logs/.gitkeep
+debug-*.log
+error-*.log
+
+# Audit logs (append-only NDJSON - tracked via Echoes, not git)
+*.ndjson
+audit-logs/
+security-logs/
+
+# ==========================
+# EDITOR STATE (track selective config only)
+# ==========================
+.vscode/
+.idea/
+*.iml
+*.iws
+*.ipr
+*.swp
+*.swo
+*~
+*.sublime-workspace
+*.sublime-project
+
+# Cursor (track skills/rules/agents only)
+.cursor/*
+!.cursor/agents/
+!.cursor/skills/
+!.cursor/rules/
+.cursor/hooks/
+.cursor/hooks.json
+.cursor/local*
+
+# Windsurf
+.windsurf/
+.windsurf-next/
+.windsurf/local*
+
+# Other editors
+.antigravity/
+.opencode/
+.claude/
+.zed/
+
+# ==========================
+# OS FILES
+# ==========================
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+.DS_Store?
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# ==========================
+# DEPLOYMENT & CI
+# ==========================
+.netlify/
+.vercel/
+.github/local/
+*.local.yml
+*.local.yaml
+
+# ==========================
+# SUBMODULE WORKSPACE
+# ==========================
+# GRID-main is a submodule - ignore its local artifacts
+GRID-main/.env
+GRID-main/data/
+GRID-main/logs/
+GRID-main/*.log
+
+# ==========================
+# SESSION & PROGRESS FILES
+# ==========================
+.session-state.json
+.claude-progress.md
+SESSION_MEMO.md
+*-action-items.json
+*-audit*.json
+claude-progress.txt
+
+# ==========================
+# DATA & ARCHIVE
+# ==========================
+archive/
+data/
+memory/
+
+# ==========================
+# SECURITY & AUDIT
+# ==========================
+audit-reports/
+HARDCODED_AUDIT_REPORT.md
+Audit\ Results\ and\ Todo\ Items.md
+.secrets.baseline
+*.sarif
+
+# ==========================
+# MACHINE-LOCAL CONFIGS
+# ==========================
+.gitconfig
+*.code-workspace
+config/
+!config/.gitkeep
+
+# Response discipline contract (local-only)
+.response-discipline-contract.yaml
+
+# ==========================
+# DOCUMENTATION DRAFTS
+# ==========================
+demo-*.md
+/GLIMPSE_BENCH.md
+/UPWORK_*.md
+
+# ==========================
+# PROJECTS SCRATCH AREA
+# ==========================
+projects/*.jpg
+projects/*.jpeg
+projects/*.png
+projects/*.gif
+projects/*.docx
+projects/*.pdf
+projects/*.txt
+projects/*.html
+projects/*.csv
+projects/*.json
+projects/*.js
+projects/images/
+projects/UPWORK_*.md
+projects/research/**/*.jpg
+projects/research/**/*.jpeg
+projects/research/**/*.docx
+projects/research/**/*.pdf
+projects/research/images/
+
+# ==========================
+# PERSONAL / SENSITIVE
+# ==========================
+resume.txt
+resume.pdf
+resume.docx
+memory.md
+.personal/
+
+# ==========================
+# EXPERIMENTS
+# ==========================
+experiments/thread.txt
+experiments/*.log
+experiments/*.tmp
+
+# ==========================
+# EPHEMERAL SESSION ARTIFACTS
+# ==========================
+gitlog.txt
+gitlog_cmd.txt
+gitstatus.txt
+gitstatus_cmd.txt
+gitremote.txt
+gitremote_cmd.txt
+2026-*.txt
+unicode*task.json
+*_task.json
+_audit/
+
+# ==========================
+# WINDOWS MIGRATION DEBRIS
+# ==========================
+e:/
+E:\\*
+E:/*
 
 # Editor state (track .cursor/agents, .cursor/skills, .cursor/rules for sharing)
 .agents/skills/
