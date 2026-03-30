@@ -1,0 +1,51 @@
+{
+  "name": "@mangrove/hogsmade",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Mangrove monorepo — MCP servers, shared packages, and tooling",
+  "type": "module",
+  "workspaces": [
+    "shared-types",
+    "shared-resilience",
+    "shared-pipeline",
+    "afloat-server",
+    "echoes-server",
+    "grid-server",
+    "lots-server",
+    "maintain-server",
+    "overview-server",
+    "pulse-server",
+    "seeds-server",
+    "glimpse-server",
+    "mangrove-server",
+    "eligibility-server",
+    "pi-mangrove",
+    "glimpse-artifact",
+    "glimpse-engine"
+  ],
+  "scripts": {
+    "lint:all": "npm run --workspaces lint",
+    "build:all": "npm run --workspaces build",
+    "test:all": "npm run --workspaces test",
+    "clean": "rm -rf */dist */build */coverage */.coverage */node_modules/.cache",
+    "clean:deep": "npm run clean && rm -rf node_modules */node_modules",
+    "version:bump": "node scripts/version-bump.mjs",
+    "release:notes": "node scripts/generate-release-notes.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "~5.9.3"
+  },
+  "engines": {
+    "node": ">=20.6.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/caraxesthebloodwyrm02/hogsmade.git"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/caraxesthebloodwyrm02/hogsmade/issues"
+  },
+  "homepage": "https://github.com/caraxesthebloodwyrm02/hogsmade#readme"
+}
