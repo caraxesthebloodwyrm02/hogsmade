@@ -13,13 +13,13 @@
   },
   "dependencies": {
     "@cascade/shared-types": "file:../shared-types",
-    "@modelcontextprotocol/sdk": "^1.27.1",
+    "@modelcontextprotocol/sdk": "^1.28.0",
     "zod": "^3.22.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
     "tsx": "^4.6.0",
     "typescript": "~5.9.3",
-    "vitest": "4.1.1"
+    "vitest": "4.1.2"
   }
 }
