@@ -36,7 +36,9 @@
     "demo:portfolio": "node cli.js portfolio",
     "demo:lending": "node cli.js lending",
     "demo:recommend": "node cli.js recommend",
-    "demo:sales": "node examples/sales-lead-intelligence.mjs"
+    "demo:sales": "node examples/sales-lead-intelligence.mjs",
+    "test:coverage": "node --test --experimental-test-coverage tests/drift-guard/*.test.js tests/validators/*.test.js 2>&1 | tail -20",
+    "coverage:gate": "node scripts/coverage-gate.mjs"
   },
   "dependencies": {
     "js-yaml": "^4.1.1"

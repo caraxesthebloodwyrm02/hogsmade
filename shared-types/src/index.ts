@@ -8,6 +8,29 @@ export type { AuditEvent, AuditQuery, AuditStatus } from "./audit.js";
 export { HealthCheckResponseSchema } from "./health.js";
 export type { HealthCheckResponse } from "./health.js";
 
+export {
+  ACTION_CLASS_BADGE_REQUIREMENTS,
+  ACTION_CLASS_SCOPE_REQUIREMENTS,
+  BADGE_THRESHOLDS,
+  MERIT_CONSTANTS,
+  Badge,
+  ActionClass,
+  Scope,
+  generateMcpIdentity,
+  parseMcpIdentity,
+} from "./merit-policy.js";
+export type {
+  MeritStandingDTO,
+  PermissionCheckResult,
+  MeritAuditEntry,
+} from "./merit-policy.js";
+
+export {
+  createMeritGuard,
+  McpMeritGuard,
+} from "./mcp-guard.js";
+export type { MeritGuardConfig, GuardedToolOptions } from "./mcp-guard.js";
+
 export { TelemetrySnapshotSchema } from "./telemetry.js";
 export type { TelemetrySnapshot } from "./telemetry.js";
 
