@@ -59,6 +59,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          submodules: true
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -92,6 +94,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          submodules: true
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -134,24 +138,41 @@ jobs:
   glimpse-artifact:
     name: Glimpse Artifact Check
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: glimpse-artifact
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          submodules: true
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: npm
-          cache-dependency-path: glimpse-artifact/package-lock.json
+          cache-dependency-path: |
+            shared-types/package-lock.json
+            shared-pipeline/package-lock.json
+            eligibility-server/package-lock.json
+            glimpse-artifact/package-lock.json
 
-      - name: Install dependencies
+      - name: Install and build shared-types
+        working-directory: shared-types
+        run: npm ci && npm run build
+
+      - name: Install and build shared-pipeline
+        working-directory: shared-pipeline
+        run: npm ci && npm run build
+
+      - name: Install and build eligibility-server
+        working-directory: eligibility-server
+        run: npm ci && npm run build
+
+      - name: Install glimpse-artifact dependencies
+        working-directory: glimpse-artifact
         run: npm ci
 
       - name: Check
+        working-directory: glimpse-artifact
         run: npm run check
 
   glimpse-engine:
@@ -160,6 +181,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          submodules: true
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
