@@ -23,7 +23,7 @@ npx tsc -p shared-types/tsconfig.json --noEmit
 npx tsc -p glimpse-artifact/tsconfig.json --noEmit
 
 # Secrets scan (local pre-check)
-grep -rn "sk-ant-\|sk-proj-\|ghp_\|ghu_\|AKIA" --include="*.ts" --include="*.json" . && echo "BLOCKED: credential found" || echo "CLEAR"
+grep -rnE "sk-ant-|sk-proj-|ghp_|ghu_|AKIA" --include="*.ts" --include="*.json" . && echo "BLOCKED: credential found" || echo "CLEAR"
 
 # Repo contract checks
 bash scripts/run_repo_contract_checks.sh

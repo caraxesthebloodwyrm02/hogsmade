@@ -46,6 +46,7 @@ Project-local auto-load is supported through `.pi/settings.json`:
 | `/mangrove-dev` | Development guide for extending the pi-mangrove package |
 | `/tuv-review` | TUV-001 contract audit against fidelity, integrity, and accountability clauses |
 | `/safety-gate` | Focused go/no-go safety review before merge, deployment, or risky actions |
+| `/push-green` | Push, monitor CI, log failures, fix, and iterate until all status checks pass |
 
 ## Development
 
