@@ -99,6 +99,44 @@ export interface CognitionPattern {
   recentQueries: number;
 }
 
+// ── Realtime Pattern Detection ───────────────────────────────────────
+
+export interface HybridPatternResult {
+  statisticalPatterns: string[];
+  syntacticPatterns: string[];
+  neuralPatterns: string[];
+  combinedPatterns: string[];
+  overallConfidence: number;
+  confidenceScores: {
+    statistical: number;
+    syntactic: number;
+    neural: number;
+  };
+}
+
+export interface PatternChangeEvent {
+  added: string[];
+  removed: string[];
+  stable: string[];
+  allPatterns: string[];
+}
+
+export interface RealtimePatternState {
+  tick: number;
+  windowSize: number;
+  totalIngested: number;
+  patterns: HybridPatternResult | null;
+  lastChange: PatternChangeEvent | null;
+  anomalies: RealtimeAnomaly[];
+}
+
+export interface RealtimeAnomaly {
+  type: 'LOW_CONFIDENCE' | 'HIGH_GAP_COUNT';
+  score?: number;
+  gapCount?: number;
+  timestamp: string;
+}
+
 // ── CI/CD Pipeline ────────────────────────────────────────────────────
 
 export interface PipelinePR {
