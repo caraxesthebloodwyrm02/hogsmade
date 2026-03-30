@@ -1,0 +1,42 @@
+{
+  "name": "@mangrove/pi-mangrove",
+  "version": "0.1.0",
+  "description": "Mangrove ecosystem integration for pi — DIO bridge, security automation, and canonical skills",
+  "type": "module",
+  "keywords": [
+    "pi-package",
+    "mangrove",
+    "dio",
+    "mcp",
+    "security",
+    "workflow"
+  ],
+  "engines": {
+    "node": ">=20.6.0"
+  },
+  "pi": {
+    "extensions": [
+      "./extensions"
+    ],
+    "skills": [
+      "./skills"
+    ],
+    "prompts": [
+      "./prompts"
+    ]
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "@mariozechner/pi-ai": "*",
+    "@mariozechner/pi-coding-agent": "*"
+  },
+  "devDependencies": {
+    "@mariozechner/pi-ai": "^0.64.0",
+    "@mariozechner/pi-coding-agent": "^0.64.0",
+    "@types/node": "^24.3.0",
+    "typescript": "^5.7.3"
+  }
+}
