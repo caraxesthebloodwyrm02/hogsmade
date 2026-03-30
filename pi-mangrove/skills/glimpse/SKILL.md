@@ -1,6 +1,6 @@
 ---
 name: glimpse
-description: Maintenance and development guide for the Glimpse cognitive engine, a local-first context analysis system. Use when working on the Glimpse codebase, including rules, domains, views, presets, builtin functions, engine execution, debugging lenses, or understanding file dependencies. Keywords: glimpse, cognitive engine, rules, domains, views, presets, builtin functions, dependency chain.
+description: "Maintenance and development guide for the Glimpse cognitive engine, a local-first context analysis system. Use when working on the Glimpse codebase, including rules, domains, views, presets, builtin functions, engine execution, debugging lenses, or understanding file dependencies. Keywords: glimpse, cognitive engine, rules, domains, views, presets, builtin functions, dependency chain."
 ---
 
 # Glimpse System Reference

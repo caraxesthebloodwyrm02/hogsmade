@@ -1,6 +1,6 @@
 ---
 name: trust-layer-review
-description: Senior code review with Trust Layer and safety-first audit. Checks for perpetrator voice, PII leakage, prompt injection, triadic safeguarding, citation honesty, regional sensitivity (Bangladesh Digital Safety Act), and grammar-centric safety standards. Use for safety-critical systems, AI/LLM integration, content moderation, user-facing safety features, GRID framework code, or when requested security review, safety audit, trust review, or production readiness review. Keywords: safety audit, trust layer, code review, security, PII, prompt injection, perpetrator voice, regional compliance.
+description: "Senior code review with Trust Layer and safety-first audit. Checks for perpetrator voice, PII leakage, prompt injection, triadic safeguarding, citation honesty, regional sensitivity (Bangladesh Digital Safety Act), and grammar-centric safety standards. Use for safety-critical systems, AI/LLM integration, content moderation, user-facing safety features, GRID framework code, or when requested security review, safety audit, trust review, or production readiness review. Keywords: safety audit, trust layer, code review, security, PII, prompt injection, perpetrator voice, regional compliance."
 ---
 
 # Trust Layer Review — Safety-First Code Audit
