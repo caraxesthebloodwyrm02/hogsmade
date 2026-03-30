@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from "react";
 import type {
   HybridPatternResult,
   PatternChangeEvent,
   RealtimeAnomaly,
   RealtimePatternState,
 } from "@/components/phase4/types";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 /**
  * Configuration for the realtime patterns hook.
@@ -47,8 +47,8 @@ const MOCK_PATTERNS: HybridPatternResult = {
     "TOPOLOGY_INFLUENCE_DOMINANT",
     "NEURAL_PATTERN_0",
   ],
-  overallConfidence: 0.72,
-  confidenceScores: { statistical: 0.28, syntactic: 0.22, neural: 0.22 },
+  overallConfidence: 0.73,
+  confidenceScores: { statistical: 0.78, syntactic: 0.72, neural: 0.69 },
 };
 
 const MOCK_STATE: RealtimePatternState = {
