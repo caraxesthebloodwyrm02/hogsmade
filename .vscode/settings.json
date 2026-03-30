@@ -15,7 +15,7 @@
   "editor.stickyScroll.enabled": true,
   "editor.bracketPairColorization.enabled": true,
   "typescript.disableAutomaticTypeAcquisition": true,
-  "python.defaultInterpreterPath": "/home/caraxes/roots/GRID/.venv/bin/python",
+  "python.defaultInterpreterPath": "",
   "python.analysis.typeCheckingMode": "basic",
   "python.analysis.extraPaths": [
     "/home/caraxes/roots/GRID/src",
@@ -81,7 +81,7 @@
     "**/.DS_Store": true
   },
   "[python]": {
-    "editor.defaultFormatter": "ms-python.python",
+    "editor.defaultFormatter": "charliermarsh.ruff",
     "editor.formatOnSave": true,
     "editor.tabSize": 4,
     "editor.rulers": [
@@ -101,5 +101,6 @@
   "terminal.integrated.focusAfterRun": "terminal",
   "terminal.integrated.confirmOnExit": "hasChildProcesses",
   "chat.agent.maxRequests": 35,
-  "editor.aiStats.enabled": true
+  "editor.aiStats.enabled": true,
+  "python.REPL.sendToNativeREPL": true
 }
