@@ -10,8 +10,7 @@ description: Development guide for pi-mangrove extensions, skills, and tools. Us
 ```
 pi-mangrove/
 ├── extensions/          # TypeScript extensions (loaded via jiti)
-│   ├── dio.ts          # DIO bridge (Python subprocess)
-│   └── dio-bridge.ts   # Extended DIO capabilities
+│   └── dio-bridge.ts    # DIO bridge and security tooling
 ├── skills/             # SKILL.md files (auto-discovered)
 ├── prompts/            # Prompt templates (this file)
 └── package.json        # Pi manifest root-level
@@ -22,22 +21,15 @@ pi-mangrove/
 **Extensions**
 - Export default function receiving `pi: ExtensionAPI`
 - Register tools with `pi.registerTool({ name, description, parameters, execute })`
-- Use `pi.notify()` for non-blocking status
-- Handle errors in `execute` — return stringified JSON, never throw uncaught
+- Handle errors in `execute` and return stringified JSON for structured payloads
 
 **Python Bridge Pattern (DIO)**
 ```typescript
-const cp = spawn(pythonPath, ["-c", code], {
+const cp = spawn("uv", ["run", "python", "-c", code], {
   cwd: dioRoot,
-  env: { ...process.env, PYTHONPATH: dioRoot },
+  stdio: ["ignore", "pipe", "pipe"],
 });
 // Always handle: stdout, stderr, error, timeout, exit code !== 0
-```
-
-**Local Install**
-```bash
-pi install /home/caraxes/CascadeProjects/pi-mangrove
-# Or via workspace .pi/settings.json: "packages": ["../pi-mangrove"]
 ```
 
 ## Quick Reference
@@ -45,16 +37,16 @@ pi install /home/caraxes/CascadeProjects/pi-mangrove
 | Task | Command |
 |------|---------|
 | Typecheck | `npm run typecheck` |
-| Build (optional) | `npm run build` → outputs `dist/` |
+| Build (optional) | `npm run build` |
 | Reload pi | `/reload` or restart |
 | Verify loaded | `/hotkeys` — check tool list |
 
 ## Extension Template
 
 ```typescript
-import { spawn } from "node:child_process";
+import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 
-export default function (pi: any) {
+export default function (pi: ExtensionAPI) {
   pi.registerTool({
     name: "mangrove:example",
     description: "One-line description",
@@ -66,12 +58,9 @@ export default function (pi: any) {
       required: ["arg"],
     },
     execute: async (args: { arg: string }): Promise<string> => {
-      // Implementation
       return JSON.stringify({ result: args.arg });
     },
   });
-
-  pi.notify({ type: "info", message: "Extension loaded" });
 }
 ```
 
@@ -81,5 +70,5 @@ export default function (pi: any) {
 - [ ] Tool name uses `mangrove:` or `dio:` or `security:` prefix
 - [ ] Parameters schema valid JSON Schema
 - [ ] Execute returns string (JSON.stringify for objects)
-- [ ] Python subprocess has 5s timeout
+- [ ] Python subprocess uses `uv run python`
 - [ ] All error paths return structured error, never raw throw
