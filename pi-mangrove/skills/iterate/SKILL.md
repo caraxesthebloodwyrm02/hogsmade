@@ -1,6 +1,6 @@
 ---
 name: iterate
-description: Framework for delivering freelance projects from start to finish. Use when starting a new project, planning delivery milestones, implementing a feature, fixing bugs, or completing client work. Keywords: freelance, project, delivery, milestone, scope, verification, client work.
+description: "Framework for delivering freelance projects from start to finish. Use when starting a new project, planning delivery milestones, implementing a feature, fixing bugs, or completing client work. Keywords: freelance, project, delivery, milestone, scope, verification, client work."
 ---
 
 # Iterate: Freelance Project Delivery Framework

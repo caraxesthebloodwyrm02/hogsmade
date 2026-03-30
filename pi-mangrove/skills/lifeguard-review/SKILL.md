@@ -1,6 +1,6 @@
 ---
 name: lifeguard-review
-description: Production API code review checklist with 11 validation rules covering response formats, data retention, authorization, lint hygiene, dependency declarations, JWT validation, Redis handling, Stripe webhook security, rate limiting, security logging, and OpenAI response validation. Use when reviewing backend or API code before merge or deployment. Keywords: api review, security review, production readiness, jwt, redis, stripe, openai, authorization.
+description: "Production API code review checklist with 11 validation rules covering response formats, data retention, authorization, lint hygiene, dependency declarations, JWT validation, Redis handling, Stripe webhook security, rate limiting, security logging, and OpenAI response validation. Use when reviewing backend or API code before merge or deployment. Keywords: api review, security review, production readiness, jwt, redis, stripe, openai, authorization."
 ---
 
 # Lifeguard — Production API Review Rules
