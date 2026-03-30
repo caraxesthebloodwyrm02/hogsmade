@@ -26,6 +26,9 @@ This root repo is the dedicated local repository for the workspace. It tracks sh
 | `pulse-server/`      | MCP server     | TypeScript, MCP SDK | Briefings, focus, journal, prioritization     |
 | `seeds-server/`      | MCP server     | TypeScript, MCP SDK | Ecosystem snapshots and scans                 |
 | `glimpse-server/`    | MCP server     | TypeScript, MCP SDK | Glimpse MCP tools (analyze, compress, etc.)   |
+| `eligibility-server/`| MCP server     | TypeScript, MCP SDK | Promotion gates, hierarchy, evolution cycles  |
+| `overview-server/`   | MCP server     | TypeScript, MCP SDK | Session checkpoints, health monitoring        |
+| `mangrove-server/`   | MCP server     | TypeScript, MCP SDK | DIO bridge, security audit, skill routing     |
 
 ### Shared packages
 
@@ -33,6 +36,7 @@ This root repo is the dedicated local repository for the workspace. It tracks sh
 | -------------------- | -------------- | ------------------- | --------------------------------------------- |
 | `shared-types/`      | Shared package | TypeScript          | Shared types and audit client; build first    |
 | `shared-resilience/` | Shared package | TypeScript, Vitest  | Circuit breaker, rate limit, retry patterns   |
+| `shared-pipeline/`   | Shared package | TypeScript          | Shared build/deploy pipeline utilities        |
 
 ### Applications and engines
 
@@ -40,6 +44,8 @@ This root repo is the dedicated local repository for the workspace. It tracks sh
 | -------------------- | -------------- | ----------------------- | ------------------------------------------- |
 | `glimpse-artifact/`  | App/library    | React, Vite, Tailwind   | UI/component project                        |
 | `glimpse-engine/`    | Engine         | JavaScript (ES modules) | Cognitive data analysis engine with tests   |
+| `DIO/`               | Control room   | Python 3.13+, hatchling | Airflow/light coordination + episode tool   |
+| `pi-mangrove/`       | Workspace pkg  | TypeScript, MCP SDK     | Skills, prompts, extensions for pi agent    |
 
 ### Nested repos (submodules)
 
