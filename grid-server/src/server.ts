@@ -16,6 +16,7 @@ import { emitAudit } from "@cascade/shared-types/audit-client";
 import { McpLogger } from "@cascade/shared-types/mcp-logger";
 import { GateSecurityPolicy } from "@cascade/shared-types/security-policy";
 import { SessionRateLimiter } from "@cascade/shared-types/session-rate-limit";
+import { ActionClass, createMeritGuard, McpMeritGuard } from "@cascade/shared-types";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import crypto from "crypto";
@@ -377,7 +378,13 @@ export function buildServer(): McpServer {
     version: VERSION,
   });
 
-  // Health check
+  // Initialize merit guard for session-first identity enforcement
+  const meritGuard = createMeritGuard(
+    SERVER_NAME,
+    process.env.GRID_API_URL || config.gridApiUrl,
+  );
+
+  // Health check - public_basic action class
   server.registerTool(
     "health_check",
     {
@@ -426,10 +433,12 @@ export function buildServer(): McpServer {
     },
   );
 
-  // List deployment targets
-  server.registerTool(
+  // List deployment targets (wrapped with merit guard - ANALYSIS_READ required)
+  meritGuard.registerGuardedTool(
+    server,
     "list_targets",
     {
+      actionClass: ActionClass.ANALYSIS_READ,
       description:
         "List all GATE deployment targets with their status and permissions",
       inputSchema: z.object({}),
@@ -438,10 +447,7 @@ export function buildServer(): McpServer {
       const rlMsg = readLimiter.check("list_targets");
       if (rlMsg)
         return {
-          content: [
-            { type: "text" as const, text: JSON.stringify({ error: rlMsg }) },
-          ],
-          isError: true,
+          error: rlMsg,
         };
       const results: Record<string, unknown>[] = [];
       for (const [name, target] of Object.entries(DEPLOYMENT_TARGETS)) {
@@ -461,11 +467,7 @@ export function buildServer(): McpServer {
           hasPackageJson,
         });
       }
-      return {
-        content: [
-          { type: "text" as const, text: JSON.stringify(results, null, 2) },
-        ],
-      };
+      return results;
     },
   );
 
