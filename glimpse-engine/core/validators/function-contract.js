@@ -1,0 +1,325 @@
+/**
+ * @file core/validators/function-contract.js
+ * @description Validates function registry consistency and generates missing implementations
+ * Agentic capability: Auto-detection of contract violations with healing suggestions
+ */
+
+/**
+ * Validates function implementations against YAML declarations
+ * @param {Object} registry - function_registry from config
+ * @param {Object} implementations - Map of actual implementations (fn name -> function)
+ * @returns {Object} Contract validation report
+ */
+export function validateFunctionContracts(registry, implementations = {}) {
+  const report = {
+    valid: true,
+    missing: [],
+    mismatched: [],
+    orphaned: [],
+    argErrors: [],
+    details: {},
+    summary: {
+      totalDeclared: 0,
+      totalImplemented: 0,
+      coverage: 0
+    }
+  };
+  
+  // Null-safety checks
+  const safeRegistry = registry || {};
+  const safeImplementations = implementations || {};
+  
+  const declaredNames = Object.keys(safeRegistry);
+  const implementedNames = Object.keys(safeImplementations);
+  
+  report.summary.totalDeclared = declaredNames.length;
+  report.summary.totalImplemented = implementedNames.length;
+  
+  // Check for missing implementations
+  for (const fnName of declaredNames) {
+    report.details[fnName] = { status: 'checking' };
+    
+    if (!implementedNames.includes(fnName)) {
+      report.missing.push(fnName);
+      report.details[fnName] = { 
+        status: 'missing',
+        declared: registry[fnName],
+        severity: 'critical'
+      };
+      report.valid = false;
+      continue;
+    }
+    
+    const declared = safeRegistry[fnName];
+    const impl = safeImplementations[fnName];
+    
+    // Check arity compatibility
+    const arity = impl.length;
+    const declaredArgCount = Object.keys(declared.args || {}).length;
+    
+    if (arity < declaredArgCount) {
+      report.mismatched.push({
+        name: fnName,
+        reason: 'arity_mismatch',
+        declaredArgs: declaredArgCount,
+        implementedArity: arity,
+        severity: 'high'
+      });
+      report.details[fnName] = {
+        status: 'mismatched',
+        reason: 'arity_mismatch',
+        arity,
+        declaredArgCount,
+        severity: 'high'
+      };
+      report.valid = false;
+      continue;
+    }
+    
+    // Validate return type hint (if available)
+    if (declared.returns) {
+      const validReturns = ['boolean', 'score', 'number', 'string', 'array', 'object', 'undefined'];
+      if (!validReturns.includes(declared.returns)) {
+        report.mismatched.push({
+          name: fnName,
+          reason: 'unknown_return_type',
+          declaredReturns: declared.returns,
+          severity: 'warning'
+        });
+      }
+    }
+    
+    // Check argument type definitions
+    for (const [argName, argType] of Object.entries(declared.args || {})) {
+      if (typeof argType !== 'string') {
+        report.argErrors.push({
+          function: fnName,
+          argument: argName,
+          error: 'arg_type_not_string',
+          type: typeof argType
+        });
+      }
+    }
+    
+    report.details[fnName] = {
+      status: 'ok',
+      arity,
+      returns: declared.returns,
+      scope: declared.scope
+    };
+  }
+  
+  // Check for orphaned implementations (not in registry)
+  for (const fnName of implementedNames) {
+    if (!declaredNames.includes(fnName)) {
+      report.orphaned.push(fnName);
+      report.valid = false;
+    }
+  }
+  
+  // Calculate coverage
+  report.summary.coverage = declaredNames.length > 0 
+    ? (declaredNames.length - report.missing.length) / declaredNames.length
+    : 0;
+  
+  return report;
+}
+
+/**
+ * Generates implementation stub for missing function
+ * @param {string} fnName - Function name
+ * @param {Object} declaration - Registry declaration
+ * @returns {string} Generated JavaScript implementation
+ */
+export function generateFunctionStub(fnName, declaration) {
+  const args = Object.keys(declaration.args || {});
+  const argString = args.length > 0 ? `{ ${args.join(', ')} }` : '';
+  const returns = declaration.returns || 'undefined';
+  
+  // Generate return value based on type
+  let defaultReturn;
+  switch (returns) {
+    case 'boolean':
+      defaultReturn = 'false';
+      break;
+    case 'score':
+    case 'number':
+      defaultReturn = '0';
+      break;
+    case 'string':
+      defaultReturn = "''";
+      break;
+    case 'array':
+      defaultReturn = '[]';
+      break;
+    case 'object':
+      defaultReturn = '{}';
+      break;
+    default:
+      defaultReturn = 'undefined';
+  }
+  
+  // Generate description from declaration
+  const description = declaration.description || `TODO: Implement ${fnName}`;
+  const scope = (declaration.scope || ['dataset']).join(' | ');
+  
+  return `/**
+ * ${description}
+ * 
+ * Scope: ${scope}
+ * Returns: ${returns}
+ * 
+ * @param {Object} ctx - Evaluation context
+ ${args.map(a => ` * @param {*} ${a} - from declaration`).join('\n')}
+ * @returns {${returns}}
+ */
+function ${fnName}(ctx${argString ? ', ' + argString : ''}) {
+  // AUTOGENERATED STUB - Replace with actual implementation
+  console.warn('[STUB] ${fnName} called but not implemented');
+  
+  // TODO: Validate arguments
+  // TODO: Implement core logic
+  // TODO: Return appropriate type
+  
+  return ${defaultReturn};
+}
+
+export { ${fnName} };
+`;
+}
+
+/**
+ * Generates healing patch for contract violations
+ * @param {Object} report - From validateFunctionContracts
+ * @returns {Object} Patch with files to create/modify
+ */
+export function generateHealingPatch(report) {
+  const patch = {
+    files: [],
+    instructions: [],
+    createdAt: new Date().toISOString()
+  };
+  
+  // Generate stubs for missing functions
+  for (const fnName of report.missing) {
+    const declaration = report.details[fnName]?.declared;
+    if (declaration) {
+      const stub = generateFunctionStub(fnName, declaration);
+      patch.files.push({
+        action: 'create',
+        path: `functions/generated/${fnName}.stub.js`,
+        content: stub
+      });
+    }
+  }
+  
+  // Generate missing registry entries for orphaned functions
+  for (const fnName of report.orphaned) {
+    patch.instructions.push({
+      severity: 'warning',
+      action: 'add_to_registry',
+      function: fnName,
+      message: `Function ${fnName} implemented but not declared in registry`
+    });
+  }
+  
+  // Generate fix instructions for mismatched functions
+  for (const mismatch of report.mismatched) {
+    if (mismatch.reason === 'arity_mismatch') {
+      patch.instructions.push({
+        severity: mismatch.severity,
+        action: 'fix_arity',
+        function: mismatch.name,
+        message: `arity mismatch: ${mismatch.name} declares ${mismatch.declaredArgs} args but implements ${mismatch.implementedArity}`,
+        fix: `Add missing parameters or update registry declaration`
+      });
+    }
+  }
+  
+  return patch;
+}
+
+/**
+ * Runtime contract checker - wraps function with validation
+ * @param {Function} fn - Function to wrap
+ * @param {Object} declaration - Registry declaration
+ * @returns {Function} Wrapped function with runtime checks
+ */
+export function wrapWithContract(fn, declaration) {
+  return function contractedFunction(...args) {
+    // Runtime argument validation could go here
+    // For performance, this is typically disabled in production
+    
+    const result = fn.apply(this, args);
+    
+    // Runtime return type checking
+    if (process.env.GLIMPSE_STRICT_MODE === 'true') {
+      const expectedType = declaration.returns;
+      const actualType = Array.isArray(result) ? 'array' : typeof result;
+      
+      if (expectedType && expectedType !== 'undefined' && expectedType !== actualType) {
+        console.warn(`[CONTRACT] ${declaration.name} returned ${actualType}, expected ${expectedType}`);
+      }
+    }
+    
+    return result;
+  };
+}
+
+/**
+ * Generates summary report for CI/CD display
+ * @param {Object} report - Contract validation report
+ * @returns {string} Formatted report
+ */
+export function formatReport(report) {
+  const lines = [
+    '─'.repeat(50),
+    'FUNCTION CONTRACT VALIDATION REPORT',
+    '─'.repeat(50),
+    `Status:     ${report.valid ? '✅ VALID' : '❌ INVALID'}`,
+    `Coverage:   ${(report.summary.coverage * 100).toFixed(1)}%`,
+    `Declared:   ${report.summary.totalDeclared}`,
+    `Implemented: ${report.summary.totalImplemented}`,
+    '',
+    'Issues:',
+  ];
+  
+  if (report.missing.length) {
+    lines.push(`  ❌ Missing (${report.missing.length}):`);
+    report.missing.forEach(fn => lines.push(`     - ${fn}`));
+  }
+  
+  if (report.orphaned.length) {
+    lines.push(`  ⚠️  Orphaned (${report.orphaned.length}):`);
+    report.orphaned.forEach(fn => lines.push(`     - ${fn}`));
+  }
+  
+  if (report.mismatched.length) {
+    lines.push(`  ⚠️  Mismatched (${report.mismatched.length}):`);
+    report.mismatched.forEach(m => {
+      lines.push(`     - ${m.name}: ${m.reason}`);
+    });
+  }
+  
+  if (report.missing.length === 0 && report.orphaned.length === 0 && report.mismatched.length === 0) {
+    lines.push('  ✅ None');
+  }
+  
+  lines.push('─'.repeat(50));
+  
+  return lines.join('\n');
+}
+
+/**
+ * Quick validation for CI pipeline
+ * @param {Object} config - Parsed master config
+ * @param {Object} implementations - Available implementations
+ * @returns {boolean} True if valid
+ */
+export function quickValidate(config, implementations) {
+  const report = validateFunctionContracts(
+    config?.function_registry,
+    implementations
+  );
+  return report.valid;
+}
