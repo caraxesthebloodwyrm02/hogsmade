@@ -558,6 +558,35 @@ taxonomy:
         - join
         - filter
         - map
+    - id: ml_pipeline
+      label: ML Pipeline & Training
+      parents:
+        - technology
+      keywords:
+        - model
+        - training
+        - fine-tuning
+        - lora
+        - qlora
+        - gguf
+        - quantization
+        - inference
+        - ollama
+        - dataset
+        - epoch
+        - loss
+        - checkpoint
+        - deployment
+        - rollout
+        - canary
+        - fallback
+        - benchmark
+        - evaluation
+        - vram
+        - gpu
+        - tokens
+        - latency
+        - throughput
 semantic_packs:
   dimension_aliases:
     time:
@@ -895,6 +924,7 @@ rule_sets:
       - botany-keyword-support
       - sound-keyword-support
       - structured-data-keyword-support
+      - ml-pipeline-keyword-support
   semantic:
     label: Semantic Expansion
     rules:
@@ -1555,4 +1585,31 @@ rules:
       - view
     because: Parent-child and root-leaf patterns map naturally to tree-flow and cluster views.
     promotion: active
+  - id: ml-pipeline-keyword-support
+    label: ML pipeline keywords support the ml_pipeline lens
+    applies_to: entity
+    enabled: true
+    priority: 86
+    function: taxonomy_score
+    args:
+      path: entity.domain_keyword_hits
+      domain: ml_pipeline
+      min_score: 1
+    returns: score
+    weight_strategy: direct_score
+    derive:
+      - action: boost_lens
+        lens: ml_pipeline
+        score: 0.75
+      - action: prefer_view
+        view: flow
+        score: 0.5
+      - action: prefer_view
+        view: timeline
+        score: 0.35
+    affects:
+      - context_lens
+      - view
+    because: ML training pipeline data benefits from flow (phase progression) and timeline (training schedule) views.
+    promotion: experimental
 `;

@@ -1,0 +1,7 @@
+# Glimpse Runtime Directory
+
+This directory contains runtime data for agentic infrastructure:
+
+- drift-log.ndjson - Append-only log of configuration drift events
+
+Do not commit this directory to version control.
