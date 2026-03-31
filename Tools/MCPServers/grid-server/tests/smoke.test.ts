@@ -1,10 +1,10 @@
 import crypto from "crypto";
 import {
-    mkdirSync,
-    mkdtempSync,
-    readFileSync,
-    rmSync,
-    writeFileSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
 } from "fs";
 import os from "os";
 import path from "path";
@@ -83,6 +83,8 @@ describe("grid-server smoke", () => {
     const targets = (await invokeTool(server, "list_targets", {})) as {
       isError?: boolean;
     };
+    console.log("Health response:", JSON.stringify(health, null, 2));
+    console.log("Targets response:", JSON.stringify(targets, null, 2));
     expect(health.isError).not.toBe(true);
     expect(targets.isError).not.toBe(true);
   });
