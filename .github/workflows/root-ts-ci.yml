@@ -4,56 +4,56 @@ on:
   push:
     branches: ["**"]
     paths:
-      - "shared-types/**"
-      - "shared-resilience/**"
-      - "shared-pipeline/**"
-      - "eligibility-server/**"
-      - "afloat-server/**"
-      - "echoes-server/**"
-      - "grid-server/**"
-      - "glimpse-server/**"
-      - "lots-server/**"
-      - "maintain-server/**"
-      - "mangrove-server/**"
-      - "overview-server/**"
-      - "pulse-server/**"
-      - "seeds-server/**"
-      - "glimpse-artifact/**"
-      - "glimpse-engine/**"
+      - "Components/shared-types/**"
+      - "Components/shared-resilience/**"
+      - "Components/shared-pipeline/**"
+      - "Tools/MCPServers/eligibility-server/**"
+      - "Tools/MCPServers/afloat-server/**"
+      - "Tools/MCPServers/echoes-server/**"
+      - "Tools/MCPServers/grid-server/**"
+      - "Tools/MCPServers/glimpse-server/**"
+      - "Tools/MCPServers/lots-server/**"
+      - "Tools/MCPServers/maintain-server/**"
+      - "Tools/MCPServers/mangrove-server/**"
+      - "Tools/MCPServers/overview-server/**"
+      - "Tools/MCPServers/pulse-server/**"
+      - "Tools/MCPServers/seeds-server/**"
+      - "Applications/glimpse-artifact/**"
+      - "Applications/glimpse-engine/**"
       - "glimpse.master.yaml"
       - "sample-innovations.json"
       - "sample-scenario.json"
       - "sample-cross-context-demo.json"
-      - "tests/**"
-      - "scripts/bootstrap_glimpse_logic.mjs"
-      - "scripts/run_repo_contract_checks.sh"
+      - "Components/tests/**"
+      - "Components/scripts/bootstrap_glimpse_logic.mjs"
+      - "Components/scripts/run_repo_contract_checks.sh"
       - ".github/repo-contract.json"
       - ".github/workflows/root-ts-ci.yml"
   pull_request:
     paths:
-      - "shared-types/**"
-      - "shared-resilience/**"
-      - "shared-pipeline/**"
-      - "eligibility-server/**"
-      - "afloat-server/**"
-      - "echoes-server/**"
-      - "grid-server/**"
-      - "glimpse-server/**"
-      - "lots-server/**"
-      - "maintain-server/**"
-      - "mangrove-server/**"
-      - "overview-server/**"
-      - "pulse-server/**"
-      - "seeds-server/**"
-      - "glimpse-artifact/**"
-      - "glimpse-engine/**"
+      - "Components/shared-types/**"
+      - "Components/shared-resilience/**"
+      - "Components/shared-pipeline/**"
+      - "Tools/MCPServers/eligibility-server/**"
+      - "Tools/MCPServers/afloat-server/**"
+      - "Tools/MCPServers/echoes-server/**"
+      - "Tools/MCPServers/grid-server/**"
+      - "Tools/MCPServers/glimpse-server/**"
+      - "Tools/MCPServers/lots-server/**"
+      - "Tools/MCPServers/maintain-server/**"
+      - "Tools/MCPServers/mangrove-server/**"
+      - "Tools/MCPServers/overview-server/**"
+      - "Tools/MCPServers/pulse-server/**"
+      - "Tools/MCPServers/seeds-server/**"
+      - "Applications/glimpse-artifact/**"
+      - "Applications/glimpse-engine/**"
       - "glimpse.master.yaml"
       - "sample-innovations.json"
       - "sample-scenario.json"
       - "sample-cross-context-demo.json"
-      - "tests/**"
-      - "scripts/bootstrap_glimpse_logic.mjs"
-      - "scripts/run_repo_contract_checks.sh"
+      - "Components/tests/**"
+      - "Components/scripts/bootstrap_glimpse_logic.mjs"
+      - "Components/scripts/run_repo_contract_checks.sh"
       - ".github/repo-contract.json"
       - ".github/workflows/root-ts-ci.yml"
   workflow_dispatch:
@@ -80,24 +80,24 @@ jobs:
           node-version: "22"
           cache: "npm"
           cache-dependency-path: |
-            shared-types/package-lock.json
-            shared-resilience/package-lock.json
-            shared-pipeline/package-lock.json
-            eligibility-server/package-lock.json
-            afloat-server/package-lock.json
-            echoes-server/package-lock.json
-            grid-server/package-lock.json
-            lots-server/package-lock.json
-            maintain-server/package-lock.json
-            pulse-server/package-lock.json
-            seeds-server/package-lock.json
-            glimpse-artifact/package-lock.json
-            glimpse-server/package-lock.json
-            mangrove-server/package-lock.json
-            overview-server/package-lock.json
-            glimpse-engine/package-lock.json
+            Components/shared-types/package-lock.json
+            Components/shared-resilience/package-lock.json
+            Components/shared-pipeline/package-lock.json
+            Tools/MCPServers/eligibility-server/package-lock.json
+            Tools/MCPServers/afloat-server/package-lock.json
+            Tools/MCPServers/echoes-server/package-lock.json
+            Tools/MCPServers/grid-server/package-lock.json
+            Tools/MCPServers/lots-server/package-lock.json
+            Tools/MCPServers/maintain-server/package-lock.json
+            Tools/MCPServers/pulse-server/package-lock.json
+            Tools/MCPServers/seeds-server/package-lock.json
+            Applications/glimpse-artifact/package-lock.json
+            Tools/MCPServers/glimpse-server/package-lock.json
+            Tools/MCPServers/mangrove-server/package-lock.json
+            Tools/MCPServers/overview-server/package-lock.json
+            Applications/glimpse-engine/package-lock.json
 
       - name: Run trusted repo checks
         env:
           NODE_OPTIONS: '--max-old-space-size=8192'
-        run: bash scripts/run_repo_contract_checks.sh
+        run: bash Components/scripts/run_repo_contract_checks.sh

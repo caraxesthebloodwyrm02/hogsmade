@@ -6,13 +6,13 @@ on:
     paths:
       - "mcp_config.json"
       - "mcp_inventory.manifest.json"
-      - "scripts/verify_mcp_inventory.py"
+      - "Components/scripts/verify_mcp_inventory.py"
       - ".github/workflows/verify-mcp-inventory.yml"
   pull_request:
     paths:
       - "mcp_config.json"
       - "mcp_inventory.manifest.json"
-      - "scripts/verify_mcp_inventory.py"
+      - "Components/scripts/verify_mcp_inventory.py"
       - ".github/workflows/verify-mcp-inventory.yml"
   workflow_dispatch:
 
@@ -27,4 +27,4 @@ jobs:
       - uses: actions/checkout@v6
 
       - name: Verify manifest alignment
-        run: python3 scripts/verify_mcp_inventory.py --cascade-root "${GITHUB_WORKSPACE}"
+        run: python3 Components/scripts/verify_mcp_inventory.py --cascade-root "${GITHUB_WORKSPACE}"

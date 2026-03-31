@@ -10,12 +10,12 @@ name: Boundary & Safety Gate
 on:
   pull_request:
     paths:
-      - 'GRID-main/**/safety/**'
-      - 'GRID-main/**/security/**'
-      - 'GRID-main/**/boundaries/**'
-      - 'GRID-main/.claude/rules/safety.md'
-      - 'GRID-main/.claude/rules/behavioral-shield.md'
-      - 'GRID-main/mcp-setup/server/**'
+      - 'Projects/GRID-main/**/safety/**'
+      - 'Projects/GRID-main/**/security/**'
+      - 'Projects/GRID-main/**/boundaries/**'
+      - 'Projects/GRID-main/.claude/rules/safety.md'
+      - 'Projects/GRID-main/.claude/rules/behavioral-shield.md'
+      - 'Projects/GRID-main/mcp-setup/server/**'
 
 permissions:
   pull-requests: write
@@ -41,10 +41,10 @@ jobs:
       - name: Install uv and test dependencies
         run: |
           pip install uv
-          cd GRID-main && uv sync --group dev --group test
+          cd Projects/GRID-main && uv sync --group dev --group test
 
       - name: Run existing safety/boundary tests
-        working-directory: GRID-main
+        working-directory: Projects/GRID-main
         run: |
           PYTHONPATH=src \
           MOTHERSHIP_ENVIRONMENT=test \
@@ -57,10 +57,10 @@ jobs:
         run: |
           git diff origin/${{ github.base_ref }}...HEAD \
             -- \
-            'GRID-main/**/safety/**' \
-            'GRID-main/**/security/**' \
-            'GRID-main/**/boundaries/**' \
-            'GRID-main/.claude/rules/safety.md' \
+            'Projects/GRID-main/**/safety/**' \
+            'Projects/GRID-main/**/security/**' \
+            'Projects/GRID-main/**/boundaries/**' \
+            'Projects/GRID-main/.claude/rules/safety.md' \
           > boundary_diff.txt
           wc -l boundary_diff.txt
 
@@ -73,7 +73,7 @@ jobs:
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
-          python scripts/boundary_review.py
+          python Components/scripts/boundary_review.py
 
       - name: Post PR review
         if: always()

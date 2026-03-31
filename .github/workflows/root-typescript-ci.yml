@@ -1,53 +1,27 @@
 name: Root TypeScript CI
 
 on:
-  push:
-    branches: ['**']
-    paths:
-      - '.github/workflows/root-typescript-ci.yml'
-      - 'shared-types/**'
-      - 'shared-resilience/**'
-      - 'shared-pipeline/**'
-      - 'eligibility-server/**'
-      - 'afloat-server/**'
-      - 'echoes-server/**'
-      - 'grid-server/**'
-      - 'glimpse-server/**'
-      - 'lots-server/**'
-      - 'maintain-server/**'
-      - 'mangrove-server/**'
-      - 'overview-server/**'
-      - 'pulse-server/**'
-      - 'seeds-server/**'
-      - 'glimpse-artifact/**'
-      - 'glimpse-engine/**'
-      - 'tests/glimpse-engine.test.mjs'
-      - 'scripts/bootstrap_glimpse_logic.mjs'
-      - 'glimpse.master.yaml'
-      - 'sample-innovations.json'
-      - 'sample-scenario.json'
-      - 'sample-cross-context-demo.json'
   pull_request:
     paths:
       - '.github/workflows/root-typescript-ci.yml'
-      - 'shared-types/**'
-      - 'shared-resilience/**'
-      - 'shared-pipeline/**'
-      - 'eligibility-server/**'
-      - 'afloat-server/**'
-      - 'echoes-server/**'
-      - 'grid-server/**'
-      - 'glimpse-server/**'
-      - 'lots-server/**'
-      - 'maintain-server/**'
-      - 'mangrove-server/**'
-      - 'overview-server/**'
-      - 'pulse-server/**'
-      - 'seeds-server/**'
-      - 'glimpse-artifact/**'
-      - 'glimpse-engine/**'
-      - 'tests/glimpse-engine.test.mjs'
-      - 'scripts/bootstrap_glimpse_logic.mjs'
+      - 'Components/shared-types/**'
+      - 'Components/shared-resilience/**'
+      - 'Components/shared-pipeline/**'
+      - 'Tools/MCPServers/eligibility-server/**'
+      - 'Tools/MCPServers/afloat-server/**'
+      - 'Tools/MCPServers/echoes-server/**'
+      - 'Tools/MCPServers/grid-server/**'
+      - 'Tools/MCPServers/glimpse-server/**'
+      - 'Tools/MCPServers/lots-server/**'
+      - 'Tools/MCPServers/maintain-server/**'
+      - 'Tools/MCPServers/mangrove-server/**'
+      - 'Tools/MCPServers/overview-server/**'
+      - 'Tools/MCPServers/pulse-server/**'
+      - 'Tools/MCPServers/seeds-server/**'
+      - 'Applications/glimpse-artifact/**'
+      - 'Applications/glimpse-engine/**'
+      - 'Components/tests/glimpse-engine.test.mjs'
+      - 'Components/scripts/bootstrap_glimpse_logic.mjs'
       - 'glimpse.master.yaml'
       - 'sample-innovations.json'
       - 'sample-scenario.json'
@@ -75,10 +49,10 @@ jobs:
         with:
           node-version: '22'
           cache: npm
-          cache-dependency-path: shared-types/package-lock.json
+          cache-dependency-path: Components/shared-types/package-lock.json
 
-      - run: npm ci -w shared-types
-      - run: npm run build -w shared-types
+      - run: npm ci -w @cascade/shared-types
+      - run: npm run build -w @cascade/shared-types
 
   # ── MCP servers (matrix) ───────────────────────────────────────────────────
   servers:
@@ -117,19 +91,19 @@ jobs:
           node-version: '22'
           cache: npm
           cache-dependency-path: |
-            shared-types/package-lock.json
-            ${{ matrix.project }}/package-lock.json
+            Components/shared-types/package-lock.json
+            Tools/MCPServers/${{ matrix.project }}/package-lock.json
 
       - name: Build shared-types
-        run: npm ci -w shared-types && npm run build -w shared-types
+        run: npm ci -w @cascade/shared-types && npm run build -w @cascade/shared-types
 
       - name: Build shared-resilience
         if: matrix.needs_resilience
-        run: npm ci -w shared-resilience && npm run build -w shared-resilience
+        run: npm ci -w @cascade/shared-resilience && npm run build -w @cascade/shared-resilience
 
       - name: Build shared-pipeline
         if: matrix.needs_pipeline
-        run: npm ci -w shared-pipeline && npm run build -w shared-pipeline
+        run: npm ci -w @cascade/shared-pipeline && npm run build -w @cascade/shared-pipeline
 
       - name: Build server
         env:
@@ -153,16 +127,16 @@ jobs:
           node-version: '22'
           cache: npm
           cache-dependency-path: |
-            shared-types/package-lock.json
-            shared-pipeline/package-lock.json
-            eligibility-server/package-lock.json
-            glimpse-artifact/package-lock.json
+            Components/shared-types/package-lock.json
+            Components/shared-pipeline/package-lock.json
+            Tools/MCPServers/eligibility-server/package-lock.json
+            Applications/glimpse-artifact/package-lock.json
 
       - name: Build shared-types
-        run: npm ci -w shared-types && npm run build -w shared-types
+        run: npm ci -w @cascade/shared-types && npm run build -w @cascade/shared-types
 
       - name: Build shared-pipeline
-        run: npm ci -w shared-pipeline && npm run build -w shared-pipeline
+        run: npm ci -w @cascade/shared-pipeline && npm run build -w @cascade/shared-pipeline
 
       - name: Build eligibility-server
         env:
@@ -185,10 +159,10 @@ jobs:
         with:
           node-version: '22'
           cache: npm
-          cache-dependency-path: glimpse-engine/package-lock.json
+          cache-dependency-path: Applications/glimpse-engine/package-lock.json
 
       - name: Install deps
         run: npm ci -w glimpse-engine
 
       - name: Run tests
-        run: node --test tests/glimpse-engine.test.mjs
+        run: node --test Components/tests/glimpse-engine.test.mjs

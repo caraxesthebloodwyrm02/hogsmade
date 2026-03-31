@@ -90,21 +90,21 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          cd shared-types && npm ci && npm run build
-          cd ../shared-resilience && npm ci && npm run build
-          cd ../shared-pipeline && npm ci && npm run build
+          cd Components/shared-types && npm ci && npm run build
+          cd ../../Components/shared-resilience && npm ci && npm run build
+          cd ../../Components/shared-pipeline && npm ci && npm run build
 
       - name: Build eligibility-server
         env:
           NODE_OPTIONS: '--max-old-space-size=8192'
-        run: cd eligibility-server && npm ci && npm run build
+        run: cd Tools/MCPServers/eligibility-server && npm ci && npm run build
 
       - name: Build MCP Servers
         run: |
           FAILED=0
           for dir in afloat-server echoes-server glimpse-server grid-server lots-server maintain-server mangrove-server overview-server pulse-server seeds-server; do
             echo "== Building ${dir} =="
-            (cd "$dir" && npm ci && npm run build) || FAILED=$((FAILED + 1))
+            (cd "Tools/MCPServers/$dir" && npm ci && npm run build) || FAILED=$((FAILED + 1))
           done
           if [ "$FAILED" -gt 0 ]; then
             echo "::error::${FAILED} server(s) failed to build"
@@ -113,7 +113,7 @@ jobs:
 
       - name: Build Applications
         run: |
-          cd glimpse-artifact && npm ci && npm run build || true
+          cd Applications/glimpse-artifact && npm ci && npm run build || true
 
   release:
     name: Create GitHub Release
