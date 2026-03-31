@@ -5,18 +5,35 @@
  * All new entities start at B0_RESTRICTED with strict limited scopes.
  */
 
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import {
   generateMcpIdentity,
   ActionClass,
   Badge,
-  PermissionCheckResult,
+  type PermissionCheckResult,
+  type MeritAuditEntry,
   Scope,
-  MeritAuditEntry,
 } from "./merit-policy.js";
 import { emitAudit } from "./audit-client.js";
 
-interface MeritGuardConfig {
+// Local Logger interface for guard operations
+interface Logger {
+  debug: (msg: string, meta?: Record<string, unknown>) => void;
+  info: (msg: string, meta?: Record<string, unknown>) => void;
+  warn: (msg: string, meta?: Record<string, unknown>) => void;
+  error: (msg: string, meta?: Record<string, unknown>) => void;
+}
+
+// Minimal McpServer interface for type checking (actual SDK types used at runtime)
+interface McpServerShape {
+  registerTool: (
+    name: string,
+    config: { description: string; inputSchema?: Record<string, unknown> },
+    handler: (args: Record<string, unknown>) => Promise<unknown>
+  ) => void;
+}
+
+/** Configuration options for McpMeritGuard */
+export interface MeritGuardConfig {
   serverName: string;
   /** Base GRID API URL for remote verification */
   gridApiUrl?: string;
@@ -26,7 +43,8 @@ interface MeritGuardConfig {
   fallbackBadge?: Badge;
 }
 
-interface GuardedToolOptions {
+/** Options for registering a guarded tool */
+export interface GuardedToolOptions {
   actionClass: ActionClass;
   requiredScope?: Scope;
   description: string;
@@ -192,23 +210,33 @@ export class McpMeritGuard {
       source: "mcp",
     };
 
+    // Pass the audit fields excluding timestamp (emitAudit adds it)
     await emitAudit({
-      timestamp: auditEntry.timestamp,
       source: `${this.config.serverName}-merit-guard`,
       tool: "merit_check",
-      status: auditEntry.verdict === "allowed" ? "success" : "blocked",
-      metadata: auditEntry,
+      status: auditEntry.verdict === "allowed" ? "success" : "failure",
+      metadata: {
+        entity_id: auditEntry.entity_id,
+        action_class: auditEntry.action_class,
+        required_badge: auditEntry.required_badge,
+        actual_badge: auditEntry.actual_badge,
+        verdict: auditEntry.verdict,
+        penalty_delta: auditEntry.penalty_delta,
+        roll_number: auditEntry.roll_number,
+        score: auditEntry.score,
+        session_id: auditEntry.session_id,
+      },
     });
   }
 
   /**
    * Register a guarded tool with merit checking
    */
-  registerGuardedTool<TArgs extends Record<string, unknown>, TResult>(
-    server: McpServer,
+  registerGuardedTool(
+    server: McpServerShape,
     name: string,
     options: GuardedToolOptions,
-    handler: (args: TArgs, sessionId?: string) => Promise<TResult>
+    handler: (args: Record<string, unknown>, sessionId?: string) => Promise<unknown>
   ): void {
     server.registerTool(
       name,
@@ -216,7 +244,7 @@ export class McpMeritGuard {
         description: `${options.description} [Requires: ${options.actionClass}]`,
         inputSchema: options.inputSchema || { type: "object", properties: {} },
       },
-      async (args: TArgs) => {
+      async (args: Record<string, unknown>) => {
         const sessionId = (args as { session_id?: string }).session_id;
         const entityId = this.generateIdentity(sessionId);
 
@@ -276,14 +304,10 @@ export class McpMeritGuard {
 
   /**
    * Wrap an entire McpServer with merit guards
-   *
-   * This wraps all tools with a baseline check and allows individual tools
-   * to have their own action_class metadata.
    */
-  wrapServer(server: McpServer, defaultActionClass: ActionClass = ActionClass.PUBLIC_BASIC): void {
+  wrapServer(server: McpServerShape, defaultActionClass: ActionClass = ActionClass.PUBLIC_BASIC): void {
     // Note: This is a simplified wrapper. In production, you would
     // use a more sophisticated approach that preserves individual tool metadata.
-    // This demonstrates the concept.
 
     // Store reference to the original registerTool
     const originalRegisterTool = server.registerTool.bind(server);
@@ -320,4 +344,197 @@ export function createMeritGuard(
     serverName,
     gridApiUrl: gridApiUrl || process.env.GRID_API_URL,
   });
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// VOID PATTERN MITIGATION - Focused, Tailored Custom Guards
+// ═══════════════════════════════════════════════════════════════════
+
+export interface GuardConfig {
+  serverName: string;
+  logger: Logger;
+  failClosedOnAudit?: boolean;
+  maxRetries?: number;
+  verifyWrites?: boolean;
+}
+
+export interface OperationResult<T> {
+  success: boolean;
+  data?: T;
+  error?: Error;
+  durationMs: number;
+  retryCount: number;
+}
+
+/**
+ * Guarded async operation - mitigates void + .catch() silent failures
+ * aggressively retries with exponential backoff
+ */
+export async function guardedOperation<T>(
+  operation: () => Promise<T>,
+  config: GuardConfig,
+  context: string
+): Promise<OperationResult<T>> {
+  const startTime = Date.now();
+  let retryCount = 0;
+  const maxRetries = config.maxRetries ?? 1;
+
+  while (retryCount < maxRetries) {
+    try {
+      const data = await operation();
+      return {
+        success: true,
+        data,
+        durationMs: Date.now() - startTime,
+        retryCount,
+      };
+    } catch (error) {
+      retryCount++;
+      config.logger.error(`[${config.serverName}] ${context} failed (${retryCount}/${maxRetries})`, {
+        error: error instanceof Error ? error.message : String(error),
+      });
+
+      if (retryCount >= maxRetries) {
+        return {
+          success: false,
+          error: error instanceof Error ? error : new Error(String(error)),
+          durationMs: Date.now() - startTime,
+          retryCount,
+        };
+      }
+
+      await new Promise((r) => setTimeout(r, 100 * Math.pow(2, retryCount - 1)));
+    }
+  }
+
+  return {
+    success: false,
+    error: new Error(`Max retries exceeded for ${context}`),
+    durationMs: Date.now() - startTime,
+    retryCount,
+  };
+}
+
+/**
+ * Guarded audit emit - mitigates fire-and-forget audit failures
+ * fails closed on security-critical operations
+ */
+export async function guardedAuditEmit(
+  serverName: string,
+  tool: string,
+  status: "success" | "failure" | "blocked",
+  config: { failClosed?: boolean; logger: Logger },
+  metadata?: Record<string, unknown>
+): Promise<boolean> {
+  const result = await guardedOperation(
+    () => emitAudit({ source: serverName, tool, status, metadata }),
+    {
+      serverName,
+      logger: config.logger,
+      maxRetries: 3,
+    },
+    `audit:${tool}`
+  );
+
+  if (!result.success && config.failClosed) {
+    config.logger.error(`[${serverName}] CRITICAL: Audit write failed, entering degraded mode`);
+    throw new Error(`Audit write failed for ${tool}: ${result.error?.message}`);
+  }
+
+  return result.success;
+}
+
+/**
+ * Guarded file write - mitigates silent file write failures
+ * optional read-back verification
+ */
+export async function guardedFileWrite<T>(
+  writeFn: () => Promise<void>,
+  readBackFn: (() => Promise<T>) | null,
+  config: GuardConfig,
+  filePath: string
+): Promise<OperationResult<T | void>> {
+  const writeResult = await guardedOperation(writeFn, config, `write:${filePath}`);
+
+  if (!writeResult.success) {
+    return writeResult as OperationResult<T | void>;
+  }
+
+  if (readBackFn && config.verifyWrites) {
+    const verifyResult = await guardedOperation(readBackFn, { ...config, maxRetries: 1 }, `verify:${filePath}`);
+
+    if (!verifyResult.success) {
+      return {
+        success: false,
+        error: new Error(`Write succeeded but verification failed for ${filePath}`),
+        durationMs: writeResult.durationMs + verifyResult.durationMs,
+        retryCount: writeResult.retryCount + verifyResult.retryCount,
+      };
+    }
+
+    return {
+      success: true,
+      data: verifyResult.data,
+      durationMs: writeResult.durationMs + verifyResult.durationMs,
+      retryCount: writeResult.retryCount + verifyResult.retryCount,
+    };
+  }
+
+  return {
+    success: true,
+    data: undefined,
+    durationMs: writeResult.durationMs,
+    retryCount: writeResult.retryCount,
+  };
+}
+
+/**
+ * Server startup guard - mitigates void startServer().catch() pattern
+ * exits process immediately on failure
+ */
+export async function guardedServerStartup<T>(
+  startFn: () => Promise<T>,
+  serverName: string,
+  logger: Logger
+): Promise<T> {
+  const result = await guardedOperation(
+    startFn,
+    { serverName, logger, maxRetries: 1 },
+    "server-startup"
+  );
+
+  if (!result.success) {
+    logger.error(`[${serverName}] Server startup failed`, { error: result.error?.message });
+    process.exit(1);
+  }
+
+  logger.info(`[${serverName}] Server started`, { durationMs: result.durationMs });
+  return result.data!;
+}
+
+/**
+ * Selective scope definitions for aggressive mitigation
+ */
+export const MITIGATION_SCOPES = {
+  /** Critical security operations - fail closed, max retries */
+  SECURITY: { failClosedOnAudit: true, maxRetries: 3, verifyWrites: true },
+  /** Audit trail operations - retry aggressively */
+  AUDIT: { failClosedOnAudit: false, maxRetries: 3, verifyWrites: false },
+  /** File persistence - verify with read-back */
+  PERSISTENCE: { failClosedOnAudit: false, maxRetries: 2, verifyWrites: true },
+  /** Standard operations - minimal guarding */
+  STANDARD: { failClosedOnAudit: false, maxRetries: 1, verifyWrites: false },
+} as const;
+
+export type MitigationScope = keyof typeof MITIGATION_SCOPES;
+
+/**
+ * Create guard config from scope
+ */
+export function createGuardConfig(
+  serverName: string,
+  logger: Logger,
+  scope: MitigationScope
+): GuardConfig {
+  return { serverName, logger, ...MITIGATION_SCOPES[scope] };
 }

@@ -25,11 +25,15 @@ export type {
   MeritAuditEntry,
 } from "./merit-policy.js";
 
+// Hardened MCP guard (recommended)
 export {
-  createMeritGuard,
-  McpMeritGuard,
-} from "./mcp-guard.js";
-export type { MeritGuardConfig, GuardedToolOptions } from "./mcp-guard.js";
+  HardenedMcpMeritGuard,
+  createHardenedMeritGuard,
+} from "./mcp-guard-hardened.js";
+export type {
+  HardenedMeritGuardConfig,
+  GuardedToolOptions as HardenedGuardedToolOptions,
+} from "./mcp-guard-hardened.js";
 
 export { TelemetrySnapshotSchema } from "./telemetry.js";
 export type { TelemetrySnapshot } from "./telemetry.js";
@@ -72,4 +76,79 @@ export type {
     PolicyResult,
     PolicyRule, PolicyVerdict, SecurityTrigger
 } from "./security-policy.js";
+
+// Runtime protection
+export {
+  RuntimeErrorBoundary,
+  createRuntimeBoundary,
+} from "./runtime-guard.js";
+
+// Monitoring
+export {
+  MeritGuardMonitor,
+  createMeritGuardMonitor,
+  getGlobalMonitor,
+  resetGlobalMonitor,
+} from "./monitoring.js";
+export type { Alert, AlertLevel, MonitoringConfig } from "./monitoring.js";
+
+// Circuit Breaker
+export {
+  CircuitState,
+  GuardCircuitBreaker,
+  CircuitBreakerOpenError,
+  DEFAULT_CIRCUIT_BREAKER_CONFIG,
+  getCircuitBreaker,
+  resetAllCircuitBreakers,
+  getAllCircuitBreakerStats,
+} from "./circuit-breaker.js";
+export type {
+  CircuitBreakerConfig,
+  CircuitBreakerStats,
+} from "./circuit-breaker.js";
+
+// Guard Runtime Configuration
+export {
+  DEFAULT_RUNTIME_CONFIG,
+  MITIGATION_SCOPES,
+  loadRuntimeConfig,
+  validateRuntimeConfig,
+  createScopedConfig,
+  validateGuardStartup,
+} from "./guard-config.js";
+export type {
+  MitigationScope,
+  PrintTarget,
+  GuardFeatures,
+  GuardRuntimeConfig,
+} from "./guard-config.js";
+
+// Guard Logger
+export {
+  PrintLevel,
+  GuardLogWriter,
+  createGuardLogger,
+  createConsoleLogger,
+  createSilentLogger,
+  createLogger,
+  shouldPrint,
+  createCorrelationId,
+} from "./guard-logger.js";
+export type {
+  GuardPrintEvent,
+  GuardLogger,
+} from "./guard-logger.js";
+
+// Void Pattern Mitigation Guards (from mcp-guard.ts)
+export {
+  createGuardConfig,
+  guardedOperation,
+  guardedAuditEmit,
+  guardedFileWrite,
+  guardedServerStartup,
+} from "./mcp-guard.js";
+export type {
+  GuardConfig,
+  OperationResult,
+} from "./mcp-guard.js";
 
