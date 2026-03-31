@@ -15,6 +15,7 @@ import {
   MeritAuditEntry,
 } from "./merit-policy.js";
 import { emitAudit } from "./audit-client.js";
+import { randomUUID } from "crypto";
 
 // Local Logger interface for guard operations
 interface Logger {
@@ -56,6 +57,7 @@ export class McpMeritGuard {
   private config: MeritGuardConfig;
   private cache: Map<string, PermissionCheckResult> = new Map();
   private cacheTtlMs = 30000; // 30 second cache TTL
+  private readonly fallbackSessionId: string = randomUUID();
 
   constructor(config: MeritGuardConfig) {
     this.config = {
@@ -70,7 +72,10 @@ export class McpMeritGuard {
    * Format: `mcp:{server}:{session_id}` (fallback deterministic)
    */
   private generateIdentity(sessionId?: string): string {
-    return generateMcpIdentity(this.config.serverName, sessionId);
+    return generateMcpIdentity(
+      this.config.serverName,
+      sessionId === undefined || sessionId === null ? this.fallbackSessionId : sessionId
+    );
   }
 
   /**

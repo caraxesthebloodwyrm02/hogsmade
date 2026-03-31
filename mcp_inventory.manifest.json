@@ -6,7 +6,7 @@
     "gridStandalone": "HTTP — GRID mcp-setup/mcp_config.json defines ports 8000-8009 with /health endpoints for standalone deployment. Not used by editor configs."
   },
   "paths": {
-    "gridRepoRelativeToCascade": "../roots/GRID"
+    "gridRepoRelativeToCascade": "Projects/GRID-main"
   },
   "servers": [
     {
@@ -61,14 +61,16 @@
       "mcpServerKey": "grid-rag",
       "runtime": "python",
       "bootstrapType": "mcp_sdk_stdio_python",
-      "gridPythonScript": "mcp-setup/server/grid_rag_mcp_server.py"
+      "gridPythonScript": "mcp-setup/server/rag_mcp_server.py"
     },
     {
-      "mcpServerKey": "grid-rag-enhanced",
+      "id": "grid-rag-legacy",
+      "mcpServerKey": null,
+      "status": "excluded_from_editor_canonical",
+      "reason": "Deprecated in favor of mcp-setup/server/rag_mcp_server.py (unified RAG). Retained temporarily for migration reference; do not enable in editor configs.",
       "runtime": "python",
       "bootstrapType": "mcp_sdk_stdio_python",
-      "pythonModule": "grid.mcp.enhanced_rag_server",
-      "gridPythonScript": null
+      "gridPythonScript": "mcp-setup/server/grid_rag_mcp_server.py"
     },
     {
       "mcpServerKey": "grid-enhanced-tools",

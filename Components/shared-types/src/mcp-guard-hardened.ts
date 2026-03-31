@@ -21,6 +21,7 @@ import {
 } from "./merit-policy.js";
 import { emitAudit } from "./audit-client.js";
 import * as z from "zod";
+import { randomUUID } from "crypto";
 
 // Result type for explicit error handling
 type Result<T, E = Error> =
@@ -114,6 +115,7 @@ export class HardenedMcpMeritGuard {
   private config: InternalConfig;
   private cache: Map<string, CachedPermission> = new Map();
   private rateLimitMap: Map<string, number[]> = new Map();
+  private readonly fallbackSessionId: string = randomUUID();
 
   // Circuit breaker state
   private circuitState: CircuitState = CircuitState.CLOSED;
@@ -161,8 +163,8 @@ export class HardenedMcpMeritGuard {
    */
   private generateIdentity(sessionId: unknown): Result<string> {
     if (sessionId === undefined || sessionId === null) {
-      // Deterministic fallback without required tool-input schema change
-      return ok(generateMcpIdentity(this.config.serverName, "unknown"));
+      // Stable per-process fallback without requiring tool-input schema change
+      return ok(generateMcpIdentity(this.config.serverName, this.fallbackSessionId));
     }
 
     if (typeof sessionId !== "string") {
@@ -373,11 +375,18 @@ export class HardenedMcpMeritGuard {
     const timeout = setTimeout(() => controller.abort(), 5000);
 
     try {
+      const requestId = randomUUID();
       const response = await fetch(
         `${this.config.gridApiUrl}/admission/check-permission`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "X-Request-ID": requestId,
+            "X-Correlation-ID": requestId,
+            // Admission Gate entity attribution (prevents ip:* fallback)
+            "X-Entity-Id": entityId,
+          },
           body: JSON.stringify({
             entity_id: entityId,
             action_class: actionClass,
@@ -517,7 +526,7 @@ export class HardenedMcpMeritGuard {
             penalty_delta: 0,
             roll_number: 0,
             score: 0,
-            session_id: String(sessionIdRaw),
+            session_id: "invalid",
           });
 
           return {
@@ -536,6 +545,8 @@ export class HardenedMcpMeritGuard {
         }
 
         const entityId = identityResult.value;
+        // Extract resolved session ID from identity (mcp:{server}:{sessionId})
+        const resolvedSessionId = entityId.split(":").pop() || this.fallbackSessionId;
 
         // Check permission
         const permissionResult = await this.checkPermission(
@@ -555,7 +566,7 @@ export class HardenedMcpMeritGuard {
             penalty_delta: 0,
             roll_number: 0,
             score: 0,
-            session_id: String(sessionIdRaw),
+            session_id: resolvedSessionId,
           });
 
           return {
@@ -585,7 +596,7 @@ export class HardenedMcpMeritGuard {
           penalty_delta: 0,
           roll_number: permission.roll_number,
           score: permission.score,
-          session_id: String(sessionIdRaw),
+          session_id: resolvedSessionId,
         });
 
         if (!permission.allowed) {
@@ -610,7 +621,7 @@ export class HardenedMcpMeritGuard {
 
         // Execute handler with error boundary
         try {
-          const result = await handler(args, String(sessionIdRaw));
+          const result = await handler(args, resolvedSessionId);
 
           const duration = Date.now() - startTime;
 
