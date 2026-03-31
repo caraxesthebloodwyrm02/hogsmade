@@ -68,7 +68,7 @@ test("buildQuestionQueue asks disambiguation questions when the top candidates a
 });
 
 test("runResolutionWorkbench resolves recognition prompts toward eligibility-style surfaces", async () => {
-  const repoRoot = path.resolve(process.cwd(), "..");
+  const repoRoot = path.resolve(process.cwd(), "../..");
 
   const result = await runResolutionWorkbench(
     {
@@ -90,7 +90,7 @@ test("runResolutionWorkbench resolves recognition prompts toward eligibility-sty
 });
 
 test("runResolutionWorkbench resolves penalty prompts toward gate, admission, or corruption surfaces", async () => {
-  const repoRoot = path.resolve(process.cwd(), "..");
+  const repoRoot = path.resolve(process.cwd(), "../..");
 
   const result = await runResolutionWorkbench(
     {

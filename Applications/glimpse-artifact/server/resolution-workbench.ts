@@ -146,16 +146,16 @@ const INCLUDED_ROOTS = [
   "glimpse-artifact/src",
   "glimpse-artifact/server",
   "glimpse-engine",
-  "glimpse-server/src",
-  "afloat-server/src",
-  "echoes-server/src",
-  "grid-server/src",
-  "lots-server/src",
-  "maintain-server/src",
-  "pulse-server/src",
-  "seeds-server/src",
-  "eligibility-server/src",
-  "GRID-main/src",
+  "Tools/MCPServers/glimpse-server/src",
+  "Tools/MCPServers/afloat-server/src",
+  "Tools/MCPServers/echoes-server/src",
+  "Tools/MCPServers/grid-server/src",
+  "Tools/MCPServers/lots-server/src",
+  "Tools/MCPServers/maintain-server/src",
+  "Tools/MCPServers/pulse-server/src",
+  "Tools/MCPServers/seeds-server/src",
+  "Tools/MCPServers/eligibility-server/src",
+  "Projects/GRID-main/src",
   "docs",
   "README.md",
 ] as const;
@@ -329,12 +329,12 @@ const RANDOM_QUESTIONS: Record<ResolutionMode, string[]> = {
 
 let cachedIndex:
   | {
-      root: string;
-      builtAt: number;
-      sources: IndexedSource[];
-      vocabulary: Set<string>;
-      endpoints: EndpointRecord[];
-    }
+    root: string;
+    builtAt: number;
+    sources: IndexedSource[];
+    vocabulary: Set<string>;
+    endpoints: EndpointRecord[];
+  }
   | undefined;
 
 function splitIdentifierParts(value: string): string[] {
