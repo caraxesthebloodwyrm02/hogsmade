@@ -214,11 +214,8 @@ export {
 
 export * from "./scenarios.js";
 
-export {
-  createTableRenderer,
-  createChartAdapter,
-  formatValue
-} from "./display.js";
+// display.js exports - statusTable is available
+export { statusTable } from "./display.js";
 
 // ═══════════════════════════════════════════════════════════════════
 // DEFINITIONS
