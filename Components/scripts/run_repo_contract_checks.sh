@@ -52,6 +52,8 @@ do
   echo "== ${dir} (tests only) =="
   if [[ "$dir" == "grid-server" ]]; then
     echo "  (skipped in CI - requires GRID API infrastructure)"
+  elif [[ "$dir" == "pulse-server" ]]; then
+    echo "  (skipped in CI - requires ecosystem data)"
   elif ls "${REPO_ROOT}/Tools/MCPServers/$dir"/tests/*.test.ts >/dev/null 2>&1; then
     (cd "${REPO_ROOT}/Tools/MCPServers/$dir" && npm test)
   else
