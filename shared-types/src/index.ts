@@ -35,6 +35,13 @@ export type {
   GuardedToolOptions as HardenedGuardedToolOptions,
 } from "./mcp-guard-hardened.js";
 
+// Legacy/Standard MCP guard
+export {
+  createMeritGuard,
+  McpMeritGuard,
+} from "./mcp-guard.js";
+export type { MeritGuardConfig, GuardedToolOptions } from "./mcp-guard.js";
+
 export { TelemetrySnapshotSchema } from "./telemetry.js";
 export type { TelemetrySnapshot } from "./telemetry.js";
 

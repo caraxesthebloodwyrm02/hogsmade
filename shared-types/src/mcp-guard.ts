@@ -5,13 +5,14 @@
  * All new entities start at B0_RESTRICTED with strict limited scopes.
  */
 
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import {
   generateMcpIdentity,
   ActionClass,
   Badge,
-  type PermissionCheckResult,
-  type MeritAuditEntry,
+  PermissionCheckResult,
   Scope,
+  MeritAuditEntry,
 } from "./merit-policy.js";
 import { emitAudit } from "./audit-client.js";
 
@@ -30,7 +31,7 @@ interface McpServerShape {
 }
 
 /** Configuration options for McpMeritGuard */
-export interface MeritGuardConfig {
+interface MeritGuardConfig {
   serverName: string;
   /** Base GRID API URL for remote verification */
   gridApiUrl?: string;
@@ -40,7 +41,6 @@ export interface MeritGuardConfig {
   fallbackBadge?: Badge;
 }
 
-/** Options for registering a guarded tool */
 export interface GuardedToolOptions {
   actionClass: ActionClass;
   requiredScope?: Scope;
@@ -230,11 +230,11 @@ export class McpMeritGuard {
   /**
    * Register a guarded tool with merit checking
    */
-  registerGuardedTool(
+  registerGuardedTool<TArgs extends Record<string, unknown>, TResult>(
     server: McpServerShape,
     name: string,
     options: GuardedToolOptions,
-    handler: (args: Record<string, unknown>, sessionId?: string) => Promise<unknown>
+    handler: (args: TArgs, sessionId?: string) => Promise<TResult>
   ): void {
     server.registerTool(
       name,
@@ -242,7 +242,7 @@ export class McpMeritGuard {
         description: `${options.description} [Requires: ${options.actionClass}]`,
         inputSchema: options.inputSchema || { type: "object", properties: {} },
       },
-      async (args: Record<string, unknown>) => {
+      async (args: TArgs) => {
         const sessionId = (args as { session_id?: string }).session_id;
         const entityId = this.generateIdentity(sessionId);
 
@@ -302,6 +302,9 @@ export class McpMeritGuard {
 
   /**
    * Wrap an entire McpServer with merit guards
+   *
+   * This wraps all tools with a baseline check and allows individual tools
+   * to have their own action_class metadata.
    */
   wrapServer(server: McpServerShape, defaultActionClass: ActionClass = ActionClass.PUBLIC_BASIC): void {
     // Note: This is a simplified wrapper. In production, you would
@@ -311,20 +314,21 @@ export class McpMeritGuard {
     const originalRegisterTool = server.registerTool.bind(server);
 
     // Replace with a wrapped version
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    server.registerTool = (...args: any[]) => {
-      const [name, config, handler] = args;
-      const description = (config?.description as string) || '';
+    server.registerTool = (
+      name: string,
+      config: { description: string; inputSchema?: Record<string, unknown> },
+      handler: (args: Record<string, unknown>) => Promise<unknown>
+    ) => {
       // Extract action_class from description if present
-      const actionMatch = description.match(/\[action_class:\s*(\w+)\]/);
+      const actionMatch = config.description.match(/\[action_class:\s*(\w+)\]/);
       const actionClass = actionMatch
         ? (actionMatch[1] as ActionClass)
         : defaultActionClass;
 
       this.registerGuardedTool(server, name, {
         actionClass,
-        description,
-        inputSchema: config?.inputSchema as Record<string, unknown> | undefined,
+        description: config.description,
+        inputSchema: config.inputSchema,
       }, handler);
     };
   }
@@ -342,6 +346,7 @@ export function createMeritGuard(
     gridApiUrl: gridApiUrl || process.env.GRID_API_URL,
   });
 }
+
 
 // ═══════════════════════════════════════════════════════════════════
 // VOID PATTERN MITIGATION - Focused, Tailored Custom Guards
