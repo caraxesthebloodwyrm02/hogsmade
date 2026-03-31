@@ -50,7 +50,11 @@ for dir in \
   "seeds-server"
 do
   echo "== ${dir} (tests only) =="
-  (cd "${REPO_ROOT}/Tools/MCPServers/$dir" && npm test)
+  if ls "${REPO_ROOT}/Tools/MCPServers/$dir"/tests/*.test.ts >/dev/null 2>&1; then
+    (cd "${REPO_ROOT}/Tools/MCPServers/$dir" && npm test)
+  else
+    echo "  (no test files, skipping)"
+  fi
 done
 
 run_npm_package "${REPO_ROOT}/Applications/glimpse-artifact" "npm run check"
