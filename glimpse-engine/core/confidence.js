@@ -60,6 +60,7 @@ export function recordGap(frame, gap) {
     severity: Math.min(1, Math.max(0, gap.severity ?? 0.5)),
     affectedIds: gap.affectedIds || [],
     timestamp: Date.now(),
+    metadata: gap.metadata || {},
   });
 }
 

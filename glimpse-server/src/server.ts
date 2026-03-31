@@ -549,8 +549,14 @@ const isEntrypoint = process.argv[1] != null
   && pathToFileURL(process.argv[1]).href === import.meta.url;
 
 if (isEntrypoint) {
-  void startServer().catch((err) => {
-    console.error(`[${SERVER_NAME}] Fatal:`, err);
-    process.exitCode = 1;
-  });
+  async function main() {
+    try {
+      await startServer();
+    } catch (err) {
+      console.error(`[${SERVER_NAME}] Fatal:`, err);
+      process.exit(1);
+    }
+  }
+
+  void main();
 }

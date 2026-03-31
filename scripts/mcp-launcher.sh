@@ -84,7 +84,7 @@ stop_server() {
 case "${1:-start}" in
     start)
         echo "Starting MCP servers..."
-        
+
         # TypeScript servers (direct tsx) - cd to server dir first
         start_server "echoes-server" "node" "$TSX_BIN src/server.ts" "ECHOES_AUDIT_PATH=$HOME/.echoes/audit.ndjson" "$WORKSPACE_ROOT/echoes-server"
         start_server "grid-server" "node" "$TSX_BIN src/server.ts" "CASCADE_WORKSPACE_ROOT=$WORKSPACE_ROOT,GATE_DIR=$WORKSPACE_ROOT/GATE,GRID_API_URL=http://localhost:8080" "$WORKSPACE_ROOT/grid-server"
@@ -97,11 +97,11 @@ case "${1:-start}" in
         start_server "eligibility-server" "node" "$TSX_BIN src/server.ts" "ECHOES_AUDIT_PATH=$HOME/.echoes/audit.ndjson,ELIGIBILITY_DATA_DIR=$HOME/.eligibility-server" "$WORKSPACE_ROOT/eligibility-server"
         start_server "mangrove-server" "node" "$TSX_BIN src/server.ts" "MANGROVE_DIO_ROOT=$WORKSPACE_ROOT/DIO" "$WORKSPACE_ROOT/mangrove-server"
         start_server "glimpse-server" "node" "$TSX_BIN src/server.ts" "" "$WORKSPACE_ROOT/glimpse-server"
-        
+
         # Python servers (GRID venv)
         PYTHONPATH="$HOME/roots/GRID/src:$HOME/roots/GRID"
         RAG_ENV="PYTHONPATH=$PYTHONPATH,RAG_EMBEDDING_PROVIDER=ollama,RAG_EMBEDDING_MODEL=nomic-embed-text-v2-moe:latest,RAG_LLM_MODE=local,RAG_LLM_MODEL_LOCAL=ministral-3:latest,RAG_VECTOR_STORE_PROVIDER=chromadb,RAG_VECTOR_STORE_PATH=$HOME/roots/GRID/.rag_db,OLLAMA_BASE_URL=http://localhost:11434"
-        
+
         start_server "grid-rag" "$GRID_VENV" "mcp-setup/server/grid_rag_mcp_server.py" "$RAG_ENV" "$HOME/roots/GRID"
         start_server "grid-rag-enhanced" "$GRID_VENV" "-m grid.mcp.enhanced_rag_server" "$RAG_ENV" ""
         start_server "grid-enhanced-tools" "$GRID_VENV" "mcp-setup/server/enhanced_tools_mcp_server.py" "PYTHONPATH=$PYTHONPATH" "$HOME/roots/GRID"
@@ -109,31 +109,31 @@ case "${1:-start}" in
         start_server "code-analysis" "$GRID_VENV" "mcp-setup/server/code_analysis_mcp_server.py" "PYTHONPATH=$PYTHONPATH,EXTRA_ALLOWED_ROOTS=$WORKSPACE_ROOT" "$HOME/roots/GRID"
         start_server "test-runner" "$GRID_VENV" "mcp-setup/server/test_runner_mcp_server.py" "PYTHONPATH=$PYTHONPATH,EXTRA_ALLOWED_ROOTS=$WORKSPACE_ROOT" "$HOME/roots/GRID"
         start_server "grid-intelligence" "$GRID_VENV" "-m grid.mcp.intelligence_server" "PYTHONPATH=$PYTHONPATH" ""
-        
+
         echo ""
         echo "MCP servers started. Use '$0 status' to check."
         ;;
-        
+
     stop)
         echo "Stopping MCP servers..."
-        
+
         for name in echoes-server grid-server afloat-server lots-server seeds-server pulse-server maintain-server overview-server eligibility-server mangrove-server glimpse-server; do
             stop_server "$name"
         done
-        
+
         for name in grid-rag grid-rag-enhanced grid-enhanced-tools portfolio-safety-lens code-analysis test-runner grid-intelligence; do
             stop_server "$name"
         done
-        
+
         echo "MCP servers stopped."
         ;;
-        
+
     restart)
         $0 stop
         sleep 2
         $0 start
         ;;
-        
+
     status)
         echo "=== MCP Server Status ==="
         echo ""
@@ -161,7 +161,7 @@ case "${1:-start}" in
             fi
         done
         ;;
-        
+
     *)
         echo "Usage: $0 {start|stop|restart|status}"
         exit 1

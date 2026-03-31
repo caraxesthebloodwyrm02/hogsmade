@@ -1,0 +1,15 @@
+{
+  "version": "2.1.0",
+  "runs": [
+    {
+      "runId": "mndt6rff",
+      "timestamp": "2026-03-30T23:18:08.475Z",
+      "state": "MISSING_SOURCE",
+      "driftDetected": true,
+      "severity": "none",
+      "duration": 0,
+      "action": "AUTO_SYNC"
+    }
+  ],
+  "lastUpdated": "2026-03-30T23:18:08.475Z"
+}

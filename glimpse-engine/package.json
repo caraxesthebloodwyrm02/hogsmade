@@ -17,15 +17,28 @@
     "./functions/*": "./functions/*.js"
   },
   "scripts": {
-    "test": "node --test tests/*.test.js",
+    "test": "node --test tests/*.test.js tests/**/*.test.js",
+    "test:validators": "node --test tests/validators/*.test.js",
+    "test:drift": "node --test tests/drift-guard/*.test.js",
+    "ci:check": "node scripts/ci-check.mjs --strict",
+    "ci:permissive": "node scripts/ci-check.mjs",
+    "ci:heal": "node scripts/ci-check.mjs --allow-heal",
+    "smoke": "node scripts/smoke-test.mjs",
+    "validate:sync": "node -e \"import('./core/validators/sync-validator.js').then(v => console.log(v.validateSyncHealth()))\"",
     "glimpse": "node cli.js",
+    "glimpse:demo": "node cli-drift-guard.mjs",
+    "glimpse:health": "node cli-drift-guard.mjs health",
+    "glimpse:ci": "node cli-drift-guard.mjs ci",
     "demo": "node examples/simplify-demo.mjs",
+    "demo:drift": "node cli-drift-guard.mjs",
     "demo:standup": "node cli.js standup",
     "demo:energy": "node cli.js energy",
     "demo:portfolio": "node cli.js portfolio",
     "demo:lending": "node cli.js lending",
     "demo:recommend": "node cli.js recommend",
-    "demo:sales": "node examples/sales-lead-intelligence.mjs"
+    "demo:sales": "node examples/sales-lead-intelligence.mjs",
+    "test:coverage": "node --test --experimental-test-coverage tests/drift-guard/*.test.js tests/validators/*.test.js 2>&1 | tail -20",
+    "coverage:gate": "node scripts/coverage-gate.mjs"
   },
   "dependencies": {
     "js-yaml": "^4.1.1"

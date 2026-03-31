@@ -33,6 +33,8 @@ import {
   recordOutcome,
 } from "./confidence.js";
 
+import { createCalibratedFrame } from "./validators/calibration-engine.js";
+
 function buildGroundingInputs(rankedPatterns) {
   return rankedPatterns.map((p) => ({
     compressed: p.pattern,

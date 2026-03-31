@@ -1,0 +1,171 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      version_bump:
+        description: "Version bump type"
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+        default: patch
+      prerelease:
+        description: "Create as pre-release"
+        required: false
+        type: boolean
+        default: false
+      dry_run:
+        description: "Dry run (don't create release)"
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  prepare:
+    name: Prepare Release
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          submodules: true
+
+      - name: Determine Version
+        id: version
+        run: |
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            VERSION=${GITHUB_REF#refs/tags/v}
+            TAG=${GITHUB_REF#refs/tags/}
+          else
+            CURRENT=$(jq -r '.version' package.json)
+            IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
+            case "${{ github.event.inputs.version_bump }}" in
+              major) MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0 ;;
+              minor) MINOR=$((MINOR + 1)); PATCH=0 ;;
+              patch) PATCH=$((PATCH + 1)) ;;
+            esac
+            VERSION="${MAJOR}.${MINOR}.${PATCH}"
+            if [[ "${{ github.event.inputs.prerelease }}" == "true" ]]; then
+              VERSION="${VERSION}-rc.1"
+            fi
+            TAG="v${VERSION}"
+          fi
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+          echo "::notice::Version: ${VERSION}, Tag: ${TAG}"
+
+      - name: Validate CHANGELOG
+        run: |
+          if ! grep -q "^## \[${{ steps.version.outputs.version }}\]" CHANGELOG.md; then
+            echo "::error::Version ${{ steps.version.outputs.version }} not found in CHANGELOG.md"
+            exit 1
+          fi
+
+  build:
+    name: Build Packages
+    runs-on: ubuntu-latest
+    needs: [prepare]
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: true
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install Dependencies
+        run: |
+          cd shared-types && npm ci && npm run build
+          cd ../shared-resilience && npm ci && npm run build
+          cd ../shared-pipeline && npm ci
+
+      - name: Build MCP Servers
+        run: |
+          FAILED=0
+          for dir in afloat-server echoes-server grid-server lots-server maintain-server pulse-server seeds-server; do
+            echo "== Building ${dir} =="
+            (cd "$dir" && npm ci && npm run build) || FAILED=$((FAILED + 1))
+          done
+          if [ "$FAILED" -gt 0 ]; then
+            echo "::error::${FAILED} server(s) failed to build"
+            exit 1
+          fi
+
+      - name: Build Applications
+        run: |
+          cd glimpse-artifact && npm ci && npm run build || true
+
+  release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: [prepare, build]
+    if: github.event.inputs.dry_run != 'true'
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Generate Release Notes
+        run: |
+          LAST_TAG=$(git describe --tags --abbrev=0 HEAD~1 2>/dev/null || echo "")
+          if [[ -n "$LAST_TAG" ]]; then
+            COMMITS=$(git log ${LAST_TAG}..HEAD --pretty=format:"- %s (%h)" --no-merges)
+          else
+            COMMITS=$(git log --pretty=format:"- %s (%h)" --no-merges -20)
+          fi
+          echo -e "## What's Changed\n\n${COMMITS}\n\n## Workspace\n$(jq -r '.workspaces | map("- `" + . + "`") | join("\n")' package.json)" > RELEASE_NOTES.md
+          cat RELEASE_NOTES.md
+
+      - name: Create Tag (if workflow_dispatch)
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          TAG="${{ needs.prepare.outputs.tag }}"
+          if ! git ls-remote --tags origin "refs/tags/${TAG}" | grep -q "${TAG}"; then
+            git tag -a "${TAG}" -m "Release ${TAG}"
+            git push origin "${TAG}"
+          fi
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.prepare.outputs.tag }}
+          name: "hogsmade ${{ needs.prepare.outputs.tag }}"
+          body_path: RELEASE_NOTES.md
+          draft: false
+          prerelease: ${{ github.event.inputs.prerelease == 'true' }}
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  summary:
+    name: Release Summary
+    runs-on: ubuntu-latest
+    needs: [prepare, release]
+    if: always()
+    steps:
+      - name: Output Summary
+        run: |
+          echo "## hogsmade Release Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** ${{ needs.prepare.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Tag:** ${{ needs.prepare.outputs.tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "MCP Servers: 8" >> $GITHUB_STEP_SUMMARY
+          echo "Shared Packages: 3" >> $GITHUB_STEP_SUMMARY
