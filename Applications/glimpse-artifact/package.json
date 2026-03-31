@@ -4,9 +4,9 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "predev": "npm --prefix ../../Components/shared-types run build && npm --prefix ../../Tools/MCPServers/eligibility-server run build && node scripts/verify-rollup-platform.mjs",
+    "predev": "npm --prefix ../../Components/shared-types run build && node scripts/verify-rollup-platform.mjs",
     "dev": "vite",
-    "prebuild": "npm --prefix ../../Components/shared-types run build && npm --prefix ../../Tools/MCPServers/eligibility-server run build && node scripts/verify-rollup-platform.mjs",
+    "prebuild": "npm --prefix ../../Components/shared-types run build && node scripts/verify-rollup-platform.mjs",
     "build": "tsc && vite build",
     "lint": "tsc --noEmit --pretty false",
     "test": "npx tsx --test tests/*.test.ts",
