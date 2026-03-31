@@ -1,7 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { pathToFileURL } from "node:url";
-import * as z from "zod";
+import * as z from "zod/v3";
 import { getDefaultAttributeCatalog } from "./catalog.js";
 import {
   advanceCycle,
@@ -391,35 +391,62 @@ export function buildServer(): McpServer {
   server.tool(
     "evaluate_candidate",
     "Evaluate one or more candidates into weighted hierarchy, notes, forms, and collection rows.",
-    candidateInputSchema,
+    {
+      candidate: candidateSchema.optional().describe("Inline candidate to evaluate."),
+      fixtureId: z.string().optional().describe("Single fixture id to evaluate."),
+      fixtureIds: z.array(z.string()).optional().describe("Multiple fixture ids to evaluate."),
+      args: argsSchema.optional().describe("Conditional runtime arguments that bias the analog hierarchy."),
+    },
     async (input) => toJsonText(evaluateCandidateHandler(input)),
   );
 
   server.tool(
     "compile_forms",
     "Compile the runtime result into server, rule, agent, skill, and reference artifacts.",
-    candidateInputSchema,
+    {
+      candidate: candidateSchema.optional().describe("Inline candidate to evaluate."),
+      fixtureId: z.string().optional().describe("Single fixture id to evaluate."),
+      fixtureIds: z.array(z.string()).optional().describe("Multiple fixture ids to evaluate."),
+      args: argsSchema.optional().describe("Conditional runtime arguments that bias the analog hierarchy."),
+    },
     async (input) => toJsonText(compileFormsHandler(input)),
   );
 
   server.tool(
     "collect_table",
     "Return row-and-column collection output with provenance credit and formula-ready fields.",
-    candidateInputSchema,
+    {
+      candidate: candidateSchema.optional().describe("Inline candidate to evaluate."),
+      fixtureId: z.string().optional().describe("Single fixture id to evaluate."),
+      fixtureIds: z.array(z.string()).optional().describe("Multiple fixture ids to evaluate."),
+      args: argsSchema.optional().describe("Conditional runtime arguments that bias the analog hierarchy."),
+    },
     async (input) => toJsonText(collectTableHandler(input)),
   );
 
   server.tool(
     "explain_hierarchy",
     "Explain the current top hierarchy, leading condition, and leading observation.",
-    candidateInputSchema,
+    {
+      candidate: candidateSchema.optional().describe("Inline candidate to evaluate."),
+      fixtureId: z.string().optional().describe("Single fixture id to evaluate."),
+      fixtureIds: z.array(z.string()).optional().describe("Multiple fixture ids to evaluate."),
+      args: argsSchema.optional().describe("Conditional runtime arguments that bias the analog hierarchy."),
+    },
     async (input) => toJsonText(explainHierarchyHandler(input)),
   );
 
   server.tool(
     "open_evolution_case",
     "Open a rolling evolution case that wraps the current eligibility routine.",
-    openEvolutionCaseSchema,
+    {
+      candidate: candidateSchema.optional().describe("Inline candidate to evaluate."),
+      fixtureId: z.string().optional().describe("Single fixture id to evaluate."),
+      fixtureIds: z.array(z.string()).optional().describe("Multiple fixture ids to evaluate."),
+      args: argsSchema.optional().describe("Conditional runtime arguments that bias the analog hierarchy."),
+      caseId: z.string().optional().describe("Optional deterministic case id."),
+      label: z.string().optional().describe("Human-readable case label."),
+    },
     async (input) => toJsonText(openEvolutionCaseHandler(input)),
   );
 
@@ -433,42 +460,64 @@ export function buildServer(): McpServer {
   server.tool(
     "get_cycle_snapshot",
     "Fetch the full control-room snapshot for a single evolution case.",
-    caseLookupSchema,
+    {
+      caseId: z.string().describe("Case id to look up."),
+    },
     async (input) => toJsonText(getCycleSnapshotHandler(input)),
   );
 
   server.tool(
     "record_cycle_signal",
     "Record a weighted runtime signal against an evolution case.",
-    signalSchema,
+    {
+      caseId: z.string().describe("Case id to record signal against."),
+      kind: z.enum(SIGNAL_KIND_VALUES).describe("Signal kind."),
+      weight: z.number().min(0).max(1).describe("Signal weight 0-1."),
+      note: z.string().optional().describe("Optional human note."),
+    },
     async (input) => toJsonText(recordCycleSignalHandler(input)),
   );
 
   server.tool(
     "record_handoff",
     "Record a handoff event between actors or surfaces in the current cycle.",
-    handoffSchema,
+    {
+      caseId: z.string().describe("Case id to record handoff against."),
+      from: z.string().describe("Source actor or surface."),
+      to: z.string().describe("Target actor or surface."),
+      status: z.enum(HANDOFF_STATUS_VALUES).describe("Handoff status."),
+    },
     async (input) => toJsonText(recordHandoffHandler(input)),
   );
 
   server.tool(
     "upsert_endpoint_spec",
     "Insert or update an endpoint spec used by the promotion gate.",
-    endpointSchema,
+    {
+      endpointId: z.string().describe("Endpoint identifier."),
+      status: z.enum(ENDPOINT_STATUS_VALUES).describe("Endpoint status."),
+      url: z.string().optional().describe("Optional URL."),
+      lastVerified: z.string().optional().describe("Optional last verified timestamp."),
+    },
     async (input) => toJsonText(upsertEndpointSpecHandler(input)),
   );
 
   server.tool(
     "advance_cycle",
     "Advance the cycle one beat forward or return it one beat backward.",
-    cycleMoveSchema,
+    {
+      caseId: z.string().describe("Case id to advance."),
+      direction: z.enum(["forward", "backward"]).describe("Direction to move."),
+    },
     async (input) => toJsonText(advanceCycleHandler(input)),
   );
 
   server.tool(
     "evaluate_promotion_gate",
     "Evaluate the promotion gate for a verify-beat cycle.",
-    caseLookupSchema,
+    {
+      caseId: z.string().describe("Case id to look up."),
+    },
     async (input) => toJsonText(evaluatePromotionGateHandler(input)),
   );
 
