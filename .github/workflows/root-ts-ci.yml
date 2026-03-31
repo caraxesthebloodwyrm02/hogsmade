@@ -86,6 +86,8 @@ jobs:
             glimpse-engine/package-lock.json
 
       - name: Run trusted repo checks
+        env:
+          NODE_OPTIONS: '--max-old-space-size=4096'
         run: bash scripts/run_repo_contract_checks.sh
 
 # bp-discovery-bp-discovery-hogsmade-20260321101953
