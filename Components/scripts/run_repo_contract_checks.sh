@@ -7,13 +7,15 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 echo "== verify_mcp_inventory =="
 python3 "${SCRIPT_DIR}/verify_mcp_inventory.py" --cascade-root "${REPO_ROOT}"
 
+echo "== npm ci (root workspace) =="
+(cd "${REPO_ROOT}" && npm ci)
+
 run_npm_package() {
   local dir="$1"
   shift
   echo "== ${dir} =="
   (
     cd "$dir"
-    npm ci
     for cmd in "$@"; do
       echo "\$ ${cmd}"
       eval "${cmd}"
@@ -49,8 +51,4 @@ done
 run_npm_package "${REPO_ROOT}/Applications/glimpse-artifact" "npm run check"
 
 echo "== glimpse-engine =="
-(
-  cd "${REPO_ROOT}/Applications/glimpse-engine"
-  npm ci
-)
 node --test "${REPO_ROOT}/Components/tests/glimpse-engine.test.mjs"
