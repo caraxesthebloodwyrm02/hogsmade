@@ -57,6 +57,7 @@ do
       if [[ "$dir" == "grid-server" ]]; then
         export CASCADE_WORKSPACE_ROOT="${REPO_ROOT}"
         export GATE_DIR="${REPO_ROOT}/Components/scripts/gate"
+        export GRID_API_URL=""  # Force local mode, avoid remote connection attempts
         # Create minimal GATE structure for tests
         mkdir -p "${GATE_DIR}/incoming" "${GATE_DIR}/results"
         touch "${GATE_DIR}/audit.ndjson" "${GATE_DIR}/.nonce_registry.json"
