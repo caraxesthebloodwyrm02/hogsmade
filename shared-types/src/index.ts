@@ -25,6 +25,7 @@ export type {
   MeritAuditEntry,
 } from "./merit-policy.js";
 
+<<<<<<< HEAD
 // Hardened MCP guard (recommended)
 export {
   HardenedMcpMeritGuard,
@@ -34,6 +35,13 @@ export type {
   HardenedMeritGuardConfig,
   GuardedToolOptions as HardenedGuardedToolOptions,
 } from "./mcp-guard-hardened.js";
+=======
+export {
+  createMeritGuard,
+  McpMeritGuard,
+} from "./mcp-guard.js";
+export type { MeritGuardConfig, GuardedToolOptions } from "./mcp-guard.js";
+>>>>>>> phase-3-packaging-foundation
 
 export { TelemetrySnapshotSchema } from "./telemetry.js";
 export type { TelemetrySnapshot } from "./telemetry.js";

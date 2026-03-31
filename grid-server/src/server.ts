@@ -16,7 +16,11 @@ import { emitAudit } from "@cascade/shared-types/audit-client";
 import { McpLogger } from "@cascade/shared-types/mcp-logger";
 import { GateSecurityPolicy } from "@cascade/shared-types/security-policy";
 import { SessionRateLimiter } from "@cascade/shared-types/session-rate-limit";
+<<<<<<< HEAD
 import { ActionClass, createHardenedMeritGuard, HardenedMcpMeritGuard } from "@cascade/shared-types";
+=======
+import { ActionClass, createMeritGuard, McpMeritGuard } from "@cascade/shared-types";
+>>>>>>> phase-3-packaging-foundation
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import crypto from "crypto";
@@ -378,15 +382,25 @@ export function buildServer(): McpServer {
     version: VERSION,
   });
 
+<<<<<<< HEAD
   // Initialize hardened merit guard for session-first identity enforcement
   const meritGuard = createHardenedMeritGuard(
+=======
+  // Initialize merit guard for session-first identity enforcement
+  const meritGuard = createMeritGuard(
+>>>>>>> phase-3-packaging-foundation
     SERVER_NAME,
     process.env.GRID_API_URL || config.gridApiUrl,
   );
 
+<<<<<<< HEAD
   // Health check - use merit guard's registerGuardedTool with PUBLIC_BASIC
   meritGuard.registerGuardedTool(
     server,
+=======
+  // Health check - public_basic action class
+  server.registerTool(
+>>>>>>> phase-3-packaging-foundation
     "health_check",
     {
       actionClass: ActionClass.PUBLIC_BASIC,
