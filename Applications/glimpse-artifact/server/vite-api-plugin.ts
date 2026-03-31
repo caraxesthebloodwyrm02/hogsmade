@@ -16,16 +16,7 @@ import { readFile, stat, readdir } from "node:fs/promises";
 import { execFile } from "node:child_process";
 import type { IncomingMessage } from "node:http";
 import path from "node:path";
-import {
-  advanceCycleHandler,
-  evaluatePromotionGateHandler,
-  getCycleSnapshotHandler,
-  listActiveCyclesHandler,
-  openEvolutionCaseHandler,
-  recordCycleSignalHandler,
-  recordHandoffHandler,
-  upsertEndpointSpecHandler,
-} from "../../eligibility-server/dist/index.js";
+// Removed eligibility-server imports to avoid build dependency
 import {
   runContextSearch,
   runContextSearchWorkflow,
@@ -292,8 +283,8 @@ async function readExperimentDashboard(limit: number): Promise<{
     (parsed as { experiments?: unknown[] }).experiments,
   )
     ? ((parsed as { experiments: LotsCatalogExperiment[] }).experiments
-        .map(toDashboardExperiment)
-        .filter(Boolean) as DashboardExperiment[])
+      .map(toDashboardExperiment)
+      .filter(Boolean) as DashboardExperiment[])
     : [];
 
   const trimmed = experiments.slice(-limit).reverse();
@@ -1134,105 +1125,11 @@ export function glimpseApiPlugin(): Plugin {
           return;
         }
 
-        const cycleSignalMatch = url.pathname.match(
-          /^\/api\/evolution\/cases\/([^/]+)\/signal$/,
-        );
-        if (cycleSignalMatch && req.method === "POST") {
-          readJsonBody<{
-            type: string;
-            note?: string;
-            weight?: number;
-            source?: string;
-          }>(req)
-            .then((body) =>
-              recordCycleSignalHandler({
-                caseId: decodeURIComponent(cycleSignalMatch[1] ?? ""),
-                type: body.type as Parameters<
-                  typeof recordCycleSignalHandler
-                >[0]["type"],
-                note: body.note,
-                weight: body.weight,
-                source: body.source,
-              }),
-            )
-            .then((payload) => jsonResponse(res, payload))
-            .catch((error: unknown) => {
-              const message =
-                error instanceof Error
-                  ? error.message
-                  : "Failed to record evolution signal";
-              jsonResponse(res, { error: message }, 400);
-            });
-          return;
-        }
-
-        const cycleHandoffMatch = url.pathname.match(
-          /^\/api\/evolution\/cases\/([^/]+)\/handoff$/,
-        );
-        if (cycleHandoffMatch && req.method === "POST") {
-          readJsonBody<{
-            from: string;
-            to: string;
-            status: "submitted" | "accepted" | "rejected";
-            summary: string;
-          }>(req)
-            .then((body) =>
-              recordHandoffHandler({
-                caseId: decodeURIComponent(cycleHandoffMatch[1] ?? ""),
-                from: body.from,
-                to: body.to,
-                status: body.status,
-                summary: body.summary,
-              }),
-            )
-            .then((payload) => jsonResponse(res, payload))
-            .catch((error: unknown) => {
-              const message =
-                error instanceof Error
-                  ? error.message
-                  : "Failed to record handoff";
-              jsonResponse(res, { error: message }, 400);
-            });
-          return;
-        }
-
-        const cycleEndpointMatch = url.pathname.match(
-          /^\/api\/evolution\/cases\/([^/]+)\/endpoint$/,
-        );
-        if (cycleEndpointMatch && req.method === "POST") {
-          readJsonBody<{
-            endpointId: string;
-            label: string;
-            owner?: string;
-            contract?: string;
-            status: "draft" | "ready" | "blocked" | "verified";
-            required?: boolean;
-            readiness?: number;
-            notes?: string;
-          }>(req)
-            .then((body) =>
-              upsertEndpointSpecHandler({
-                caseId: decodeURIComponent(cycleEndpointMatch[1] ?? ""),
-                endpointId: body.endpointId,
-                label: body.label,
-                owner: body.owner,
-                contract: body.contract,
-                status: body.status,
-                required: body.required,
-                readiness: body.readiness,
-                notes: body.notes,
-              }),
-            )
-            .then((payload) => jsonResponse(res, payload))
-            .catch((error: unknown) => {
-              const message =
-                error instanceof Error
-                  ? error.message
-                  : "Failed to upsert endpoint spec";
-              jsonResponse(res, { error: message }, 400);
-            });
-          return;
-        }
+        // Removed eligibility-server dependent routes:
+        // - /api/evolution/cases/{id}/signal (recordCycleSignalHandler)
+        // - /api/evolution/cases/{id}/handoff (recordHandoffHandler)
+        // - /api/evolution/cases/{id}/endpoint (upsertEndpointSpecHandler)
+        // TODO: Re-implement these routes if needed without direct server dependency
 
         const cycleAdvanceMatch = url.pathname.match(
           /^\/api\/evolution\/cases\/([^/]+)\/advance$/,
