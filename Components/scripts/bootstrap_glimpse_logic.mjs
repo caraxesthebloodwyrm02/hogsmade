@@ -9,7 +9,8 @@ import { rankViews } from "../../Applications/glimpse-engine/view-specs.js";
 
 const execFileAsync = promisify(execFile);
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const ROOT = resolve(__dirname, "..");
+// Project root: Components/scripts/../.. = project root
+const ROOT = resolve(__dirname, "../..");
 const DEFAULT_REPORT_PATH = resolve(ROOT, "tmp/jupyter-notebook/validation-report.json");
 const DATASETS = [
   { id: "innovations", file: resolve(ROOT, "sample-innovations.json"), preset: "researcher" },
