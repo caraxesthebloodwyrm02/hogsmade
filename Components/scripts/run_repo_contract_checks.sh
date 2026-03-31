@@ -57,6 +57,9 @@ do
       if [[ "$dir" == "grid-server" ]]; then
         export CASCADE_WORKSPACE_ROOT="${REPO_ROOT}"
         export GATE_DIR="${REPO_ROOT}/Components/scripts/gate"
+        # Create minimal GATE structure for tests
+        mkdir -p "${GATE_DIR}/incoming" "${GATE_DIR}/results"
+        touch "${GATE_DIR}/audit.ndjson" "${GATE_DIR}/.nonce_registry.json"
       fi
       npm test
     )
