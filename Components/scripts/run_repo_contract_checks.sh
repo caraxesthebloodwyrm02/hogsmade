@@ -7,6 +7,8 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 echo "== verify_mcp_inventory =="
 python3 "${SCRIPT_DIR}/verify_mcp_inventory.py" --cascade-root "${REPO_ROOT}"
 
+export NODE_OPTIONS='--max-old-space-size=4096'
+
 echo "== npm ci (root workspace) =="
 (cd "${REPO_ROOT}" && npm ci)
 
@@ -31,7 +33,7 @@ run_npm_package() {
 run_npm_package "${REPO_ROOT}/Components/shared-types" "npm run build"
 run_npm_package "${REPO_ROOT}/Components/shared-resilience" "npm run build"
 run_npm_package "${REPO_ROOT}/Components/shared-pipeline" "npm run build"
-run_npm_package "${REPO_ROOT}/Tools/MCPServers/eligibility-server" "NODE_OPTIONS='--max-old-space-size=8192' npm run build" "npm test"
+run_npm_package "${REPO_ROOT}/Tools/MCPServers/eligibility-server" "npm run build" "npm test"
 
 for dir in \
   "afloat-server" \
@@ -45,7 +47,7 @@ for dir in \
   "pulse-server" \
   "seeds-server"
 do
-  run_npm_package "${REPO_ROOT}/Tools/MCPServers/$dir" "NODE_OPTIONS='--max-old-space-size=8192' npm run build" "npm test"
+  run_npm_package "${REPO_ROOT}/Tools/MCPServers/$dir" "npm run build" "npm test"
 done
 
 run_npm_package "${REPO_ROOT}/Applications/glimpse-artifact" "npm run check"

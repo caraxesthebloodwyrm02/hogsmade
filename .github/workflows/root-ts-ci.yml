@@ -99,5 +99,5 @@ jobs:
 
       - name: Run trusted repo checks
         env:
-          NODE_OPTIONS: '--max-old-space-size=8192'
+          NODE_OPTIONS: '--max-old-space-size=4096'
         run: bash Components/scripts/run_repo_contract_checks.sh
