@@ -1,0 +1,25 @@
+{
+  "name": "lots-server",
+  "version": "1.0.0",
+  "description": "Light of the Seven — lightweight experiment runner MCP server for executing scripts, capturing output, and managing experiment lifecycle",
+  "type": "module",
+  "main": "src/server.ts",
+  "scripts": {
+    "start": "tsx src/server.ts",
+    "build": "tsc",
+    "lint": "tsc --noEmit",
+    "dev": "tsx --watch src/server.ts",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@cascade/shared-types": "file:../../Components/shared-types",
+    "@modelcontextprotocol/sdk": "^1.28.0",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.6.0",
+    "typescript": "~5.9.3",
+    "vitest": "4.1.2"
+  }
+}

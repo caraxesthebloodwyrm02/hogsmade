@@ -56,7 +56,8 @@
         "/home/caraxes/CascadeProjects/seeds-server/src/server.ts"
       ],
       "env": {
-        "SEEDS_ROOT": "/home/caraxes/seed"
+        "SEEDS_ROOT": "/home/caraxes/CascadeProjects",
+        "SEEDS_ROOTS": "/home/caraxes/CascadeProjects,/home/caraxes/canopy,/home/caraxes/grove"
       }
     },
     "pulse-server": {
@@ -112,7 +113,7 @@
       ],
       "env": {
         "CASCADE_WORKSPACE_ROOT": "/home/caraxes/CascadeProjects",
-        "SEEDS_ROOT": "/home/caraxes/seed",
+        "SEEDS_ROOT": "/home/caraxes/CascadeProjects",
         "ECHOES_AUDIT_PATH": "/home/caraxes/.echoes/audit.ndjson"
       }
     },
@@ -125,7 +126,7 @@
       ],
       "env": {
         "CASCADE_WORKSPACE_ROOT": "/home/caraxes/CascadeProjects",
-        "SEEDS_ROOT": "/home/caraxes/seed",
+        "SEEDS_ROOT": "/home/caraxes/CascadeProjects",
         "ECHOES_AUDIT_PATH": "/home/caraxes/.echoes/audit.ndjson",
         "GATE_DIR": "/home/caraxes/CascadeProjects/GATE"
       }

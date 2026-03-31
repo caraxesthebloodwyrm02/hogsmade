@@ -9,7 +9,11 @@
     "echoes-server": {
       "command": {
         "path": "npx",
-        "args": ["-y", "tsx", "/home/caraxes/CascadeProjects/echoes-server/src/server.ts"],
+        "args": [
+          "-y",
+          "tsx",
+          "/home/caraxes/CascadeProjects/echoes-server/src/server.ts"
+        ],
         "env": {
           "ECHOES_AUDIT_PATH": "/home/caraxes/.echoes/audit.ndjson"
         }
@@ -18,7 +22,11 @@
     "grid-server": {
       "command": {
         "path": "npx",
-        "args": ["-y", "tsx", "/home/caraxes/CascadeProjects/grid-server/src/server.ts"],
+        "args": [
+          "-y",
+          "tsx",
+          "/home/caraxes/CascadeProjects/grid-server/src/server.ts"
+        ],
         "env": {
           "CASCADE_WORKSPACE_ROOT": "/home/caraxes/CascadeProjects",
           "GATE_DIR": "/home/caraxes/CascadeProjects/GATE",
@@ -29,14 +37,22 @@
     "afloat-server": {
       "command": {
         "path": "npx",
-        "args": ["-y", "tsx", "/home/caraxes/CascadeProjects/afloat-server/src/server.ts"],
+        "args": [
+          "-y",
+          "tsx",
+          "/home/caraxes/CascadeProjects/afloat-server/src/server.ts"
+        ],
         "env": {}
       }
     },
     "lots-server": {
       "command": {
         "path": "npx",
-        "args": ["-y", "tsx", "/home/caraxes/CascadeProjects/lots-server/src/server.ts"],
+        "args": [
+          "-y",
+          "tsx",
+          "/home/caraxes/CascadeProjects/lots-server/src/server.ts"
+        ],
         "env": {
           "LOTS_EXPERIMENTS_DIR": "/home/caraxes/CascadeProjects/experiments",
           "ECHOES_AUDIT_PATH": "/home/caraxes/.echoes/audit.ndjson"
@@ -46,23 +62,34 @@
     "seeds-server": {
       "command": {
         "path": "npx",
-        "args": ["-y", "tsx", "/home/caraxes/CascadeProjects/seeds-server/src/server.ts"],
+        "args": [
+          "-y",
+          "tsx",
+          "/home/caraxes/CascadeProjects/seeds-server/src/server.ts"
+        ],
         "env": {
-          "SEEDS_ROOT": "/home/caraxes/seed"
+          "SEEDS_ROOT": "/home/caraxes/CascadeProjects",
+          "SEEDS_ROOTS": "/home/caraxes/CascadeProjects,/home/caraxes/canopy,/home/caraxes/grove"
         }
       }
     },
     "pulse-server": {
       "command": {
         "path": "npx",
-        "args": ["-y", "tsx", "/home/caraxes/CascadeProjects/pulse-server/src/server.ts"],
+        "args": [
+          "-y",
+          "tsx",
+          "/home/caraxes/CascadeProjects/pulse-server/src/server.ts"
+        ],
         "env": {}
       }
     },
     "grid-rag": {
       "command": {
         "path": "/home/caraxes/roots/GRID/.venv/bin/python",
-        "args": ["/home/caraxes/roots/GRID/mcp-setup/server/grid_rag_mcp_server.py"],
+        "args": [
+          "/home/caraxes/roots/GRID/mcp-setup/server/grid_rag_mcp_server.py"
+        ],
         "env": {
           "PYTHONPATH": "/home/caraxes/roots/GRID/src:/home/caraxes/roots/GRID",
           "RAG_EMBEDDING_PROVIDER": "ollama",
@@ -78,7 +105,10 @@
     "grid-rag-enhanced": {
       "command": {
         "path": "/home/caraxes/roots/GRID/.venv/bin/python",
-        "args": ["-m", "grid.mcp.enhanced_rag_server"],
+        "args": [
+          "-m",
+          "grid.mcp.enhanced_rag_server"
+        ],
         "env": {
           "PYTHONPATH": "/home/caraxes/roots/GRID/src:/home/caraxes/roots/GRID",
           "RAG_EMBEDDING_PROVIDER": "ollama",
@@ -94,7 +124,9 @@
     "grid-enhanced-tools": {
       "command": {
         "path": "/home/caraxes/roots/GRID/.venv/bin/python",
-        "args": ["/home/caraxes/roots/GRID/mcp-setup/server/enhanced_tools_mcp_server.py"],
+        "args": [
+          "/home/caraxes/roots/GRID/mcp-setup/server/enhanced_tools_mcp_server.py"
+        ],
         "env": {
           "PYTHONPATH": "/home/caraxes/roots/GRID/src:/home/caraxes/roots/GRID"
         }
@@ -103,7 +135,9 @@
     "portfolio-safety-lens": {
       "command": {
         "path": "/home/caraxes/roots/GRID/.venv/bin/python",
-        "args": ["/home/caraxes/roots/GRID/mcp-setup/server/portfolio_safety_mcp_server.py"],
+        "args": [
+          "/home/caraxes/roots/GRID/mcp-setup/server/portfolio_safety_mcp_server.py"
+        ],
         "env": {
           "PYTHONPATH": "/home/caraxes/roots/GRID/src:/home/caraxes/roots/GRID:/home/caraxes/seed/archive/Coinbase_from_zip"
         }
@@ -112,7 +146,9 @@
     "code-analysis": {
       "command": {
         "path": "/home/caraxes/roots/GRID/.venv/bin/python",
-        "args": ["/home/caraxes/roots/GRID/mcp-setup/server/code_analysis_mcp_server.py"],
+        "args": [
+          "/home/caraxes/roots/GRID/mcp-setup/server/code_analysis_mcp_server.py"
+        ],
         "env": {
           "PYTHONPATH": "/home/caraxes/roots/GRID/src:/home/caraxes/roots/GRID"
         }
@@ -121,7 +157,9 @@
     "test-runner": {
       "command": {
         "path": "/home/caraxes/roots/GRID/.venv/bin/python",
-        "args": ["/home/caraxes/roots/GRID/mcp-setup/server/test_runner_mcp_server.py"],
+        "args": [
+          "/home/caraxes/roots/GRID/mcp-setup/server/test_runner_mcp_server.py"
+        ],
         "env": {
           "PYTHONPATH": "/home/caraxes/roots/GRID/src:/home/caraxes/roots/GRID"
         }
@@ -130,10 +168,14 @@
     "maintain-server": {
       "command": {
         "path": "npx",
-        "args": ["-y", "tsx", "/home/caraxes/CascadeProjects/maintain-server/src/server.ts"],
+        "args": [
+          "-y",
+          "tsx",
+          "/home/caraxes/CascadeProjects/maintain-server/src/server.ts"
+        ],
         "env": {
           "CASCADE_WORKSPACE_ROOT": "/home/caraxes/CascadeProjects",
-          "SEEDS_ROOT": "/home/caraxes/seed",
+          "SEEDS_ROOT": "/home/caraxes/CascadeProjects",
           "ECHOES_AUDIT_PATH": "/home/caraxes/.echoes/audit.ndjson"
         }
       }
@@ -141,10 +183,14 @@
     "overview-server": {
       "command": {
         "path": "npx",
-        "args": ["-y", "tsx", "/home/caraxes/CascadeProjects/overview-server/src/server.ts"],
+        "args": [
+          "-y",
+          "tsx",
+          "/home/caraxes/CascadeProjects/overview-server/src/server.ts"
+        ],
         "env": {
           "CASCADE_WORKSPACE_ROOT": "/home/caraxes/CascadeProjects",
-          "SEEDS_ROOT": "/home/caraxes/seed",
+          "SEEDS_ROOT": "/home/caraxes/CascadeProjects",
           "ECHOES_AUDIT_PATH": "/home/caraxes/.echoes/audit.ndjson",
           "GATE_DIR": "/home/caraxes/CascadeProjects/GATE"
         }

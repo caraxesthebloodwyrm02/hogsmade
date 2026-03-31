@@ -1,0 +1,79 @@
+contract:
+  id: TOOL-GOV-001
+  version: "1.0.0"
+  title: "Tool Interface Governance Contract"
+  principle: "No write without read"
+  created: "2026-03-31"
+
+  rules:
+    - id: GOV-01
+      rule: "Every tool must have a description ≤ 120 chars"
+      enforcement: "Board rejects tools without description"
+      severity: block
+
+    - id: GOV-02
+      rule: "Every parameter must have a type, description, and default when applicable"
+      enforcement: "Board marks incomplete params with warning indicator"
+      severity: warn
+
+    - id: GOV-03
+      rule: "Every server must expose health_check"
+      enforcement: "Board shows server as 'unknown' health without it"
+      severity: warn
+
+    - id: GOV-04
+      rule: "Tool names use snake_case, max 40 chars"
+      enforcement: "Board normalizes display but flags violations"
+      severity: warn
+
+    - id: GOV-05
+      rule: "No tool may write without a corresponding read tool in the same server"
+      enforcement: "Board pairs read/write tools; orphan writes flagged"
+      severity: warn
+
+    - id: GOV-06
+      rule: "Every tool invocation should be auditable via echoes"
+      enforcement: "Board checks audit trail; gaps shown on screen"
+      severity: info
+
+    - id: GOV-07
+      rule: "Presets must be versioned and diffable"
+      enforcement: "Board stores presets as JSON with content hash"
+      severity: block
+
+  houses:
+    observation:
+      motto: "See clearly"
+      color: "#3B82F6"
+      servers:
+        - glimpse-server
+        - pulse-server
+        - overview-server
+        - seeds-server
+        - grid-rag
+        - grid-rag-enhanced
+
+    enforcement:
+      motto: "Hold the line"
+      color: "#EF4444"
+      servers:
+        - echoes-server
+        - grid-server
+        - eligibility-server
+        - code-analysis
+
+    experimentation:
+      motto: "Try, measure, learn"
+      color: "#10B981"
+      servers:
+        - lots-server
+        - grid-enhanced-tools
+        - test-runner
+
+    orchestration:
+      motto: "Coordinate and flow"
+      color: "#F59E0B"
+      servers:
+        - afloat-server
+        - maintain-server
+        - mangrove-server

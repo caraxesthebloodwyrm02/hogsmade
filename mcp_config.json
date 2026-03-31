@@ -17,7 +17,7 @@
       "args": [
         "-y",
         "tsx",
-        "/home/caraxes/CascadeProjects/echoes-server/src/server.ts"
+        "/home/caraxes/CascadeProjects/Tools/MCPServers/echoes-server/src/server.ts"
       ],
       "env": {
         "ECHOES_AUDIT_PATH": "/home/caraxes/.echoes/audit.ndjson"
@@ -28,7 +28,7 @@
       "args": [
         "-y",
         "tsx",
-        "/home/caraxes/CascadeProjects/grid-server/src/server.ts"
+        "/home/caraxes/CascadeProjects/Tools/MCPServers/grid-server/src/server.ts"
       ],
       "env": {
         "CASCADE_WORKSPACE_ROOT": "/home/caraxes/CascadeProjects",
@@ -41,7 +41,7 @@
       "args": [
         "-y",
         "tsx",
-        "/home/caraxes/CascadeProjects/afloat-server/src/server.ts"
+        "/home/caraxes/CascadeProjects/Tools/MCPServers/afloat-server/src/server.ts"
       ],
       "env": {}
     },
@@ -50,7 +50,7 @@
       "args": [
         "-y",
         "tsx",
-        "/home/caraxes/CascadeProjects/lots-server/src/server.ts"
+        "/home/caraxes/CascadeProjects/Tools/MCPServers/lots-server/src/server.ts"
       ],
       "env": {
         "LOTS_EXPERIMENTS_DIR": "/home/caraxes/CascadeProjects/experiments",
@@ -62,10 +62,11 @@
       "args": [
         "-y",
         "tsx",
-        "/home/caraxes/CascadeProjects/seeds-server/src/server.ts"
+        "/home/caraxes/CascadeProjects/Tools/MCPServers/seeds-server/src/server.ts"
       ],
       "env": {
-        "SEEDS_ROOT": "/home/caraxes/seed"
+        "SEEDS_ROOT": "/home/caraxes/CascadeProjects",
+        "SEEDS_ROOTS": "/home/caraxes/CascadeProjects,/home/caraxes/canopy,/home/caraxes/grove"
       }
     },
     "pulse-server": {
@@ -73,7 +74,7 @@
       "args": [
         "-y",
         "tsx",
-        "/home/caraxes/CascadeProjects/pulse-server/src/server.ts"
+        "/home/caraxes/CascadeProjects/Tools/MCPServers/pulse-server/src/server.ts"
       ],
       "env": {}
     },
@@ -153,11 +154,11 @@
       "args": [
         "-y",
         "tsx",
-        "/home/caraxes/CascadeProjects/maintain-server/src/server.ts"
+        "/home/caraxes/CascadeProjects/Tools/MCPServers/maintain-server/src/server.ts"
       ],
       "env": {
         "CASCADE_WORKSPACE_ROOT": "/home/caraxes/CascadeProjects",
-        "SEEDS_ROOT": "/home/caraxes/seed",
+        "SEEDS_ROOT": "/home/caraxes/CascadeProjects",
         "ECHOES_AUDIT_PATH": "/home/caraxes/.echoes/audit.ndjson"
       }
     },
@@ -166,11 +167,11 @@
       "args": [
         "-y",
         "tsx",
-        "/home/caraxes/CascadeProjects/overview-server/src/server.ts"
+        "/home/caraxes/CascadeProjects/Tools/MCPServers/overview-server/src/server.ts"
       ],
       "env": {
         "CASCADE_WORKSPACE_ROOT": "/home/caraxes/CascadeProjects",
-        "SEEDS_ROOT": "/home/caraxes/seed",
+        "SEEDS_ROOT": "/home/caraxes/CascadeProjects",
         "ECHOES_AUDIT_PATH": "/home/caraxes/.echoes/audit.ndjson",
         "GATE_DIR": "/home/caraxes/CascadeProjects/GATE"
       }
@@ -180,7 +181,7 @@
       "args": [
         "-y",
         "tsx",
-        "/home/caraxes/CascadeProjects/mangrove-server/src/server.ts"
+        "/home/caraxes/CascadeProjects/Tools/MCPServers/mangrove-server/src/server.ts"
       ],
       "env": {
         "MANGROVE_DIO_ROOT": "/home/caraxes/CascadeProjects/DIO"
@@ -191,7 +192,7 @@
       "args": [
         "-y",
         "tsx",
-        "/home/caraxes/CascadeProjects/glimpse-server/src/server.ts"
+        "/home/caraxes/CascadeProjects/Tools/MCPServers/glimpse-server/src/server.ts"
       ],
       "env": {}
     },
@@ -210,7 +211,7 @@
       "args": [
         "-y",
         "tsx",
-        "/home/caraxes/CascadeProjects/eligibility-server/src/server.ts"
+        "/home/caraxes/CascadeProjects/Tools/MCPServers/eligibility-server/src/server.ts"
       ],
       "env": {
         "ECHOES_AUDIT_PATH": "/home/caraxes/.echoes/audit.ndjson",

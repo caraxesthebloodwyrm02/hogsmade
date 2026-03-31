@@ -1,4 +1,4 @@
 [submodule "GRID-main"]
-	path = GRID-main
+	path = Projects/GRID-main
 	url = https://github.com/GRID-INTELLIGENCE/GRID.git
 	ignore = dirty
