@@ -34,13 +34,10 @@ function err<E extends Error>(error: E, code: string): Result<never, E> {
   return { ok: false, error, code };
 }
 
-// Minimal McpServer interface
+// Minimal McpServer interface — permissive enough to accept the real SDK McpServer
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 interface McpServerShape {
-  registerTool: (
-    name: string,
-    config: { description: string; inputSchema?: Record<string, unknown> },
-    handler: (args: Record<string, unknown>) => Promise<unknown>
-  ) => void;
+  registerTool: (...args: any[]) => any;
 }
 
 /** Hardened configuration options */
@@ -84,7 +81,8 @@ export interface GuardedToolOptions {
   actionClass: ActionClass;
   requiredScope?: Scope;
   description: string;
-  inputSchema?: Record<string, unknown>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  inputSchema?: Record<string, unknown> | any;
   /** Custom rate limit for this tool */
   rateLimit?: {
     max: number;

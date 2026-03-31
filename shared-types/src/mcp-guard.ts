@@ -23,13 +23,10 @@ interface Logger {
   error: (msg: string, meta?: Record<string, unknown>) => void;
 }
 
-// Minimal McpServer interface for type checking (actual SDK types used at runtime)
+// Minimal McpServer interface — permissive enough to accept the real SDK McpServer
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 interface McpServerShape {
-  registerTool: (
-    name: string,
-    config: { description: string; inputSchema?: Record<string, unknown> },
-    handler: (args: Record<string, unknown>) => Promise<unknown>
-  ) => void;
+  registerTool: (...args: any[]) => any;
 }
 
 /** Configuration options for McpMeritGuard */
@@ -48,7 +45,8 @@ export interface GuardedToolOptions {
   actionClass: ActionClass;
   requiredScope?: Scope;
   description: string;
-  inputSchema?: Record<string, unknown>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  inputSchema?: Record<string, unknown> | any;
 }
 
 /**
@@ -313,21 +311,20 @@ export class McpMeritGuard {
     const originalRegisterTool = server.registerTool.bind(server);
 
     // Replace with a wrapped version
-    server.registerTool = (
-      name: string,
-      config: { description: string; inputSchema?: Record<string, unknown> },
-      handler: (args: Record<string, unknown>) => Promise<unknown>
-    ) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    server.registerTool = (...args: any[]) => {
+      const [name, config, handler] = args;
+      const description = (config?.description as string) || '';
       // Extract action_class from description if present
-      const actionMatch = config.description.match(/\[action_class:\s*(\w+)\]/);
+      const actionMatch = description.match(/\[action_class:\s*(\w+)\]/);
       const actionClass = actionMatch
         ? (actionMatch[1] as ActionClass)
         : defaultActionClass;
 
       this.registerGuardedTool(server, name, {
         actionClass,
-        description: config.description,
-        inputSchema: config.inputSchema,
+        description,
+        inputSchema: config?.inputSchema as Record<string, unknown> | undefined,
       }, handler);
     };
   }
