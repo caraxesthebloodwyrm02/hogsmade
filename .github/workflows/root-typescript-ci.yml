@@ -53,9 +53,6 @@ jobs:
   shared-types:
     name: Shared Types Build
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: shared-types
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -70,10 +67,10 @@ jobs:
           cache-dependency-path: shared-types/package-lock.json
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci -w shared-types
 
       - name: Build
-        run: npm run build
+        run: npm run build -w shared-types
 
   servers:
     name: Server Build & Test (${{ matrix.project }})
@@ -108,32 +105,25 @@ jobs:
             ${{ matrix.project }}/package-lock.json
 
       - name: Install shared-types dependencies
-        working-directory: shared-types
-        run: npm ci
+        run: npm ci -w shared-types
 
       - name: Build shared-types
-        working-directory: shared-types
-        run: npm run build
+        run: npm run build -w shared-types
 
       - name: Install shared-resilience dependencies
-        working-directory: shared-resilience
-        run: npm ci
+        run: npm ci -w shared-resilience
 
       - name: Build shared-resilience
-        working-directory: shared-resilience
-        run: npm run build
+        run: npm run build -w shared-resilience
 
       - name: Install server dependencies
-        working-directory: ${{ matrix.project }}
-        run: npm ci
+        run: npm ci -w ${{ matrix.project }}
 
       - name: Build server
-        working-directory: ${{ matrix.project }}
-        run: npm run build
+        run: npm run build -w ${{ matrix.project }}
 
       - name: Test server
-        working-directory: ${{ matrix.project }}
-        run: npm test
+        run: npm test -w ${{ matrix.project }}
 
   glimpse-artifact:
     name: Glimpse Artifact Check
@@ -156,24 +146,19 @@ jobs:
             glimpse-artifact/package-lock.json
 
       - name: Install and build shared-types
-        working-directory: shared-types
-        run: npm ci && npm run build
+        run: npm ci -w shared-types && npm run build -w shared-types
 
       - name: Install and build shared-pipeline
-        working-directory: shared-pipeline
-        run: npm ci && npm run build
+        run: npm ci -w shared-pipeline && npm run build -w shared-pipeline
 
       - name: Install and build eligibility-server
-        working-directory: eligibility-server
-        run: npm ci && npm run build
+        run: npm ci -w eligibility-server && npm run build -w eligibility-server
 
       - name: Install glimpse-artifact dependencies
-        working-directory: glimpse-artifact
-        run: npm ci
+        run: npm ci -w glimpse-artifact
 
       - name: Check
-        working-directory: glimpse-artifact
-        run: npm run check
+        run: npm run check -w glimpse-artifact
 
   glimpse-engine:
     name: Glimpse Engine Verification
@@ -194,12 +179,10 @@ jobs:
             glimpse-engine/package-lock.json
 
       - name: Install glimpse-artifact deps
-        working-directory: glimpse-artifact
-        run: npm ci
+        run: npm ci -w glimpse-artifact
 
       - name: Install glimpse-engine deps
-        working-directory: glimpse-engine
-        run: npm ci
+        run: npm ci -w glimpse-engine
 
       - name: Run root Glimpse tests
         run: node --test tests/glimpse-engine.test.mjs

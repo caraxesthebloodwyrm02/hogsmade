@@ -1952,8 +1952,14 @@ const isEntrypoint =
   pathToFileURL(process.argv[1]).href === import.meta.url;
 
 if (isEntrypoint) {
-  void startServer().catch((error) => {
-    console.error(`[${SERVER_NAME}] failed to start`, error);
-    process.exitCode = 1;
-  });
+  async function main() {
+    try {
+      await startServer();
+    } catch (error) {
+      console.error(`[${SERVER_NAME}] failed to start`, error);
+      process.exit(1);
+    }
+  }
+
+  void main();
 }

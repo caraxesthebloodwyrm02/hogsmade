@@ -88,37 +88,36 @@ const argsSchema = z.object({
   tableScope: z.enum(["attributes", "dimensions", "all"]).optional(),
 });
 
-const candidateInputSchema = {
+const candidateInputSchema = z.object({
   candidate: candidateSchema.optional().describe("Inline candidate to evaluate."),
   fixtureId: z.string().optional().describe("Single fixture id to evaluate."),
   fixtureIds: z.array(z.string()).optional().describe("Multiple fixture ids to evaluate."),
   args: argsSchema.optional().describe("Conditional runtime arguments that bias the analog hierarchy."),
-};
+});
 
-const openEvolutionCaseSchema = {
-  ...candidateInputSchema,
+const openEvolutionCaseSchema = candidateInputSchema.extend({
   caseId: z.string().optional().describe("Optional deterministic case id."),
   label: z.string().optional().describe("Human-readable case label."),
   owner: z.string().optional().describe("Optional human owner for the case."),
-};
+});
 
-const signalSchema = {
+const signalSchema = z.object({
   caseId: z.string().describe("Existing evolution case id."),
   type: z.enum(SIGNAL_KIND_VALUES),
   source: z.string().optional(),
   note: z.string().optional(),
   weight: z.number().min(0).max(1).optional(),
-};
+});
 
-const handoffSchema = {
+const handoffSchema = z.object({
   caseId: z.string().describe("Existing evolution case id."),
   from: z.string(),
   to: z.string(),
   status: z.enum(HANDOFF_STATUS_VALUES),
   summary: z.string(),
-};
+});
 
-const endpointSchema = {
+const endpointSchema = z.object({
   caseId: z.string().describe("Existing evolution case id."),
   endpointId: z.string(),
   label: z.string(),
@@ -128,17 +127,17 @@ const endpointSchema = {
   required: z.boolean().optional(),
   readiness: z.number().min(0).max(1).optional(),
   notes: z.string().optional(),
-};
+});
 
-const cycleMoveSchema = {
+const cycleMoveSchema = z.object({
   caseId: z.string().describe("Existing evolution case id."),
   direction: z.enum(["forward", "return"]).optional(),
   reason: z.string().optional(),
-};
+});
 
-const caseLookupSchema = {
+const caseLookupSchema = z.object({
   caseId: z.string().describe("Existing evolution case id."),
-};
+});
 
 function toJsonText(payload: unknown) {
   return {
@@ -539,8 +538,14 @@ const isEntrypoint =
   pathToFileURL(process.argv[1]).href === import.meta.url;
 
 if (isEntrypoint) {
-  void startServer().catch((error) => {
-    console.error(`[${SERVER_NAME}] failed to start`, error);
-    process.exitCode = 1;
-  });
+  async function main() {
+    try {
+      await startServer();
+    } catch (error) {
+      console.error(`[${SERVER_NAME}] failed to start`, error);
+      process.exit(1);
+    }
+  }
+
+  void main();
 }

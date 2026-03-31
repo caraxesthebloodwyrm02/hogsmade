@@ -28,6 +28,11 @@
 import { emitAudit } from "@cascade/shared-types/audit-client";
 import { generateId } from "@cascade/shared-types/id";
 import { SessionRateLimiter } from "@cascade/shared-types/session-rate-limit";
+import {
+  ActionClass,
+  Scope,
+  createHardenedMeritGuard,
+} from "@cascade/shared-types";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { promises as fs } from "fs";
@@ -1000,10 +1005,20 @@ export function buildServer(): McpServer {
     version: VERSION,
   });
 
-  // Health check
-  server.registerTool(
+  // Initialize hardened merit guard for session-first identity enforcement
+  const meritGuard = createHardenedMeritGuard(
+    SERVER_NAME,
+    process.env.GRID_API_URL,
+  );
+
+  // Health check -- public access
+  meritGuard.registerGuardedTool(
+    server,
     "health_check",
-    { description: "Check pulse-server health and connected data sources" },
+    {
+      actionClass: ActionClass.PUBLIC_BASIC,
+      description: "Check pulse-server health and connected data sources",
+    },
     async () => {
       await ensureDataDir();
       const journal = await getTodayJournal();
@@ -1013,39 +1028,32 @@ export function buildServer(): McpServer {
       const seedsAvailable = await fileExists(SEEDS_SNAPSHOTS);
 
       return {
-        content: [
-          {
-            type: "text" as const,
-            text: JSON.stringify(
-              {
-                status: "ok",
-                server: SERVER_NAME,
-                version: VERSION,
-                dataDir: DATA_DIR,
-                today: todayKey(),
-                journalEntries: journal.length,
-                activeFocusSession: !!activeFocus,
-                dataSources: {
-                  echoesAudit: auditAvailable,
-                  afloatWorkflows: workflowsAvailable,
-                  seedsSnapshots: seedsAvailable,
-                },
-                timestamp: new Date().toISOString(),
-              },
-              null,
-              2,
-            ),
-          },
-        ],
+        status: "ok",
+        server: SERVER_NAME,
+        version: VERSION,
+        dataDir: DATA_DIR,
+        today: todayKey(),
+        journalEntries: journal.length,
+        activeFocusSession: !!activeFocus,
+        dataSources: {
+          echoesAudit: auditAvailable,
+          afloatWorkflows: workflowsAvailable,
+          seedsSnapshots: seedsAvailable,
+        },
+        timestamp: new Date().toISOString(),
+        circuitState: meritGuard.getCircuitState(),
+        metrics: meritGuard.getMetrics(),
       };
     },
   );
 
-  // ── Morning Briefing ──
+  // ── Morning Briefing (ANALYSIS_READ) ──
 
-  server.registerTool(
+  meritGuard.registerGuardedTool(
+    server,
     "morning_briefing",
     {
+      actionClass: ActionClass.ANALYSIS_READ,
       description:
         "Generate a morning briefing by aggregating status from all MCP servers. " +
         "Shows overnight changes, pending work, ecosystem health, and suggested priorities for the day. " +
@@ -1054,7 +1062,7 @@ export function buildServer(): McpServer {
     },
     async () => {
       const rlMsg = readLimiter.check("morning_briefing");
-      if (rlMsg) return { content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
+      if (rlMsg) return { error: rlMsg };
       await ensureDataDir();
 
       // Gather data from all sources
@@ -1944,8 +1952,14 @@ const isEntrypoint =
   pathToFileURL(process.argv[1]).href === import.meta.url;
 
 if (isEntrypoint) {
-  void startServer().catch((error) => {
-    console.error(`[${SERVER_NAME}] failed to start`, error);
-    process.exitCode = 1;
-  });
+  async function main() {
+    try {
+      await startServer();
+    } catch (error) {
+      console.error(`[${SERVER_NAME}] failed to start`, error);
+      process.exit(1);
+    }
+  }
+
+  void main();
 }
