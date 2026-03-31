@@ -5,14 +5,15 @@ import { execFile } from "node:child_process";
 import path from "node:path";
 import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
-import { parseMasterConfig } from "../glimpse-engine/master-config.js";
-import { DEFAULT_MASTER_YAML } from "../glimpse-engine/default-master.js";
-import { runContextPipeline, compileRuleFromConversation, parseQueryIntent, validateConfigWithRegistry } from "../glimpse-engine/core/engine.js";
-import { rankViews } from "../glimpse-engine/view-specs.js";
+import { parseMasterConfig } from "../../Applications/glimpse-engine/master-config.js";
+import { DEFAULT_MASTER_YAML } from "../../Applications/glimpse-engine/default-master.js";
+import { runContextPipeline, compileRuleFromConversation, parseQueryIntent, validateConfigWithRegistry } from "../../Applications/glimpse-engine/core/engine.js";
+import { rankViews } from "../../Applications/glimpse-engine/view-specs.js";
 
 const config = parseMasterConfig(DEFAULT_MASTER_YAML);
 const execFileAsync = promisify(execFile);
-const repoRoot = path.resolve(fileURLToPath(new URL(".", import.meta.url)), "..");
+// repoRoot = project root (Components/tests/../.. = project root)
+const repoRoot = path.resolve(fileURLToPath(new URL(".", import.meta.url)), "../..");
 
 async function loadJson(relativePath) {
   return JSON.parse(await readFile(path.join(repoRoot, relativePath), "utf8"));
@@ -174,7 +175,7 @@ test("growth_pattern detects branching field names after d.name fix", () => {
 test("bootstrap validation report catches missing registry entries before runtime use", async () => {
   const reportPath = path.join(repoRoot, "tmp", "jupyter-notebook", "test-validation-report.json");
   await execFileAsync("node", [
-    path.join(repoRoot, "scripts/bootstrap_glimpse_logic.mjs"),
+    path.join(repoRoot, "Components/scripts/bootstrap_glimpse_logic.mjs"),
     "--report-json",
     reportPath,
     "--quiet",
