@@ -31,7 +31,7 @@ interface McpServerShape {
 }
 
 /** Configuration options for McpMeritGuard */
-interface MeritGuardConfig {
+export interface MeritGuardConfig {
   serverName: string;
   /** Base GRID API URL for remote verification */
   gridApiUrl?: string;
