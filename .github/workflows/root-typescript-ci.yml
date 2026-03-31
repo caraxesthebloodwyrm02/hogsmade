@@ -120,6 +120,8 @@ jobs:
         run: npm ci -w ${{ matrix.project }}
 
       - name: Build server
+        env:
+          NODE_OPTIONS: '--max-old-space-size=8192'
         run: npm run build -w ${{ matrix.project }}
 
       - name: Test server
@@ -152,6 +154,8 @@ jobs:
         run: npm ci -w shared-pipeline && npm run build -w shared-pipeline
 
       - name: Install and build eligibility-server
+        env:
+          NODE_OPTIONS: '--max-old-space-size=8192'
         run: npm ci -w eligibility-server && npm run build -w eligibility-server
 
       - name: Install glimpse-artifact dependencies

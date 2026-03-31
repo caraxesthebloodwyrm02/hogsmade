@@ -87,7 +87,7 @@ jobs:
 
       - name: Run trusted repo checks
         env:
-          NODE_OPTIONS: '--max-old-space-size=4096'
+          NODE_OPTIONS: '--max-old-space-size=8192'
         run: bash scripts/run_repo_contract_checks.sh
 
 # bp-discovery-bp-discovery-hogsmade-20260321101953
