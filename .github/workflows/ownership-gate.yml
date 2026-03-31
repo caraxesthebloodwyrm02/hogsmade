@@ -23,8 +23,9 @@ jobs:
           node-version: '22'
 
       - name: Build shared-types
-        working-directory: shared-types
-        run: npm ci && npm run build
+        run: |
+          npm ci
+          npm run build --workspace=shared-types
 
       - name: Collect PR metadata
         id: pr_meta
