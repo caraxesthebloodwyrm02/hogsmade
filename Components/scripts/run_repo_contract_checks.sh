@@ -7,7 +7,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 echo "== verify_mcp_inventory =="
 python3 "${SCRIPT_DIR}/verify_mcp_inventory.py" --cascade-root "${REPO_ROOT}"
 
-export NODE_OPTIONS='--max-old-space-size=4096'
+export NODE_OPTIONS='--max-old-space-size=2048'
 
 echo "== npm ci (root workspace) =="
 (cd "${REPO_ROOT}" && npm ci)
