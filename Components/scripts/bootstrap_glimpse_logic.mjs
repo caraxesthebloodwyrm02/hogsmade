@@ -3,9 +3,9 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
-import { runContextPipeline, validateConfigWithRegistry } from "../glimpse-engine/core/engine.js";
-import { parseMasterConfig } from "../glimpse-engine/master-config.js";
-import { rankViews } from "../glimpse-engine/view-specs.js";
+import { runContextPipeline, validateConfigWithRegistry } from "../../Applications/glimpse-engine/core/engine.js";
+import { parseMasterConfig } from "../../Applications/glimpse-engine/master-config.js";
+import { rankViews } from "../../Applications/glimpse-engine/view-specs.js";
 
 const execFileAsync = promisify(execFile);
 const __dirname = dirname(fileURLToPath(import.meta.url));
