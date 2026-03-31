@@ -27,6 +27,18 @@ jobs:
           npm ci
           npm run build
 
+      - name: Build shared-resilience
+        run: |
+          cd shared-resilience
+          npm ci
+          npm run build
+
+      - name: Build shared-pipeline
+        run: |
+          cd shared-pipeline
+          npm ci
+          npm run build
+
       - name: Build MCP servers
         run: |
           FAILED=0
@@ -69,6 +81,18 @@ jobs:
       - name: Build shared-types
         run: |
           cd shared-types
+          npm ci
+          npm run build
+
+      - name: Build shared-resilience
+        run: |
+          cd shared-resilience
+          npm ci
+          npm run build
+
+      - name: Build shared-pipeline
+        run: |
+          cd shared-pipeline
           npm ci
           npm run build
 
