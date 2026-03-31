@@ -56,7 +56,7 @@ do
       # grid-server requires these env vars for startup
       if [[ "$dir" == "grid-server" ]]; then
         export CASCADE_WORKSPACE_ROOT="${REPO_ROOT}"
-        export GATE_DIR="${REPO_ROOT}/GATE"
+        export GATE_DIR="${REPO_ROOT}/Components/scripts/gate"
       fi
       npm test
     )
