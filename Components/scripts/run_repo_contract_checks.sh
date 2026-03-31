@@ -33,12 +33,11 @@ run_npm_package() {
 run_npm_package "${REPO_ROOT}/Components/shared-types" "npm run build"
 run_npm_package "${REPO_ROOT}/Components/shared-resilience" "npm run build"
 run_npm_package "${REPO_ROOT}/Components/shared-pipeline" "npm run build"
-# eligibility-server tsc (build + lint) OOMs on standard GitHub Actions runners (7GB RAM).
-# Run tests directly, skip the run_npm_package wrapper which auto-runs lint.
-echo "== eligibility-server (tests only — tsc OOMs on CI runners) =="
-(cd "${REPO_ROOT}/Tools/MCPServers/eligibility-server" && npm test)
-
+# MCP server tsc builds OOM on standard GitHub Actions runners (7GB RAM) due to
+# MCP SDK type resolution (~3GB per tsc invocation). Vitest handles its own
+# transpilation, so tests work without a prior tsc build. Run tests only.
 for dir in \
+  "eligibility-server" \
   "afloat-server" \
   "echoes-server" \
   "glimpse-server" \
@@ -50,7 +49,8 @@ for dir in \
   "pulse-server" \
   "seeds-server"
 do
-  run_npm_package "${REPO_ROOT}/Tools/MCPServers/$dir" "npm run build" "npm test"
+  echo "== ${dir} (tests only) =="
+  (cd "${REPO_ROOT}/Tools/MCPServers/$dir" && npm test)
 done
 
 run_npm_package "${REPO_ROOT}/Applications/glimpse-artifact" "npm run check"
