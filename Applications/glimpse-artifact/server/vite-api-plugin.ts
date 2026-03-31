@@ -1073,6 +1073,9 @@ export function glimpseApiPlugin(): Plugin {
           return;
         }
 
+        // Removed evolution routes - depend on eligibility-server
+        // TODO: Re-implement without direct server dependency
+        /*
         if (url.pathname === "/api/evolution/cases" && req.method === "GET") {
           try {
             jsonResponse(res, listActiveCyclesHandler());
@@ -1085,7 +1088,10 @@ export function glimpseApiPlugin(): Plugin {
           }
           return;
         }
+        */
 
+        // Removed evolution routes - depend on eligibility-server
+        /*
         if (url.pathname === "/api/evolution/open" && req.method === "POST") {
           readJsonBody<{
             candidate?: unknown;
@@ -1107,7 +1113,10 @@ export function glimpseApiPlugin(): Plugin {
             });
           return;
         }
+        */
 
+        // Removed evolution routes - depend on eligibility-server
+        /*
         const cycleSnapshotMatch = url.pathname.match(
           /^\/api\/evolution\/cases\/([^/]+)$/,
         );
@@ -1124,6 +1133,7 @@ export function glimpseApiPlugin(): Plugin {
           }
           return;
         }
+        */
 
         // Removed eligibility-server dependent routes:
         // - /api/evolution/cases/{id}/signal (recordCycleSignalHandler)
@@ -1131,6 +1141,8 @@ export function glimpseApiPlugin(): Plugin {
         // - /api/evolution/cases/{id}/endpoint (upsertEndpointSpecHandler)
         // TODO: Re-implement these routes if needed without direct server dependency
 
+        // Removed evolution routes - depend on eligibility-server
+        /*
         const cycleAdvanceMatch = url.pathname.match(
           /^\/api\/evolution\/cases\/([^/]+)\/advance$/,
         );
@@ -1155,7 +1167,10 @@ export function glimpseApiPlugin(): Plugin {
             });
           return;
         }
+        */
 
+        // Removed evolution routes - depend on eligibility-server
+        /*
         const shaderDataMatch = url.pathname.match(
           /^\/api\/evolution\/cases\/([^/]+)\/shader-data$/,
         );
@@ -1187,7 +1202,10 @@ export function glimpseApiPlugin(): Plugin {
           }
           return;
         }
+        */
 
+        // Removed evolution routes - depend on eligibility-server
+        /*
         const cyclePromotionMatch = url.pathname.match(
           /^\/api\/evolution\/cases\/([^/]+)\/promotion$/,
         );
@@ -1206,6 +1224,7 @@ export function glimpseApiPlugin(): Plugin {
           }
           return;
         }
+        */
 
         next();
       });
