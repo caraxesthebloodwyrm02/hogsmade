@@ -34,9 +34,12 @@ run_npm_package "eligibility-server" "npm run build" "npm test"
 for dir in \
   "afloat-server" \
   "echoes-server" \
+  "glimpse-server" \
   "grid-server" \
   "lots-server" \
   "maintain-server" \
+  "mangrove-server" \
+  "overview-server" \
   "pulse-server" \
   "seeds-server"
 do

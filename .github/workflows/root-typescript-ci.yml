@@ -5,15 +5,21 @@ on:
     branches: ['**']
     paths:
       - '.github/workflows/root-typescript-ci.yml'
-      - 'glimpse-artifact/**'
       - 'shared-types/**'
+      - 'shared-resilience/**'
+      - 'shared-pipeline/**'
+      - 'eligibility-server/**'
       - 'afloat-server/**'
       - 'echoes-server/**'
       - 'grid-server/**'
+      - 'glimpse-server/**'
       - 'lots-server/**'
       - 'maintain-server/**'
+      - 'mangrove-server/**'
+      - 'overview-server/**'
       - 'pulse-server/**'
       - 'seeds-server/**'
+      - 'glimpse-artifact/**'
       - 'glimpse-engine/**'
       - 'tests/glimpse-engine.test.mjs'
       - 'scripts/bootstrap_glimpse_logic.mjs'
@@ -24,15 +30,21 @@ on:
   pull_request:
     paths:
       - '.github/workflows/root-typescript-ci.yml'
-      - 'glimpse-artifact/**'
       - 'shared-types/**'
+      - 'shared-resilience/**'
+      - 'shared-pipeline/**'
+      - 'eligibility-server/**'
       - 'afloat-server/**'
       - 'echoes-server/**'
       - 'grid-server/**'
+      - 'glimpse-server/**'
       - 'lots-server/**'
       - 'maintain-server/**'
+      - 'mangrove-server/**'
+      - 'overview-server/**'
       - 'pulse-server/**'
       - 'seeds-server/**'
+      - 'glimpse-artifact/**'
       - 'glimpse-engine/**'
       - 'tests/glimpse-engine.test.mjs'
       - 'scripts/bootstrap_glimpse_logic.mjs'
@@ -50,28 +62,25 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # ── Shared packages (build once, every server job rebuilds from checkout) ──
   shared-types:
     name: Shared Types Build
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v6
+      - uses: actions/checkout@v6
         with:
           submodules: true
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: npm
           cache-dependency-path: shared-types/package-lock.json
 
-      - name: Install dependencies
-        run: npm ci -w shared-types
+      - run: npm ci -w shared-types
+      - run: npm run build -w shared-types
 
-      - name: Build
-        run: npm run build -w shared-types
-
+  # ── MCP servers (matrix) ───────────────────────────────────────────────────
   servers:
     name: Server Build & Test (${{ matrix.project }})
     needs: shared-types
@@ -82,62 +91,64 @@ jobs:
         project:
           - afloat-server
           - echoes-server
+          - eligibility-server
+          - glimpse-server
           - grid-server
           - lots-server
           - maintain-server
+          - mangrove-server
           - overview-server
           - pulse-server
           - seeds-server
+        include:
+          # grid-server needs shared-resilience
+          - project: grid-server
+            needs_resilience: true
+          # eligibility-server needs shared-pipeline
+          - project: eligibility-server
+            needs_pipeline: true
     steps:
-      - name: Checkout
-        uses: actions/checkout@v6
+      - uses: actions/checkout@v6
         with:
           submodules: true
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: npm
           cache-dependency-path: |
             shared-types/package-lock.json
-            shared-resilience/package-lock.json
             ${{ matrix.project }}/package-lock.json
 
-      - name: Install shared-types dependencies
-        run: npm ci -w shared-types
-
       - name: Build shared-types
-        run: npm run build -w shared-types
-
-      - name: Install shared-resilience dependencies
-        run: npm ci -w shared-resilience
+        run: npm ci -w shared-types && npm run build -w shared-types
 
       - name: Build shared-resilience
-        run: npm run build -w shared-resilience
+        if: matrix.needs_resilience
+        run: npm ci -w shared-resilience && npm run build -w shared-resilience
 
-      - name: Install server dependencies
-        run: npm ci -w ${{ matrix.project }}
+      - name: Build shared-pipeline
+        if: matrix.needs_pipeline
+        run: npm ci -w shared-pipeline && npm run build -w shared-pipeline
 
       - name: Build server
         env:
           NODE_OPTIONS: '--max-old-space-size=8192'
-        run: npm run build -w ${{ matrix.project }}
+        run: npm ci -w ${{ matrix.project }} && npm run build -w ${{ matrix.project }}
 
       - name: Test server
         run: npm test -w ${{ matrix.project }}
 
+  # ── Glimpse Artifact (React component library) ────────────────────────────
   glimpse-artifact:
     name: Glimpse Artifact Check
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v6
+      - uses: actions/checkout@v6
         with:
           submodules: true
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: npm
@@ -147,46 +158,37 @@ jobs:
             eligibility-server/package-lock.json
             glimpse-artifact/package-lock.json
 
-      - name: Install and build shared-types
+      - name: Build shared-types
         run: npm ci -w shared-types && npm run build -w shared-types
 
-      - name: Install and build shared-pipeline
+      - name: Build shared-pipeline
         run: npm ci -w shared-pipeline && npm run build -w shared-pipeline
 
-      - name: Install and build eligibility-server
+      - name: Build eligibility-server
         env:
           NODE_OPTIONS: '--max-old-space-size=8192'
         run: npm ci -w eligibility-server && npm run build -w eligibility-server
 
-      - name: Install glimpse-artifact dependencies
-        run: npm ci -w glimpse-artifact
-
       - name: Check
-        run: npm run check -w glimpse-artifact
+        run: npm ci -w glimpse-artifact && npm run check -w glimpse-artifact
 
+  # ── Glimpse Engine (browser visualization) ────────────────────────────────
   glimpse-engine:
     name: Glimpse Engine Verification
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v6
+      - uses: actions/checkout@v6
         with:
           submodules: true
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: npm
-          cache-dependency-path: |
-            glimpse-artifact/package-lock.json
-            glimpse-engine/package-lock.json
+          cache-dependency-path: glimpse-engine/package-lock.json
 
-      - name: Install glimpse-artifact deps
-        run: npm ci -w glimpse-artifact
-
-      - name: Install glimpse-engine deps
+      - name: Install deps
         run: npm ci -w glimpse-engine
 
-      - name: Run root Glimpse tests
+      - name: Run tests
         run: node --test tests/glimpse-engine.test.mjs

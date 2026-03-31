@@ -5,13 +5,17 @@ on:
     branches: ["**"]
     paths:
       - "shared-types/**"
+      - "shared-resilience/**"
       - "shared-pipeline/**"
       - "eligibility-server/**"
       - "afloat-server/**"
       - "echoes-server/**"
       - "grid-server/**"
+      - "glimpse-server/**"
       - "lots-server/**"
       - "maintain-server/**"
+      - "mangrove-server/**"
+      - "overview-server/**"
       - "pulse-server/**"
       - "seeds-server/**"
       - "glimpse-artifact/**"
@@ -28,13 +32,17 @@ on:
   pull_request:
     paths:
       - "shared-types/**"
+      - "shared-resilience/**"
       - "shared-pipeline/**"
       - "eligibility-server/**"
       - "afloat-server/**"
       - "echoes-server/**"
       - "grid-server/**"
+      - "glimpse-server/**"
       - "lots-server/**"
       - "maintain-server/**"
+      - "mangrove-server/**"
+      - "overview-server/**"
       - "pulse-server/**"
       - "seeds-server/**"
       - "glimpse-artifact/**"
@@ -73,6 +81,7 @@ jobs:
           cache: "npm"
           cache-dependency-path: |
             shared-types/package-lock.json
+            shared-resilience/package-lock.json
             shared-pipeline/package-lock.json
             eligibility-server/package-lock.json
             afloat-server/package-lock.json
@@ -83,11 +92,12 @@ jobs:
             pulse-server/package-lock.json
             seeds-server/package-lock.json
             glimpse-artifact/package-lock.json
+            glimpse-server/package-lock.json
+            mangrove-server/package-lock.json
+            overview-server/package-lock.json
             glimpse-engine/package-lock.json
 
       - name: Run trusted repo checks
         env:
           NODE_OPTIONS: '--max-old-space-size=8192'
         run: bash scripts/run_repo_contract_checks.sh
-
-# bp-discovery-bp-discovery-hogsmade-20260321101953

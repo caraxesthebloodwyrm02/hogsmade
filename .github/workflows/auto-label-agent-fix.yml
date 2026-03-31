@@ -4,6 +4,7 @@ on:
   workflow_run:
     workflows:
       - "root-ts-ci"
+      - "Root TypeScript CI"
       - "Secrets & Credential Gate"
       - "Boundary & Safety Gate"
       - "GRID-main CI"
