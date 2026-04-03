@@ -26,10 +26,10 @@ import { z } from "zod";
 const SERVER_NAME = "glimpse-server";
 const VERSION = "1.0.0";
 
-// Path to the glimpse engine (sibling directory)
+// Path to the glimpse engine (Applications/glimpse-engine)
 const ENGINE_ROOT = path.resolve(
   new URL(".", import.meta.url).pathname.replace(/^\/([A-Z]:)/, "$1"),
-  "../../glimpse-engine",
+  "../../../../Applications/glimpse-engine",
 );
 
 // ── Dynamic Engine Import ──

@@ -49,17 +49,17 @@ const KNOWN_REPOS: Record<string, { description: string; stack: string; path?: s
   afloat: {
     description: "Next.js workflow app",
     stack: "TypeScript, Next.js, Stripe",
-    path: "/home/caraxes/canopy/afloat",
+    path: "/home/caraxes/CascadeProjects/Tools/MCPServers/afloat-server",
   },
   echoes: {
     description: "Audit & observability platform",
     stack: "Python 3.12+, FastAPI",
-    path: "/home/caraxes/canopy/echoes",
+    path: "/home/caraxes/CascadeProjects/Tools/MCPServers/echoes-server",
   },
   "glimpse-engine": {
     description: "Cognitive rendering engine",
     stack: "JavaScript",
-    path: "/home/caraxes/roots/glimpse-engine",
+    path: "/home/caraxes/CascadeProjects/Applications/glimpse-engine",
   },
   apiguard: {
     description: "API security gateway",
@@ -105,6 +105,16 @@ const REPO_SKIP_LIST = new Set([
   "templates",
 ]);
 
+const PROJECT_MARKERS = [
+  ".git",
+  "package.json",
+  "pyproject.toml",
+  "requirements.txt",
+  "Cargo.toml",
+  "go.mod",
+  ".python-version",
+];
+
 function getRepoCandidates(repoName: string): string[] {
   const resolvedDir = REPO_PATH_ALIASES[repoName] ?? repoName;
   return SEEDS_ROOTS.map((root) => path.join(root, resolvedDir));
@@ -132,12 +142,17 @@ async function getDiscoveredRepoNames(): Promise<string[]> {
     try {
       const entries = await fs.readdir(root, { withFileTypes: true });
       for (const entry of entries as { isDirectory(): boolean; name: string }[]) {
-        if (
-          entry.isDirectory() &&
-          !KNOWN_REPOS[entry.name] &&
-          !entry.name.startsWith(".") &&
-          !REPO_SKIP_LIST.has(entry.name)
-        ) {
+        if (!entry.isDirectory()) continue;
+        if (KNOWN_REPOS[entry.name] || entry.name.startsWith(".") || REPO_SKIP_LIST.has(entry.name)) {
+          continue;
+        }
+
+        const candidatePath = path.join(root, entry.name);
+        const markerChecks = await Promise.all(
+          PROJECT_MARKERS.map((marker) => fileExists(path.join(candidatePath, marker))),
+        );
+
+        if (markerChecks.some(Boolean)) {
           discovered.add(entry.name);
         }
       }
@@ -213,6 +228,10 @@ async function runGitCommand(repoPath: string, args: string[]): Promise<string |
   }
 }
 
+async function findGitRoot(repoPath: string): Promise<string | null> {
+  return runGitCommand(repoPath, ["rev-parse", "--show-toplevel"]);
+}
+
 async function checkRepoHealth(repoName: string): Promise<RepoHealth> {
   const knownInfo = KNOWN_REPOS[repoName];
   const repoPath = await resolveRepoPath(repoName);
@@ -235,17 +254,18 @@ async function checkRepoHealth(repoName: string): Promise<RepoHealth> {
   }
 
   // Check git
-  health.hasGit = await fileExists(path.join(repoPath, ".git"));
+  const gitRoot = await findGitRoot(repoPath);
+  health.hasGit = gitRoot !== null;
   if (health.hasGit) {
     health.branch = (await runGitCommand(repoPath, ["branch", "--show-current"])) ?? undefined;
 
-    const statusOutput = await runGitCommand(repoPath, ["status", "--porcelain"]);
+    const statusOutput = await runGitCommand(repoPath, ["status", "--porcelain", "--", "."]);
     if (statusOutput !== null) {
       const lines = statusOutput.split("\n").filter(Boolean);
       health.uncommittedChanges = lines.length;
     }
 
-    const lastCommit = await runGitCommand(repoPath, ["log", "-1", "--format=%cr|||%s"]);
+    const lastCommit = await runGitCommand(repoPath, ["log", "-1", "--format=%cr|||%s", "--", "."]);
     if (lastCommit) {
       const [age, message] = lastCommit.split("|||");
       health.lastCommitAge = age;
