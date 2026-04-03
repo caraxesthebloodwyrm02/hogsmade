@@ -67,19 +67,19 @@ jobs:
         with:
           node-version: "22"
           cache: npm
-          cache-dependency-path: |
-            Components/shared-types/package-lock.json
-            Components/shared-resilience/package-lock.json
-            Components/shared-pipeline/package-lock.json
+          cache-dependency-path: package-lock.json
+
+      - name: Install monorepo
+        run: npm ci
 
       - name: Build shared-types
-        run: npm ci -w @cascade/shared-types && npm run build -w @cascade/shared-types
+        run: npm run build -w @cascade/shared-types
 
       - name: Test shared-resilience with coverage
-        run: npm ci -w @cascade/shared-resilience && npm run test:coverage -w @cascade/shared-resilience
+        run: npm run test:coverage -w @cascade/shared-resilience
 
       - name: Test shared-pipeline with coverage
-        run: npm ci -w @cascade/shared-pipeline && npm run test:coverage -w @cascade/shared-pipeline
+        run: npm run test:coverage -w @cascade/shared-pipeline
 
   # ── MCP servers (matrix) ───────────────────────────────────────────────────
   servers:
@@ -110,25 +110,26 @@ jobs:
         with:
           node-version: "22"
           cache: npm
-          cache-dependency-path: |
-            Components/shared-types/package-lock.json
-            Tools/MCPServers/${{ matrix.project }}/package-lock.json
+          cache-dependency-path: package-lock.json
+
+      - name: Install monorepo
+        run: npm ci
 
       - name: Build shared-types
-        run: npm ci -w @cascade/shared-types && npm run build -w @cascade/shared-types
+        run: npm run build -w @cascade/shared-types
 
       - name: Build shared-resilience
         if: matrix.project == 'grid-server'
-        run: npm ci -w @cascade/shared-resilience && npm run build -w @cascade/shared-resilience
+        run: npm run build -w @cascade/shared-resilience
 
       - name: Build shared-pipeline
         if: matrix.project == 'eligibility-server'
-        run: npm ci -w @cascade/shared-pipeline && npm run build -w @cascade/shared-pipeline
+        run: npm run build -w @cascade/shared-pipeline
 
       - name: Build server
         env:
           NODE_OPTIONS: "--max-old-space-size=8192"
-        run: npm ci -w ${{ matrix.project }} && npm run build -w ${{ matrix.project }}
+        run: npm run build -w ${{ matrix.project }}
 
       - name: Test server with coverage
         run: npm run test:coverage -w ${{ matrix.project }}
@@ -146,25 +147,24 @@ jobs:
         with:
           node-version: "22"
           cache: npm
-          cache-dependency-path: |
-            Components/shared-types/package-lock.json
-            Components/shared-pipeline/package-lock.json
-            Tools/MCPServers/eligibility-server/package-lock.json
-            Applications/glimpse-artifact/package-lock.json
+          cache-dependency-path: package-lock.json
+
+      - name: Install monorepo
+        run: npm ci
 
       - name: Build shared-types
-        run: npm ci -w @cascade/shared-types && npm run build -w @cascade/shared-types
+        run: npm run build -w @cascade/shared-types
 
       - name: Build shared-pipeline
-        run: npm ci -w @cascade/shared-pipeline && npm run build -w @cascade/shared-pipeline
+        run: npm run build -w @cascade/shared-pipeline
 
       - name: Build eligibility-server
         env:
           NODE_OPTIONS: "--max-old-space-size=8192"
-        run: npm ci -w eligibility-server && npm run build -w eligibility-server
+        run: npm run build -w eligibility-server
 
       - name: Check
-        run: npm ci -w glimpse-artifact && npm run check -w glimpse-artifact
+        run: npm run check -w glimpse-artifact
 
   # ── Glimpse Engine (browser visualization) ────────────────────────────────
   glimpse-engine:
