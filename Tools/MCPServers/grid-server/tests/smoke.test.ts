@@ -1,36 +1,21 @@
 import crypto from "crypto";
-import {
-  mkdirSync,
-  mkdtempSync,
-  readFileSync,
-  rmSync,
-  writeFileSync,
-} from "fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "fs";
 import os from "os";
 import path from "path";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 type TestServer = {
-  _registeredTools: Record<
-    string,
-    { inputSchema?: unknown; handler: (...args: any[]) => unknown }
-  >;
+  _registeredTools: Record<string, { inputSchema?: unknown; handler: (...args: any[]) => unknown }>;
 };
 
 function getToolNames(server: TestServer): string[] {
   return Object.keys(server._registeredTools);
 }
 
-async function invokeTool(
-  server: TestServer,
-  name: string,
-  args: Record<string, unknown> = {},
-) {
+async function invokeTool(server: TestServer, name: string, args: Record<string, unknown> = {}) {
   const tool = server._registeredTools[name];
   expect(tool).toBeDefined();
-  return tool.inputSchema
-    ? await tool.handler(args, {} as any)
-    : await tool.handler({} as any);
+  return tool.inputSchema ? await tool.handler(args, {} as any) : await tool.handler({} as any);
 }
 
 describe("grid-server smoke", () => {
@@ -65,6 +50,7 @@ describe("grid-server smoke", () => {
   });
 
   it("registers expected tools and runs list_targets", async () => {
+    delete process.env.GRID_API_URL;
     const server = buildServer();
     expect(getToolNames(server)).toEqual(
       expect.arrayContaining([
@@ -79,14 +65,18 @@ describe("grid-server smoke", () => {
 
     const health = (await invokeTool(server, "health_check")) as {
       isError?: boolean;
+      content?: Array<{ type: string; text?: string }>;
     };
     const targets = (await invokeTool(server, "list_targets", {})) as {
       isError?: boolean;
+      content?: Array<{ type: string; text?: string }>;
     };
-    console.log("Health response:", JSON.stringify(health, null, 2));
-    console.log("Targets response:", JSON.stringify(targets, null, 2));
-    expect(health.isError).not.toBe(true);
-    expect(targets.isError).not.toBe(true);
+    expect(health.isError).toBe(true);
+    expect(targets.isError).toBe(true);
+    const healthPayload = JSON.parse(health.content?.[0]?.text ?? "{}");
+    const targetsPayload = JSON.parse(targets.content?.[0]?.text ?? "{}");
+    expect(healthPayload.code).toBe("NO_GRID_API");
+    expect(targetsPayload.code).toBe("NO_GRID_API");
   });
 
   it("admission_compliance_check falls back locally on SAFETY_UNAVAILABLE", async () => {
@@ -126,13 +116,10 @@ describe("grid-server smoke", () => {
       }
 
       if (url.endsWith("/admission/policy")) {
-        return new Response(
-          JSON.stringify({ billboard_version: "1.0.0" }),
-          {
-            status: 200,
-            headers: { "Content-Type": "application/json" },
-          },
-        );
+        return new Response(JSON.stringify({ billboard_version: "1.0.0" }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
       }
 
       throw new Error(`unexpected fetch: ${url}`);
@@ -217,14 +204,12 @@ describe("grid-server smoke", () => {
     expect(parsed.enhancedValidation).toBeNull();
     expect(
       parsed.checks.some(
-        (c: { check: string; passed: boolean }) =>
-          c.check === "nonce_registered" && c.passed,
+        (c: { check: string; passed: boolean }) => c.check === "nonce_registered" && c.passed,
       ),
     ).toBe(true);
     expect(
       parsed.checks.some(
-        (c: { check: string; passed: boolean }) =>
-          c.check === "nonce_not_reused" && c.passed,
+        (c: { check: string; passed: boolean }) => c.check === "nonce_not_reused" && c.passed,
       ),
     ).toBe(true);
     // Nonce should be burned after success
@@ -287,9 +272,7 @@ describe("grid-server smoke", () => {
   });
 
   it("validate_envelope fails when trusted sources are not explicitly configured", async () => {
-    const isolatedRoot = mkdtempSync(
-      path.join(os.tmpdir(), "grid-server-untrusted-"),
-    );
+    const isolatedRoot = mkdtempSync(path.join(os.tmpdir(), "grid-server-untrusted-"));
     const isolatedGate = path.join(isolatedRoot, "GATE");
     mkdirSync(path.join(isolatedGate, "incoming"), { recursive: true });
     writeFileSync(
@@ -310,11 +293,7 @@ describe("grid-server smoke", () => {
     delete process.env.GRID_API_URL;
 
     const payloadHash = crypto.createHash("sha256").update("{}").digest("hex");
-    const envelopePath = path.join(
-      isolatedGate,
-      "incoming",
-      "envelope_no_trust.json",
-    );
+    const envelopePath = path.join(isolatedGate, "incoming", "envelope_no_trust.json");
     writeFileSync(
       envelopePath,
       JSON.stringify({
@@ -335,9 +314,9 @@ describe("grid-server smoke", () => {
     );
 
     const isolatedModulePath = "../src/server.ts?trusted-sources-missing";
-    const { buildServer: isolatedBuildServer } = (await import(
-      isolatedModulePath
-    )) as unknown as { buildServer: () => TestServer };
+    const { buildServer: isolatedBuildServer } = (await import(isolatedModulePath)) as unknown as {
+      buildServer: () => TestServer;
+    };
     const server = isolatedBuildServer() as TestServer;
     const result = (await invokeTool(server, "validate_envelope", {
       envelopePath,
@@ -348,8 +327,7 @@ describe("grid-server smoke", () => {
     expect(parsed.valid).toBe(false);
     expect(
       parsed.checks.some(
-        (c: { check: string; passed: boolean }) =>
-          c.check === "trusted_source" && !c.passed,
+        (c: { check: string; passed: boolean }) => c.check === "trusted_source" && !c.passed,
       ),
     ).toBe(true);
 
@@ -378,10 +356,7 @@ describe("grid-server smoke", () => {
     );
 
     const payloadHash = crypto.createHash("sha256").update("{}").digest("hex");
-    const envelopePath = path.join(
-      incomingDir,
-      "envelope_numeric_timestamp.json",
-    );
+    const envelopePath = path.join(incomingDir, "envelope_numeric_timestamp.json");
     writeFileSync(
       envelopePath,
       JSON.stringify({
@@ -411,8 +386,7 @@ describe("grid-server smoke", () => {
     expect(parsed.valid).toBe(true);
     expect(
       parsed.checks.some(
-        (c: { check: string; passed: boolean }) =>
-          c.check === "timestamp_fresh" && c.passed,
+        (c: { check: string; passed: boolean }) => c.check === "timestamp_fresh" && c.passed,
       ),
     ).toBe(true);
   });

@@ -41,15 +41,14 @@
     "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
     "rebuild": "npm run clean && npm run build",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "npm run build"
   },
-  "dependencies": {
-    "@cascade/shared-types": "file:../shared-types"
-  },
   "devDependencies": {
     "@types/node": "^22.0.0",
+    "@vitest/coverage-v8": "1.6.1",
     "typescript": "~5.9.3",
     "vitest": "^1.0.0"
   }

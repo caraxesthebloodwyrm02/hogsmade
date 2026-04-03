@@ -1,36 +1,72 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "fs";
 import os from "os";
 import path from "path";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+
+/** Unwrap merit-guard `{ result, _meta }` when present; otherwise parse handler JSON body. */
+function parseToolJson(raw: { content: Array<{ text: string }>; isError?: boolean }) {
+  const first = JSON.parse(raw.content[0].text);
+  if (raw.isError) return first;
+  if (first && typeof first === "object" && "result" in first && "_meta" in first) {
+    const inner = (first as { result: { content?: Array<{ text: string }> } }).result;
+    if (inner?.content?.[0]?.text) {
+      return JSON.parse(inner.content[0].text);
+    }
+    return inner as Record<string, unknown>;
+  }
+  return first;
+}
 
 type TestServer = {
-  _registeredTools: Record<
-    string,
-    { inputSchema?: unknown; handler: (...args: any[]) => unknown }
-  >;
+  _registeredTools: Record<string, { inputSchema?: unknown; handler: (...args: any[]) => unknown }>;
 };
 
 function getToolNames(server: TestServer): string[] {
   return Object.keys(server._registeredTools);
 }
 
-async function invokeTool(
-  server: TestServer,
-  name: string,
-  args: Record<string, unknown> = {},
-) {
+async function invokeTool(server: TestServer, name: string, args: Record<string, unknown> = {}) {
   const tool = server._registeredTools[name];
   expect(tool).toBeDefined();
-  return tool.inputSchema
-    ? await tool.handler(args, {} as any)
-    : await tool.handler({} as any);
+  return tool.inputSchema ? await tool.handler(args, {} as any) : await tool.handler({} as any);
 }
 
 describe("pulse-server smoke", () => {
   const tempRoot = mkdtempSync(path.join(os.tmpdir(), "pulse-server-"));
   let buildServer!: () => unknown;
+  let unstubFetch: (() => void) | undefined;
 
   beforeAll(async () => {
+    const origFetch = globalThis.fetch;
+    process.env.GRID_API_URL = "http://127.0.0.1:59999";
+    globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.includes("/admission/check-permission")) {
+        return new Response(
+          JSON.stringify({
+            allowed: true,
+            entity_id: "mcp:pulse-server:smoke",
+            action_class: "analysis_read",
+            required_badge: "B1_TRUSTED",
+            actual_badge: "B1_TRUSTED",
+            has_badge: true,
+            required_scopes: ["read"],
+            eligible_scopes: ["read", "write"],
+            has_scopes: true,
+            has_specific_scope: true,
+            score: 100,
+            roll_number: 0,
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        );
+      }
+      return origFetch(input, init);
+    }) as typeof fetch;
+    unstubFetch = () => {
+      globalThis.fetch = origFetch;
+      delete process.env.GRID_API_URL;
+    };
+
     const pulseDataDir = path.join(tempRoot, ".pulse");
     const echoesDataDir = path.join(tempRoot, ".echoes");
     const afloatDataDir = path.join(tempRoot, ".afloat");
@@ -105,6 +141,7 @@ describe("pulse-server smoke", () => {
   });
 
   afterAll(() => {
+    unstubFetch?.();
     delete process.env.PULSE_DATA_DIR;
     delete process.env.ECHOES_DATA_DIR;
     delete process.env.ECHOES_AUDIT_PATH;
@@ -139,23 +176,19 @@ describe("pulse-server smoke", () => {
     const alerts = (await invokeTool(server, "check_alerts", {
       healthThreshold: 70,
     })) as { content: Array<{ text: string }> };
-    const priorities = (await invokeTool(
-      server,
-      "what_should_i_work_on",
-      {},
-    )) as { content: Array<{ text: string }> };
+    const priorities = (await invokeTool(server, "what_should_i_work_on", {})) as {
+      content: Array<{ text: string }>;
+    };
 
-    const briefingPayload = JSON.parse(briefing.content[0].text);
-    const alertsPayload = JSON.parse(alerts.content[0].text);
-    const prioritiesPayload = JSON.parse(priorities.content[0].text);
+    const briefingPayload = parseToolJson(briefing);
+    const alertsPayload = parseToolJson(alerts);
+    const prioritiesPayload = parseToolJson(priorities);
 
     expect(briefingPayload.priorities.length).toBeGreaterThan(0);
     expect(briefingPayload.correlations.length).toBeGreaterThan(0);
     expect(alertsPayload.alertCount).toBeGreaterThan(0);
     expect(prioritiesPayload.items.length).toBeGreaterThan(0);
-    expect(briefingPayload.ecosystem.snapshot.sourceFile).toBe(
-      "snapshot-0001-new.json",
-    );
+    expect(briefingPayload.ecosystem.snapshot.sourceFile).toBe("snapshot-0001-new.json");
     expect(prioritiesPayload.items).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -178,7 +211,7 @@ describe("pulse-server smoke", () => {
     const briefing = (await invokeTool(server, "morning_briefing", {})) as {
       content: Array<{ text: string }>;
     };
-    const payload = JSON.parse(briefing.content[0].text);
+    const payload = parseToolJson(briefing);
 
     // Skipped sections should be absent
     expect(payload).not.toHaveProperty("overnightActivity");
@@ -203,16 +236,12 @@ describe("pulse-server smoke", () => {
     const briefing = (await invokeTool(server, "morning_briefing", {})) as {
       content: Array<{ text: string }>;
     };
-    const payload = JSON.parse(briefing.content[0].text);
+    const payload = parseToolJson(briefing) as { priorities: string[] };
     const priorities: string[] = payload.priorities;
 
     // Find the ecosystem-related priority and verify it comes first
-    const ecosystemIndex = priorities.findIndex((p) =>
-      p.toLowerCase().includes("ecosystem"),
-    );
-    const nonEcosystemIndex = priorities.findIndex(
-      (p) => !p.toLowerCase().includes("ecosystem"),
-    );
+    const ecosystemIndex = priorities.findIndex((p) => p.toLowerCase().includes("ecosystem"));
+    const nonEcosystemIndex = priorities.findIndex((p) => !p.toLowerCase().includes("ecosystem"));
     // If both exist, ecosystem should come before non-ecosystem
     if (ecosystemIndex >= 0 && nonEcosystemIndex >= 0) {
       expect(ecosystemIndex).toBeLessThan(nonEcosystemIndex);
@@ -237,7 +266,7 @@ describe("pulse-server smoke", () => {
       content: Array<{ text: string }>;
       isError?: boolean;
     };
-    const interruptPayload = JSON.parse(interrupt.content[0].text);
+    const interruptPayload = parseToolJson(interrupt);
     expect(interruptPayload.recorded).toBe(true);
     expect(interruptPayload.interruptions).toBe(1);
 
@@ -245,7 +274,7 @@ describe("pulse-server smoke", () => {
       outcome: "Added regression tests",
     })) as { content: Array<{ text: string }>; isError?: boolean };
     expect(end.isError).not.toBe(true);
-    const endPayload = JSON.parse(end.content[0].text);
+    const endPayload = parseToolJson(end);
     expect(endPayload.completed).toBe(true);
     expect(endPayload.session.interruptions).toBe(1);
     expect(endPayload.journalUpdated).toBe(true);
@@ -263,7 +292,7 @@ describe("pulse-server smoke", () => {
     const idle = (await invokeTool(server, "focus_status", {})) as {
       content: Array<{ text: string }>;
     };
-    const idlePayload = JSON.parse(idle.content[0].text);
+    const idlePayload = parseToolJson(idle);
     expect(idlePayload.active).toBe(false);
     expect(idlePayload.session).toBeNull();
 
@@ -275,15 +304,17 @@ describe("pulse-server smoke", () => {
     const active = (await invokeTool(server, "focus_status", {})) as {
       content: Array<{ text: string }>;
     };
-    const activePayload = JSON.parse(active.content[0].text);
+    const activePayload = parseToolJson(active);
     expect(activePayload.active).toBe(true);
     expect(activePayload.session).toMatchObject({
       workflowName: "glimpse-artifact — Implement dashboard sync",
       status: "running",
     });
-    expect(
-      activePayload.session.steps.map((step: { name: string }) => step.name),
-    ).toEqual(["Declared focus", "Deep work", "Archive session"]);
+    expect(activePayload.session.steps.map((step: { name: string }) => step.name)).toEqual([
+      "Declared focus",
+      "Deep work",
+      "Archive session",
+    ]);
 
     await invokeTool(server, "focus_end", {
       outcome: "Completed dashboard wiring",
@@ -300,7 +331,7 @@ describe("pulse-server smoke", () => {
     })) as { content: Array<{ text: string }>; isError?: boolean };
 
     expect(add.isError).not.toBe(true);
-    const addPayload = JSON.parse(add.content[0].text);
+    const addPayload = parseToolJson(add);
     expect(addPayload.recorded).toBe(true);
     expect(addPayload.id).toBeTruthy();
 
@@ -309,11 +340,12 @@ describe("pulse-server smoke", () => {
       isError?: boolean;
     };
     expect(list.isError).not.toBe(true);
-    const listPayload = JSON.parse(list.content[0].text);
+    const listPayload = parseToolJson(list);
     expect(listPayload.count).toBeGreaterThan(0);
     expect(
-      listPayload.entries.some((entry: { id: string; entry: string }) =>
-        entry.id === addPayload.id && entry.entry.includes("Hardened"),
+      listPayload.entries.some(
+        (entry: { id: string; entry: string }) =>
+          entry.id === addPayload.id && entry.entry.includes("Hardened"),
       ),
     ).toBe(true);
   });
@@ -340,7 +372,7 @@ describe("pulse-server smoke", () => {
     })) as { content: Array<{ text: string }>; isError?: boolean };
 
     expect(digest.isError).not.toBe(true);
-    const payload = JSON.parse(digest.content[0].text);
+    const payload = parseToolJson(digest);
     expect(payload.date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(payload.journalEntries).toBeGreaterThan(0);
     expect(payload.focusSessions).toBeGreaterThan(0);

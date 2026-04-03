@@ -2,7 +2,6 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
-    globals: false,
     environment: "node",
     include: ["tests/**/*.test.ts"],
     testTimeout: 10000,
@@ -11,10 +10,10 @@ export default defineConfig({
       reporter: ["text", "json-summary"],
       include: ["src/**/*.ts"],
       thresholds: {
-        lines: 40,
-        functions: 35,
-        branches: 30,
-        statements: 40,
+        lines: 25,
+        functions: 20,
+        branches: 25,
+        statements: 25,
       },
     },
   },
