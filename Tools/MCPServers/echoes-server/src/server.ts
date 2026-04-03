@@ -13,18 +13,11 @@
 import { AuditIntegrityGuard } from "@cascade/shared-types/security-policy";
 import { generateId } from "@cascade/shared-types/id";
 import { McpLogger } from "@cascade/shared-types/mcp-logger";
-import {
-  DEFAULT_COOLDOWN_MS,
-  PRECEDENT_TRIGGER_STATUSES,
-} from "@cascade/shared-types/precedent";
+import { DEFAULT_COOLDOWN_MS, PRECEDENT_TRIGGER_STATUSES } from "@cascade/shared-types/precedent";
 import type { RecurrenceCheckResult } from "@cascade/shared-types/precedent";
 import { SessionRateLimiter } from "@cascade/shared-types/session-rate-limit";
 import { PrecedentStore } from "./precedent-store.js";
-import {
-  applySuccessDeescalation,
-  applyTimeDecay,
-  checkRecurrence,
-} from "./recurrence.js";
+import { applySuccessDeescalation, applyTimeDecay, checkRecurrence } from "./recurrence.js";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { promises as fs } from "fs";
@@ -132,9 +125,7 @@ const RUN_MODES = ["live", "sandbox", "edge"] as const;
 type RunMode = (typeof RUN_MODES)[number];
 const runModeSchema = z
   .enum(RUN_MODES)
-  .describe(
-    "Execution mode: live allows normal writes; sandbox/edge block writes under $HOME",
-  );
+  .describe("Execution mode: live allows normal writes; sandbox/edge block writes under $HOME");
 
 function pathIsInside(targetPath: string, rootPath: string): boolean {
   const target = path.resolve(targetPath);
@@ -149,9 +140,7 @@ function assertMutablePathsAllowed(runMode: RunMode, paths: string[]): void {
   const home = homedir();
   const blocked = paths.filter((p) => pathIsInside(p, home));
   if (blocked.length > 0) {
-    throw new Error(
-      `runMode=${runMode} blocked write under HOME: ${blocked.join(", ")}`,
-    );
+    throw new Error(`runMode=${runMode} blocked write under HOME: ${blocked.join(", ")}`);
   }
 }
 
@@ -196,9 +185,7 @@ async function readAuditLog(
     })
     .filter(Boolean) as AuditEntry[];
   if (corruptLineCount > 0) {
-    logger.warn(
-      `${corruptLineCount} corrupt/malformed lines skipped in audit log`,
-    );
+    logger.warn(`${corruptLineCount} corrupt/malformed lines skipped in audit log`);
   }
 
   if (filter?.tool) {
@@ -226,18 +213,14 @@ async function atomicWriteJson(filepath: string, data: unknown): Promise<void> {
   await fs.rename(tmpPath, filepath);
 }
 
-async function saveTelemetrySnapshot(
-  snapshot: TelemetrySnapshot,
-): Promise<string> {
+async function saveTelemetrySnapshot(snapshot: TelemetrySnapshot): Promise<string> {
   const filename = `snapshot-${Date.now()}.json`;
   const filepath = path.join(TELEMETRY_DIR, filename);
   await atomicWriteJson(filepath, snapshot);
   return filepath;
 }
 
-async function listTelemetrySnapshots(
-  limit: number,
-): Promise<TelemetrySnapshot[]> {
+async function listTelemetrySnapshots(limit: number): Promise<TelemetrySnapshot[]> {
   let files: string[];
   try {
     files = await fs.readdir(TELEMETRY_DIR);
@@ -254,10 +237,7 @@ async function listTelemetrySnapshots(
 
   for (const file of jsonFiles) {
     try {
-      const content = await fs.readFile(
-        path.join(TELEMETRY_DIR, file),
-        "utf-8",
-      );
+      const content = await fs.readFile(path.join(TELEMETRY_DIR, file), "utf-8");
       snapshots.push(JSON.parse(content));
     } catch {
       // skip corrupt files
@@ -281,9 +261,7 @@ async function getAuditStats(): Promise<Record<string, unknown>> {
   }
 
   const avgDuration =
-    entries
-      .filter((e) => e.durationMs != null)
-      .reduce((sum, e) => sum + (e.durationMs ?? 0), 0) /
+    entries.filter((e) => e.durationMs != null).reduce((sum, e) => sum + (e.durationMs ?? 0), 0) /
     (entries.filter((e) => e.durationMs != null).length || 1);
 
   return {
@@ -304,9 +282,11 @@ export function buildServer(): McpServer {
     name: SERVER_NAME,
     version: VERSION,
   });
+  // SDK generic inference can explode on deep Zod schemas; use a widened call signature.
+  const registerTool = server.registerTool.bind(server) as any;
 
   // Health check
-  server.registerTool(
+  registerTool(
     "health_check",
     { description: "Check echoes-server health and data store status" },
     async () => {
@@ -371,32 +351,22 @@ export function buildServer(): McpServer {
   );
 
   // Record audit entry
-  server.registerTool(
+  registerTool(
     "record_audit",
     {
-      description:
-        "Record an audit entry from any MCP server pipeline execution",
+      description: "Record an audit entry from any MCP server pipeline execution",
       inputSchema: z.object({
-        source: z
-          .string()
-          .min(1)
-          .describe('Source server name (e.g. "echoes", "grid-rag")'),
+        source: z.string().min(1).describe('Source server name (e.g. "echoes", "grid-rag")'),
         tool: z.string().min(1).describe("Tool name that was called"),
         status: z
           .enum(["success", "failure", "blocked", "dry_run", "error"])
           .describe("Execution result status"),
-        durationMs: z
-          .number()
-          .optional()
-          .describe("Execution duration in milliseconds"),
-        metadata: z
-          .record(z.unknown())
-          .optional()
-          .describe("Additional context"),
+        durationMs: z.number().optional().describe("Execution duration in milliseconds"),
+        metadata: z.record(z.unknown()).optional().describe("Additional context"),
         runMode: runModeSchema,
       }),
     },
-    async (args) => {
+    async (args: any) => {
       await ensureDataDir();
       assertMutablePathsAllowed(args.runMode as RunMode, [
         AUDIT_LOG_PATH,
@@ -405,10 +375,7 @@ export function buildServer(): McpServer {
       const now = new Date().toISOString();
 
       // P-INT-001 + P-INT-002: Validate source and timestamp integrity
-      const integrityCheck = AuditIntegrityGuard.validateEntry(
-        args.source,
-        now,
-      );
+      const integrityCheck = AuditIntegrityGuard.validateEntry(args.source, now);
       if (integrityCheck.verdict === "deny") {
         return {
           content: [
@@ -469,18 +436,12 @@ export function buildServer(): McpServer {
   );
 
   // Query audit log
-  server.registerTool(
+  registerTool(
     "query_audit",
     {
       description: "Query the persistent audit log with optional filters",
       inputSchema: z.object({
-        limit: z
-          .number()
-          .min(1)
-          .max(500)
-          .optional()
-          .default(20)
-          .describe("Max entries to return"),
+        limit: z.number().min(1).max(500).optional().default(20).describe("Max entries to return"),
         tool: z.string().optional().describe("Filter by tool name"),
         status: z
           .enum(["success", "failure", "blocked", "dry_run", "error"])
@@ -492,13 +453,11 @@ export function buildServer(): McpServer {
           .describe("ISO timestamp — only return entries after this time"),
       }),
     },
-    async (args) => {
+    async (args: any) => {
       const rlMsg = readLimiter.check("query_audit");
       if (rlMsg)
         return {
-          content: [
-            { type: "text" as const, text: JSON.stringify({ error: rlMsg }) },
-          ],
+          content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }],
           isError: true,
         };
       await ensureDataDir();
@@ -532,7 +491,7 @@ export function buildServer(): McpServer {
   );
 
   // Audit statistics
-  server.registerTool(
+  registerTool(
     "audit_stats",
     {
       description:
@@ -543,42 +502,33 @@ export function buildServer(): McpServer {
       const rlMsg = readLimiter.check("audit_stats");
       if (rlMsg)
         return {
-          content: [
-            { type: "text" as const, text: JSON.stringify({ error: rlMsg }) },
-          ],
+          content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }],
           isError: true,
         };
       await ensureDataDir();
       const stats = await getAuditStats();
       return {
-        content: [
-          { type: "text" as const, text: JSON.stringify(stats, null, 2) },
-        ],
+        content: [{ type: "text" as const, text: JSON.stringify(stats, null, 2) }],
       };
     },
   );
 
   // Save telemetry snapshot
-  server.registerTool(
+  registerTool(
     "save_telemetry",
     {
-      description:
-        "Save a workspace telemetry snapshot for longitudinal tracking",
+      description: "Save a workspace telemetry snapshot for longitudinal tracking",
       inputSchema: z.object({
         workspace: z.string().min(1).describe("Workspace name or path"),
         projects: z.number().describe("Number of projects scanned"),
-        activeServers: z
-          .array(z.string())
-          .describe("List of active MCP server names"),
+        activeServers: z.array(z.string()).describe("List of active MCP server names"),
         metrics: z
           .record(z.number())
-          .describe(
-            "Key-value numeric metrics (e.g. healthScore, commitCount)",
-          ),
+          .describe("Key-value numeric metrics (e.g. healthScore, commitCount)"),
         runMode: runModeSchema,
       }),
     },
-    async (args) => {
+    async (args: any) => {
       await ensureDataDir();
       assertMutablePathsAllowed(args.runMode as RunMode, [TELEMETRY_DIR]);
       const snapshot: TelemetrySnapshot = {
@@ -601,7 +551,7 @@ export function buildServer(): McpServer {
   );
 
   // List telemetry snapshots
-  server.registerTool(
+  registerTool(
     "list_telemetry",
     {
       description: "List recent telemetry snapshots for trend analysis",
@@ -615,13 +565,11 @@ export function buildServer(): McpServer {
           .describe("Max snapshots to return"),
       }),
     },
-    async (args) => {
+    async (args: any) => {
       const rlMsg = readLimiter.check("list_telemetry");
       if (rlMsg)
         return {
-          content: [
-            { type: "text" as const, text: JSON.stringify({ error: rlMsg }) },
-          ],
+          content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }],
           isError: true,
         };
       await ensureDataDir();
@@ -630,11 +578,7 @@ export function buildServer(): McpServer {
         content: [
           {
             type: "text" as const,
-            text: JSON.stringify(
-              { count: snapshots.length, snapshots },
-              null,
-              2,
-            ),
+            text: JSON.stringify({ count: snapshots.length, snapshots }, null, 2),
           },
         ],
       };
@@ -643,7 +587,7 @@ export function buildServer(): McpServer {
 
   // ── Precedent Enforcement ──
 
-  server.registerTool(
+  registerTool(
     "check_recurrence",
     {
       description:
@@ -654,10 +598,7 @@ export function buildServer(): McpServer {
         status: z
           .enum(["success", "failure", "blocked", "dry_run", "error"])
           .describe("Status to check"),
-        metadata: z
-          .record(z.unknown())
-          .optional()
-          .describe("Metadata for fingerprint matching"),
+        metadata: z.record(z.unknown()).optional().describe("Metadata for fingerprint matching"),
         isMutating: z
           .boolean()
           .optional()
@@ -666,12 +607,10 @@ export function buildServer(): McpServer {
         runMode: runModeSchema
           .optional()
           .default("sandbox")
-          .describe(
-            "Use sandbox/edge for simulation; live is allowed but still read-only",
-          ),
+          .describe("Use sandbox/edge for simulation; live is allowed but still read-only"),
       }),
     },
-    async (args) => {
+    async (args: any) => {
       const result = checkRecurrence(
         precedentStore,
         {
@@ -684,14 +623,12 @@ export function buildServer(): McpServer {
         false,
       );
       return {
-        content: [
-          { type: "text" as const, text: JSON.stringify(result, null, 2) },
-        ],
+        content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
       };
     },
   );
 
-  server.registerTool(
+  registerTool(
     "query_precedents",
     {
       description:
@@ -703,22 +640,14 @@ export function buildServer(): McpServer {
           .describe("Filter by escalation level"),
         source: z.string().optional().describe("Filter by source server"),
         tool: z.string().optional().describe("Filter by tool name"),
-        limit: z
-          .number()
-          .min(1)
-          .max(100)
-          .optional()
-          .default(20)
-          .describe("Max records to return"),
+        limit: z.number().min(1).max(100).optional().default(20).describe("Max records to return"),
       }),
     },
-    async (args) => {
+    async (args: any) => {
       const rlMsg = readLimiter.check("query_precedents");
       if (rlMsg)
         return {
-          content: [
-            { type: "text" as const, text: JSON.stringify({ error: rlMsg }) },
-          ],
+          content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }],
           isError: true,
         };
 
@@ -765,17 +694,14 @@ export function buildServer(): McpServer {
     },
   );
 
-  server.registerTool(
+  registerTool(
     "resolve_precedent",
     {
       description:
         "Mark a precedent as resolved. Resets escalation to observed and starts a 7-day cooldown. If the pattern recurs during cooldown, escalation resumes.",
       inputSchema: z.object({
         precedentId: z.string().min(1).describe("Precedent ID to resolve"),
-        action: z
-          .string()
-          .min(1)
-          .describe("What was done to fix the root cause"),
+        action: z.string().min(1).describe("What was done to fix the root cause"),
         resolvedBy: z
           .string()
           .optional()
@@ -791,10 +717,8 @@ export function buildServer(): McpServer {
         runMode: runModeSchema,
       }),
     },
-    async (args) => {
-      assertMutablePathsAllowed(args.runMode as RunMode, [
-        precedentStore.storePath,
-      ]);
+    async (args: any) => {
+      assertMutablePathsAllowed(args.runMode as RunMode, [precedentStore.storePath]);
       const cooldownMs = (args.cooldownDays ?? 7) * 24 * 60 * 60 * 1000;
       const resolution = {
         resolvedAt: new Date().toISOString(),
@@ -838,7 +762,7 @@ export function buildServer(): McpServer {
     },
   );
 
-  server.registerTool(
+  registerTool(
     "enforcement_status",
     {
       description:
@@ -918,8 +842,7 @@ export async function startServer(): Promise<McpServer> {
 }
 
 const isEntrypoint =
-  process.argv[1] != null &&
-  pathToFileURL(process.argv[1]).href === import.meta.url;
+  process.argv[1] != null && pathToFileURL(process.argv[1]).href === import.meta.url;
 
 if (isEntrypoint) {
   async function main() {

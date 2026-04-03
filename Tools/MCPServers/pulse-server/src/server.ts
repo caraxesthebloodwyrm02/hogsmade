@@ -28,11 +28,7 @@
 import { emitAudit } from "@cascade/shared-types/audit-client";
 import { generateId } from "@cascade/shared-types/id";
 import { SessionRateLimiter } from "@cascade/shared-types/session-rate-limit";
-import {
-  ActionClass,
-  Scope,
-  createHardenedMeritGuard,
-} from "@cascade/shared-types";
+import { ActionClass, Scope, createHardenedMeritGuard } from "@cascade/shared-types";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { promises as fs } from "fs";
@@ -131,21 +127,13 @@ const BRIEFING_SECTION_KEYS = [
 ] as const;
 type BriefingSectionKey = (typeof BRIEFING_SECTION_KEYS)[number];
 
-function applyPromotedOrder<T extends string>(
-  items: T[],
-  promotedSignals: string[],
-): T[] {
+function applyPromotedOrder<T extends string>(items: T[], promotedSignals: string[]): T[] {
   if (promotedSignals.length === 0) return items;
   const promoted = items.filter((item) =>
-    promotedSignals.some((sig) =>
-      item.toLowerCase().includes(sig.toLowerCase()),
-    ),
+    promotedSignals.some((sig) => item.toLowerCase().includes(sig.toLowerCase())),
   );
   const rest = items.filter(
-    (item) =>
-      !promotedSignals.some((sig) =>
-        item.toLowerCase().includes(sig.toLowerCase()),
-      ),
+    (item) => !promotedSignals.some((sig) => item.toLowerCase().includes(sig.toLowerCase())),
   );
   return [...promoted, ...rest];
 }
@@ -240,9 +228,7 @@ function focusSessionToWorkflowRun(
 ): DashboardWorkflowRun {
   return {
     id: session.id,
-    workflowName: session.project
-      ? `${session.project} — ${session.task}`
-      : session.task,
+    workflowName: session.project ? `${session.project} — ${session.task}` : session.task,
     status: "running",
     steps: [
       { name: "Declared focus", status: "done" },
@@ -277,7 +263,9 @@ async function readRecentAuditEntries(limit: number): Promise<unknown[]> {
     // File size guard — prevent loading huge audit files into memory
     const stat = await fs.stat(ECHOES_AUDIT);
     if (stat.size > MAX_AUDIT_FILE_BYTES) {
-      console.error(`[${SERVER_NAME}] Audit log too large (${Math.round(stat.size / (1024 * 1024))}MB) — skipping`);
+      console.error(
+        `[${SERVER_NAME}] Audit log too large (${Math.round(stat.size / (1024 * 1024))}MB) — skipping`,
+      );
       return [];
     }
     const content = await fs.readFile(ECHOES_AUDIT, "utf-8");
@@ -305,10 +293,7 @@ async function countRecentWorkflows(): Promise<number> {
     let count = 0;
     for (const file of files.filter((f: string) => f.endsWith(".json"))) {
       try {
-        const content = await fs.readFile(
-          path.join(AFLOAT_HISTORY, file),
-          "utf-8",
-        );
+        const content = await fs.readFile(path.join(AFLOAT_HISTORY, file), "utf-8");
         const exec = JSON.parse(content);
         if (exec.startedAt?.startsWith(today)) count++;
       } catch {
@@ -329,10 +314,7 @@ async function getLatestTelemetry(): Promise<unknown | null> {
       .sort()
       .reverse()[0];
     if (!latest) return null;
-    const content = await fs.readFile(
-      path.join(ECHOES_TELEMETRY, latest),
-      "utf-8",
-    );
+    const content = await fs.readFile(path.join(ECHOES_TELEMETRY, latest), "utf-8");
     return JSON.parse(content);
   } catch {
     return null;
@@ -401,18 +383,14 @@ function scoreRepoEntry(repo: Record<string, any>): number {
   return score;
 }
 
-function normalizeSeedsSnapshot(
-  snapshot: Record<string, any>,
-): {
+function normalizeSeedsSnapshot(snapshot: Record<string, any>): {
   snapshot: Record<string, any>;
   metadata: Pick<
     SnapshotMetadata,
     "normalizedRepoNames" | "deduplicatedEntries" | "snapshotTimestamp"
   >;
 } {
-  const repos = Array.isArray(snapshot.repos)
-    ? (snapshot.repos as Record<string, any>[])
-    : [];
+  const repos = Array.isArray(snapshot.repos) ? (snapshot.repos as Record<string, any>[]) : [];
   const normalizedRepoNames: Record<string, string> = {};
   let deduplicatedEntries = 0;
 
@@ -420,11 +398,8 @@ function normalizeSeedsSnapshot(
 
   for (const rawRepo of repos) {
     if (!rawRepo || typeof rawRepo !== "object") continue;
-    const originalName =
-      typeof rawRepo.name === "string" ? rawRepo.name.trim() : "";
-    const canonicalName = originalName
-      ? canonicalRepoName(originalName)
-      : originalName;
+    const originalName = typeof rawRepo.name === "string" ? rawRepo.name.trim() : "";
+    const canonicalName = originalName ? canonicalRepoName(originalName) : originalName;
     const normalizedRepo =
       canonicalName && canonicalName !== originalName
         ? { ...rawRepo, name: canonicalName }
@@ -453,18 +428,12 @@ function normalizeSeedsSnapshot(
   const overallScore =
     existingRepos.length > 0
       ? Math.round(
-        existingRepos.reduce(
-          (sum, repo) => sum + (repo.healthScore ?? 0),
-          0,
-        ) / existingRepos.length,
-      )
+          existingRepos.reduce((sum, repo) => sum + (repo.healthScore ?? 0), 0) /
+            existingRepos.length,
+        )
       : 0;
-  const activeCount = existingRepos.filter(
-    (repo) => (repo.healthScore ?? 0) >= 60,
-  ).length;
-  const staleCount = existingRepos.filter(
-    (repo) => (repo.healthScore ?? 0) < 40,
-  ).length;
+  const activeCount = existingRepos.filter((repo) => (repo.healthScore ?? 0) >= 60).length;
+  const staleCount = existingRepos.filter((repo) => (repo.healthScore ?? 0) < 40).length;
   const issueCount = normalizedRepos.reduce(
     (sum, repo) => sum + (Array.isArray(repo.issues) ? repo.issues.length : 0),
     0,
@@ -485,16 +454,12 @@ function normalizeSeedsSnapshot(
       normalizedRepoNames,
       deduplicatedEntries,
       snapshotTimestamp:
-        typeof normalizedSnapshot.timestamp === "string"
-          ? normalizedSnapshot.timestamp
-          : null,
+        typeof normalizedSnapshot.timestamp === "string" ? normalizedSnapshot.timestamp : null,
     },
   };
 }
 
-async function buildSnapshotCandidate(
-  file: string,
-): Promise<SnapshotCandidate | null> {
+async function buildSnapshotCandidate(file: string): Promise<SnapshotCandidate | null> {
   try {
     const content = await fs.readFile(path.join(SEEDS_SNAPSHOTS, file), "utf-8");
     const snapshot = JSON.parse(content) as Record<string, any>;
@@ -557,9 +522,7 @@ async function getLatestEcosystemScore(): Promise<number | null> {
   return latest.snapshot?.overallScore ?? null;
 }
 
-async function listRecentWorkflowExecutions(
-  limit: number,
-): Promise<Record<string, any>[]> {
+async function listRecentWorkflowExecutions(limit: number): Promise<Record<string, any>[]> {
   try {
     const files = (await fs.readdir(AFLOAT_HISTORY))
       .filter((f: string) => f.endsWith(".json"))
@@ -570,10 +533,7 @@ async function listRecentWorkflowExecutions(
     const executions: Record<string, any>[] = [];
     for (const file of files) {
       try {
-        const content = await fs.readFile(
-          path.join(AFLOAT_HISTORY, file),
-          "utf-8",
-        );
+        const content = await fs.readFile(path.join(AFLOAT_HISTORY, file), "utf-8");
         executions.push(JSON.parse(content) as Record<string, any>);
       } catch {
         /* skip corrupt */
@@ -591,29 +551,19 @@ function getLowHealthRepos(
   threshold = 70,
 ): Array<Record<string, any>> {
   if (!snapshot || !Array.isArray(snapshot.repos)) return [];
-  return snapshot.repos.filter(
-    (repo: Record<string, any>) => (repo.healthScore ?? 0) < threshold,
-  );
+  return snapshot.repos.filter((repo: Record<string, any>) => (repo.healthScore ?? 0) < threshold);
 }
 
-function inferRelatedRepo(
-  event: Record<string, any>,
-  repoNames: string[],
-): string | null {
+function inferRelatedRepo(event: Record<string, any>, repoNames: string[]): string | null {
   const canonicalRepoNames = repoNames.map(canonicalRepoName);
   const metadata =
     event.metadata && typeof event.metadata === "object"
       ? (event.metadata as Record<string, unknown>)
       : {};
 
-  if (
-    typeof metadata.relatedRepo === "string" &&
-    metadata.relatedRepo.length > 0
-  ) {
+  if (typeof metadata.relatedRepo === "string" && metadata.relatedRepo.length > 0) {
     const canonical = canonicalRepoName(metadata.relatedRepo);
-    return canonicalRepoNames.includes(canonical)
-      ? canonical
-      : metadata.relatedRepo;
+    return canonicalRepoNames.includes(canonical) ? canonical : metadata.relatedRepo;
   }
 
   const haystacks = [
@@ -630,9 +580,7 @@ function inferRelatedRepo(
     const repoNameLower = repoName.toLowerCase();
     const canonicalLower = canonicalName.toLowerCase();
     if (
-      haystacks.some(
-        (value) => value.includes(repoNameLower) || value.includes(canonicalLower),
-      )
+      haystacks.some((value) => value.includes(repoNameLower) || value.includes(canonicalLower))
     ) {
       return canonicalName;
     }
@@ -716,8 +664,7 @@ function getJournalContext(journal: JournalEntry[]): {
       /\b(grid|seeds|maintain|lots|echoes|afloat|pulse)[-\s]?server\b/gi,
     );
     if (serverMentions) {
-      for (const m of serverMentions)
-        workedOn.add(m.toLowerCase().replace(/\s/g, ""));
+      for (const m of serverMentions) workedOn.add(m.toLowerCase().replace(/\s/g, ""));
     }
 
     // Track blocked mood entries
@@ -750,9 +697,7 @@ function scoreAndRankItems(
 
   // Group failures by source for frequency escalation
   const failureGroups = groupFailuresBySource(recentFailures);
-  const repoNames = lowHealthRepos
-    .map((r) => r.name)
-    .filter(Boolean) as string[];
+  const repoNames = lowHealthRepos.map((r) => r.name).filter(Boolean) as string[];
 
   // Track which repos are already mentioned via correlated failures
   // (explicit tracking instead of fragile title-parsing)
@@ -764,9 +709,7 @@ function scoreAndRankItems(
     const age = hoursSince(latest.timestamp) ?? 0;
     const relatedRepo = inferRelatedRepo(latest, repoNames);
 
-    const repo = relatedRepo
-      ? lowHealthRepos.find((r) => r.name === relatedRepo)
-      : null;
+    const repo = relatedRepo ? lowHealthRepos.find((r) => r.name === relatedRepo) : null;
 
     // Unlinked failures or failures not matching a low-health repo → medium priority
     if (!relatedRepo || !repo) {
@@ -794,8 +737,7 @@ function scoreAndRankItems(
     const timeDecay = calculateTimeDecay(age, rules.timeDecayHours);
     const correlationBonus = rules.correlationBoost;
 
-    let score =
-      (rules.failureWeight + frequencyBonus + correlationBonus) * timeDecay;
+    let score = (rules.failureWeight + frequencyBonus + correlationBonus) * timeDecay;
 
     // Boost if user mentioned being blocked on this in journal
     if (journalContext.blockedTags.has(relatedRepo.toLowerCase())) {
@@ -860,19 +802,14 @@ function scoreAndRankItems(
         const reasoning: string[] = [];
         if (typeof meta?.overallScore === "number")
           reasoning.push(`Diagnostic score: ${meta.overallScore}/100`);
-        if (followUp.recommendation)
-          reasoning.push(String(followUp.recommendation));
+        if (followUp.recommendation) reasoning.push(String(followUp.recommendation));
         if (typeof followUp.totalReclaimableMB === "number")
           reasoning.push(`Reclaimable: ${followUp.totalReclaimableMB} MB`);
 
         // Score below health threshold → medium, otherwise low (informational)
-        const diagScore =
-          typeof meta?.overallScore === "number" ? meta.overallScore : null;
-        const isBelowThreshold =
-          diagScore !== null && diagScore < rules.healthThreshold;
-        const baseScore = isBelowThreshold
-          ? rules.failureWeight * 0.7
-          : rules.failureWeight * 0.3;
+        const diagScore = typeof meta?.overallScore === "number" ? meta.overallScore : null;
+        const isBelowThreshold = diagScore !== null && diagScore < rules.healthThreshold;
+        const baseScore = isBelowThreshold ? rules.failureWeight * 0.7 : rules.failureWeight * 0.3;
 
         items.push({
           score: baseScore * timeDecay,
@@ -931,8 +868,7 @@ function scoreAndRankItems(
 
   // 6. Unfinished focus session (penalty-based priority)
   if (activeFocus) {
-    const hoursRunning =
-      (now - new Date(activeFocus.startedAt).getTime()) / (1000 * 60 * 60);
+    const hoursRunning = (now - new Date(activeFocus.startedAt).getTime()) / (1000 * 60 * 60);
     const isStale = hoursRunning > 4;
 
     items.push({
@@ -941,12 +877,8 @@ function scoreAndRankItems(
       title: `Resolve unfinished focus session: ${activeFocus.task}`,
       reasoning: [
         `Started at ${activeFocus.startedAt}`,
-        isStale
-          ? `Running for ${Math.round(hoursRunning)}h — may indicate blocker`
-          : "",
-        activeFocus.interruptions > 0
-          ? `${activeFocus.interruptions} interruptions recorded`
-          : "",
+        isStale ? `Running for ${Math.round(hoursRunning)}h — may indicate blocker` : "",
+        activeFocus.interruptions > 0 ? `${activeFocus.interruptions} interruptions recorded` : "",
       ].filter(Boolean),
       source: "focus:unfinished",
       firstSeen: activeFocus.startedAt,
@@ -972,22 +904,16 @@ function getRecentScheduledDiagnosticsFollowUp(
   timestamp: string;
 } | null {
   for (const event of recentAudit) {
-    if (
-      event.source !== "afloat-scheduler" ||
-      event.tool !== "scheduled_diagnostics"
-    )
-      continue;
+    if (event.source !== "afloat-scheduler" || event.tool !== "scheduled_diagnostics") continue;
     const age = hoursSince(event.timestamp);
     if (age === null || age > maxAgeHours) continue;
     const followUp =
       event.metadata && typeof event.metadata === "object"
         ? (event.metadata as Record<string, any>).followUp
         : undefined;
-    if (!followUp || typeof followUp !== "object" || !followUp.triggered)
-      continue;
+    if (!followUp || typeof followUp !== "object" || !followUp.triggered) continue;
     const rec =
-      followUp.recommendation ??
-      "Run cleanup_execute with dry-run first to reclaim space.";
+      followUp.recommendation ?? "Run cleanup_execute with dry-run first to reclaim space.";
     return {
       recommendation: rec,
       totalReclaimableMB: followUp.totalReclaimableMB,
@@ -1006,13 +932,12 @@ export function buildServer(): McpServer {
   });
 
   // Initialize hardened merit guard for session-first identity enforcement
-  const meritGuard = createHardenedMeritGuard(
-    SERVER_NAME,
-    process.env.GRID_API_URL,
-  );
+  const meritGuard = createHardenedMeritGuard(SERVER_NAME, process.env.GRID_API_URL);
+  const registerGuardedTool = meritGuard.registerGuardedTool.bind(meritGuard) as any;
+  const registerTool = server.registerTool.bind(server) as any;
 
   // Health check -- public access
-  meritGuard.registerGuardedTool(
+  registerGuardedTool(
     server,
     "health_check",
     {
@@ -1049,7 +974,7 @@ export function buildServer(): McpServer {
 
   // ── Morning Briefing (ANALYSIS_READ) ──
 
-  meritGuard.registerGuardedTool(
+  registerGuardedTool(
     server,
     "morning_briefing",
     {
@@ -1066,17 +991,14 @@ export function buildServer(): McpServer {
       await ensureDataDir();
 
       // Gather data from all sources
-      const recentAudit = (await readRecentAuditEntries(100)) as Array<
-        Record<string, any>
-      >;
+      const recentAudit = (await readRecentAuditEntries(100)) as Array<Record<string, any>>;
       const latestSnapshotResult = await getLatestSeedsSnapshot();
       const latestSnapshot = latestSnapshotResult.snapshot;
       const recentExecutions = await listRecentWorkflowExecutions(20);
       const workflowsToday = recentExecutions.filter((execution) =>
         execution.startedAt?.startsWith(todayKey()),
       ).length;
-      const ecosystemScore =
-        latestSnapshot?.overallScore ?? (await getLatestEcosystemScore());
+      const ecosystemScore = latestSnapshot?.overallScore ?? (await getLatestEcosystemScore());
       const telemetry = await getLatestTelemetry();
       const journal = await getTodayJournal();
       const activeFocus = await getActiveFocus();
@@ -1088,9 +1010,7 @@ export function buildServer(): McpServer {
         return age !== null && age <= 24;
       });
 
-      const recentFailures = overnightEvents.filter((event) =>
-        isFailureStatus(event.status),
-      );
+      const recentFailures = overnightEvents.filter((event) => isFailureStatus(event.status));
       const lowHealthRepos = getLowHealthRepos(latestSnapshot, 70);
       const failedWorkflows = recentExecutions.filter(
         (execution) => execution.status && execution.status !== "completed",
@@ -1103,9 +1023,7 @@ export function buildServer(): McpServer {
             return null;
           }
 
-          const repoHealth = lowHealthRepos.find(
-            (candidate) => candidate.name === repo,
-          );
+          const repoHealth = lowHealthRepos.find((candidate) => candidate.name === repo);
           if (!repoHealth) {
             return null;
           }
@@ -1117,9 +1035,7 @@ export function buildServer(): McpServer {
       const priorities: string[] = [];
       const warnings: string[] = [];
       if (recentFailures.length > 0) {
-        warnings.push(
-          `${recentFailures.length} recent failure/block events in the last 24 hours`,
-        );
+        warnings.push(`${recentFailures.length} recent failure/block events in the last 24 hours`);
         priorities.push("Review blocked pipeline events");
       }
 
@@ -1131,31 +1047,21 @@ export function buildServer(): McpServer {
       }
 
       if (failedWorkflows.length > 0) {
-        warnings.push(
-          `${failedWorkflows.length} workflow execution(s) are incomplete or failed`,
-        );
-        priorities.push(
-          "Review recent workflow executions before starting new automation",
-        );
+        warnings.push(`${failedWorkflows.length} workflow execution(s) are incomplete or failed`);
+        priorities.push("Review recent workflow executions before starting new automation");
       }
 
       if (ecosystemScore !== null && ecosystemScore < 60) {
-        warnings.push(
-          `Ecosystem health score is ${ecosystemScore}/100 — below threshold`,
-        );
+        warnings.push(`Ecosystem health score is ${ecosystemScore}/100 — below threshold`);
         priorities.push("Run ecosystem_scan to identify degraded repos");
       }
 
       if (correlatedSignals.length > 0) {
-        priorities.unshift(
-          "Address correlated failures before starting new work",
-        );
+        priorities.unshift("Address correlated failures before starting new work");
       }
 
       if (activeFocus) {
-        warnings.push(
-          `You have an unfinished focus session: "${activeFocus.task}"`,
-        );
+        warnings.push(`You have an unfinished focus session: "${activeFocus.task}"`);
         priorities.push("Close or resume the unfinished focus session");
       }
 
@@ -1167,22 +1073,15 @@ export function buildServer(): McpServer {
       }
 
       // Apply adaptive preferences (section skip + promoted order)
-      const orderedPriorities = applyPromotedOrder(
-        priorities,
-        preferences.promotedSignals,
-      );
-      const orderedWarnings = applyPromotedOrder(
-        warnings,
-        preferences.promotedSignals,
-      );
+      const orderedPriorities = applyPromotedOrder(priorities, preferences.promotedSignals);
+      const orderedWarnings = applyPromotedOrder(warnings, preferences.promotedSignals);
 
       const rawPayload: Record<string, unknown> = {
         briefing: "Good morning! Here's your developer dashboard.",
         date: todayKey(),
         generatedAt: new Date().toISOString(),
         ecosystem: {
-          healthScore:
-            ecosystemScore ?? "No snapshots yet — run ecosystem_scan",
+          healthScore: ecosystemScore ?? "No snapshots yet — run ecosystem_scan",
           latestTelemetry: telemetry ? "Available" : "No telemetry snapshots",
           snapshot: {
             sourceFile: latestSnapshotResult.metadata.sourceFile,
@@ -1206,9 +1105,9 @@ export function buildServer(): McpServer {
           journalEntriesToday: journal.length,
           activeFocusSession: activeFocus
             ? {
-              task: activeFocus.task,
-              startedAt: activeFocus.startedAt,
-            }
+                task: activeFocus.task,
+                startedAt: activeFocus.startedAt,
+              }
             : null,
         },
         preferences,
@@ -1253,7 +1152,7 @@ export function buildServer(): McpServer {
 
   // ── Journal ──
 
-  server.registerTool(
+  registerTool(
     "check_alerts",
     {
       description:
@@ -1270,7 +1169,11 @@ export function buildServer(): McpServer {
     },
     async (args: { healthThreshold?: number }) => {
       const rlMsg = readLimiter.check("check_alerts");
-      if (rlMsg) return { content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
+      if (rlMsg)
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }],
+          isError: true,
+        };
       await ensureDataDir();
       const threshold = args.healthThreshold ?? 70;
       const snapshotResult = await getLatestSeedsSnapshot();
@@ -1289,9 +1192,7 @@ export function buildServer(): McpServer {
       const alerts = [
         ...lowHealthRepos.map((repo) => `[repo] ${formatRepoIssue(repo)}`),
         ...(recentFailures.length > 3
-          ? [
-            `[audit] ${recentFailures.length} failure/block events in the last 24 hours`,
-          ]
+          ? [`[audit] ${recentFailures.length} failure/block events in the last 24 hours`]
           : []),
         ...failedWorkflows
           .slice(0, 3)
@@ -1324,7 +1225,7 @@ export function buildServer(): McpServer {
     },
   );
 
-  server.registerTool(
+  registerTool(
     "what_should_i_work_on",
     {
       description:
@@ -1341,12 +1242,14 @@ export function buildServer(): McpServer {
     },
     async (args: { healthThreshold?: number }) => {
       const rlMsg = readLimiter.check("what_should_i_work_on");
-      if (rlMsg) return { content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
+      if (rlMsg)
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }],
+          isError: true,
+        };
       await ensureDataDir();
       const threshold = args.healthThreshold ?? 70;
-      const recentAudit = (await readRecentAuditEntries(100)) as Array<
-        Record<string, any>
-      >;
+      const recentAudit = (await readRecentAuditEntries(100)) as Array<Record<string, any>>;
       const recentFailures = recentAudit.filter((event) => {
         const age = hoursSince(event.timestamp);
         return age !== null && age <= 24 && isFailureStatus(event.status);
@@ -1381,23 +1284,23 @@ export function buildServer(): McpServer {
       const finalItems =
         items.length === 0
           ? [
-            {
-              rank: 1,
-              priority: "low" as const,
-              title: "All clear — no urgent items",
-              reasoning: [summary],
-              score: 0,
-              occurrenceCount: 0,
-            },
-          ]
+              {
+                rank: 1,
+                priority: "low" as const,
+                title: "All clear — no urgent items",
+                reasoning: [summary],
+                score: 0,
+                occurrenceCount: 0,
+              },
+            ]
           : items.map((item, index) => ({
-            rank: index + 1,
-            priority: item.priority,
-            title: item.title,
-            reasoning: item.reasoning,
-            score: Math.round(item.score * 10) / 10,
-            occurrenceCount: item.occurrenceCount,
-          }));
+              rank: index + 1,
+              priority: item.priority,
+              title: item.title,
+              reasoning: item.reasoning,
+              score: Math.round(item.score * 10) / 10,
+              occurrenceCount: item.occurrenceCount,
+            }));
 
       return {
         content: [
@@ -1411,10 +1314,8 @@ export function buildServer(): McpServer {
                 snapshot: {
                   sourceFile: latestSnapshotResult.metadata.sourceFile,
                   timestamp: latestSnapshotResult.metadata.snapshotTimestamp,
-                  normalizedRepoNames:
-                    latestSnapshotResult.metadata.normalizedRepoNames,
-                  deduplicatedEntries:
-                    latestSnapshotResult.metadata.deduplicatedEntries,
+                  normalizedRepoNames: latestSnapshotResult.metadata.normalizedRepoNames,
+                  deduplicatedEntries: latestSnapshotResult.metadata.deduplicatedEntries,
                 },
                 journalEntriesToday: journal.length,
                 summary,
@@ -1434,7 +1335,7 @@ export function buildServer(): McpServer {
     },
   );
 
-  server.registerTool(
+  registerTool(
     "briefing_preferences_set",
     {
       description:
@@ -1447,15 +1348,10 @@ export function buildServer(): McpServer {
         promotedSignals: z.array(z.string()).optional().default([]),
       }),
     },
-    async (args: {
-      skippedBriefingSections?: string[];
-      promotedSignals?: string[];
-    }) => {
+    async (args: { skippedBriefingSections?: string[]; promotedSignals?: string[] }) => {
       await ensureDataDir();
       const validSectionSet = new Set<string>(BRIEFING_SECTION_KEYS);
-      const skipped = (args.skippedBriefingSections ?? []).filter((k) =>
-        validSectionSet.has(k),
-      );
+      const skipped = (args.skippedBriefingSections ?? []).filter((k) => validSectionSet.has(k));
       const preferences: Preferences = {
         skippedBriefingSections: skipped,
         promotedSignals: args.promotedSignals ?? [],
@@ -1472,18 +1368,14 @@ export function buildServer(): McpServer {
     },
   );
 
-  server.registerTool(
+  registerTool(
     "journal_add",
     {
       description:
         "Add a journal entry — track what you worked on, decisions made, or blockers encountered. " +
         "Entries are grouped by day for digest generation.",
       inputSchema: z.object({
-        entry: z
-          .string()
-          .min(1)
-          .max(2000)
-          .describe("What happened / what you worked on"),
+        entry: z.string().min(1).max(2000).describe("What happened / what you worked on"),
         tags: z
           .array(z.string())
           .optional()
@@ -1496,9 +1388,7 @@ export function buildServer(): McpServer {
         linkedServer: z
           .string()
           .optional()
-          .describe(
-            'Which MCP server is relevant (e.g. "grid-server", "lots-server")',
-          ),
+          .describe('Which MCP server is relevant (e.g. "grid-server", "lots-server")'),
       }),
     },
     async (args: {
@@ -1546,20 +1436,21 @@ export function buildServer(): McpServer {
     },
   );
 
-  server.registerTool(
+  registerTool(
     "journal_list",
     {
       description: "List today's journal entries (or a specific date)",
       inputSchema: z.object({
-        date: z
-          .string()
-          .optional()
-          .describe("ISO date (YYYY-MM-DD). Defaults to today."),
+        date: z.string().optional().describe("ISO date (YYYY-MM-DD). Defaults to today."),
       }),
     },
     async (args: { date?: string }) => {
       const rlMsg = readLimiter.check("journal_list");
-      if (rlMsg) return { content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
+      if (rlMsg)
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }],
+          isError: true,
+        };
       await ensureDataDir();
       const dateKey = args.date ?? todayKey();
       let entries: JournalEntry[] = [];
@@ -1574,11 +1465,7 @@ export function buildServer(): McpServer {
         content: [
           {
             type: "text" as const,
-            text: JSON.stringify(
-              { date: dateKey, count: entries.length, entries },
-              null,
-              2,
-            ),
+            text: JSON.stringify({ date: dateKey, count: entries.length, entries }, null, 2),
           },
         ],
       };
@@ -1587,7 +1474,7 @@ export function buildServer(): McpServer {
 
   // ── Focus Timer ──
 
-  server.registerTool(
+  registerTool(
     "focus_start",
     {
       description:
@@ -1595,10 +1482,7 @@ export function buildServer(): McpServer {
         "Only one focus session can be active at a time.",
       inputSchema: z.object({
         task: z.string().min(1).max(200).describe("What you're focusing on"),
-        project: z
-          .string()
-          .optional()
-          .describe('Project name (e.g. "GRID-main", "afloat")'),
+        project: z.string().optional().describe('Project name (e.g. "GRID-main", "afloat")'),
       }),
     },
     async (args: { task: string; project?: string }) => {
@@ -1646,11 +1530,10 @@ export function buildServer(): McpServer {
     },
   );
 
-  server.registerTool(
+  registerTool(
     "focus_status",
     {
-      description:
-        "Return the current active focus session in the dashboard workflow shape",
+      description: "Return the current active focus session in the dashboard workflow shape",
       inputSchema: z.object({}),
     },
     async () => {
@@ -1674,7 +1557,7 @@ export function buildServer(): McpServer {
     },
   );
 
-  server.registerTool(
+  registerTool(
     "focus_interrupt",
     {
       description:
@@ -1716,16 +1599,13 @@ export function buildServer(): McpServer {
     },
   );
 
-  server.registerTool(
+  registerTool(
     "focus_end",
     {
       description:
         "End the current focus session and record the outcome. Calculates duration and archives the session.",
       inputSchema: z.object({
-        outcome: z
-          .string()
-          .optional()
-          .describe("What you accomplished during this session"),
+        outcome: z.string().optional().describe("What you accomplished during this session"),
       }),
     },
     async (args: { outcome?: string }) => {
@@ -1745,9 +1625,7 @@ export function buildServer(): McpServer {
 
       session.endedAt = new Date().toISOString();
       session.durationMinutes = Math.round(
-        (new Date(session.endedAt).getTime() -
-          new Date(session.startedAt).getTime()) /
-        60000,
+        (new Date(session.endedAt).getTime() - new Date(session.startedAt).getTime()) / 60000,
       );
       session.outcome = args.outcome;
 
@@ -1802,7 +1680,7 @@ export function buildServer(): McpServer {
 
   // ── Daily Digest ──
 
-  server.registerTool(
+  registerTool(
     "daily_digest",
     {
       description:
@@ -1810,10 +1688,7 @@ export function buildServer(): McpServer {
         "audit events, workflow runs, and ecosystem health. " +
         "Run this at the end of your workday for a complete summary.",
       inputSchema: z.object({
-        date: z
-          .string()
-          .optional()
-          .describe("ISO date (YYYY-MM-DD). Defaults to today."),
+        date: z.string().optional().describe("ISO date (YYYY-MM-DD). Defaults to today."),
         save: z
           .boolean()
           .optional()
@@ -1823,7 +1698,11 @@ export function buildServer(): McpServer {
     },
     async (args: { date?: string; save?: boolean }) => {
       const rlMsg = readLimiter.check("daily_digest");
-      if (rlMsg) return { content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
+      if (rlMsg)
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }],
+          isError: true,
+        };
       await ensureDataDir();
       const dateKey = args.date ?? todayKey();
 
@@ -1847,18 +1726,13 @@ export function buildServer(): McpServer {
         /* none */
       }
 
-      const totalFocusMinutes = focusSessions.reduce(
-        (sum, s) => sum + (s.durationMinutes ?? 0),
-        0,
-      );
+      const totalFocusMinutes = focusSessions.reduce((sum, s) => sum + (s.durationMinutes ?? 0), 0);
 
       // Cross-server
       const recentAudit = await readRecentAuditEntries(50);
-      const todayAudit = recentAudit.filter((e: any) =>
-        e.timestamp?.startsWith(dateKey),
-      );
-      const workflowsRun = (await listRecentWorkflowExecutions(50)).filter(
-        (execution) => execution.startedAt?.startsWith(dateKey),
+      const todayAudit = recentAudit.filter((e: any) => e.timestamp?.startsWith(dateKey));
+      const workflowsRun = (await listRecentWorkflowExecutions(50)).filter((execution) =>
+        execution.startedAt?.startsWith(dateKey),
       ).length;
       const ecosystemScore = await getLatestEcosystemScore();
 
@@ -1874,9 +1748,7 @@ export function buildServer(): McpServer {
           (s) => s.interruptions <= 1 && (s.durationMinutes ?? 0) >= 25,
         );
         if (flowSessions.length > 0) {
-          highlights.push(
-            `${flowSessions.length} flow-state sessions — great deep work!`,
-          );
+          highlights.push(`${flowSessions.length} flow-state sessions — great deep work!`);
         }
       }
 
@@ -1891,17 +1763,13 @@ export function buildServer(): McpServer {
 
       const tomorrowSuggestions: string[] = [];
       if (totalFocusMinutes < 60) {
-        tomorrowSuggestions.push(
-          "Try to get at least 2 focus sessions tomorrow",
-        );
+        tomorrowSuggestions.push("Try to get at least 2 focus sessions tomorrow");
       }
       if (blockers.length > 0) {
         tomorrowSuggestions.push("Address yesterday's blockers first thing");
       }
       if (ecosystemScore !== null && ecosystemScore < 70) {
-        tomorrowSuggestions.push(
-          "Run ecosystem maintenance to improve health scores",
-        );
+        tomorrowSuggestions.push("Run ecosystem maintenance to improve health scores");
       }
 
       const digest: DailyDigest = {
@@ -1948,8 +1816,7 @@ export async function startServer(): Promise<McpServer> {
 }
 
 const isEntrypoint =
-  process.argv[1] != null &&
-  pathToFileURL(process.argv[1]).href === import.meta.url;
+  process.argv[1] != null && pathToFileURL(process.argv[1]).href === import.meta.url;
 
 if (isEntrypoint) {
   async function main() {

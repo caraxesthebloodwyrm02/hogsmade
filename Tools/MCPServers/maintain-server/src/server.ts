@@ -62,7 +62,9 @@ function checkScanRateLimit(scanType: string): string | null {
 // Execution policy for path validation
 const executionPolicy = new ExecutionPolicyEngine(config.scanRoots);
 
-function actionHash(actions: Array<{ type: string; target?: string; maxAgeDays?: number }>): string {
+function actionHash(
+  actions: Array<{ type: string; target?: string; maxAgeDays?: number }>,
+): string {
   return crypto.createHash("sha256").update(JSON.stringify(actions)).digest("hex");
 }
 
@@ -270,10 +272,7 @@ async function loadReports(limit: number): Promise<DiagnosticReport[]> {
     const reports: DiagnosticReport[] = [];
     for (const file of jsonFiles) {
       try {
-        const content = await fs.readFile(
-          path.join(REPORTS_DIR, file),
-          "utf-8",
-        );
+        const content = await fs.readFile(path.join(REPORTS_DIR, file), "utf-8");
         reports.push(JSON.parse(content));
       } catch {
         /* skip corrupt */
@@ -325,7 +324,9 @@ async function getDirSize(
           if (seen.has(ino)) continue;
           seen.add(ino);
         }
-      } catch { continue; }
+      } catch {
+        continue;
+      }
 
       if (entry.isDirectory()) {
         const sub = await getDirSize(fullPath, depth + 1, seen);
@@ -366,7 +367,9 @@ async function getStaleFiles(
         try {
           const lst = await fs.lstat(fullPath);
           if (lst.isSymbolicLink()) continue;
-        } catch { continue; }
+        } catch {
+          continue;
+        }
 
         if (entry.isDirectory()) {
           await walk(fullPath, depth + 1);
@@ -449,15 +452,7 @@ async function scanWorkspace(
   let logFileCount = 0;
   let logSize = 0;
 
-  const buildArtifactNames = [
-    "dist",
-    "build",
-    ".next",
-    "out",
-    "target",
-    "bin",
-    "obj",
-  ];
+  const buildArtifactNames = ["dist", "build", ".next", "out", "target", "bin", "obj"];
   const { size } = await getDirSize(workspacePath);
   totalSize = size;
 
@@ -505,10 +500,7 @@ async function scanWorkspace(
   pycacheSize = await findPycache(workspacePath, 0);
 
   // Check log files
-  async function findLogs(
-    dir: string,
-    depth: number,
-  ): Promise<{ count: number; size: number }> {
+  async function findLogs(dir: string, depth: number): Promise<{ count: number; size: number }> {
     if (depth > maxDepth) return { count: 0, size: 0 };
     let count = 0;
     let size = 0;
@@ -547,18 +539,13 @@ async function scanWorkspace(
   if (logFileCount > 20) score -= 5;
 
   const reclaimable =
-    (nodeModulesSize ? nodeModulesSize * 0.1 : 0) +
-    buildArtifactsSize +
-    pycacheSize +
-    logSize;
+    (nodeModulesSize ? nodeModulesSize * 0.1 : 0) + buildArtifactsSize + pycacheSize + logSize;
 
   return {
     path: workspacePath,
     name,
     totalSizeMB: Math.round(totalSize / (1024 * 1024)),
-    nodeModulesSizeMB: nodeModulesSize
-      ? Math.round(nodeModulesSize / (1024 * 1024))
-      : null,
+    nodeModulesSizeMB: nodeModulesSize ? Math.round(nodeModulesSize / (1024 * 1024)) : null,
     buildArtifactsSizeMB: Math.round(buildArtifactsSize / (1024 * 1024)),
     pycacheSizeMB: Math.round(pycacheSize / (1024 * 1024)),
     logFileCount,
@@ -571,10 +558,7 @@ async function scanWorkspace(
 
 // ── Git Scan ──
 
-async function runGitCommand(
-  repoPath: string,
-  args: string[],
-): Promise<string | null> {
+async function runGitCommand(repoPath: string, args: string[]): Promise<string | null> {
   try {
     const { stdout } = await execFileAsync("git", args, {
       cwd: repoPath,
@@ -608,8 +592,7 @@ async function scanGitRepo(repoPath: string): Promise<GitRepoResult> {
   }
 
   // Branch
-  const branch =
-    (await runGitCommand(repoPath, ["branch", "--show-current"])) || "unknown";
+  const branch = (await runGitCommand(repoPath, ["branch", "--show-current"])) || "unknown";
 
   // Loose objects
   const countOutput = await runGitCommand(repoPath, ["count-objects", "-v"]);
@@ -658,11 +641,7 @@ async function scanGitRepo(repoPath: string): Promise<GitRepoResult> {
   // Behind remote
   let behindRemote = 0;
   await runGitCommand(repoPath, ["fetch", "--quiet"]);
-  const behindOutput = await runGitCommand(repoPath, [
-    "rev-list",
-    "--count",
-    "HEAD..@{u}",
-  ]);
+  const behindOutput = await runGitCommand(repoPath, ["rev-list", "--count", "HEAD..@{u}"]);
   if (behindOutput) {
     behindRemote = parseInt(behindOutput) || 0;
   }
@@ -717,18 +696,21 @@ async function getSystemMetrics(topN: number): Promise<SystemMetrics> {
   let volumes: SystemMetrics["volumes"] = [];
   if (os.platform() === "win32") {
     try {
-      const { stdout } = await execFileAsync("powershell", [
-        "-NoProfile",
-        "-Command",
-        "Get-Volume | Where-Object {$_.DriveLetter} | Select-Object DriveLetter,SizeRemaining,Size | ConvertTo-Json",
-      ], { timeout: 30000 });
+      const { stdout } = await execFileAsync(
+        "powershell",
+        [
+          "-NoProfile",
+          "-Command",
+          "Get-Volume | Where-Object {$_.DriveLetter} | Select-Object DriveLetter,SizeRemaining,Size | ConvertTo-Json",
+        ],
+        { timeout: 30000 },
+      );
       const volData = JSON.parse(stdout);
       const vols = Array.isArray(volData) ? volData : [volData];
       for (const v of vols) {
         const totalGB = Math.round((v.Size || 0) / 1024 ** 3);
         const freeGB = Math.round((v.SizeRemaining || 0) / 1024 ** 3);
-        const freePercent =
-          totalGB > 0 ? Math.round((freeGB / totalGB) * 100) : 0;
+        const freePercent = totalGB > 0 ? Math.round((freeGB / totalGB) * 100) : 0;
         volumes.push({ drive: v.DriveLetter, totalGB, freeGB, freePercent });
         if (freePercent < 5) {
           status = "critical";
@@ -738,11 +720,15 @@ async function getSystemMetrics(topN: number): Promise<SystemMetrics> {
           warnings.push(`Low disk space on ${v.DriveLetter}:\\ (${freePercent}% free)`);
         }
       }
-    } catch { /* PowerShell not available */ }
+    } catch {
+      /* PowerShell not available */
+    }
   } else {
     // Linux/macOS: use df
     try {
-      const { stdout } = await execFileAsync("df", ["-BG", "--output=target,size,avail"], { timeout: 10000 });
+      const { stdout } = await execFileAsync("df", ["-BG", "--output=target,size,avail"], {
+        timeout: 10000,
+      });
       const lines = stdout.trim().split("\n").slice(1);
       for (const line of lines) {
         const parts = line.trim().split(/\s+/);
@@ -760,33 +746,41 @@ async function getSystemMetrics(topN: number): Promise<SystemMetrics> {
           }
         }
       }
-    } catch { /* df not available */ }
+    } catch {
+      /* df not available */
+    }
   }
 
   // Top processes — platform-aware
   let topProcesses: SystemMetrics["topProcesses"] = [];
   if (os.platform() === "win32") {
     try {
-      const { stdout } = await execFileAsync("powershell", [
-        "-NoProfile",
-        "-Command",
-        `Get-Process | Sort-Object WorkingSet64 -Descending | Select-Object -First ${topN} Name,Id,WorkingSet64 | ConvertTo-Json`,
-      ], { timeout: 30000 });
+      const { stdout } = await execFileAsync(
+        "powershell",
+        [
+          "-NoProfile",
+          "-Command",
+          `Get-Process | Sort-Object WorkingSet64 -Descending | Select-Object -First ${topN} Name,Id,WorkingSet64 | ConvertTo-Json`,
+        ],
+        { timeout: 30000 },
+      );
       const procData = JSON.parse(stdout);
       const procs = Array.isArray(procData) ? procData : [procData];
-      topProcesses = procs.map(
-        (p: { Name: string; Id: number; WorkingSet64: number }) => ({
-          name: p.Name,
-          pid: p.Id,
-          memoryMB: Math.round(p.WorkingSet64 / (1024 * 1024)),
-        }),
-      );
-    } catch { /* PowerShell not available */ }
+      topProcesses = procs.map((p: { Name: string; Id: number; WorkingSet64: number }) => ({
+        name: p.Name,
+        pid: p.Id,
+        memoryMB: Math.round(p.WorkingSet64 / (1024 * 1024)),
+      }));
+    } catch {
+      /* PowerShell not available */
+    }
   } else {
     try {
-      const { stdout } = await execFileAsync("ps", [
-        "axo", "comm,pid,rss", "--sort=-rss", "--no-headers",
-      ], { timeout: 10000 });
+      const { stdout } = await execFileAsync(
+        "ps",
+        ["axo", "comm,pid,rss", "--sort=-rss", "--no-headers"],
+        { timeout: 10000 },
+      );
       const lines = stdout.trim().split("\n").slice(0, topN);
       topProcesses = lines.map((line) => {
         const parts = line.trim().split(/\s+/);
@@ -796,7 +790,9 @@ async function getSystemMetrics(topN: number): Promise<SystemMetrics> {
           memoryMB: Math.round((parseInt(parts[2]) || 0) / 1024),
         };
       });
-    } catch { /* ps not available */ }
+    } catch {
+      /* ps not available */
+    }
   }
 
   // Swap — platform-aware
@@ -804,17 +800,23 @@ async function getSystemMetrics(topN: number): Promise<SystemMetrics> {
   let swapUsed = 0;
   if (os.platform() === "win32") {
     try {
-      const { stdout } = await execFileAsync("powershell", [
-        "-NoProfile",
-        "-Command",
-        "Get-CimInstance Win32_PageFileUsage | Select-Object AllocatedBaseSize,CurrentUsage | ConvertTo-Json",
-      ], { timeout: 30000 });
+      const { stdout } = await execFileAsync(
+        "powershell",
+        [
+          "-NoProfile",
+          "-Command",
+          "Get-CimInstance Win32_PageFileUsage | Select-Object AllocatedBaseSize,CurrentUsage | ConvertTo-Json",
+        ],
+        { timeout: 30000 },
+      );
       const swapData = JSON.parse(stdout);
       if (swapData) {
         swapTotal = swapData.AllocatedBaseSize || 0;
         swapUsed = swapData.CurrentUsage || 0;
       }
-    } catch { /* No pagefile or PowerShell unavailable */ }
+    } catch {
+      /* No pagefile or PowerShell unavailable */
+    }
   } else {
     try {
       const meminfo = await fs.readFile("/proc/meminfo", "utf-8");
@@ -822,9 +824,13 @@ async function getSystemMetrics(topN: number): Promise<SystemMetrics> {
       const swapFreeMatch = meminfo.match(/SwapFree:\s+(\d+)/);
       if (swapTotalMatch) swapTotal = Math.round(parseInt(swapTotalMatch[1]) / (1024 * 1024));
       if (swapTotalMatch && swapFreeMatch) {
-        swapUsed = Math.round((parseInt(swapTotalMatch[1]) - parseInt(swapFreeMatch[1])) / (1024 * 1024));
+        swapUsed = Math.round(
+          (parseInt(swapTotalMatch[1]) - parseInt(swapFreeMatch[1])) / (1024 * 1024),
+        );
       }
-    } catch { /* /proc/meminfo not available */ }
+    } catch {
+      /* /proc/meminfo not available */
+    }
   }
 
   const uptimeSec = os.uptime();
@@ -869,7 +875,9 @@ async function cleanupTemp(
         try {
           const lst = await fs.lstat(fullPath);
           if (lst.isSymbolicLink()) continue;
-        } catch { continue; }
+        } catch {
+          continue;
+        }
 
         if (entry.isDirectory()) {
           await walkAndClean(fullPath, depth + 1);
@@ -912,9 +920,10 @@ async function cleanupNpmCache(
   let bytesFreed = 0;
   let filesRemoved = 0;
 
-  const cachePath = os.platform() === "win32"
-    ? path.join(os.homedir(), "AppData", "Local", "npm-cache")
-    : path.join(os.homedir(), ".npm", "_cacache");
+  const cachePath =
+    os.platform() === "win32"
+      ? path.join(os.homedir(), "AppData", "Local", "npm-cache")
+      : path.join(os.homedir(), ".npm", "_cacache");
   if (!dryRun) {
     try {
       const before = await getDirSize(cachePath);
@@ -943,9 +952,10 @@ async function cleanupPipCache(
   let bytesFreed = 0;
   let filesRemoved = 0;
 
-  const cachePath = os.platform() === "win32"
-    ? path.join(os.homedir(), "AppData", "Local", "pip", "Cache")
-    : path.join(os.homedir(), ".cache", "pip");
+  const cachePath =
+    os.platform() === "win32"
+      ? path.join(os.homedir(), "AppData", "Local", "pip", "Cache")
+      : path.join(os.homedir(), ".cache", "pip");
   if (!dryRun) {
     try {
       const before = await getDirSize(cachePath);
@@ -984,7 +994,9 @@ async function cleanupPycache(
         try {
           const lst = await fs.lstat(fullPath);
           if (lst.isSymbolicLink()) continue;
-        } catch { continue; }
+        } catch {
+          continue;
+        }
 
         if (entry.name === "__pycache__" && entry.isDirectory()) {
           const { size, count } = await getDirSize(fullPath);
@@ -1043,9 +1055,11 @@ export function buildServer(): McpServer {
     name: SERVER_NAME,
     version: VERSION,
   });
+  // Avoid deep generic instantiation with complex Zod schemas.
+  const registerTool = server.registerTool.bind(server) as any;
 
   // Tool 1: health_check
-  server.registerTool(
+  registerTool(
     "health_check",
     { description: "Check maintain-server health and data store status" },
     async () => {
@@ -1080,9 +1094,7 @@ export function buildServer(): McpServer {
                   uptime: os.uptime(),
                   totalRamGB: Math.round(totalMem / 1024 ** 3),
                   freeRamGB: Math.round(freeMem / 1024 ** 3),
-                  ramUsedPercent: Math.round(
-                    ((totalMem - freeMem) / totalMem) * 100,
-                  ),
+                  ramUsedPercent: Math.round(((totalMem - freeMem) / totalMem) * 100),
                 },
                 timestamp: new Date().toISOString(),
               },
@@ -1096,7 +1108,7 @@ export function buildServer(): McpServer {
   );
 
   // Tool 2: scan_temp
-  server.registerTool(
+  registerTool(
     "scan_temp",
     {
       description:
@@ -1113,10 +1125,17 @@ export function buildServer(): McpServer {
     },
     async (args: { maxAgeDays?: number }) => {
       const rlMsg = readLimiter.check("scan_temp");
-      if (rlMsg) return { content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
+      if (rlMsg)
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }],
+          isError: true,
+        };
       const rateLimitMsg = checkScanRateLimit("scan_temp");
       if (rateLimitMsg) {
-        return { content: [{ type: "text" as const, text: JSON.stringify({ error: rateLimitMsg }) }], isError: true };
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({ error: rateLimitMsg }) }],
+          isError: true,
+        };
       }
       await ensureDataDir();
       const config = await loadConfig();
@@ -1128,10 +1147,7 @@ export function buildServer(): McpServer {
         results.push(result);
       }
 
-      const reclaimableTotal = results.reduce(
-        (sum, r) => sum + r.staleSizeMB,
-        0,
-      );
+      const reclaimableTotal = results.reduce((sum, r) => sum + r.staleSizeMB, 0);
       const topTarget = results
         .filter((r) => r.staleSizeMB > 0)
         .sort((a, b) => b.staleSizeMB - a.staleSizeMB)[0];
@@ -1169,7 +1185,7 @@ export function buildServer(): McpServer {
   );
 
   // Tool 3: scan_workspaces
-  server.registerTool(
+  registerTool(
     "scan_workspaces",
     {
       description:
@@ -1190,10 +1206,16 @@ export function buildServer(): McpServer {
     },
     async (args: { roots?: string[]; maxDepth?: number }) => {
       const rlMsg = readLimiter.check("scan_workspaces");
-      if (rlMsg) return { content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
+      if (rlMsg)
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }],
+          isError: true,
+        };
       const rateLimitMsg = checkScanRateLimit("scan_workspaces");
       if (rateLimitMsg) {
-        return { content: [{ type: "text" as const, text: JSON.stringify({ error: rateLimitMsg }) }] };
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({ error: rateLimitMsg }) }],
+        };
       }
       await ensureDataDir();
       const config = await loadConfig();
@@ -1215,12 +1237,8 @@ export function buildServer(): McpServer {
             }
           }
           // Also scan the root itself if it has project files
-          const hasPackageJson = await fileExists(
-            path.join(root, "package.json"),
-          );
-          const hasPyproject = await fileExists(
-            path.join(root, "pyproject.toml"),
-          );
+          const hasPackageJson = await fileExists(path.join(root, "package.json"));
+          const hasPyproject = await fileExists(path.join(root, "pyproject.toml"));
           if (hasPackageJson || hasPyproject) {
             results.push(await scanWorkspace(root, maxDepth));
           }
@@ -1229,13 +1247,8 @@ export function buildServer(): McpServer {
         }
       }
 
-      const ranked = [...results].sort(
-        (a, b) => b.reclaimableMB - a.reclaimableMB,
-      );
-      const totalReclaimable = results.reduce(
-        (sum, r) => sum + r.reclaimableMB,
-        0,
-      );
+      const ranked = [...results].sort((a, b) => b.reclaimableMB - a.reclaimableMB);
+      const totalReclaimable = results.reduce((sum, r) => sum + r.reclaimableMB, 0);
 
       return {
         content: [
@@ -1271,7 +1284,7 @@ export function buildServer(): McpServer {
   );
 
   // Tool 4: scan_git_repos
-  server.registerTool(
+  registerTool(
     "scan_git_repos",
     {
       description:
@@ -1285,10 +1298,16 @@ export function buildServer(): McpServer {
     },
     async (args: { roots?: string[] }) => {
       const rlMsg = readLimiter.check("scan_git_repos");
-      if (rlMsg) return { content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
+      if (rlMsg)
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }],
+          isError: true,
+        };
       const rateLimitMsg = checkScanRateLimit("scan_git_repos");
       if (rateLimitMsg) {
-        return { content: [{ type: "text" as const, text: JSON.stringify({ error: rateLimitMsg }) }] };
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({ error: rateLimitMsg }) }],
+        };
       }
       await ensureDataDir();
       const config = await loadConfig();
@@ -1331,10 +1350,7 @@ export function buildServer(): McpServer {
                     name: r.name,
                     looseObjectsMB: r.looseObjectsMB,
                   })),
-                  totalIssues: results.reduce(
-                    (sum, r) => sum + r.issues.length,
-                    0,
-                  ),
+                  totalIssues: results.reduce((sum, r) => sum + r.issues.length, 0),
                   recommendation:
                     gcCandidates.length > 0
                       ? `Run cleanup_execute with actions: [git_gc] for ${gcCandidates.length} repos`
@@ -1351,7 +1367,7 @@ export function buildServer(): McpServer {
   );
 
   // Tool 5: scan_system
-  server.registerTool(
+  registerTool(
     "scan_system",
     {
       description:
@@ -1368,7 +1384,11 @@ export function buildServer(): McpServer {
     },
     async (args: { topProcesses?: number }) => {
       const rlMsg = readLimiter.check("scan_system");
-      if (rlMsg) return { content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
+      if (rlMsg)
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }],
+          isError: true,
+        };
       await ensureDataDir();
       const metrics = await getSystemMetrics(args.topProcesses ?? 10);
 
@@ -1402,7 +1422,7 @@ export function buildServer(): McpServer {
   );
 
   // Tool 6: full_diagnostic
-  server.registerTool(
+  registerTool(
     "full_diagnostic",
     {
       description:
@@ -1418,10 +1438,16 @@ export function buildServer(): McpServer {
     },
     async (args: { saveReport?: boolean; roots?: string[] }) => {
       const rlMsg = readLimiter.check("full_diagnostic");
-      if (rlMsg) return { content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
+      if (rlMsg)
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }],
+          isError: true,
+        };
       const rateLimitMsg = checkScanRateLimit("full_diagnostic");
       if (rateLimitMsg) {
-        return { content: [{ type: "text" as const, text: JSON.stringify({ error: rateLimitMsg }) }] };
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({ error: rateLimitMsg }) }],
+        };
       }
       await ensureDataDir();
       const config = await loadConfig();
@@ -1430,9 +1456,7 @@ export function buildServer(): McpServer {
       // Run all scans
       const tempResults: TempScanResult[] = [];
       for (const [name, dirPath] of Object.entries(config.tempTargets)) {
-        tempResults.push(
-          await scanTempDir(name, dirPath, config.thresholds.tempStaleAgeDays),
-        );
+        tempResults.push(await scanTempDir(name, dirPath, config.thresholds.tempStaleAgeDays));
       }
 
       const workspaceResults: WorkspaceScanResult[] = [];
@@ -1442,9 +1466,7 @@ export function buildServer(): McpServer {
           const entries = await fs.readdir(root, { withFileTypes: true });
           for (const entry of entries) {
             if (entry.isDirectory() && !entry.name.startsWith(".")) {
-              workspaceResults.push(
-                await scanWorkspace(path.join(root, entry.name), 3),
-              );
+              workspaceResults.push(await scanWorkspace(path.join(root, entry.name), 3));
             }
           }
         } catch {
@@ -1480,14 +1502,8 @@ export function buildServer(): McpServer {
         score -= v.freePercent < 10 ? 10 : 0;
         score -= v.freePercent < 5 ? 10 : 0;
       }
-      score -= Math.min(
-        20,
-        workspaceResults.filter((w) => w.healthScore < 60).length * 5,
-      );
-      score -= Math.min(
-        15,
-        gitResults.filter((g) => g.issues.length > 2).length * 5,
-      );
+      score -= Math.min(20, workspaceResults.filter((w) => w.healthScore < 60).length * 5);
+      score -= Math.min(15, gitResults.filter((g) => g.issues.length > 2).length * 5);
 
       const totalIssues =
         workspaceResults.reduce((s, w) => s + w.issues.length, 0) +
@@ -1533,13 +1549,12 @@ export function buildServer(): McpServer {
                   count: workspaceResults.length,
                   avgHealth: Math.round(
                     workspaceResults.reduce((s, w) => s + w.healthScore, 0) /
-                    Math.max(1, workspaceResults.length),
+                      Math.max(1, workspaceResults.length),
                   ),
                 },
                 gitScan: {
                   count: gitResults.length,
-                  gcCandidates: gitResults.filter((g) => g.gcRecommended)
-                    .length,
+                  gcCandidates: gitResults.filter((g) => g.gcRecommended).length,
                 },
                 system: {
                   ramUsed: systemMetrics.ram.usedPercent,
@@ -1550,33 +1565,31 @@ export function buildServer(): McpServer {
                   actions: [
                     ...(report.reclaimableTotalMB > 100
                       ? [
-                        {
-                          priority: "high",
-                          action: "cleanup_execute",
-                          params: { actions: ["temp_clean", "pycache"] },
-                          estimatedSavingsMB: report.reclaimableTotalMB,
-                        },
-                      ]
+                          {
+                            priority: "high",
+                            action: "cleanup_execute",
+                            params: { actions: ["temp_clean", "pycache"] },
+                            estimatedSavingsMB: report.reclaimableTotalMB,
+                          },
+                        ]
                       : []),
                     ...(gitResults.filter((g) => g.gcRecommended).length > 0
                       ? [
-                        {
-                          priority: "medium",
-                          action: "git_gc",
-                          repos: gitResults
-                            .filter((g) => g.gcRecommended)
-                            .map((g) => g.name),
-                        },
-                      ]
+                          {
+                            priority: "medium",
+                            action: "git_gc",
+                            repos: gitResults.filter((g) => g.gcRecommended).map((g) => g.name),
+                          },
+                        ]
                       : []),
                     ...(systemMetrics.status !== "healthy"
                       ? [
-                        {
-                          priority: "high",
-                          action: "address_system_warnings",
-                          warnings: systemMetrics.warnings,
-                        },
-                      ]
+                          {
+                            priority: "high",
+                            action: "address_system_warnings",
+                            warnings: systemMetrics.warnings,
+                          },
+                        ]
                       : []),
                   ],
                 },
@@ -1591,7 +1604,7 @@ export function buildServer(): McpServer {
   );
 
   // Tool 7: cleanup_execute
-  server.registerTool(
+  registerTool(
     "cleanup_execute",
     {
       description:
@@ -1611,19 +1624,12 @@ export function buildServer(): McpServer {
                 "prefetch",
               ]),
               target: z.string().optional().describe("Specific path override"),
-              maxAgeDays: z
-                .number()
-                .optional()
-                .describe("For temp_clean (default 7)"),
+              maxAgeDays: z.number().optional().describe("For temp_clean (default 7)"),
             }),
           )
           .min(1)
           .describe("Cleanup actions to perform"),
-        dryRun: z
-          .boolean()
-          .optional()
-          .default(true)
-          .describe("Preview only (default true)"),
+        dryRun: z.boolean().optional().default(true).describe("Preview only (default true)"),
         confirmPhrase: z
           .string()
           .optional()
@@ -1631,7 +1637,9 @@ export function buildServer(): McpServer {
         previewToken: z
           .string()
           .optional()
-          .describe("Token from a prior dry-run; required for execute to enforce multi-step safety"),
+          .describe(
+            "Token from a prior dry-run; required for execute to enforce multi-step safety",
+          ),
       }),
     },
     async (args: {
@@ -1659,13 +1667,19 @@ export function buildServer(): McpServer {
           const targetPolicy = executionPolicy.validateTargetPath(action.target);
           if (targetPolicy.verdict === "deny") {
             return {
-              content: [{
-                type: "text" as const,
-                text: JSON.stringify({
-                  error: `${targetPolicy.policyId}: ${targetPolicy.reason}`,
-                  blocked: true,
-                }, null, 2),
-              }],
+              content: [
+                {
+                  type: "text" as const,
+                  text: JSON.stringify(
+                    {
+                      error: `${targetPolicy.policyId}: ${targetPolicy.reason}`,
+                      blocked: true,
+                    },
+                    null,
+                    2,
+                  ),
+                },
+              ],
             };
           }
         }
@@ -1679,8 +1693,7 @@ export function buildServer(): McpServer {
               text: JSON.stringify(
                 {
                   error: "Safety check failed",
-                  message:
-                    "Set confirmPhrase='CONFIRM-CLEANUP' to execute non-dry-run cleanup",
+                  message: "Set confirmPhrase='CONFIRM-CLEANUP' to execute non-dry-run cleanup",
                   dryRun: true,
                 },
                 null,
@@ -1738,11 +1751,7 @@ export function buildServer(): McpServer {
         switch (action.type) {
           case "temp_clean": {
             const tempPath = action.target ?? config.tempTargets.user_temp;
-            result = await cleanupTemp(
-              tempPath,
-              action.maxAgeDays ?? 7,
-              isDryRun,
-            );
+            result = await cleanupTemp(tempPath, action.maxAgeDays ?? 7, isDryRun);
             break;
           }
           case "npm_cache": {
@@ -1792,10 +1801,7 @@ export function buildServer(): McpServer {
       }
 
       const totalBytesFreed = results.reduce((sum, r) => sum + r.bytesFreed, 0);
-      const totalFilesRemoved = results.reduce(
-        (sum, r) => sum + r.filesRemoved,
-        0,
-      );
+      const totalFilesRemoved = results.reduce((sum, r) => sum + r.filesRemoved, 0);
       const hasErrors = results.some((r) => r.errors.length > 0);
       const relatedRepo = getCleanupRelatedRepo(args.actions, config.scanRoots);
 
@@ -1855,7 +1861,7 @@ export function buildServer(): McpServer {
   );
 
   // Tool 8: report_history
-  server.registerTool(
+  registerTool(
     "report_history",
     {
       description: "Query past diagnostic reports for trend analysis.",
@@ -1876,7 +1882,11 @@ export function buildServer(): McpServer {
     },
     async (args: { limit?: number; metric?: string }) => {
       const rlMsg = readLimiter.check("report_history");
-      if (rlMsg) return { content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
+      if (rlMsg)
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }],
+          isError: true,
+        };
       await ensureDataDir();
       const reports = await loadReports(args.limit ?? 5);
 
@@ -1886,8 +1896,7 @@ export function buildServer(): McpServer {
             {
               type: "text" as const,
               text: JSON.stringify({
-                message:
-                  "No reports found. Run full_diagnostic with saveReport=true first.",
+                message: "No reports found. Run full_diagnostic with saveReport=true first.",
               }),
             },
           ],
@@ -1948,8 +1957,7 @@ export async function startServer(): Promise<McpServer> {
 }
 
 const isEntrypoint =
-  process.argv[1] != null &&
-  pathToFileURL(process.argv[1]).href === import.meta.url;
+  process.argv[1] != null && pathToFileURL(process.argv[1]).href === import.meta.url;
 
 if (isEntrypoint) {
   async function main() {

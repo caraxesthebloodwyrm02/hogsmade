@@ -119,9 +119,7 @@ async function loadCatalog(): Promise<Catalog> {
   try {
     parsed = JSON.parse(content);
   } catch {
-    throw new Error(
-      "Catalog contains invalid JSON — manual repair required before mutations",
-    );
+    throw new Error("Catalog contains invalid JSON — manual repair required before mutations");
   }
 
   const result = CatalogSchema.safeParse(parsed);
@@ -151,9 +149,7 @@ function generateExpId(): string {
   return generateId("exp");
 }
 
-function toDashboardStatus(
-  status: Experiment["status"],
-): DashboardExperiment["status"] | null {
+function toDashboardStatus(status: Experiment["status"]): DashboardExperiment["status"] | null {
   if (status === "draft") return "queued";
   if (status === "complete") return "completed";
   if (status === "archived") return null;
@@ -173,8 +169,7 @@ function toDashboardExperiment(exp: Experiment): DashboardExperiment | null {
     baselineValue: durationMs,
     currentValue: durationMs,
     startedAt: exp.createdAt,
-    completedAt:
-      status === "completed" || status === "failed" ? exp.updatedAt : undefined,
+    completedAt: status === "completed" || status === "failed" ? exp.updatedAt : undefined,
   };
 }
 
@@ -182,8 +177,7 @@ function isInsideDir(candidate: string, root: string): boolean {
   const resolvedCandidate = path.resolve(candidate);
   const resolvedRoot = path.resolve(root);
   return (
-    resolvedCandidate === resolvedRoot ||
-    resolvedCandidate.startsWith(resolvedRoot + path.sep)
+    resolvedCandidate === resolvedRoot || resolvedCandidate.startsWith(resolvedRoot + path.sep)
   );
 }
 
@@ -194,9 +188,11 @@ export function buildServer(): McpServer {
     name: SERVER_NAME,
     version: VERSION,
   });
+  // Avoid deep generic instantiation with large Zod schemas.
+  const registerTool = server.registerTool.bind(server) as any;
 
   // Health check
-  server.registerTool(
+  registerTool(
     "health_check",
     { description: "Check lots-server health and experiment catalog status" },
     async () => {
@@ -232,15 +228,13 @@ export function buildServer(): McpServer {
   );
 
   // Register experiment
-  server.registerTool(
+  registerTool(
     "experiment_create",
     {
       description: "Register a new experiment in the catalog",
       inputSchema: z.object({
         name: z.string().min(1).max(100).describe("Experiment name"),
-        description: z
-          .string()
-          .describe("What this experiment tests or explores"),
+        description: z.string().describe("What this experiment tests or explores"),
         script: z
           .string()
           .optional()
@@ -256,11 +250,7 @@ export function buildServer(): McpServer {
           .enum(["python", "node", "powershell", "bash"])
           .optional()
           .describe("Script language"),
-        tags: z
-          .array(z.string())
-          .optional()
-          .default([])
-          .describe("Tags for categorization"),
+        tags: z.array(z.string()).optional().default([]).describe("Tags for categorization"),
       }),
     },
     async (args: {
@@ -354,7 +344,7 @@ export function buildServer(): McpServer {
   );
 
   // List experiments
-  server.registerTool(
+  registerTool(
     "experiment_list",
     {
       description: "List experiments with optional filtering by status or tag",
@@ -364,18 +354,16 @@ export function buildServer(): McpServer {
           .optional()
           .describe("Filter by status"),
         tag: z.string().optional().describe("Filter by tag"),
-        limit: z
-          .number()
-          .min(1)
-          .max(100)
-          .optional()
-          .default(20)
-          .describe("Max results"),
+        limit: z.number().min(1).max(100).optional().default(20).describe("Max results"),
       }),
     },
     async (args: { status?: string; tag?: string; limit?: number }) => {
       const rlMsg = readLimiter.check("experiment_list");
-      if (rlMsg) return { content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
+      if (rlMsg)
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }],
+          isError: true,
+        };
       await ensureDir();
       const catalog = await loadCatalog();
       let filtered = catalog.experiments;
@@ -415,35 +403,23 @@ export function buildServer(): McpServer {
     },
   );
 
-  server.registerTool(
+  registerTool(
     "experiment_dashboard_list",
     {
-      description:
-        "List experiments in the dashboard-friendly shape used by glimpse-artifact",
+      description: "List experiments in the dashboard-friendly shape used by glimpse-artifact",
       inputSchema: z.object({
         status: z
           .enum(["queued", "running", "completed", "failed"])
           .optional()
           .describe("Optional dashboard status filter"),
-        limit: z
-          .number()
-          .min(1)
-          .max(100)
-          .optional()
-          .default(20)
-          .describe("Max results"),
+        limit: z.number().min(1).max(100).optional().default(20).describe("Max results"),
       }),
     },
-    async (args: {
-      status?: DashboardExperiment["status"];
-      limit?: number;
-    }) => {
+    async (args: { status?: DashboardExperiment["status"]; limit?: number }) => {
       const rlMsg = readLimiter.check("experiment_dashboard_list");
       if (rlMsg) {
         return {
-          content: [
-            { type: "text" as const, text: JSON.stringify({ error: rlMsg }) },
-          ],
+          content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }],
           isError: true,
         };
       }
@@ -458,9 +434,7 @@ export function buildServer(): McpServer {
         experiments = experiments.filter((exp) => exp.status === args.status);
       }
 
-      experiments = experiments
-        .slice(-(args.limit ?? 20))
-        .reverse();
+      experiments = experiments.slice(-(args.limit ?? 20)).reverse();
 
       return {
         content: [
@@ -481,7 +455,7 @@ export function buildServer(): McpServer {
   );
 
   // Run experiment
-  server.registerTool(
+  registerTool(
     "experiment_run",
     {
       description:
@@ -547,7 +521,9 @@ export function buildServer(): McpServer {
       // P-MCP-001: Validate script path against allowed roots
       const pathPolicy = executionPolicy.validateScriptPath(exp.script);
       if (pathPolicy.verdict === "deny") {
-        console.error(`[${SERVER_NAME}] policy denial: ${pathPolicy.policyId} — ${pathPolicy.reason}`);
+        console.error(
+          `[${SERVER_NAME}] policy denial: ${pathPolicy.policyId} — ${pathPolicy.reason}`,
+        );
         return {
           content: [
             {
@@ -578,23 +554,19 @@ export function buildServer(): McpServer {
 
       const start = Date.now();
       try {
-        const { stdout, stderr } = await execFileAsync(
-          command,
-          [resolvedScript],
-          {
-            timeout,
-            cwd: EXPERIMENTS_DIR,
-            maxBuffer: 1024 * 1024,
-            env: {
-              PATH: process.env.PATH ?? "",
-              HOME: process.env.HOME,
-              USERPROFILE: process.env.USERPROFILE,
-              SYSTEMROOT: process.env.SYSTEMROOT,
-              TEMP: process.env.TEMP,
-              TMP: process.env.TMP,
-            },
+        const { stdout, stderr } = await execFileAsync(command, [resolvedScript], {
+          timeout,
+          cwd: EXPERIMENTS_DIR,
+          maxBuffer: 1024 * 1024,
+          env: {
+            PATH: process.env.PATH ?? "",
+            HOME: process.env.HOME,
+            USERPROFILE: process.env.USERPROFILE,
+            SYSTEMROOT: process.env.SYSTEMROOT,
+            TEMP: process.env.TEMP,
+            TMP: process.env.TMP,
           },
-        );
+        });
 
         exp.status = "complete";
         exp.results = {
@@ -633,9 +605,7 @@ export function buildServer(): McpServer {
             name: exp.name,
             language: exp.language,
             tags: exp.tags,
-            relatedRepo: exp.tags
-              .find((tag) => tag.startsWith("repo:"))
-              ?.slice(5),
+            relatedRepo: exp.tags.find((tag) => tag.startsWith("repo:"))?.slice(5),
             exitCode: exp.results?.exitCode,
           },
         });
@@ -655,7 +625,7 @@ export function buildServer(): McpServer {
   );
 
   // Get experiment details
-  server.registerTool(
+  registerTool(
     "experiment_get",
     {
       description: "Get full details and results of a specific experiment",
@@ -665,7 +635,11 @@ export function buildServer(): McpServer {
     },
     async (args: { experimentId: string }) => {
       const rlMsg = readLimiter.check("experiment_get");
-      if (rlMsg) return { content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
+      if (rlMsg)
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }],
+          isError: true,
+        };
       await ensureDir();
       const catalog = await loadCatalog();
       const exp = catalog.experiments.find((e) => e.id === args.experimentId);
@@ -685,15 +659,13 @@ export function buildServer(): McpServer {
       }
 
       return {
-        content: [
-          { type: "text" as const, text: JSON.stringify(exp, null, 2) },
-        ],
+        content: [{ type: "text" as const, text: JSON.stringify(exp, null, 2) }],
       };
     },
   );
 
   // Compare experiments
-  server.registerTool(
+  registerTool(
     "experiment_compare",
     {
       description: "Compare results of two experiments side by side",
@@ -704,7 +676,11 @@ export function buildServer(): McpServer {
     },
     async (args: { experimentA: string; experimentB: string }) => {
       const rlMsg = readLimiter.check("experiment_compare");
-      if (rlMsg) return { content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
+      if (rlMsg)
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }],
+          isError: true,
+        };
       await ensureDir();
       const catalog = await loadCatalog();
       const a = catalog.experiments.find((e) => e.id === args.experimentA);
@@ -794,9 +770,7 @@ export function buildServer(): McpServer {
     parseErrors: number;
   }
 
-  async function readAuditEntries(
-    limit: number,
-  ): Promise<TelemetryReadResult> {
+  async function readAuditEntries(limit: number): Promise<TelemetryReadResult> {
     try {
       const raw = await fs.readFile(config.echoesAuditPath, "utf-8");
       let parseErrors = 0;
@@ -824,9 +798,7 @@ export function buildServer(): McpServer {
     }
   }
 
-  async function readLatestSnapshots(
-    limit: number,
-  ): Promise<TelemetryReadResult> {
+  async function readLatestSnapshots(limit: number): Promise<TelemetryReadResult> {
     try {
       const files = (await fs.readdir(config.seedsSnapshotsDir))
         .filter((f: string) => f.endsWith(".json"))
@@ -837,10 +809,7 @@ export function buildServer(): McpServer {
       const data: Array<Record<string, any>> = [];
       for (const file of files) {
         try {
-          const content = await fs.readFile(
-            path.join(config.seedsSnapshotsDir, file),
-            "utf-8",
-          );
+          const content = await fs.readFile(path.join(config.seedsSnapshotsDir, file), "utf-8");
           data.push(JSON.parse(content));
         } catch {
           parseErrors++;
@@ -855,9 +824,7 @@ export function buildServer(): McpServer {
     }
   }
 
-  async function readWorkflowHistory(
-    limit: number,
-  ): Promise<TelemetryReadResult> {
+  async function readWorkflowHistory(limit: number): Promise<TelemetryReadResult> {
     try {
       const files = (await fs.readdir(config.afloatHistoryDir))
         .filter((f: string) => f.endsWith(".json"))
@@ -868,10 +835,7 @@ export function buildServer(): McpServer {
       const data: Array<Record<string, any>> = [];
       for (const file of files) {
         try {
-          const content = await fs.readFile(
-            path.join(config.afloatHistoryDir, file),
-            "utf-8",
-          );
+          const content = await fs.readFile(path.join(config.afloatHistoryDir, file), "utf-8");
           data.push(JSON.parse(content));
         } catch {
           parseErrors++;
@@ -906,8 +870,7 @@ export function buildServer(): McpServer {
       const age = hoursSince(entry.timestamp);
       if (age === null || age > windowHours) continue;
       const status = entry.status;
-      if (status !== "failure" && status !== "error" && status !== "blocked")
-        continue;
+      if (status !== "failure" && status !== "error" && status !== "blocked") continue;
       if (targetSource && entry.source !== targetSource) continue;
 
       const key = `${entry.source ?? "unknown"}:${entry.tool ?? "unknown"}`;
@@ -922,15 +885,12 @@ export function buildServer(): McpServer {
         latest.metadata && typeof latest.metadata === "object"
           ? (latest.metadata as Record<string, unknown>)
           : {};
-      const repo =
-        typeof meta.relatedRepo === "string" ? meta.relatedRepo : undefined;
+      const repo = typeof meta.relatedRepo === "string" ? meta.relatedRepo : undefined;
 
       signals.push({
         type: "repeated_failure",
         confidence: Math.min(0.9, 0.4 + group.length * 0.15),
-        sourceSignals: group
-          .map((e) => `${e.source}/${e.tool} @ ${e.timestamp}`)
-          .slice(0, 5),
+        sourceSignals: group.map((e) => `${e.source}/${e.tool} @ ${e.timestamp}`).slice(0, 5),
         targetRepo: repo,
         title: `Repeated ${key} failures (${group.length}x in ${windowHours}h)`,
         hypothesis: `The ${key} path has a recurring issue causing ${group.length} failures. An experiment could isolate the root cause.`,
@@ -954,11 +914,7 @@ export function buildServer(): McpServer {
     for (const snapshot of snapshots) {
       if (!Array.isArray(snapshot.repos)) continue;
       for (const repo of snapshot.repos) {
-        if (
-          typeof repo.name !== "string" ||
-          typeof repo.healthScore !== "number"
-        )
-          continue;
+        if (typeof repo.name !== "string" || typeof repo.healthScore !== "number") continue;
         if (targetRepo && repo.name !== targetRepo) continue;
         if (!repoScores.has(repo.name)) repoScores.set(repo.name, []);
         repoScores.get(repo.name)!.push(repo.healthScore);
@@ -968,9 +924,7 @@ export function buildServer(): McpServer {
     for (const [name, scores] of repoScores) {
       const belowThreshold = scores.filter((s) => s < threshold).length;
       if (belowThreshold < 2) continue;
-      const avgScore = Math.round(
-        scores.reduce((a, b) => a + b, 0) / scores.length,
-      );
+      const avgScore = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
 
       signals.push({
         type: "low_health_trend",
@@ -1011,9 +965,7 @@ export function buildServer(): McpServer {
         type: "workflow_retry_failure",
         confidence: Math.min(0.85, 0.35 + group.length * 0.15),
         sourceSignals: group
-          .map(
-            (e) => `${wfId} status=${e.status} @ ${e.startedAt ?? "unknown"}`,
-          )
+          .map((e) => `${wfId} status=${e.status} @ ${e.startedAt ?? "unknown"}`)
           .slice(0, 5),
         title: `Workflow ${wfId} failing repeatedly (${group.length}x)`,
         hypothesis: `Workflow ${wfId} has failed ${group.length} times. An experiment could test the workflow in isolation or with modified parameters.`,
@@ -1046,10 +998,7 @@ export function buildServer(): McpServer {
       auditParseErrors: audit.parseErrors,
       snapshotParseErrors: snapshots.parseErrors,
       workflowParseErrors: workflows.parseErrors,
-      isDegraded:
-        audit.parseErrors > 0 ||
-        snapshots.parseErrors > 0 ||
-        workflows.parseErrors > 0,
+      isDegraded: audit.parseErrors > 0 || snapshots.parseErrors > 0 || workflows.parseErrors > 0,
     };
 
     const signals: PatternSignal[] = [
@@ -1080,23 +1029,18 @@ export function buildServer(): McpServer {
   }
 
   // Experiment suggest tool
-  server.registerTool(
+  registerTool(
     "experiment_suggest",
     {
       description:
         "Generate experiment proposals from detected patterns in audit failures, repo health trends, and workflow retries. " +
         "Returns ranked proposals. Set saveAsDraft: true to persist as draft experiments.",
       inputSchema: z.object({
-        repo: z
-          .string()
-          .optional()
-          .describe("Narrow suggestions to a specific repo"),
+        repo: z.string().optional().describe("Narrow suggestions to a specific repo"),
         source: z
           .string()
           .optional()
-          .describe(
-            "Narrow to a specific audit source (e.g. 'maintain-server')",
-          ),
+          .describe("Narrow to a specific audit source (e.g. 'maintain-server')"),
         saveAsDraft: z
           .boolean()
           .optional()
@@ -1118,7 +1062,11 @@ export function buildServer(): McpServer {
       maxProposals?: number;
     }) => {
       const rlMsg = readLimiter.check("experiment_suggest");
-      if (rlMsg) return { content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
+      if (rlMsg)
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }],
+          isError: true,
+        };
       await ensureDir();
       const maxProposals = args.maxProposals ?? 5;
       const { signals, degradation } = await detectLocalPatterns(args.repo, args.source);
@@ -1191,17 +1139,14 @@ export function buildServer(): McpServer {
 
 export async function startServer(): Promise<McpServer> {
   await ensureDir();
-  console.error(
-    `[${SERVER_NAME}] v${VERSION} starting — experiments: ${EXPERIMENTS_DIR}`,
-  );
+  console.error(`[${SERVER_NAME}] v${VERSION} starting — experiments: ${EXPERIMENTS_DIR}`);
   const server = buildServer();
   await server.connect(new StdioServerTransport());
   return server;
 }
 
 const isEntrypoint =
-  process.argv[1] != null &&
-  pathToFileURL(process.argv[1]).href === import.meta.url;
+  process.argv[1] != null && pathToFileURL(process.argv[1]).href === import.meta.url;
 
 if (isEntrypoint) {
   async function main() {

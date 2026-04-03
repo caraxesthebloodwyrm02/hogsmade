@@ -101,10 +101,7 @@ async function listWorkflows(): Promise<WorkflowDefinition[]> {
     const workflows: WorkflowDefinition[] = [];
     for (const file of files.filter((f: string) => f.endsWith(".json"))) {
       try {
-        const content = await fs.readFile(
-          path.join(WORKFLOWS_DIR, file),
-          "utf-8",
-        );
+        const content = await fs.readFile(path.join(WORKFLOWS_DIR, file), "utf-8");
         workflows.push(JSON.parse(content));
       } catch {
         /* skip corrupt */
@@ -121,10 +118,7 @@ async function saveExecution(exec: WorkflowExecution): Promise<void> {
   await atomicWriteJson(filepath, exec);
 }
 
-async function listExecutions(
-  limit: number,
-  workflowId?: string,
-): Promise<WorkflowExecution[]> {
+async function listExecutions(limit: number, workflowId?: string): Promise<WorkflowExecution[]> {
   try {
     const files = await fs.readdir(HISTORY_DIR);
     const executions: WorkflowExecution[] = [];
@@ -134,10 +128,7 @@ async function listExecutions(
       .reverse()
       .slice(0, limit * 2)) {
       try {
-        const content = await fs.readFile(
-          path.join(HISTORY_DIR, file),
-          "utf-8",
-        );
+        const content = await fs.readFile(path.join(HISTORY_DIR, file), "utf-8");
         const exec = JSON.parse(content) as WorkflowExecution;
         if (!workflowId || exec.workflowId === workflowId) {
           executions.push(exec);
@@ -214,22 +205,15 @@ export function buildServer(): McpServer {
               name: z.string().min(1).describe("Step name"),
               description: z.string().describe("What this step does"),
               command: z.string().optional().describe("Shell command to execute"),
-              rollbackCommand: z
-                .string()
-                .optional()
-                .describe("Command to run if this step fails"),
+              rollbackCommand: z.string().optional().describe("Command to run if this step fails"),
               timeout: z.number().optional().describe("Timeout in seconds"),
             }),
           )
           .min(1)
           .describe("Ordered list of workflow steps"),
-      }),
+      }) as any,
     },
-    async (args: {
-      name: string;
-      description: string;
-      steps: WorkflowStep[];
-    }) => {
+    async (args: { name: string; description: string; steps: WorkflowStep[] }) => {
       await ensureDataDir();
       const now = new Date().toISOString();
       const wf: WorkflowDefinition = {
@@ -257,11 +241,15 @@ export function buildServer(): McpServer {
     "workflow_list",
     {
       description: "List all workflow definitions",
-      inputSchema: z.object({}),
+      inputSchema: z.object({}) as any,
     },
     async () => {
       const rlMsg = readLimiter.check("workflow_list");
-      if (rlMsg) return { content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
+      if (rlMsg)
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }],
+          isError: true,
+        };
       await ensureDataDir();
       const workflows = await listWorkflows();
       return {
@@ -295,11 +283,15 @@ export function buildServer(): McpServer {
       description: "Get full details of a workflow definition",
       inputSchema: z.object({
         workflowId: z.string().min(1).describe("Workflow ID"),
-      }),
+      }) as any,
     },
     async (args: { workflowId: string }) => {
       const rlMsg = readLimiter.check("workflow_get");
-      if (rlMsg) return { content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
+      if (rlMsg)
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }],
+          isError: true,
+        };
       await ensureDataDir();
       const wf = await loadWorkflow(args.workflowId);
       if (!wf) {
@@ -334,7 +326,7 @@ export function buildServer(): McpServer {
           .optional()
           .default(true)
           .describe("If true (default), validate without executing commands"),
-      }),
+      }) as any,
     },
     async (args: { workflowId: string; dryRun?: boolean }) => {
       await ensureDataDir();
@@ -401,19 +393,17 @@ export function buildServer(): McpServer {
     {
       description: "List recent workflow executions",
       inputSchema: z.object({
-        limit: z
-          .number()
-          .min(1)
-          .max(100)
-          .optional()
-          .default(10)
-          .describe("Max entries"),
+        limit: z.number().min(1).max(100).optional().default(10).describe("Max entries"),
         workflowId: z.string().optional().describe("Filter by workflow ID"),
-      }),
+      }) as any,
     },
     async (args: { limit?: number; workflowId?: string }) => {
       const rlMsg = readLimiter.check("workflow_history");
-      if (rlMsg) return { content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
+      if (rlMsg)
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }],
+          isError: true,
+        };
       await ensureDataDir();
       const executions = await listExecutions(args.limit ?? 10, args.workflowId);
       return {
@@ -455,8 +445,8 @@ export async function startServer(): Promise<McpServer> {
   return server;
 }
 
-const isEntrypoint = process.argv[1] != null
-  && pathToFileURL(process.argv[1]).href === import.meta.url;
+const isEntrypoint =
+  process.argv[1] != null && pathToFileURL(process.argv[1]).href === import.meta.url;
 
 if (isEntrypoint) {
   async function main() {

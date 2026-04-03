@@ -44,10 +44,12 @@ export function buildServer(): McpServer {
     name: SERVER_NAME,
     version: VERSION,
   });
+  // Avoid deep generic instantiation in strict mode.
+  const tool = server.tool.bind(server) as any;
 
   // ── health_check ──
 
-  server.tool(
+  tool(
     "health_check",
     "Check overview-server health and data source connectivity",
     {},
@@ -127,7 +129,7 @@ export function buildServer(): McpServer {
 
   // ── checkpoint ──
 
-  server.tool(
+  tool(
     "checkpoint",
     "Generate a checkpoint assessment — answers 'Where do I stand right now?' with trajectory, cluster health, drift detection, and trust signals",
     {
@@ -150,9 +152,13 @@ export function buildServer(): McpServer {
           "Controls detail level. 'summary' for one-screen, 'deep' for full drill-down. Default: standard",
         ),
     },
-    async ({ focus, since, depth }) => {
+    async ({ focus, since, depth }: any) => {
       const rlMsg = readLimiter.check("checkpoint");
-      if (rlMsg) return { content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
+      if (rlMsg)
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }],
+          isError: true,
+        };
       const startMs = Date.now();
 
       try {
@@ -220,8 +226,7 @@ export async function startServer(): Promise<McpServer> {
 }
 
 const isEntrypoint =
-  process.argv[1] != null &&
-  pathToFileURL(process.argv[1]).href === import.meta.url;
+  process.argv[1] != null && pathToFileURL(process.argv[1]).href === import.meta.url;
 
 if (isEntrypoint) {
   async function main() {

@@ -16,7 +16,11 @@ import { emitAudit } from "@cascade/shared-types/audit-client";
 import { McpLogger } from "@cascade/shared-types/mcp-logger";
 import { GateSecurityPolicy } from "@cascade/shared-types/security-policy";
 import { SessionRateLimiter } from "@cascade/shared-types/session-rate-limit";
-import { ActionClass, createHardenedMeritGuard, HardenedMcpMeritGuard } from "@cascade/shared-types";
+import {
+  ActionClass,
+  createHardenedMeritGuard,
+  HardenedMcpMeritGuard,
+} from "@cascade/shared-types";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import crypto from "crypto";
@@ -77,9 +81,7 @@ async function fileExists(filepath: string): Promise<boolean> {
 
 function isPathWithin(parent: string, candidate: string): boolean {
   const relative = path.relative(path.resolve(parent), path.resolve(candidate));
-  return (
-    relative !== "" && !relative.startsWith("..") && !path.isAbsolute(relative)
-  );
+  return relative !== "" && !relative.startsWith("..") && !path.isAbsolute(relative);
 }
 
 function parseEnvelopeTimestamp(value: unknown): number | null {
@@ -109,11 +111,7 @@ function isRecognizedTarget(target: unknown): boolean {
   if (!normalized) {
     return false;
   }
-  if (
-    normalized === "grid-server" ||
-    normalized === "gate" ||
-    normalized === "gate/incoming"
-  ) {
+  if (normalized === "grid-server" || normalized === "gate" || normalized === "gate/incoming") {
     return true;
   }
 
@@ -137,10 +135,7 @@ async function readJsonFile<T>(filepath: string): Promise<T | null> {
   }
 }
 
-async function readNdjsonFile(
-  filepath: string,
-  limit: number,
-): Promise<Record<string, unknown>[]> {
+async function readNdjsonFile(filepath: string, limit: number): Promise<Record<string, unknown>[]> {
   try {
     const content = await fs.readFile(filepath, "utf-8");
     const lines = content.trim().split("\n").filter(Boolean);
@@ -192,11 +187,8 @@ type NonceRegistryEntry = {
   burned_at?: string | null;
 };
 
-async function readNonceRegistry(): Promise<
-  Record<string, NonceRegistryEntry>
-> {
-  const data =
-    await readJsonFile<Record<string, NonceRegistryEntry>>(NONCE_REGISTRY_PATH);
+async function readNonceRegistry(): Promise<Record<string, NonceRegistryEntry>> {
+  const data = await readJsonFile<Record<string, NonceRegistryEntry>>(NONCE_REGISTRY_PATH);
   return data ?? {};
 }
 
@@ -207,16 +199,12 @@ async function atomicWriteJson(filepath: string, data: unknown): Promise<void> {
   await fs.rename(tmpPath, filepath);
 }
 
-async function writeNonceRegistry(
-  registry: Record<string, NonceRegistryEntry>,
-): Promise<void> {
+async function writeNonceRegistry(registry: Record<string, NonceRegistryEntry>): Promise<void> {
   await atomicWriteJson(NONCE_REGISTRY_PATH, registry);
 }
 
 /** Best-effort append to GATE-local audit log (audit.ndjson). */
-async function writeGateAudit(
-  entry: Record<string, unknown>,
-): Promise<void> {
+async function writeGateAudit(entry: Record<string, unknown>): Promise<void> {
   try {
     await fs.appendFile(AUDIT_PATH, JSON.stringify(entry) + "\n", "utf-8");
   } catch {
@@ -243,9 +231,7 @@ function validateGridApiUrl(raw: string): string | null {
   try {
     const parsed = new URL(raw);
     if (!ALLOWED_GRID_HOSTS.has(parsed.hostname)) {
-      logger.warn(
-        `GRID_API_URL host '${parsed.hostname}' not in allowlist — ignoring`,
-      );
+      logger.warn(`GRID_API_URL host '${parsed.hostname}' not in allowlist — ignoring`);
       return null;
     }
     if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
@@ -329,29 +315,25 @@ async function getEnhancedValidation(
   }
 
   try {
-    const payload = await gridApiPolicy.execute<Record<string, unknown>>(
-      "validate",
-      async () => {
-        const response = await fetch(`${gridApiUrl}/api/v1/gate/validate`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            source_agent: envelope["source_partition"],
-            target: envelope["target_partition"],
-            action: envelope["scope"],
-            payload_hash: envelope["payload_hash"],
-            test_status:
-              envelope["tests_passed"] === true ? "passing" : "failing",
-          }),
-        });
+    const payload = await gridApiPolicy.execute<Record<string, unknown>>("validate", async () => {
+      const response = await fetch(`${gridApiUrl}/api/v1/gate/validate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          source_agent: envelope["source_partition"],
+          target: envelope["target_partition"],
+          action: envelope["scope"],
+          payload_hash: envelope["payload_hash"],
+          test_status: envelope["tests_passed"] === true ? "passing" : "failing",
+        }),
+      });
 
-        if (!response.ok) {
-          throw new Error(`GRID-main responded with ${response.status}`);
-        }
+      if (!response.ok) {
+        throw new Error(`GRID-main responded with ${response.status}`);
+      }
 
-        return (await response.json()) as Record<string, unknown>;
-      },
-    );
+      return (await response.json()) as Record<string, unknown>;
+    });
 
     const approved = payload["approved"] === true;
     return {
@@ -377,6 +359,8 @@ export function buildServer(): McpServer {
     name: SERVER_NAME,
     version: VERSION,
   });
+  // Avoid deep generic instantiation cost in strict TS mode.
+  const registerTool = server.registerTool.bind(server) as any;
 
   // Initialize hardened merit guard for session-first identity enforcement
   const meritGuard = createHardenedMeritGuard(
@@ -401,9 +385,7 @@ export function buildServer(): McpServer {
       let pendingEnvelopes = 0;
       if (incomingExists) {
         const files = await fs.readdir(INCOMING_DIR);
-        pendingEnvelopes = files.filter((f: string) =>
-          f.endsWith(".json"),
-        ).length;
+        pendingEnvelopes = files.filter((f: string) => f.endsWith(".json")).length;
       }
 
       return {
@@ -431,8 +413,7 @@ export function buildServer(): McpServer {
     "list_targets",
     {
       actionClass: ActionClass.ANALYSIS_READ,
-      description:
-        "List all GATE deployment targets with their status and permissions",
+      description: "List all GATE deployment targets with their status and permissions",
       inputSchema: z.object({}),
     },
     async () => {
@@ -446,9 +427,7 @@ export function buildServer(): McpServer {
         const exists = await fileExists(target.path);
         let hasPackageJson = false;
         if (exists) {
-          hasPackageJson = await fileExists(
-            path.join(target.path, "package.json"),
-          );
+          hasPackageJson = await fileExists(path.join(target.path, "package.json"));
         }
         results.push({
           name,
@@ -464,7 +443,7 @@ export function buildServer(): McpServer {
   );
 
   // Validate envelope structure (dry-run step 1)
-  server.registerTool(
+  registerTool(
     "validate_envelope",
     {
       description:
@@ -473,9 +452,7 @@ export function buildServer(): McpServer {
         envelopePath: z
           .string()
           .optional()
-          .describe(
-            "Path to envelope JSON file. If omitted, scans incoming/ directory.",
-          ),
+          .describe("Path to envelope JSON file. If omitted, scans incoming/ directory."),
       }),
     },
     async (args: { envelopePath?: string }) => {
@@ -539,16 +516,14 @@ export function buildServer(): McpServer {
               type: "text" as const,
               text: JSON.stringify({
                 valid: false,
-                error:
-                  "Envelope path must reference a JSON file under GATE/incoming/",
+                error: "Envelope path must reference a JSON file under GATE/incoming/",
               }),
             },
           ],
         };
       }
 
-      const envelope =
-        await readJsonFile<Record<string, unknown>>(envelopePath);
+      const envelope = await readJsonFile<Record<string, unknown>>(envelopePath);
       if (!envelope) {
         return {
           content: [
@@ -570,20 +545,14 @@ export function buildServer(): McpServer {
       checks.push({
         check: "required_fields",
         passed: missing.length === 0,
-        detail:
-          missing.length > 0
-            ? `Missing: ${missing.join(", ")}`
-            : "All fields present",
+        detail: missing.length > 0 ? `Missing: ${missing.join(", ")}` : "All fields present",
       });
 
       // Trusted source
       const source = envelope["source_partition"] as string | undefined;
       checks.push({
         check: "trusted_source",
-        passed:
-          TRUSTED_SOURCES.length > 0 &&
-          source != null &&
-          TRUSTED_SOURCES.includes(source),
+        passed: TRUSTED_SOURCES.length > 0 && source != null && TRUSTED_SOURCES.includes(source),
         detail:
           TRUSTED_SOURCES.length > 0
             ? `Source: ${source ?? "undefined"}`
@@ -600,9 +569,7 @@ export function buildServer(): McpServer {
         const canonical = JSON.stringify(canonicalize(envelope["payload"]));
         const computed = computeHash(canonical);
         const declared =
-          typeof envelope["payload_hash"] === "string"
-            ? envelope["payload_hash"].trim()
-            : "";
+          typeof envelope["payload_hash"] === "string" ? envelope["payload_hash"].trim() : "";
         const computedBuffer = Buffer.from(computed, "hex");
         const declaredBuffer = /^[a-f0-9]{64}$/i.test(declared)
           ? Buffer.from(declared, "hex")
@@ -660,19 +627,13 @@ export function buildServer(): McpServer {
       if (config.gateUserSecret) {
         const expected =
           payloadHash != null && machineFp != null && nonceVal != null
-            ? computeUserFingerprint(
-                config.gateUserSecret,
-                payloadHash,
-                machineFp,
-                nonceVal,
-              )
+            ? computeUserFingerprint(config.gateUserSecret, payloadHash, machineFp, nonceVal)
             : "";
         const bufDeclared =
           typeof userFp === "string" && /^[a-f0-9]+$/i.test(userFp)
             ? Buffer.from(userFp, "hex")
             : null;
-        const bufExpected =
-          expected.length > 0 ? Buffer.from(expected, "hex") : null;
+        const bufExpected = expected.length > 0 ? Buffer.from(expected, "hex") : null;
         const passed =
           bufDeclared != null &&
           bufExpected != null &&
@@ -697,10 +658,7 @@ export function buildServer(): McpServer {
 
       // Nonce: must be registered and not already burned (replay protection)
       const nonceRegistry = await readNonceRegistry();
-      const noncePolicy = GateSecurityPolicy.validateNonce(
-        nonceVal,
-        nonceRegistry,
-      );
+      const noncePolicy = GateSecurityPolicy.validateNonce(nonceVal, nonceRegistry);
       const nonceEntry = nonceVal != null ? nonceRegistry[nonceVal] : undefined;
       const nonceRegistered = nonceVal != null && nonceEntry != null;
       const nonceNotReused = nonceRegistered && nonceEntry.burned !== true;
@@ -732,13 +690,9 @@ export function buildServer(): McpServer {
       }
 
       const allPassed = checks.every((c) => c.passed);
-      const enhancedValidation = allPassed
-        ? await getEnhancedValidation(envelope)
-        : null;
+      const enhancedValidation = allPassed ? await getEnhancedValidation(envelope) : null;
       // P-INT-005: Fail closed when remote validation unavailable for production targets
-      const targetPartition = envelope["target_partition"] as
-        | string
-        | undefined;
+      const targetPartition = envelope["target_partition"] as string | undefined;
       if (enhancedValidation && enhancedValidation["approved"] === false) {
         const failClosedPolicy = GateSecurityPolicy.failClosedPolicy(
           !enhancedValidation["flags"]?.toString().includes("grid_unavailable"),
@@ -820,28 +774,19 @@ export function buildServer(): McpServer {
   );
 
   // Query GATE audit log
-  server.registerTool(
+  registerTool(
     "gate_audit",
     {
-      description:
-        "Query the GATE audit log (audit.ndjson) for verification events",
+      description: "Query the GATE audit log (audit.ndjson) for verification events",
       inputSchema: z.object({
-        limit: z
-          .number()
-          .min(1)
-          .max(200)
-          .optional()
-          .default(20)
-          .describe("Max entries to return"),
+        limit: z.number().min(1).max(200).optional().default(20).describe("Max entries to return"),
       }),
     },
     async (args: { limit?: number }) => {
       const rlMsg = readLimiter.check("gate_audit");
       if (rlMsg)
         return {
-          content: [
-            { type: "text" as const, text: JSON.stringify({ error: rlMsg }) },
-          ],
+          content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }],
           isError: true,
         };
       const entries = await readNdjsonFile(AUDIT_PATH, args.limit ?? 20);
@@ -857,24 +802,20 @@ export function buildServer(): McpServer {
   );
 
   // Nonce registry status
-  server.registerTool(
+  registerTool(
     "nonce_status",
     {
-      description:
-        "Check the GATE nonce registry — list burned nonces and registry health",
+      description: "Check the GATE nonce registry — list burned nonces and registry health",
       inputSchema: z.object({}),
     },
     async () => {
       const rlMsg = readLimiter.check("nonce_status");
       if (rlMsg)
         return {
-          content: [
-            { type: "text" as const, text: JSON.stringify({ error: rlMsg }) },
-          ],
+          content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }],
           isError: true,
         };
-      const registry =
-        await readJsonFile<Record<string, unknown>>(NONCE_REGISTRY_PATH);
+      const registry = await readJsonFile<Record<string, unknown>>(NONCE_REGISTRY_PATH);
       if (!registry) {
         return {
           content: [
@@ -910,33 +851,26 @@ export function buildServer(): McpServer {
   );
 
   // Check target permissions
-  server.registerTool(
+  registerTool(
     "check_permission",
     {
-      description:
-        "Check if a specific action is permitted on a deployment target",
+      description: "Check if a specific action is permitted on a deployment target",
       inputSchema: z.object({
         target: z
           .string()
           .min(1)
-          .describe(
-            'Deployment target name (e.g. "grid-server", "echoes-server")',
-          ),
+          .describe('Deployment target name (e.g. "grid-server", "echoes-server")'),
         action: z
           .string()
           .min(1)
-          .describe(
-            'Action to check (e.g. "deploy", "run_tests", "start_server")',
-          ),
+          .describe('Action to check (e.g. "deploy", "run_tests", "start_server")'),
       }),
     },
     async (args: { target: string; action: string }) => {
       const rlMsg = readLimiter.check("check_permission");
       if (rlMsg)
         return {
-          content: [
-            { type: "text" as const, text: JSON.stringify({ error: rlMsg }) },
-          ],
+          content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }],
           isError: true,
         };
       const t = DEPLOYMENT_TARGETS[args.target];
@@ -990,9 +924,7 @@ export function buildServer(): McpServer {
     const rawUrl = process.env.GRID_API_URL?.trim() || config.gridApiUrl || "";
     const gridApiUrl = rawUrl ? validateGridApiUrl(rawUrl) : null;
     if (!gridApiUrl) {
-      throw new Error(
-        "GRID_API_URL not configured or invalid — admission tools unavailable",
-      );
+      throw new Error("GRID_API_URL not configured or invalid — admission tools unavailable");
     }
 
     const result = await gridApiPolicy.execute<T>("admission", async () => {
@@ -1018,9 +950,7 @@ export function buildServer(): McpServer {
     headers: Record<string, string> = {},
   ): string[] {
     const searchSpace = JSON.stringify({ payload, headers }).toLowerCase();
-    return LOCAL_PROFIT_MASK_SIGNALS.filter((signal) =>
-      searchSpace.includes(signal),
-    );
+    return LOCAL_PROFIT_MASK_SIGNALS.filter((signal) => searchSpace.includes(signal));
   }
 
   async function buildLocalComplianceFallback(args: {
@@ -1044,9 +974,7 @@ export function buildServer(): McpServer {
     const contextCeiling = 25_000;
     const contextCeilingExceeded = estimatedTokens > contextCeiling;
     if (contextCeilingExceeded) {
-      violations.push(
-        `context_overflow: ${estimatedTokens} tokens > ceiling ${contextCeiling}`,
-      );
+      violations.push(`context_overflow: ${estimatedTokens} tokens > ceiling ${contextCeiling}`);
     }
 
     let hasRequiredStructure = true;
@@ -1079,10 +1007,7 @@ export function buildServer(): McpServer {
 
     let policy: Record<string, unknown> = {};
     try {
-      policy = await callAdmission<Record<string, unknown>>(
-        "GET",
-        "/admission/policy",
-      );
+      policy = await callAdmission<Record<string, unknown>>("GET", "/admission/policy");
     } catch {
       // Leave policy empty when the backend is broadly unavailable.
     }
@@ -1105,7 +1030,7 @@ export function buildServer(): McpServer {
   }
 
   // admission_policy — Get the current policy billboard
-  server.registerTool(
+  registerTool(
     "admission_policy",
     {
       description:
@@ -1118,17 +1043,12 @@ export function buildServer(): McpServer {
       const rlMsg = readLimiter.check("admission_policy");
       if (rlMsg)
         return {
-          content: [
-            { type: "text" as const, text: JSON.stringify({ error: rlMsg }) },
-          ],
+          content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }],
           isError: true,
         };
 
       try {
-        const result = await callAdmission<Record<string, unknown>>(
-          "GET",
-          "/admission/policy",
-        );
+        const result = await callAdmission<Record<string, unknown>>("GET", "/admission/policy");
 
         emitAudit({
           source: SERVER_NAME,
@@ -1138,9 +1058,7 @@ export function buildServer(): McpServer {
         });
 
         return {
-          content: [
-            { type: "text" as const, text: JSON.stringify(result, null, 2) },
-          ],
+          content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
         };
       } catch (error) {
         emitAudit({
@@ -1163,7 +1081,7 @@ export function buildServer(): McpServer {
   );
 
   // admission_entity_report — Get entity violation history and penalty tier
-  server.registerTool(
+  registerTool(
     "admission_entity_report",
     {
       description:
@@ -1174,18 +1092,14 @@ export function buildServer(): McpServer {
         entity_id: z
           .string()
           .min(1)
-          .describe(
-            "Entity identifier (X-Entity-Id header value, api:key prefix, or ip:address)",
-          ),
+          .describe("Entity identifier (X-Entity-Id header value, api:key prefix, or ip:address)"),
       }),
     },
     async (args: { entity_id: string }) => {
       const rlMsg = readLimiter.check("admission_entity_report");
       if (rlMsg)
         return {
-          content: [
-            { type: "text" as const, text: JSON.stringify({ error: rlMsg }) },
-          ],
+          content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }],
           isError: true,
         };
 
@@ -1207,9 +1121,7 @@ export function buildServer(): McpServer {
         });
 
         return {
-          content: [
-            { type: "text" as const, text: JSON.stringify(result, null, 2) },
-          ],
+          content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
         };
       } catch (error) {
         emitAudit({
@@ -1232,7 +1144,7 @@ export function buildServer(): McpServer {
   );
 
   // admission_compliance_check — Dry-run payload compliance check
-  server.registerTool(
+  registerTool(
     "admission_compliance_check",
     {
       description:
@@ -1240,17 +1152,12 @@ export function buildServer(): McpServer {
         "the pipeline. Reports profit-mask signals, context token estimate, structural " +
         "conformance, and entity penalty context. Use before submission to pre-validate.",
       inputSchema: z.object({
-        payload: z
-          .record(z.unknown())
-          .describe("Request payload body to check"),
+        payload: z.record(z.unknown()).describe("Request payload body to check"),
         headers: z
           .record(z.string())
           .optional()
           .describe("Request headers to scan for profit-mask signals"),
-        entity_id: z
-          .string()
-          .optional()
-          .describe("Entity ID for penalty context lookup"),
+        entity_id: z.string().optional().describe("Entity ID for penalty context lookup"),
         target_path: z
           .string()
           .optional()
@@ -1267,9 +1174,7 @@ export function buildServer(): McpServer {
       const rlMsg = readLimiter.check("admission_compliance_check");
       if (rlMsg)
         return {
-          content: [
-            { type: "text" as const, text: JSON.stringify({ error: rlMsg }) },
-          ],
+          content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }],
           isError: true,
         };
 
@@ -1297,9 +1202,7 @@ export function buildServer(): McpServer {
         });
 
         return {
-          content: [
-            { type: "text" as const, text: JSON.stringify(result, null, 2) },
-          ],
+          content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
         };
       } catch (error) {
         const errorMessage = String(error);
@@ -1320,9 +1223,7 @@ export function buildServer(): McpServer {
           });
 
           return {
-            content: [
-              { type: "text" as const, text: JSON.stringify(fallback, null, 2) },
-            ],
+            content: [{ type: "text" as const, text: JSON.stringify(fallback, null, 2) }],
           };
         }
 
@@ -1346,7 +1247,7 @@ export function buildServer(): McpServer {
   );
 
   // admission_apply_penalty — Manually apply penalty to entity
-  server.registerTool(
+  registerTool(
     "admission_apply_penalty",
     {
       description:
@@ -1376,10 +1277,7 @@ export function buildServer(): McpServer {
           .optional()
           .default("mcp_enforcement")
           .describe("Human-readable reason for the penalty"),
-        metadata: z
-          .record(z.unknown())
-          .optional()
-          .describe("Additional context metadata"),
+        metadata: z.record(z.unknown()).optional().describe("Additional context metadata"),
       }),
     },
     async (args: {
@@ -1392,9 +1290,7 @@ export function buildServer(): McpServer {
       const rlMsg = readLimiter.check("admission_apply_penalty");
       if (rlMsg)
         return {
-          content: [
-            { type: "text" as const, text: JSON.stringify({ error: rlMsg }) },
-          ],
+          content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }],
           isError: true,
         };
 
@@ -1426,9 +1322,7 @@ export function buildServer(): McpServer {
         });
 
         return {
-          content: [
-            { type: "text" as const, text: JSON.stringify(result, null, 2) },
-          ],
+          content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
         };
       } catch (error) {
         emitAudit({
@@ -1451,7 +1345,7 @@ export function buildServer(): McpServer {
   );
 
   // admission_bannered_entities — List all bannered entities
-  server.registerTool(
+  registerTool(
     "admission_bannered_entities",
     {
       description:
@@ -1463,9 +1357,7 @@ export function buildServer(): McpServer {
       const rlMsg = readLimiter.check("admission_bannered_entities");
       if (rlMsg)
         return {
-          content: [
-            { type: "text" as const, text: JSON.stringify({ error: rlMsg }) },
-          ],
+          content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }],
           isError: true,
         };
 
@@ -1483,9 +1375,7 @@ export function buildServer(): McpServer {
         });
 
         return {
-          content: [
-            { type: "text" as const, text: JSON.stringify(result, null, 2) },
-          ],
+          content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
         };
       } catch (error) {
         emitAudit({
@@ -1508,7 +1398,7 @@ export function buildServer(): McpServer {
   );
 
   // admission_stats — Get gate operational statistics
-  server.registerTool(
+  registerTool(
     "admission_stats",
     {
       description:
@@ -1520,17 +1410,12 @@ export function buildServer(): McpServer {
       const rlMsg = readLimiter.check("admission_stats");
       if (rlMsg)
         return {
-          content: [
-            { type: "text" as const, text: JSON.stringify({ error: rlMsg }) },
-          ],
+          content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }],
           isError: true,
         };
 
       try {
-        const result = await callAdmission<Record<string, unknown>>(
-          "GET",
-          "/admission/stats",
-        );
+        const result = await callAdmission<Record<string, unknown>>("GET", "/admission/stats");
 
         emitAudit({
           source: SERVER_NAME,
@@ -1543,9 +1428,7 @@ export function buildServer(): McpServer {
         });
 
         return {
-          content: [
-            { type: "text" as const, text: JSON.stringify(result, null, 2) },
-          ],
+          content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
         };
       } catch (error) {
         emitAudit({
@@ -1600,14 +1483,10 @@ export async function startServer(): Promise<McpServer> {
         );
       }
     } else {
-      logger.warn(
-        `GRID_API_URL configured but invalid — remote validation disabled.`,
-      );
+      logger.warn(`GRID_API_URL configured but invalid — remote validation disabled.`);
     }
   } else {
-    logger.info(
-      `GRID_API_URL not set — remote gate validation disabled (local-only mode).`,
-    );
+    logger.info(`GRID_API_URL not set — remote gate validation disabled (local-only mode).`);
   }
 
   const server = buildServer();
@@ -1616,8 +1495,7 @@ export async function startServer(): Promise<McpServer> {
 }
 
 const isEntrypoint =
-  process.argv[1] != null &&
-  pathToFileURL(process.argv[1]).href === import.meta.url;
+  process.argv[1] != null && pathToFileURL(process.argv[1]).href === import.meta.url;
 
 if (isEntrypoint) {
   async function main() {

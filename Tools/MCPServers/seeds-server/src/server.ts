@@ -41,13 +41,37 @@ const SNAPSHOTS_DIR = path.join(DATA_DIR, "snapshots");
 
 // Known repos in Seeds ecosystem — path overrides SEEDS_ROOT join when present
 const KNOWN_REPOS: Record<string, { description: string; stack: string; path?: string }> = {
-  "GRID": { description: "Full-stack AI framework", stack: "Python 3.13+, FastAPI, ChromaDB", path: "/home/caraxes/roots/GRID" },
-  "afloat": { description: "Next.js workflow app", stack: "TypeScript, Next.js, Stripe", path: "/home/caraxes/canopy/afloat" },
-  "echoes": { description: "Audit & observability platform", stack: "Python 3.12+, FastAPI", path: "/home/caraxes/canopy/echoes" },
-  "glimpse-engine": { description: "Cognitive rendering engine", stack: "JavaScript", path: "/home/caraxes/roots/glimpse-engine" },
-  "apiguard": { description: "API security gateway", stack: "Python 3.13+", path: "/home/caraxes/roots/apiguard" },
-  "Vision": { description: "AI vision project", stack: "Python", path: "/home/caraxes/grove/Vision" },
-  "hogsmade": { description: "MCP server monorepo", stack: "TypeScript, Node.js", path: "/home/caraxes/CascadeProjects" },
+  GRID: {
+    description: "Full-stack AI framework",
+    stack: "Python 3.13+, FastAPI, ChromaDB",
+    path: "/home/caraxes/roots/GRID",
+  },
+  afloat: {
+    description: "Next.js workflow app",
+    stack: "TypeScript, Next.js, Stripe",
+    path: "/home/caraxes/canopy/afloat",
+  },
+  echoes: {
+    description: "Audit & observability platform",
+    stack: "Python 3.12+, FastAPI",
+    path: "/home/caraxes/canopy/echoes",
+  },
+  "glimpse-engine": {
+    description: "Cognitive rendering engine",
+    stack: "JavaScript",
+    path: "/home/caraxes/roots/glimpse-engine",
+  },
+  apiguard: {
+    description: "API security gateway",
+    stack: "Python 3.13+",
+    path: "/home/caraxes/roots/apiguard",
+  },
+  Vision: { description: "AI vision project", stack: "Python", path: "/home/caraxes/grove/Vision" },
+  hogsmade: {
+    description: "MCP server monorepo",
+    stack: "TypeScript, Node.js",
+    path: "/home/caraxes/CascadeProjects",
+  },
 };
 
 // Rate limiting for expensive scans
@@ -109,10 +133,10 @@ async function getDiscoveredRepoNames(): Promise<string[]> {
       const entries = await fs.readdir(root, { withFileTypes: true });
       for (const entry of entries as { isDirectory(): boolean; name: string }[]) {
         if (
-          entry.isDirectory()
-          && !KNOWN_REPOS[entry.name]
-          && !entry.name.startsWith(".")
-          && !REPO_SKIP_LIST.has(entry.name)
+          entry.isDirectory() &&
+          !KNOWN_REPOS[entry.name] &&
+          !entry.name.startsWith(".") &&
+          !REPO_SKIP_LIST.has(entry.name)
         ) {
           discovered.add(entry.name);
         }
@@ -177,10 +201,7 @@ async function fileExists(filepath: string): Promise<boolean> {
   }
 }
 
-async function runGitCommand(
-  repoPath: string,
-  args: string[]
-): Promise<string | null> {
+async function runGitCommand(repoPath: string, args: string[]): Promise<string | null> {
   try {
     const { stdout } = await execFileAsync("git", args, {
       cwd: repoPath,
@@ -218,20 +239,13 @@ async function checkRepoHealth(repoName: string): Promise<RepoHealth> {
   if (health.hasGit) {
     health.branch = (await runGitCommand(repoPath, ["branch", "--show-current"])) ?? undefined;
 
-    const statusOutput = await runGitCommand(repoPath, [
-      "status",
-      "--porcelain",
-    ]);
+    const statusOutput = await runGitCommand(repoPath, ["status", "--porcelain"]);
     if (statusOutput !== null) {
       const lines = statusOutput.split("\n").filter(Boolean);
       health.uncommittedChanges = lines.length;
     }
 
-    const lastCommit = await runGitCommand(repoPath, [
-      "log",
-      "-1",
-      "--format=%cr|||%s",
-    ]);
+    const lastCommit = await runGitCommand(repoPath, ["log", "-1", "--format=%cr|||%s"]);
     if (lastCommit) {
       const [age, message] = lastCommit.split("|||");
       health.lastCommitAge = age;
@@ -242,12 +256,7 @@ async function checkRepoHealth(repoName: string): Promise<RepoHealth> {
   }
 
   // Check dependency files
-  const depFiles = [
-    "pyproject.toml",
-    "requirements.txt",
-    "package.json",
-    "Cargo.toml",
-  ];
+  const depFiles = ["pyproject.toml", "requirements.txt", "package.json", "Cargo.toml"];
   for (const dep of depFiles) {
     if (await fileExists(path.join(repoPath, dep))) {
       health.hasDependencyFile = true;
@@ -361,17 +370,21 @@ export function buildServer(): McpServer {
     name: SERVER_NAME,
     version: VERSION,
   });
+  // Avoid deep generic inference cost from complex schemas.
+  const registerTool = server.registerTool.bind(server) as any;
 
   // Health check
-  server.registerTool(
+  registerTool(
     "health_check",
     { description: "Check seeds-server health and data store status" },
     async () => {
       await ensureDataDir();
-      const rootsStatus = await Promise.all(SEEDS_ROOTS.map(async (root) => ({
-        root,
-        exists: await fileExists(root),
-      })));
+      const rootsStatus = await Promise.all(
+        SEEDS_ROOTS.map(async (root) => ({
+          root,
+          exists: await fileExists(root),
+        })),
+      );
       const seedsExists = rootsStatus.some((root) => root.exists);
       let repoCount = 0;
       if (seedsExists) {
@@ -406,16 +419,16 @@ export function buildServer(): McpServer {
                 timestamp: new Date().toISOString(),
               },
               null,
-              2
+              2,
             ),
           },
         ],
       };
-    }
+    },
   );
 
   // Scan all repos
-  server.registerTool(
+  registerTool(
     "ecosystem_scan",
     {
       description:
@@ -431,11 +444,17 @@ export function buildServer(): McpServer {
     },
     async (args: { saveSnapshot?: boolean }) => {
       const rlMsg = readLimiter.check("ecosystem_scan");
-      if (rlMsg) return { content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
+      if (rlMsg)
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }],
+          isError: true,
+        };
       if (process.env.NODE_ENV !== "test") {
         const rateLimitMsg = checkScanRateLimit("ecosystem_scan");
         if (rateLimitMsg) {
-          return { content: [{ type: "text" as const, text: JSON.stringify({ error: rateLimitMsg }) }] };
+          return {
+            content: [{ type: "text" as const, text: JSON.stringify({ error: rateLimitMsg }) }],
+          };
         }
       }
       await ensureDataDir();
@@ -454,7 +473,9 @@ export function buildServer(): McpServer {
       const existingRepos = repos.filter((r) => r.exists);
       const overallScore =
         existingRepos.length > 0
-          ? Math.round(existingRepos.reduce((sum, r) => sum + r.healthScore, 0) / existingRepos.length)
+          ? Math.round(
+              existingRepos.reduce((sum, r) => sum + r.healthScore, 0) / existingRepos.length,
+            )
           : 0;
       const activeCount = existingRepos.filter((r) => r.healthScore >= 60).length;
       const staleCount = existingRepos.filter((r) => r.healthScore < 40 && r.exists).length;
@@ -515,16 +536,16 @@ export function buildServer(): McpServer {
                 })),
               },
               null,
-              2
+              2,
             ),
           },
         ],
       };
-    }
+    },
   );
 
   // Single repo detail
-  server.registerTool(
+  registerTool(
     "repo_detail",
     {
       description: "Get detailed health information for a single Seeds repository",
@@ -537,7 +558,11 @@ export function buildServer(): McpServer {
     },
     async (args: { repoName: string }) => {
       const rlMsg = readLimiter.check("repo_detail");
-      if (rlMsg) return { content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
+      if (rlMsg)
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }],
+          isError: true,
+        };
       const health = await checkRepoHealth(args.repoName);
       const knownInfo = KNOWN_REPOS[args.repoName];
 
@@ -560,16 +585,16 @@ export function buildServer(): McpServer {
                 stack: knownInfo?.stack ?? "unknown",
               },
               null,
-              2
+              2,
             ),
           },
         ],
       };
-    }
+    },
   );
 
   // Bookmark management — add
-  server.registerTool(
+  registerTool(
     "bookmark_add",
     {
       description:
@@ -578,11 +603,7 @@ export function buildServer(): McpServer {
         repo: z.string().min(1).describe("Repository name"),
         filepath: z.string().optional().describe("Optional file path within the repo"),
         note: z.string().min(1).describe("What to remember about this bookmark"),
-        tags: z
-          .array(z.string())
-          .optional()
-          .default([])
-          .describe("Tags for categorization"),
+        tags: z.array(z.string()).optional().default([]).describe("Tags for categorization"),
       }),
     },
     async (args: { repo: string; filepath?: string; note: string; tags?: string[] }) => {
@@ -607,11 +628,11 @@ export function buildServer(): McpServer {
           },
         ],
       };
-    }
+    },
   );
 
   // Bookmark management — list
-  server.registerTool(
+  registerTool(
     "bookmark_list",
     {
       description: "List bookmarks with optional filtering by repo or tag",
@@ -629,7 +650,11 @@ export function buildServer(): McpServer {
     },
     async (args: { repo?: string; tag?: string; limit?: number }) => {
       const rlMsg = readLimiter.check("bookmark_list");
-      if (rlMsg) return { content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
+      if (rlMsg)
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }],
+          isError: true,
+        };
       await ensureDataDir();
       let bookmarks = await loadBookmarks();
 
@@ -650,11 +675,11 @@ export function buildServer(): McpServer {
           },
         ],
       };
-    }
+    },
   );
 
   // Trend analysis
-  server.registerTool(
+  registerTool(
     "ecosystem_trend",
     {
       description:
@@ -671,7 +696,11 @@ export function buildServer(): McpServer {
     },
     async (args: { limit?: number }) => {
       const rlMsg = readLimiter.check("ecosystem_trend");
-      if (rlMsg) return { content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }], isError: true };
+      if (rlMsg)
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }],
+          isError: true,
+        };
       await ensureDataDir();
       const snapshots = await listSnapshots(args.limit ?? 5);
 
@@ -735,12 +764,12 @@ export function buildServer(): McpServer {
                 previousTimestamp: previous.timestamp,
               },
               null,
-              2
+              2,
             ),
           },
         ],
       };
-    }
+    },
   );
 
   // ── Start ──
@@ -756,8 +785,8 @@ export async function startServer(): Promise<McpServer> {
   return server;
 }
 
-const isEntrypoint = process.argv[1] != null
-  && pathToFileURL(process.argv[1]).href === import.meta.url;
+const isEntrypoint =
+  process.argv[1] != null && pathToFileURL(process.argv[1]).href === import.meta.url;
 
 if (isEntrypoint) {
   async function main() {
