@@ -3,29 +3,29 @@ name: Root TypeScript CI
 on:
   pull_request:
     paths:
-      - '.github/workflows/root-typescript-ci.yml'
-      - 'Components/shared-types/**'
-      - 'Components/shared-resilience/**'
-      - 'Components/shared-pipeline/**'
-      - 'Tools/MCPServers/eligibility-server/**'
-      - 'Tools/MCPServers/afloat-server/**'
-      - 'Tools/MCPServers/echoes-server/**'
-      - 'Tools/MCPServers/grid-server/**'
-      - 'Tools/MCPServers/glimpse-server/**'
-      - 'Tools/MCPServers/lots-server/**'
-      - 'Tools/MCPServers/maintain-server/**'
-      - 'Tools/MCPServers/mangrove-server/**'
-      - 'Tools/MCPServers/overview-server/**'
-      - 'Tools/MCPServers/pulse-server/**'
-      - 'Tools/MCPServers/seeds-server/**'
-      - 'Applications/glimpse-artifact/**'
-      - 'Applications/glimpse-engine/**'
-      - 'Components/tests/glimpse-engine.test.mjs'
-      - 'Components/scripts/bootstrap_glimpse_logic.mjs'
-      - 'glimpse.master.yaml'
-      - 'sample-innovations.json'
-      - 'sample-scenario.json'
-      - 'sample-cross-context-demo.json'
+      - ".github/workflows/root-typescript-ci.yml"
+      - "Components/shared-types/**"
+      - "Components/shared-resilience/**"
+      - "Components/shared-pipeline/**"
+      - "Tools/MCPServers/eligibility-server/**"
+      - "Tools/MCPServers/afloat-server/**"
+      - "Tools/MCPServers/echoes-server/**"
+      - "Tools/MCPServers/grid-server/**"
+      - "Tools/MCPServers/glimpse-server/**"
+      - "Tools/MCPServers/lots-server/**"
+      - "Tools/MCPServers/maintain-server/**"
+      - "Tools/MCPServers/mangrove-server/**"
+      - "Tools/MCPServers/overview-server/**"
+      - "Tools/MCPServers/pulse-server/**"
+      - "Tools/MCPServers/seeds-server/**"
+      - "Applications/glimpse-artifact/**"
+      - "Applications/glimpse-engine/**"
+      - "Components/tests/glimpse-engine.test.mjs"
+      - "Components/scripts/bootstrap_glimpse_logic.mjs"
+      - "glimpse.master.yaml"
+      - "sample-innovations.json"
+      - "sample-scenario.json"
+      - "sample-cross-context-demo.json"
   workflow_dispatch:
 
 permissions:
@@ -47,17 +47,44 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: "22"
           cache: npm
           cache-dependency-path: Components/shared-types/package-lock.json
 
       - run: npm ci -w @cascade/shared-types
       - run: npm run build -w @cascade/shared-types
 
+  shared-packages-coverage:
+    name: Shared packages test + coverage
+    needs: shared-types
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: true
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: |
+            Components/shared-types/package-lock.json
+            Components/shared-resilience/package-lock.json
+            Components/shared-pipeline/package-lock.json
+
+      - name: Build shared-types
+        run: npm ci -w @cascade/shared-types && npm run build -w @cascade/shared-types
+
+      - name: Test shared-resilience with coverage
+        run: npm ci -w @cascade/shared-resilience && npm run test:coverage -w @cascade/shared-resilience
+
+      - name: Test shared-pipeline with coverage
+        run: npm ci -w @cascade/shared-pipeline && npm run test:coverage -w @cascade/shared-pipeline
+
   # ── MCP servers (matrix) ───────────────────────────────────────────────────
   servers:
     name: Server Build & Test (${{ matrix.project }})
-    needs: shared-types
+    needs: [shared-types, shared-packages-coverage]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -88,7 +115,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: "22"
           cache: npm
           cache-dependency-path: |
             Components/shared-types/package-lock.json
@@ -107,11 +134,11 @@ jobs:
 
       - name: Build server
         env:
-          NODE_OPTIONS: '--max-old-space-size=8192'
+          NODE_OPTIONS: "--max-old-space-size=8192"
         run: npm ci -w ${{ matrix.project }} && npm run build -w ${{ matrix.project }}
 
-      - name: Test server
-        run: npm test -w ${{ matrix.project }}
+      - name: Test server with coverage
+        run: npm run test:coverage -w ${{ matrix.project }}
 
   # ── Glimpse Artifact (React component library) ────────────────────────────
   glimpse-artifact:
@@ -124,7 +151,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: "22"
           cache: npm
           cache-dependency-path: |
             Components/shared-types/package-lock.json
@@ -140,7 +167,7 @@ jobs:
 
       - name: Build eligibility-server
         env:
-          NODE_OPTIONS: '--max-old-space-size=8192'
+          NODE_OPTIONS: "--max-old-space-size=8192"
         run: npm ci -w eligibility-server && npm run build -w eligibility-server
 
       - name: Check
@@ -157,7 +184,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: "22"
           cache: npm
           cache-dependency-path: Applications/glimpse-engine/package-lock.json
 

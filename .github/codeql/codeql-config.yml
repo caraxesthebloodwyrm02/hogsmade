@@ -1,0 +1,4 @@
+# Exclude GRID submodule — CodeQL runs in GRID's own repo; avoid duplicate analysis here.
+name: hogsmade-js-ts
+paths-ignore:
+  - Projects/GRID-main

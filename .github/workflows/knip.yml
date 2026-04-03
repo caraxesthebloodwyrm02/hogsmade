@@ -1,0 +1,38 @@
+name: Knip
+
+on:
+  pull_request:
+    paths:
+      - "Components/**"
+      - "Tools/MCPServers/**"
+      - "knip.json"
+      - "Components/scripts/run-knip-workspaces.mjs"
+      - "package.json"
+      - "package-lock.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: knip-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  knip:
+    name: Unused files & dependencies (knip)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Run knip per workspace
+        run: npm run knip
