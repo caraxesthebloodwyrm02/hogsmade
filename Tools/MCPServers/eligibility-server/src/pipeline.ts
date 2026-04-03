@@ -2,6 +2,7 @@ import {
   createPipeline,
   findResidue,
   type Pass,
+  type PassInput,
   type ResidueStack,
 } from "@cascade/shared-pipeline";
 import { getDefaultAttributeCatalog } from "./catalog.js";
@@ -452,7 +453,7 @@ function normalizeArgsPass(): Pass<EligibilityState> {
   return {
     id: "normalize-runtime-args",
     description: "Clamp and stabilize routine args",
-    execute(input) {
+    execute(input: PassInput<EligibilityState>) {
       const args = normalizeRoutineArgs(input.state.args);
       const argvSignature = buildArgvSignature(args);
       const seed = buildSeed(input.state.candidates, args);
@@ -477,7 +478,7 @@ function catalogPass(): Pass<EligibilityState> {
   return {
     id: "build-attribute-catalog",
     description: "Attach default eligibility attributes",
-    execute(input) {
+    execute(input: PassInput<EligibilityState>) {
       const catalog = getDefaultAttributeCatalog();
       return {
         state: { ...input.state, catalog },
@@ -491,7 +492,7 @@ function weightPass(): Pass<EligibilityState> {
   return {
     id: "derive-analog-weights",
     description: "Derive seeded analog weights from args, seed, and candidate properties",
-    execute(input) {
+    execute(input: PassInput<EligibilityState>) {
       const weights = scoreWeights(
         input.state.candidates,
         input.state.catalog,
@@ -511,7 +512,7 @@ function hierarchyPass(): Pass<EligibilityState> {
   return {
     id: "project-vertical-hierarchy",
     description: "Project dimension and overall hierarchy slices",
-    execute(input) {
+    execute(input: PassInput<EligibilityState>) {
       const hierarchy = deriveHierarchy(input.state.weights, input.state.args);
       return {
         state: { ...input.state, hierarchy },
@@ -532,7 +533,7 @@ function conditionPass(): Pass<EligibilityState> {
   return {
     id: "derive-condition-notes",
     description: "Derive condition notes from hierarchy thresholds",
-    execute(input) {
+    execute(input: PassInput<EligibilityState>) {
       const conditions = deriveConditions(input.state.hierarchy);
       return {
         state: { ...input.state, conditions },
@@ -546,7 +547,7 @@ function observationPass(): Pass<EligibilityState> {
   return {
     id: "derive-observation-notes",
     description: "Attach observation notes and UI/UX-grounded surface hints",
-    execute(input) {
+    execute(input: PassInput<EligibilityState>) {
       const observations = deriveObservations(input.state.hierarchy);
       const summary = summarizeResult(input.state.candidates, input.state.hierarchy);
       return {
@@ -562,7 +563,7 @@ function formsPass(): Pass<EligibilityState> {
     id: "compile-reusable-forms",
     description:
       "Compile runtime-backed result into server, rule, agent, skill, and reference forms",
-    execute(input) {
+    execute(input: PassInput<EligibilityState>) {
       const forms = compileFormArtifacts({
         args: input.state.args,
         seed: input.state.seed,
@@ -585,7 +586,7 @@ function tablePass(): Pass<EligibilityState> {
   return {
     id: "emit-collection-table",
     description: "Emit row and column output with provenance credit",
-    execute(input) {
+    execute(input: PassInput<EligibilityState>) {
       const table = buildCollectionTable({
         args: input.state.args,
         argvSignature: input.state.argvSignature,

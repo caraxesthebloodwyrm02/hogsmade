@@ -101,13 +101,6 @@ jobs:
           - overview-server
           - pulse-server
           - seeds-server
-        include:
-          # grid-server needs shared-resilience
-          - project: grid-server
-            needs_resilience: true
-          # eligibility-server needs shared-pipeline
-          - project: eligibility-server
-            needs_pipeline: true
     steps:
       - uses: actions/checkout@v6
         with:
@@ -125,11 +118,11 @@ jobs:
         run: npm ci -w @cascade/shared-types && npm run build -w @cascade/shared-types
 
       - name: Build shared-resilience
-        if: matrix.needs_resilience
+        if: matrix.project == 'grid-server'
         run: npm ci -w @cascade/shared-resilience && npm run build -w @cascade/shared-resilience
 
       - name: Build shared-pipeline
-        if: matrix.needs_pipeline
+        if: matrix.project == 'eligibility-server'
         run: npm ci -w @cascade/shared-pipeline && npm run build -w @cascade/shared-pipeline
 
       - name: Build server
