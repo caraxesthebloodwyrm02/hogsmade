@@ -299,6 +299,8 @@ memory.md
 # ==========================
 # EXPERIMENTS
 # ==========================
+# Local LOTS / agent scratch dir (LOTS_EXPERIMENTS_DIR); not part of reviewed source
+experiments/
 experiments/thread.txt
 experiments/*.log
 experiments/*.tmp
