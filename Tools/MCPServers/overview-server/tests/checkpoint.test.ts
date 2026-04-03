@@ -49,7 +49,10 @@ describe("checkpoint aggregation", () => {
         },
       ],
     };
-    await fs.writeFile(path.join(snapshotsDir, "snapshot-2025-01-01.json"), JSON.stringify(snapshot));
+    await fs.writeFile(
+      path.join(snapshotsDir, "snapshot-2025-01-01.json"),
+      JSON.stringify(snapshot),
+    );
 
     // Write audit events
     const now = new Date().toISOString();
@@ -121,7 +124,9 @@ describe("checkpoint aggregation", () => {
   it("trajectory has a valid direction with single snapshot", async () => {
     const checkpoint = await aggregateCheckpoint({});
     // With a single snapshot the trajectory depends on audit data — any direction is valid
-    expect(["stable", "improving", "degrading", "unknown"]).toContain(checkpoint.trajectory.direction);
+    expect(["stable", "improving", "degrading", "unknown"]).toContain(
+      checkpoint.trajectory.direction,
+    );
     expect(checkpoint.trajectory.evidence.length).toBeGreaterThan(0);
   });
 });

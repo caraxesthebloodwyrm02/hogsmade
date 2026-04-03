@@ -52,7 +52,12 @@ export function parseExperimentDashboardResponse(payload: unknown): Experiment[]
 }
 
 export function useExperiments(): UseExperimentsResult {
-  const { data: experiments, loading, error, retry } = useDataSource<Experiment[]>({
+  const {
+    data: experiments,
+    loading,
+    error,
+    retry,
+  } = useDataSource<Experiment[]>({
     fetcher: async (signal) => {
       const res = await fetch("/api/experiments", { signal });
       if (!res.ok) throw new Error(`Experiments fetch failed (${res.status})`);

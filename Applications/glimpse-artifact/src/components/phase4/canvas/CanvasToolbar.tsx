@@ -1,5 +1,5 @@
-import React from 'react';
-import { cn } from '@/lib/utils';
+import React from "react";
+import { cn } from "@/lib/utils";
 
 interface CanvasToolbarAction {
   id: string;
@@ -20,10 +20,10 @@ export function CanvasToolbar({ actions, className }: CanvasToolbarProps) {
   return (
     <div
       className={cn(
-        'fixed top-4 left-1/2 -translate-x-1/2 z-30',
-        'flex items-center gap-2 px-3 py-2',
-        'glass-panel shadow-token-md',
-        className
+        "fixed top-4 left-1/2 -translate-x-1/2 z-30",
+        "flex items-center gap-2 px-3 py-2",
+        "glass-panel shadow-token-md",
+        className,
       )}
       role="toolbar"
       aria-label="Canvas tools"
@@ -34,14 +34,14 @@ export function CanvasToolbar({ actions, className }: CanvasToolbarProps) {
           onClick={action.onClick}
           disabled={action.disabled}
           className={cn(
-            'flex items-center gap-2 px-3 py-2 rounded-md',
-            'min-h-touch min-w-touch',
-            'font-body text-sm font-medium',
-            'transition-colors duration-fast',
-            'focus:outline-none focus:ring-2 focus:ring-teal-500',
+            "flex items-center gap-2 px-3 py-2 rounded-md",
+            "min-h-touch min-w-touch",
+            "font-body text-sm font-medium",
+            "transition-colors duration-fast",
+            "focus:outline-none focus:ring-2 focus:ring-teal-500",
             action.disabled
-              ? 'text-ink-muted cursor-not-allowed opacity-50'
-              : 'text-ink hover:bg-surface-raised active:bg-teal-100'
+              ? "text-ink-muted cursor-not-allowed opacity-50"
+              : "text-ink hover:bg-surface-raised active:bg-teal-100",
           )}
           aria-label={action.label}
           title={action.label}

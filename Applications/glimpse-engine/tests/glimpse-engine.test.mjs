@@ -18,10 +18,7 @@ import { rankViews } from "../glimpse-engine/view-specs.js";
 
 const config = parseMasterConfig(DEFAULT_MASTER_YAML);
 const execFileAsync = promisify(execFile);
-const repoRoot = path.resolve(
-  fileURLToPath(new URL(".", import.meta.url)),
-  "..",
-);
+const repoRoot = path.resolve(fileURLToPath(new URL(".", import.meta.url)), "..");
 
 async function loadJson(relativePath) {
   return JSON.parse(await readFile(path.join(repoRoot, relativePath), "utf8"));
@@ -52,15 +49,9 @@ test("async pipeline supports web grounding without null confidence values", asy
   assert.ok(ctx);
   assert.ok(ctx.groundedInsights.length > 0);
   assert.ok(
-    ctx.groundedInsights.every(
-      (insight) => insight.grounding?.basis === "web-cross-reference",
-    ),
+    ctx.groundedInsights.every((insight) => insight.grounding?.basis === "web-cross-reference"),
   );
-  assert.ok(
-    ctx.groundedInsights.every((insight) =>
-      Number.isFinite(insight.adjustedConfidence),
-    ),
-  );
+  assert.ok(ctx.groundedInsights.every((insight) => Number.isFinite(insight.adjustedConfidence)));
 });
 
 test("narrative dataset uses the same pipeline and surfaces narrative plus geography", async () => {
@@ -105,10 +96,7 @@ test("mixed ambiguous data remains stable across repeated runs", () => {
     first.contextLenses.map((lens) => lens.id),
     second.contextLenses.map((lens) => lens.id),
   );
-  assert.deepEqual(
-    rankViews(first, config, "analyst"),
-    rankViews(second, config, "analyst"),
-  );
+  assert.deepEqual(rankViews(first, config, "analyst"), rankViews(second, config, "analyst"));
 });
 
 test("conversational rule creation compiles into a valid map-support rule", () => {
@@ -125,9 +113,7 @@ test("conversational rule creation compiles into a valid map-support rule", () =
     ),
   );
   assert.ok(
-    result.rule.derive.some(
-      (action) => action.action === "prefer_view" && action.view === "map",
-    ),
+    result.rule.derive.some((action) => action.action === "prefer_view" && action.view === "map"),
   );
 });
 
@@ -165,8 +151,7 @@ test("function-backed rules fire and leave trace output", async () => {
   });
 
   const trace = ctx.ruleTraces.find(
-    (item) =>
-      item.ruleId === "innovation-keyword-support" && item.status === "fired",
+    (item) => item.ruleId === "innovation-keyword-support" && item.status === "fired",
   );
   assert.ok(trace);
   assert.equal(trace.mode, "function");
@@ -210,11 +195,7 @@ test("invalid argument shapes fail closed and do not mutate scoring", () => {
   );
 
   const report = validateConfigWithRegistry(broken);
-  assert.ok(
-    report.invalidArgs.some((entry) =>
-      entry.includes("innovation-keyword-support"),
-    ),
-  );
+  assert.ok(report.invalidArgs.some((entry) => entry.includes("innovation-keyword-support")));
 
   const ctx = runContextPipeline(
     [{ name: "Signal", description: "telegraph network" }],
@@ -223,9 +204,7 @@ test("invalid argument shapes fail closed and do not mutate scoring", () => {
     { presetId: "analyst" },
   );
   assert.ok(
-    ctx.validationReport.invalidArgs.some((entry) =>
-      entry.includes("taxonomy_score.min_score"),
-    ),
+    ctx.validationReport.invalidArgs.some((entry) => entry.includes("taxonomy_score.min_score")),
   );
   assert.equal(
     ctx.contextLenses.some((lens) => lens.id === "innovation"),
@@ -251,15 +230,9 @@ test("signal_signature detects acoustic field names after d.name fix", () => {
   const ctx = runContextPipeline(data, "json", config, {
     presetId: "signature",
   });
-  const trace = ctx.ruleTraces.find(
-    (t) => t.ruleId === "signal-signature-detection",
-  );
+  const trace = ctx.ruleTraces.find((t) => t.ruleId === "signal-signature-detection");
   assert.ok(trace, "signal-signature-detection should have a trace");
-  assert.equal(
-    trace.status,
-    "fired",
-    "should fire when acoustic fields present",
-  );
+  assert.equal(trace.status, "fired", "should fire when acoustic fields present");
   assert.ok(trace.output.value >= 2, "should match at least 2 signal fields");
 });
 
@@ -271,24 +244,14 @@ test("growth_pattern detects branching field names after d.name fix", () => {
   const ctx = runContextPipeline(data, "json", config, {
     presetId: "signature",
   });
-  const trace = ctx.ruleTraces.find(
-    (t) => t.ruleId === "growth-pattern-detection",
-  );
+  const trace = ctx.ruleTraces.find((t) => t.ruleId === "growth-pattern-detection");
   assert.ok(trace, "growth-pattern-detection should have a trace");
   assert.equal(trace.status, "fired", "should fire when branch fields present");
-  assert.ok(
-    trace.output.value >= 2,
-    "should match at least 2 branching signals",
-  );
+  assert.ok(trace.output.value >= 2, "should match at least 2 branching signals");
 });
 
 test("bootstrap validation report catches missing registry entries before runtime use", async () => {
-  const reportPath = path.join(
-    repoRoot,
-    "tmp",
-    "jupyter-notebook",
-    "test-validation-report.json",
-  );
+  const reportPath = path.join(repoRoot, "tmp", "jupyter-notebook", "test-validation-report.json");
   await execFileAsync(
     "node",
     [

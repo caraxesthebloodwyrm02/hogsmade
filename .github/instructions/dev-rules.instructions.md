@@ -1,6 +1,7 @@
 # Shared Development Rules
 
 Canonical sources:
+
 - `/home/caraxes/seed/templates/development-contract.md`
 - `/home/caraxes/.dev-rules.md`
 

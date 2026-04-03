@@ -76,11 +76,7 @@ describe("computeDimensionSimilarity", () => {
   });
 
   it("fuzzy matches similar space values", () => {
-    const result = computeDimensionSimilarity(
-      "New York",
-      "New York City",
-      "space"
-    );
+    const result = computeDimensionSimilarity("New York", "New York City", "space");
     assert.ok(result.score > 0.4, `Expected > 0.4, got ${result.score}`);
   });
 
@@ -109,11 +105,7 @@ describe("computeDimensionSimilarity", () => {
   });
 
   it("domain similarity uses token overlap", () => {
-    const result = computeDimensionSimilarity(
-      "computer science",
-      "computer engineering",
-      "domain"
-    );
+    const result = computeDimensionSimilarity("computer science", "computer engineering", "domain");
     assert.ok(result.score > 0.3, `Expected > 0.3, got ${result.score}`);
     assert.equal(result.method, "fuzzy-domain");
   });
@@ -122,7 +114,7 @@ describe("computeDimensionSimilarity", () => {
     const config = {
       semantic_packs: {
         synonym_groups: {
-          "bd": ["bangladesh", "bangla"],
+          bd: ["bangladesh", "bangla"],
         },
       },
     };

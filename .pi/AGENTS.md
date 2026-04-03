@@ -25,13 +25,13 @@ This workspace includes `pi-mangrove` via `.pi/settings.json`.
 
 ## Quick Commands
 
-| Need | Action |
-|------|--------|
-| DIO phase info | `dio:status` |
-| Security scan | `security:audit` |
+| Need            | Action                                 |
+| --------------- | -------------------------------------- |
+| DIO phase info  | `dio:status`                           |
+| Security scan   | `security:audit`                       |
 | Episode summary | `dio_episode_summary {"partIndex": 1}` |
-| Skill help | `/skill:iterate` |
-| Prompt audit | `/tuv-review` |
+| Skill help      | `/skill:iterate`                       |
+| Prompt audit    | `/tuv-review`                          |
 
 ## Network Isolation (UNPROVISIONED MODE)
 
@@ -44,6 +44,7 @@ This workspace includes `pi-mangrove` via `.pi/settings.json`.
 **Circuit Breaker**: 5 failures = 60s cooldown
 
 **Never**:
+
 - Make external API calls without explicit approval
 - Bypass localhost-only enforcement
 - Disable rate limiting or circuit breakers

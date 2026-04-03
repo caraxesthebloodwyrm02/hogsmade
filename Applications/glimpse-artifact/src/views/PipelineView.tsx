@@ -15,11 +15,15 @@ export function PipelineView() {
             <GitBranch className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="font-heading text-2xl font-bold text-ink tracking-tight" style={{ letterSpacing: '-0.02em' }}>
+            <h1
+              className="font-heading text-2xl font-bold text-ink tracking-tight"
+              style={{ letterSpacing: "-0.02em" }}
+            >
               CI/CD Pipeline
             </h1>
             <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-muted mt-1">
-              <span className="text-teal-500">⑂</span> PR lifecycle kanban: Pending → Scanning → Building → Merged, with fix queue.
+              <span className="text-teal-500">⑂</span> PR lifecycle kanban: Pending → Scanning →
+              Building → Merged, with fix queue.
             </p>
           </div>
         </div>

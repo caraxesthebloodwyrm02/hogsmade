@@ -30,9 +30,7 @@ export function computeTrust(
 
   // Builder perspective — per cluster
   for (const cluster of clusters) {
-    relationships.push(
-      computeBuilderTrust(cluster, data, drift),
-    );
+    relationships.push(computeBuilderTrust(cluster, data, drift));
   }
 
   // Ecosystem self-assessment
@@ -49,9 +47,10 @@ export function computeTrust(
   const validScores = builderRelationships
     .map((r) => r.confidence)
     .filter((c): c is number => c !== null);
-  const legacyScore = validScores.length > 0
-    ? Math.round(validScores.reduce((a, b) => a + b, 0) / validScores.length * 100)
-    : 50;
+  const legacyScore =
+    validScores.length > 0
+      ? Math.round((validScores.reduce((a, b) => a + b, 0) / validScores.length) * 100)
+      : 50;
 
   return { relationships, narrative, legacyScore };
 }
@@ -71,13 +70,25 @@ function computeBuilderTrust(
   // Cluster health
   if (cluster.clusterHealth >= 80) {
     score += 0.2;
-    basis.push({ signal: `Health ${cluster.clusterHealth}/100 (strong)`, weight: 0.2, sentiment: "positive" });
+    basis.push({
+      signal: `Health ${cluster.clusterHealth}/100 (strong)`,
+      weight: 0.2,
+      sentiment: "positive",
+    });
   } else if (cluster.clusterHealth >= 60) {
     score += 0.1;
-    basis.push({ signal: `Health ${cluster.clusterHealth}/100 (stable)`, weight: 0.1, sentiment: "positive" });
+    basis.push({
+      signal: `Health ${cluster.clusterHealth}/100 (stable)`,
+      weight: 0.1,
+      sentiment: "positive",
+    });
   } else if (cluster.clusterHealth > 0) {
     score -= 0.15;
-    basis.push({ signal: `Health ${cluster.clusterHealth}/100 (below threshold)`, weight: -0.15, sentiment: "negative" });
+    basis.push({
+      signal: `Health ${cluster.clusterHealth}/100 (below threshold)`,
+      weight: -0.15,
+      sentiment: "negative",
+    });
   }
 
   // Issue count
@@ -86,7 +97,11 @@ function computeBuilderTrust(
     basis.push({ signal: "No open issues", weight: 0.1, sentiment: "positive" });
   } else if (cluster.issueCount > 3) {
     score -= 0.1;
-    basis.push({ signal: `${cluster.issueCount} open issues`, weight: -0.1, sentiment: "negative" });
+    basis.push({
+      signal: `${cluster.issueCount} open issues`,
+      weight: -0.1,
+      sentiment: "negative",
+    });
   }
 
   // Drift items affecting this cluster
@@ -107,14 +122,22 @@ function computeBuilderTrust(
   }
 
   // Audit activity for cluster entities
-  const clusterAuditFailures = cluster.entities
-    .reduce((sum, e) => sum + e.auditSummary.failures, 0);
-  const clusterAuditEvents = cluster.entities
-    .reduce((sum, e) => sum + e.auditSummary.eventsInWindow, 0);
+  const clusterAuditFailures = cluster.entities.reduce(
+    (sum, e) => sum + e.auditSummary.failures,
+    0,
+  );
+  const clusterAuditEvents = cluster.entities.reduce(
+    (sum, e) => sum + e.auditSummary.eventsInWindow,
+    0,
+  );
 
   if (clusterAuditEvents > 0 && clusterAuditFailures === 0) {
     score += 0.1;
-    basis.push({ signal: `${clusterAuditEvents} audit events, zero failures`, weight: 0.1, sentiment: "positive" });
+    basis.push({
+      signal: `${clusterAuditEvents} audit events, zero failures`,
+      weight: 0.1,
+      sentiment: "positive",
+    });
   } else if (clusterAuditFailures > 0) {
     const penalty = Math.min(0.2, clusterAuditFailures * 0.05);
     score -= penalty;
@@ -137,10 +160,7 @@ function computeBuilderTrust(
 // The system looking at itself. Cares about: data source availability,
 // overall trajectory, whether it can see its own state clearly.
 
-function computeEcosystemSelfTrust(
-  data: AggregatedData,
-  drift: DriftReport,
-): TrustRelationship {
+function computeEcosystemSelfTrust(data: AggregatedData, drift: DriftReport): TrustRelationship {
   const basis: TrustBasisItem[] = [];
   let score = 0.5;
 
@@ -151,13 +171,25 @@ function computeEcosystemSelfTrust(
 
   if (coverage >= 0.8) {
     score += 0.15;
-    basis.push({ signal: `${available}/${total} data sources available`, weight: 0.15, sentiment: "positive" });
+    basis.push({
+      signal: `${available}/${total} data sources available`,
+      weight: 0.15,
+      sentiment: "positive",
+    });
   } else if (coverage >= 0.5) {
     score += 0.05;
-    basis.push({ signal: `${available}/${total} data sources available (partial visibility)`, weight: 0.05, sentiment: "neutral" });
+    basis.push({
+      signal: `${available}/${total} data sources available (partial visibility)`,
+      weight: 0.05,
+      sentiment: "neutral",
+    });
   } else {
     score -= 0.2;
-    basis.push({ signal: `Only ${available}/${total} data sources — limited self-awareness`, weight: -0.2, sentiment: "negative" });
+    basis.push({
+      signal: `Only ${available}/${total} data sources — limited self-awareness`,
+      weight: -0.2,
+      sentiment: "negative",
+    });
   }
 
   // Staleness
@@ -165,17 +197,29 @@ function computeEcosystemSelfTrust(
   if (staleCount > 0) {
     const penalty = Math.min(0.15, staleCount * 0.05);
     score -= penalty;
-    basis.push({ signal: `${staleCount} stale data source${staleCount === 1 ? "" : "s"}`, weight: -penalty, sentiment: "negative" });
+    basis.push({
+      signal: `${staleCount} stale data source${staleCount === 1 ? "" : "s"}`,
+      weight: -penalty,
+      sentiment: "negative",
+    });
   }
 
   // Overall ecosystem score
   if (data.latestSnapshot?.overallScore != null) {
     if (data.latestSnapshot.overallScore >= 80) {
       score += 0.15;
-      basis.push({ signal: `Ecosystem score ${data.latestSnapshot.overallScore}/100`, weight: 0.15, sentiment: "positive" });
+      basis.push({
+        signal: `Ecosystem score ${data.latestSnapshot.overallScore}/100`,
+        weight: 0.15,
+        sentiment: "positive",
+      });
     } else if (data.latestSnapshot.overallScore < 50) {
       score -= 0.15;
-      basis.push({ signal: `Ecosystem score ${data.latestSnapshot.overallScore}/100 (low)`, weight: -0.15, sentiment: "negative" });
+      basis.push({
+        signal: `Ecosystem score ${data.latestSnapshot.overallScore}/100 (low)`,
+        weight: -0.15,
+        sentiment: "negative",
+      });
     }
   } else {
     score -= 0.1;
@@ -203,10 +247,7 @@ function computeEcosystemSelfTrust(
 // Can someone new look at this and feel held? Cares about:
 // completeness, documentation signals, overall health, no alarming failures.
 
-function computeNewcomerTrust(
-  data: AggregatedData,
-  clusters: ClusterInsight[],
-): TrustRelationship {
+function computeNewcomerTrust(data: AggregatedData, clusters: ClusterInsight[]): TrustRelationship {
   const basis: TrustBasisItem[] = [];
 
   // If we don't have enough data, say so honestly
@@ -216,7 +257,9 @@ function computeNewcomerTrust(
       observer: "newcomer",
       subject: "ecosystem",
       confidence: null,
-      basis: [{ signal: "Not enough signal to form an impression", weight: 0, sentiment: "neutral" }],
+      basis: [
+        { signal: "Not enough signal to form an impression", weight: 0, sentiment: "neutral" },
+      ],
     };
   }
 
@@ -228,13 +271,25 @@ function computeNewcomerTrust(
 
   if (ratio >= 0.7) {
     score += 0.2;
-    basis.push({ signal: `${healthyClusters.length}/${clusters.length} clusters healthy — ecosystem feels coherent`, weight: 0.2, sentiment: "positive" });
+    basis.push({
+      signal: `${healthyClusters.length}/${clusters.length} clusters healthy — ecosystem feels coherent`,
+      weight: 0.2,
+      sentiment: "positive",
+    });
   } else if (ratio >= 0.4) {
     score += 0.05;
-    basis.push({ signal: `${healthyClusters.length}/${clusters.length} clusters healthy — mixed signals`, weight: 0.05, sentiment: "neutral" });
+    basis.push({
+      signal: `${healthyClusters.length}/${clusters.length} clusters healthy — mixed signals`,
+      weight: 0.05,
+      sentiment: "neutral",
+    });
   } else {
     score -= 0.15;
-    basis.push({ signal: `Only ${healthyClusters.length}/${clusters.length} clusters healthy`, weight: -0.15, sentiment: "negative" });
+    basis.push({
+      signal: `Only ${healthyClusters.length}/${clusters.length} clusters healthy`,
+      weight: -0.15,
+      sentiment: "negative",
+    });
   }
 
   // Failure visibility — are there alarming failures a newcomer would see?
@@ -244,10 +299,18 @@ function computeNewcomerTrust(
 
   if (totalFailures === 0) {
     score += 0.15;
-    basis.push({ signal: "No visible failures — clean first impression", weight: 0.15, sentiment: "positive" });
+    basis.push({
+      signal: "No visible failures — clean first impression",
+      weight: 0.15,
+      sentiment: "positive",
+    });
   } else if (totalFailures > 10) {
     score -= 0.2;
-    basis.push({ signal: `${totalFailures} failures visible — could feel chaotic`, weight: -0.2, sentiment: "negative" });
+    basis.push({
+      signal: `${totalFailures} failures visible — could feel chaotic`,
+      weight: -0.2,
+      sentiment: "negative",
+    });
   }
 
   // Active builder presence — does it feel maintained?
@@ -266,10 +329,7 @@ function computeNewcomerTrust(
 
 // ── Narrative Generation ──
 
-function generateNarrative(
-  relationships: TrustRelationship[],
-  drift: DriftReport,
-): string {
+function generateNarrative(relationships: TrustRelationship[], drift: DriftReport): string {
   const parts: string[] = [];
 
   // Builder cluster summaries — pick the strongest and weakest

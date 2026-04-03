@@ -4,26 +4,17 @@ import path from "path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 type TestServer = {
-  _registeredTools: Record<
-    string,
-    { inputSchema?: unknown; handler: (...args: any[]) => unknown }
-  >;
+  _registeredTools: Record<string, { inputSchema?: unknown; handler: (...args: any[]) => unknown }>;
 };
 
 function getToolNames(server: TestServer): string[] {
   return Object.keys(server._registeredTools);
 }
 
-async function invokeTool(
-  server: TestServer,
-  name: string,
-  args: Record<string, unknown> = {},
-) {
+async function invokeTool(server: TestServer, name: string, args: Record<string, unknown> = {}) {
   const tool = server._registeredTools[name];
   expect(tool).toBeDefined();
-  return tool.inputSchema
-    ? await tool.handler(args, {} as any)
-    : await tool.handler({} as any);
+  return tool.inputSchema ? await tool.handler(args, {} as any) : await tool.handler({} as any);
 }
 
 describe("lots-server smoke", () => {
@@ -88,9 +79,7 @@ describe("lots-server smoke", () => {
       JSON.stringify({
         timestamp: now,
         overallScore: 50,
-        repos: [
-          { name: "GRID-main", healthScore: 35, issues: ["stale", "no tests"] },
-        ],
+        repos: [{ name: "GRID-main", healthScore: 35, issues: ["stale", "no tests"] }],
       }),
       "utf-8",
     );
@@ -345,10 +334,7 @@ describe("lots-server smoke", () => {
   // ── P2: Catalog corruption ──
 
   it("fails closed on malformed catalog JSON", async () => {
-    const catalogPath = path.join(
-      process.env.LOTS_EXPERIMENTS_DIR!,
-      ".catalog.json",
-    );
+    const catalogPath = path.join(process.env.LOTS_EXPERIMENTS_DIR!, ".catalog.json");
     writeFileSync(catalogPath, "NOT VALID JSON{{{", "utf-8");
 
     const server = buildServer();
@@ -376,10 +362,7 @@ describe("lots-server smoke", () => {
   });
 
   it("fails closed on schema-invalid catalog", async () => {
-    const catalogPath = path.join(
-      process.env.LOTS_EXPERIMENTS_DIR!,
-      ".catalog.json",
-    );
+    const catalogPath = path.join(process.env.LOTS_EXPERIMENTS_DIR!, ".catalog.json");
     // Valid JSON but wrong shape — missing required fields
     writeFileSync(
       catalogPath,
@@ -443,12 +426,13 @@ describe("lots-server smoke", () => {
     // Write some malformed audit lines
     const auditPath = process.env.ECHOES_AUDIT_PATH!;
     const now = new Date().toISOString();
-    const lines = [
-      JSON.stringify({ timestamp: now, source: "x", tool: "y", status: "failure" }),
-      "NOT_JSON_LINE",
-      "{broken json",
-      JSON.stringify({ timestamp: now, source: "x", tool: "y", status: "failure" }),
-    ].join("\n") + "\n";
+    const lines =
+      [
+        JSON.stringify({ timestamp: now, source: "x", tool: "y", status: "failure" }),
+        "NOT_JSON_LINE",
+        "{broken json",
+        JSON.stringify({ timestamp: now, source: "x", tool: "y", status: "failure" }),
+      ].join("\n") + "\n";
     writeFileSync(auditPath, lines, "utf-8");
 
     const server = buildServer();

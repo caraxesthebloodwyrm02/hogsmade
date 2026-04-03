@@ -19,7 +19,9 @@
 
 const PATHWAY_DIR = "E:/Pathways/Networks/glimpse-traces";
 
-function pad2(n) { return String(n).padStart(2, "0"); }
+function pad2(n) {
+  return String(n).padStart(2, "0");
+}
 
 function dateStamp() {
   const d = new Date();
@@ -37,12 +39,13 @@ function isoNow() {
 export function buildPathwayEntry(pipelineResult, fileName) {
   if (!pipelineResult) return null;
 
-  const { profile, contextLenses, primaryLens, viewPreferences, ruleTraces, records } = pipelineResult;
+  const { profile, contextLenses, primaryLens, viewPreferences, ruleTraces, records } =
+    pipelineResult;
 
   // Root signals: which rules fired and what they found
   const roots = (ruleTraces || [])
-    .filter(t => t.status === "fired")
-    .map(t => ({
+    .filter((t) => t.status === "fired")
+    .map((t) => ({
       rule: t.ruleId,
       score: t.score ?? null,
       lens: t.derive?.[0]?.lens || null,
@@ -50,7 +53,7 @@ export function buildPathwayEntry(pipelineResult, fileName) {
     }));
 
   // Branch strengths: lens scores (thicker branch = stronger affinity)
-  const branches = (contextLenses || []).map(l => ({
+  const branches = (contextLenses || []).map((l) => ({
     lens: l.id,
     score: l.score,
     rank: l.rank,
@@ -123,7 +126,9 @@ export async function logPathway(entry) {
  */
 export async function initPathwayHandle() {
   if (typeof window === "undefined" || !window.showDirectoryPicker) {
-    console.info("[pathway-logger] No File System Access API — entries will be returned in-memory.");
+    console.info(
+      "[pathway-logger] No File System Access API — entries will be returned in-memory.",
+    );
     return null;
   }
   try {

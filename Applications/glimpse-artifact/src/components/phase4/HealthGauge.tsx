@@ -21,7 +21,15 @@ function scoreToLabel(score: number): string {
   return "At risk";
 }
 
-function TrendIcon({ trend, className, style }: { trend: "up" | "down" | "stable", className?: string, style?: React.CSSProperties }) {
+function TrendIcon({
+  trend,
+  className,
+  style,
+}: {
+  trend: "up" | "down" | "stable";
+  className?: string;
+  style?: React.CSSProperties;
+}) {
   if (trend === "up") return <TrendingUp className={className} style={style} />;
   if (trend === "down") return <TrendingDown className={className} style={style} />;
   return <Minus className={className} style={style} />;
@@ -31,12 +39,7 @@ function TrendIcon({ trend, className, style }: { trend: "up" | "down" | "stable
 const ARC_RADIUS = 40;
 const ARC_CIRCUMFERENCE = 2 * Math.PI * ARC_RADIUS;
 
-export function HealthGauge({
-  data,
-  loading,
-  error,
-  className,
-}: HealthGaugeProps) {
+export function HealthGauge({ data, loading, error, className }: HealthGaugeProps) {
   if (error) {
     return (
       <div
@@ -47,12 +50,8 @@ export function HealthGauge({
         role="alert"
       >
         <AlertTriangle className="w-6 h-6 text-rose-500 mb-2" />
-        <p className="font-body text-sm text-rose-600 font-medium text-center">
-          Loading error
-        </p>
-        <p className="font-body text-xs text-rose-500/80 mt-1 text-center line-clamp-2">
-          {error}
-        </p>
+        <p className="font-body text-sm text-rose-600 font-medium text-center">Loading error</p>
+        <p className="font-body text-xs text-rose-500/80 mt-1 text-center line-clamp-2">{error}</p>
       </div>
     );
   }
@@ -81,20 +80,34 @@ export function HealthGauge({
 
   return (
     <div
-      className={cn(
-        "flex flex-col items-center p-4 glass-panel min-h-[180px]",
-        className
-      )}
+      className={cn("flex flex-col items-center p-4 glass-panel min-h-[180px]", className)}
       role="figure"
       aria-label={`${data.repoName}: health score ${score} out of 100, ${label}`}
     >
       {/* Repo name + trend */}
       <div className="flex items-center justify-between w-full mb-3">
-        <span className="font-heading text-sm font-bold text-ink truncate pr-2 tracking-tight" title={data.repoName}>
+        <span
+          className="font-heading text-sm font-bold text-ink truncate pr-2 tracking-tight"
+          title={data.repoName}
+        >
           {data.repoName}
         </span>
-        <span aria-label={`trend ${data.trend}`} className="shrink-0 p-1 rounded-md border border-border-color/30 bg-canvas-bg/50">
-          <TrendIcon trend={data.trend} className="w-3 h-3" style={{ color: data.trend === 'up' ? 'var(--emerald-500)' : data.trend === 'down' ? 'var(--rose-500)' : 'var(--ink-muted)' }} />
+        <span
+          aria-label={`trend ${data.trend}`}
+          className="shrink-0 p-1 rounded-md border border-border-color/30 bg-canvas-bg/50"
+        >
+          <TrendIcon
+            trend={data.trend}
+            className="w-3 h-3"
+            style={{
+              color:
+                data.trend === "up"
+                  ? "var(--emerald-500)"
+                  : data.trend === "down"
+                    ? "var(--rose-500)"
+                    : "var(--ink-muted)",
+            }}
+          />
         </span>
       </div>
 
@@ -103,7 +116,9 @@ export function HealthGauge({
         <svg width="96" height="96" viewBox="0 0 96 96" className="absolute inset-0 -rotate-90">
           {/* Background track */}
           <circle
-            cx="48" cy="48" r={ARC_RADIUS}
+            cx="48"
+            cy="48"
+            r={ARC_RADIUS}
             fill="none"
             stroke="var(--border-color)"
             strokeWidth="5"
@@ -112,7 +127,9 @@ export function HealthGauge({
           />
           {/* Score arc */}
           <circle
-            cx="48" cy="48" r={ARC_RADIUS}
+            cx="48"
+            cy="48"
+            r={ARC_RADIUS}
             fill="none"
             stroke={color}
             strokeWidth="5"
@@ -120,11 +137,13 @@ export function HealthGauge({
             strokeDasharray={ARC_CIRCUMFERENCE}
             strokeDashoffset={dashOffset}
             className="animate-arc-reveal"
-            style={{
-              "--arc-length": ARC_CIRCUMFERENCE,
-              "--arc-offset": dashOffset,
-              filter: `drop-shadow(0 0 6px ${color})`,
-            } as React.CSSProperties}
+            style={
+              {
+                "--arc-length": ARC_CIRCUMFERENCE,
+                "--arc-offset": dashOffset,
+                filter: `drop-shadow(0 0 6px ${color})`,
+              } as React.CSSProperties
+            }
           />
         </svg>
         {/* Score number centered */}

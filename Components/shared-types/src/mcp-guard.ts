@@ -74,7 +74,7 @@ export class McpMeritGuard {
   private generateIdentity(sessionId?: string): string {
     return generateMcpIdentity(
       this.config.serverName,
-      sessionId === undefined || sessionId === null ? this.fallbackSessionId : sessionId
+      sessionId === undefined || sessionId === null ? this.fallbackSessionId : sessionId,
     );
   }
 
@@ -84,7 +84,7 @@ export class McpMeritGuard {
   private async checkPermission(
     entityId: string,
     actionClass: ActionClass,
-    requiredScope?: Scope
+    requiredScope?: Scope,
   ): Promise<PermissionCheckResult> {
     // Check cache first
     const cacheKey = `${entityId}:${actionClass}:${requiredScope || "none"}`;
@@ -96,18 +96,15 @@ export class McpMeritGuard {
     // Try to verify with GRID Mothership
     if (this.config.gridApiUrl) {
       try {
-        const response = await fetch(
-          `${this.config.gridApiUrl}/admission/check-permission`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              entity_id: entityId,
-              action_class: actionClass,
-              required_scope: requiredScope,
-            }),
-          }
-        );
+        const response = await fetch(`${this.config.gridApiUrl}/admission/check-permission`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            entity_id: entityId,
+            action_class: actionClass,
+            required_scope: requiredScope,
+          }),
+        });
 
         if (response.ok) {
           const result = (await response.json()) as PermissionCheckResult;
@@ -205,7 +202,7 @@ export class McpMeritGuard {
    * Log merit decision to audit trail
    */
   private async logMeritDecision(
-    entry: Omit<MeritAuditEntry, "timestamp" | "source">
+    entry: Omit<MeritAuditEntry, "timestamp" | "source">,
   ): Promise<void> {
     const auditEntry: MeritAuditEntry = {
       ...entry,
@@ -239,7 +236,7 @@ export class McpMeritGuard {
     server: McpServerShape,
     name: string,
     options: GuardedToolOptions,
-    handler: (args: TArgs, sessionId?: string) => Promise<TResult>
+    handler: (args: TArgs, sessionId?: string) => Promise<TResult>,
   ): void {
     server.registerTool(
       name,
@@ -255,7 +252,7 @@ export class McpMeritGuard {
         const permission = await this.checkPermission(
           entityId,
           options.actionClass,
-          options.requiredScope
+          options.requiredScope,
         );
 
         // Log the decision
@@ -276,15 +273,20 @@ export class McpMeritGuard {
             content: [
               {
                 type: "text" as const,
-                text: JSON.stringify({
-                  error: "INSUFFICIENT_MERIT_STANDING",
-                  entity_id: entityId,
-                  required_badge: permission.required_badge,
-                  actual_badge: permission.actual_badge,
-                  required_scope: options.requiredScope,
-                  message: `Insufficient merit standing for ${options.actionClass}. ` +
-                    `Required: ${permission.required_badge}, Current: ${permission.actual_badge}`,
-                }, null, 2),
+                text: JSON.stringify(
+                  {
+                    error: "INSUFFICIENT_MERIT_STANDING",
+                    entity_id: entityId,
+                    required_badge: permission.required_badge,
+                    actual_badge: permission.actual_badge,
+                    required_scope: options.requiredScope,
+                    message:
+                      `Insufficient merit standing for ${options.actionClass}. ` +
+                      `Required: ${permission.required_badge}, Current: ${permission.actual_badge}`,
+                  },
+                  null,
+                  2,
+                ),
               },
             ],
             isError: true,
@@ -301,7 +303,7 @@ export class McpMeritGuard {
             },
           ],
         };
-      }
+      },
     );
   }
 
@@ -311,7 +313,10 @@ export class McpMeritGuard {
    * This wraps all tools with a baseline check and allows individual tools
    * to have their own action_class metadata.
    */
-  wrapServer(server: McpServerShape, defaultActionClass: ActionClass = ActionClass.PUBLIC_BASIC): void {
+  wrapServer(
+    server: McpServerShape,
+    defaultActionClass: ActionClass = ActionClass.PUBLIC_BASIC,
+  ): void {
     // Note: This is a simplified wrapper. In production, you would
     // use a more sophisticated approach that preserves individual tool metadata.
 
@@ -322,19 +327,22 @@ export class McpMeritGuard {
     server.registerTool = (
       name: string,
       config: { description: string; inputSchema?: Record<string, unknown> },
-      handler: (args: Record<string, unknown>) => Promise<unknown>
+      handler: (args: Record<string, unknown>) => Promise<unknown>,
     ) => {
       // Extract action_class from description if present
       const actionMatch = config.description.match(/\[action_class:\s*(\w+)\]/);
-      const actionClass = actionMatch
-        ? (actionMatch[1] as ActionClass)
-        : defaultActionClass;
+      const actionClass = actionMatch ? (actionMatch[1] as ActionClass) : defaultActionClass;
 
-      this.registerGuardedTool(server, name, {
-        actionClass,
-        description: config.description,
-        inputSchema: config.inputSchema,
-      }, handler);
+      this.registerGuardedTool(
+        server,
+        name,
+        {
+          actionClass,
+          description: config.description,
+          inputSchema: config.inputSchema,
+        },
+        handler,
+      );
     };
   }
 }
@@ -342,16 +350,12 @@ export class McpMeritGuard {
 /**
  * Convenience function to create a merit guard for an MCP server
  */
-export function createMeritGuard(
-  serverName: string,
-  gridApiUrl?: string
-): McpMeritGuard {
+export function createMeritGuard(serverName: string, gridApiUrl?: string): McpMeritGuard {
   return new McpMeritGuard({
     serverName,
     gridApiUrl: gridApiUrl || process.env.GRID_API_URL,
   });
 }
-
 
 // ═══════════════════════════════════════════════════════════════════
 // VOID PATTERN MITIGATION - Focused, Tailored Custom Guards
@@ -380,7 +384,7 @@ export interface OperationResult<T> {
 export async function guardedOperation<T>(
   operation: () => Promise<T>,
   config: GuardConfig,
-  context: string
+  context: string,
 ): Promise<OperationResult<T>> {
   const startTime = Date.now();
   let retryCount = 0;
@@ -397,9 +401,12 @@ export async function guardedOperation<T>(
       };
     } catch (error) {
       retryCount++;
-      config.logger.error(`[${config.serverName}] ${context} failed (${retryCount}/${maxRetries})`, {
-        error: error instanceof Error ? error.message : String(error),
-      });
+      config.logger.error(
+        `[${config.serverName}] ${context} failed (${retryCount}/${maxRetries})`,
+        {
+          error: error instanceof Error ? error.message : String(error),
+        },
+      );
 
       if (retryCount >= maxRetries) {
         return {
@@ -431,7 +438,7 @@ export async function guardedAuditEmit(
   tool: string,
   status: "success" | "failure" | "blocked",
   config: { failClosed?: boolean; logger: Logger },
-  metadata?: Record<string, unknown>
+  metadata?: Record<string, unknown>,
 ): Promise<boolean> {
   const result = await guardedOperation(
     () => emitAudit({ source: serverName, tool, status, metadata }),
@@ -440,7 +447,7 @@ export async function guardedAuditEmit(
       logger: config.logger,
       maxRetries: 3,
     },
-    `audit:${tool}`
+    `audit:${tool}`,
   );
 
   if (!result.success && config.failClosed) {
@@ -459,7 +466,7 @@ export async function guardedFileWrite<T>(
   writeFn: () => Promise<void>,
   readBackFn: (() => Promise<T>) | null,
   config: GuardConfig,
-  filePath: string
+  filePath: string,
 ): Promise<OperationResult<T | void>> {
   const writeResult = await guardedOperation(writeFn, config, `write:${filePath}`);
 
@@ -468,7 +475,11 @@ export async function guardedFileWrite<T>(
   }
 
   if (readBackFn && config.verifyWrites) {
-    const verifyResult = await guardedOperation(readBackFn, { ...config, maxRetries: 1 }, `verify:${filePath}`);
+    const verifyResult = await guardedOperation(
+      readBackFn,
+      { ...config, maxRetries: 1 },
+      `verify:${filePath}`,
+    );
 
     if (!verifyResult.success) {
       return {
@@ -502,12 +513,12 @@ export async function guardedFileWrite<T>(
 export async function guardedServerStartup<T>(
   startFn: () => Promise<T>,
   serverName: string,
-  logger: Logger
+  logger: Logger,
 ): Promise<T> {
   const result = await guardedOperation(
     startFn,
     { serverName, logger, maxRetries: 1 },
-    "server-startup"
+    "server-startup",
   );
 
   if (!result.success) {
@@ -533,7 +544,7 @@ export const MITIGATION_SCOPES = {
   STANDARD: { failClosedOnAudit: false, maxRetries: 1, verifyWrites: false },
 } as const;
 
-export type MitigationScope = keyof typeof MITIGATION_SCOPES;
+type McpMitigationScopeKey = keyof typeof MITIGATION_SCOPES;
 
 /**
  * Create guard config from scope
@@ -541,7 +552,7 @@ export type MitigationScope = keyof typeof MITIGATION_SCOPES;
 export function createGuardConfig(
   serverName: string,
   logger: Logger,
-  scope: MitigationScope
+  scope: McpMitigationScopeKey,
 ): GuardConfig {
   return { serverName, logger, ...MITIGATION_SCOPES[scope] };
 }

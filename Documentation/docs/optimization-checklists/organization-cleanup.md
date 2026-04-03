@@ -3,6 +3,7 @@
 Improve codebase structure, naming conventions, and overall hygiene in GRID-main.
 
 ## Priority System
+
 - **P0**: Misplaced security modules, broken package structure
 - **P1**: Naming convention violations, module consolidation opportunities
 - **P2**: Import ordering, docstring consistency, file header standardization
@@ -12,6 +13,7 @@ Improve codebase structure, naming conventions, and overall hygiene in GRID-main
 ## P0: Critical Organization Issues
 
 **1. Security Module Placement**
+
 - [ ] Ensure all auth/security code lives in designated directories
   ```bash
   cd GRID-main
@@ -22,14 +24,16 @@ Improve codebase structure, naming conventions, and overall hygiene in GRID-main
   grep -rln "jwt\|password\|secret\|encrypt\|decrypt" src/ --include="*.py" | grep -v "auth\|security"
   ```
 
-**2. Package __init__.py Completeness**
-- [ ] Verify all Python packages have proper __init__.py files
+**2. Package **init**.py Completeness**
+
+- [ ] Verify all Python packages have proper **init**.py files
   ```bash
   cd GRID-main
   find src/ -type d -exec sh -c 'ls -la "$1"/__init__.py 2>/dev/null || echo "Missing __init__.py: $1"' _ {} \;
   ```
 
 **3. Circular Import Prevention**
+
 - [ ] Detect and resolve circular import chains
   ```bash
   cd GRID-main
@@ -42,6 +46,7 @@ Improve codebase structure, naming conventions, and overall hygiene in GRID-main
 ## P1: High-Impact Organization
 
 **4. Naming Convention Enforcement**
+
 - [ ] Validate module names follow snake_case
   ```bash
   cd GRID-main
@@ -49,6 +54,7 @@ Improve codebase structure, naming conventions, and overall hygiene in GRID-main
   ```
 
 **5. Router Organization**
+
 - [ ] Group related endpoints into cohesive router modules
   ```bash
   cd GRID-main
@@ -60,6 +66,7 @@ Improve codebase structure, naming conventions, and overall hygiene in GRID-main
   ```
 
 **6. Service Layer Separation**
+
 - [ ] Ensure business logic is in services/, not routers/
   ```bash
   cd GRID-main
@@ -69,6 +76,7 @@ Improve codebase structure, naming conventions, and overall hygiene in GRID-main
   ```
 
 **7. Configuration Consolidation**
+
 - [ ] Centralize all config in settings.py or config/
   ```bash
   cd GRID-main
@@ -77,6 +85,7 @@ Improve codebase structure, naming conventions, and overall hygiene in GRID-main
   ```
 
 **8. Test Directory Mirroring**
+
 - [ ] Ensure tests/ structure mirrors src/ structure
   ```bash
   cd GRID-main
@@ -89,6 +98,7 @@ Improve codebase structure, naming conventions, and overall hygiene in GRID-main
 ## P2: Code Hygiene
 
 **9. Import Ordering (isort)**
+
 - [ ] Standardize import order across all modules
   ```bash
   cd GRID-main
@@ -97,6 +107,7 @@ Improve codebase structure, naming conventions, and overall hygiene in GRID-main
   ```
 
 **10. Docstring Consistency**
+
 - [ ] Ensure all public functions have docstrings
   ```bash
   cd GRID-main
@@ -104,6 +115,7 @@ Improve codebase structure, naming conventions, and overall hygiene in GRID-main
   ```
 
 **11. File Header Standardization**
+
 - [ ] Add consistent module-level docstrings
   ```bash
   cd GRID-main
@@ -116,6 +128,7 @@ Improve codebase structure, naming conventions, and overall hygiene in GRID-main
   ```
 
 **12. Type Hint Coverage**
+
 - [ ] Increase type annotation coverage
   ```bash
   cd GRID-main
@@ -124,6 +137,7 @@ Improve codebase structure, naming conventions, and overall hygiene in GRID-main
   ```
 
 **13. Consistent Error Handling**
+
 - [ ] Standardize exception classes and error responses
   ```bash
   cd GRID-main
@@ -137,6 +151,7 @@ Improve codebase structure, naming conventions, and overall hygiene in GRID-main
 ## Directory Structure Reference
 
 Recommended GRID-main structure:
+
 ```
 src/
 ├── application/
@@ -155,14 +170,15 @@ src/
 
 ## Automated Formatting Tools
 
-| Tool | Purpose | Command |
-|------|---------|---------|
-| ruff | Linting + formatting | `uv run ruff check src/ --fix` |
-| black | Code formatting | `uv run black src/` |
-| isort | Import sorting | `uv run ruff check src/ --select I --fix` |
-| mypy | Type checking | `uv run mypy src/` |
+| Tool  | Purpose              | Command                                   |
+| ----- | -------------------- | ----------------------------------------- |
+| ruff  | Linting + formatting | `uv run ruff check src/ --fix`            |
+| black | Code formatting      | `uv run black src/`                       |
+| isort | Import sorting       | `uv run ruff check src/ --select I --fix` |
+| mypy  | Type checking        | `uv run mypy src/`                        |
 
 ## Cross-References
+
 - VERIFICATION_CHECKLIST.md: CI linting and formatting checks
 - REMEDIATION_CHECKLIST.md: Refactoring safety procedures
 - SAFETY_DEBUG_CHECKLIST.md: Avoiding regressions during reorganization

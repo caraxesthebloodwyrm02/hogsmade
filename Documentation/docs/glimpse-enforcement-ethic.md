@@ -46,12 +46,14 @@ Glimpse enforces to:
 ### Class A: confusion and low-confidence distortion
 
 Examples:
+
 - incomplete context
 - conflicting signals
 - single-source claims
 - emotional certainty without traceable support
 
 Default response:
+
 - ask clarifying questions
 - widen perspective
 - delay action
@@ -60,6 +62,7 @@ Default response:
 ### Class B: soft manipulation and attribution drift
 
 Examples:
+
 - under-crediting the builder
 - excluding the contributor while absorbing their work
 - pressure to settle below contribution
@@ -67,6 +70,7 @@ Examples:
 - social atmospheres that normalize unfair extraction
 
 Default response:
+
 - flag the pattern
 - gather corroborating signals
 - trace value flow
@@ -76,6 +80,7 @@ Default response:
 ### Class C: structured exploitation
 
 Examples:
+
 - repeat extraction with observable beneficiaries
 - compensation mismatch paired with visible value capture
 - coercive dependency creation
@@ -83,6 +88,7 @@ Examples:
 - deliberate contradiction between public credit and private causality
 
 Default response:
+
 - escalate severity
 - produce an explicit record of pattern and asymmetry
 - recommend containment, refusal, or human review
@@ -91,6 +97,7 @@ Default response:
 ### Class D: intentional harm and prohibited use
 
 Examples:
+
 - bio-scheming
 - psycho-scheming
 - covert manipulation
@@ -99,6 +106,7 @@ Examples:
 - use of privileged access to erase, poison, or falsify evidence
 
 Default response:
+
 - immediate refusal
 - hard access denial where applicable
 - durable audit trail
@@ -113,6 +121,7 @@ Glimpse should reason in layers of confidence.
 A weak indicator. Worth noticing, not punishing.
 
 Examples:
+
 - a mismatch in tone and reward
 - recurring exclusion patterns
 - a value contribution that appears to be flowing elsewhere
@@ -122,6 +131,7 @@ Examples:
 Multiple signals that align across time, actors, or outcomes.
 
 Examples:
+
 - the same builder repeatedly omitted where their building blocks appear
 - repeated pressure toward under-valuation
 - repeated gains by others paired with repeated social sidelining

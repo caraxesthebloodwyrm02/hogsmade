@@ -1,6 +1,6 @@
 /**
  * Merit Guard Monitoring Dashboard
- * 
+ *
  * Real-time monitoring for CIRCUIT_OPEN and RATE_LIMITED events
  */
 
@@ -102,12 +102,7 @@ export class MeritGuardMonitor {
   /**
    * Track a rate limit event
    */
-  trackRateLimit(
-    server: string,
-    tool: string,
-    currentUsage: number,
-    maxAllowed: number
-  ): void {
+  trackRateLimit(server: string, tool: string, currentUsage: number, maxAllowed: number): void {
     const percentage = (currentUsage / maxAllowed) * 100;
     const key = `ratelimit:${server}:${tool}`;
     const count = (this.eventCounts.get(key) || 0) + 1;
@@ -134,7 +129,7 @@ export class MeritGuardMonitor {
     tool: string,
     entityId: string,
     requiredBadge: string,
-    actualBadge: string
+    actualBadge: string,
   ): void {
     const key = `denied:${server}:${tool}`;
     const count = (this.eventCounts.get(key) || 0) + 1;
@@ -156,7 +151,7 @@ export class MeritGuardMonitor {
           denialCount: count,
         },
       });
-      
+
       // Reset after alerting
       this.eventCounts.set(key, 0);
     }
@@ -165,12 +160,7 @@ export class MeritGuardMonitor {
   /**
    * Track authentication failure
    */
-  trackAuthFailure(
-    server: string,
-    tool: string,
-    errorCode: string,
-    errorMessage: string
-  ): void {
+  trackAuthFailure(server: string, tool: string, errorCode: string, errorMessage: string): void {
     this._alert({
       timestamp: new Date().toISOString(),
       server,
@@ -193,11 +183,9 @@ export class MeritGuardMonitor {
       alert.level === "critical"
         ? console.error
         : alert.level === "warning"
-        ? console.warn
-        : console.log;
-    consoleMethod(
-      `[MONITOR:${alert.level.toUpperCase()}] ${alert.code}: ${alert.message}`
-    );
+          ? console.warn
+          : console.log;
+    consoleMethod(`[MONITOR:${alert.level.toUpperCase()}] ${alert.code}: ${alert.message}`);
 
     // Custom callback
     if (this.config.onAlert) {
@@ -251,9 +239,7 @@ export class MeritGuardMonitor {
    */
   clearOldAlerts(maxAgeMs: number = 3600000): void {
     const cutoff = Date.now() - maxAgeMs;
-    this.alerts = this.alerts.filter(
-      (a) => new Date(a.timestamp).getTime() > cutoff
-    );
+    this.alerts = this.alerts.filter((a) => new Date(a.timestamp).getTime() > cutoff);
   }
 
   /**
@@ -301,7 +287,7 @@ export class MeritGuardMonitor {
  * Create a merit guard monitor
  */
 export function createMeritGuardMonitor(
-  options?: Omit<MonitoringConfig, "serverName">
+  options?: Omit<MonitoringConfig, "serverName">,
 ): MeritGuardMonitor {
   return new MeritGuardMonitor({
     errorThreshold: 10,

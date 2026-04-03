@@ -46,7 +46,10 @@ function layoutGraph(nodes: ReferenceGraphNode[]): GraphLayoutNode[] {
 
   const fileOffsets = new Map<string, number>();
   for (const file of files) {
-    const clusterIndex = Math.max(0, clusters.findIndex((cluster) => cluster.label === file.cluster));
+    const clusterIndex = Math.max(
+      0,
+      clusters.findIndex((cluster) => cluster.label === file.cluster),
+    );
     const clusterX = clusterGap * clusterIndex + clusterGap / 2;
     const offset = fileOffsets.get(file.cluster ?? "") ?? 0;
     fileOffsets.set(file.cluster ?? "", offset + 1);
@@ -81,7 +84,12 @@ function GraphPanel({
         const target = nodeMap.get(edge.target);
         if (!source || !target) return null;
 
-        const stroke = edge.type === "transfer" ? "var(--amber-400)" : edge.type === "references" ? "var(--teal-500)" : "var(--border-color)";
+        const stroke =
+          edge.type === "transfer"
+            ? "var(--amber-400)"
+            : edge.type === "references"
+              ? "var(--teal-500)"
+              : "var(--border-color)";
         const dash = edge.type === "transfer" ? "7 4" : undefined;
 
         return (
@@ -177,7 +185,9 @@ function HeatmapTable({
             <tr key={keyword} className="border-b border-border-color/40">
               <td className="py-2 pr-3 font-mono text-ink">{keyword}</td>
               {clusters.map((cluster) => {
-                const cell = heatmap.find((entry) => entry.keyword === keyword && entry.clusterId === cluster.id);
+                const cell = heatmap.find(
+                  (entry) => entry.keyword === keyword && entry.clusterId === cluster.id,
+                );
                 const score = cell?.score ?? 0;
                 const intensity = maxScore > 0 ? clamp(score / maxScore, 0, 1) : 0;
                 return (
@@ -238,10 +248,14 @@ function InterviewPanel({
           <article key={turn.id} className="glass-panel p-4 space-y-2">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="font-body text-sm font-medium text-ink">{speaker?.label ?? turn.speakerId}</p>
+                <p className="font-body text-sm font-medium text-ink">
+                  {speaker?.label ?? turn.speakerId}
+                </p>
                 <p className="font-body text-xs text-ink-muted">{speaker?.role}</p>
               </div>
-              <span className="font-mono text-[11px] text-teal-600">{Math.round(turn.confidence * 100)}%</span>
+              <span className="font-mono text-[11px] text-teal-600">
+                {Math.round(turn.confidence * 100)}%
+              </span>
             </div>
             <p className="text-sm text-ink leading-6">{turn.text}</p>
             <div className="flex flex-wrap gap-2 text-[11px] font-mono text-ink-muted">
@@ -271,30 +285,42 @@ function DefinitionPanel({ definition }: { definition: ContextSearchWorkflowDefi
         <div className="space-y-2">
           <p className="text-xs uppercase tracking-[0.08em] text-ink-muted">authority order</p>
           {definition.authorityOrder.map((entry) => (
-            <p key={entry} className="text-ink-muted leading-6">{entry}</p>
+            <p key={entry} className="text-ink-muted leading-6">
+              {entry}
+            </p>
           ))}
         </div>
 
         <div className="space-y-2">
           <p className="text-xs uppercase tracking-[0.08em] text-ink-muted">contract notes</p>
           {definition.contractNotes.map((entry) => (
-            <p key={entry} className="text-ink-muted leading-6">{entry}</p>
+            <p key={entry} className="text-ink-muted leading-6">
+              {entry}
+            </p>
           ))}
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
         <div className="rounded-xl bg-white/40 p-4 border border-amber-400/20">
-          <p className="text-xs uppercase tracking-[0.08em] text-ink-muted mb-2">implemented runtime</p>
+          <p className="text-xs uppercase tracking-[0.08em] text-ink-muted mb-2">
+            implemented runtime
+          </p>
           {definition.implementedRuntime.map((entry) => (
-            <p key={entry} className="text-ink-muted leading-6">{entry}</p>
+            <p key={entry} className="text-ink-muted leading-6">
+              {entry}
+            </p>
           ))}
         </div>
 
         <div className="rounded-xl bg-white/40 p-4 border border-amber-400/20">
-          <p className="text-xs uppercase tracking-[0.08em] text-ink-muted mb-2">adjacent influence</p>
+          <p className="text-xs uppercase tracking-[0.08em] text-ink-muted mb-2">
+            adjacent influence
+          </p>
           {definition.adjacentInfluence.map((entry) => (
-            <p key={entry} className="text-ink-muted leading-6">{entry}</p>
+            <p key={entry} className="text-ink-muted leading-6">
+              {entry}
+            </p>
           ))}
         </div>
       </div>
@@ -342,7 +368,9 @@ function ObservationPanel({ observation }: { observation: ContextSearchObservati
         </div>
         <div className="rounded-xl border border-border-color/60 bg-surface-raised p-3">
           <p className="text-xs uppercase tracking-[0.08em] text-ink-muted">top cluster</p>
-          <p className="font-mono text-[11px] text-teal-600 mt-1">{observation.topCluster ?? "none"}</p>
+          <p className="font-mono text-[11px] text-teal-600 mt-1">
+            {observation.topCluster ?? "none"}
+          </p>
         </div>
       </div>
 
@@ -373,19 +401,26 @@ function WorkflowTracePanel({ prints }: { prints: ContextSearchStageResult[] }) 
 
       <div className="space-y-3">
         {prints.map((entry) => (
-          <article key={`${entry.stage}-${entry.status}`} className="rounded-xl border border-border-color/60 bg-surface p-4 space-y-2">
+          <article
+            key={`${entry.stage}-${entry.status}`}
+            className="rounded-xl border border-border-color/60 bg-surface p-4 space-y-2"
+          >
             <div className="flex items-center justify-between gap-3">
               <p className="font-body text-sm font-medium text-ink">{entry.stage}</p>
-              <span className={cn(
-                "font-mono text-[11px] uppercase",
-                entry.status === "completed" ? "text-teal-600" : "text-amber-700",
-              )}>
+              <span
+                className={cn(
+                  "font-mono text-[11px] uppercase",
+                  entry.status === "completed" ? "text-teal-600" : "text-amber-700",
+                )}
+              >
                 {entry.status}
               </span>
             </div>
             <p className="text-sm text-ink-muted leading-6">{entry.message}</p>
             <p className="font-mono text-[11px] text-ink-muted">
-              {Object.entries(entry.counts).map(([key, value]) => `${key}=${value}`).join(" • ") || "no counters"}
+              {Object.entries(entry.counts)
+                .map(([key, value]) => `${key}=${value}`)
+                .join(" • ") || "no counters"}
             </p>
           </article>
         ))}
@@ -418,11 +453,15 @@ export function ContextSearchView() {
             <BrainCircuit className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="font-heading text-2xl font-bold text-ink tracking-tight" style={{ letterSpacing: "-0.02em" }}>
+            <h1
+              className="font-heading text-2xl font-bold text-ink tracking-tight"
+              style={{ letterSpacing: "-0.02em" }}
+            >
               Context Search
             </h1>
             <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-muted mt-1">
-              <span className="text-teal-500">◎</span> scenario compression, deterministic retrieval, node transfer, cluster visibility.
+              <span className="text-teal-500">◎</span> scenario compression, deterministic
+              retrieval, node transfer, cluster visibility.
             </p>
           </div>
         </div>
@@ -450,7 +489,9 @@ export function ContextSearchView() {
               </label>
               <textarea
                 value={input.scenarioText}
-                onChange={(event) => setInput((current) => ({ ...current, scenarioText: event.target.value }))}
+                onChange={(event) =>
+                  setInput((current) => ({ ...current, scenarioText: event.target.value }))
+                }
                 className="w-full min-h-[120px] rounded-xl border border-border-color bg-surface px-4 py-3 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-teal-500"
                 placeholder="Describe the situation you want compressed and searched against the codebase."
               />
@@ -463,7 +504,9 @@ export function ContextSearchView() {
                 </label>
                 <textarea
                   value={input.optionalContext}
-                  onChange={(event) => setInput((current) => ({ ...current, optionalContext: event.target.value }))}
+                  onChange={(event) =>
+                    setInput((current) => ({ ...current, optionalContext: event.target.value }))
+                  }
                   className="w-full min-h-[88px] rounded-xl border border-border-color bg-surface px-4 py-3 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-teal-500"
                   placeholder="Constraints, audience, subsystem, or background."
                 />
@@ -475,7 +518,12 @@ export function ContextSearchView() {
                 </label>
                 <textarea
                   value={input.optionalProblemFrame}
-                  onChange={(event) => setInput((current) => ({ ...current, optionalProblemFrame: event.target.value }))}
+                  onChange={(event) =>
+                    setInput((current) => ({
+                      ...current,
+                      optionalProblemFrame: event.target.value,
+                    }))
+                  }
                   className="w-full min-h-[88px] rounded-xl border border-border-color bg-surface px-4 py-3 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-teal-500"
                   placeholder="Risk, intended output, or question framing."
                 />
@@ -492,7 +540,12 @@ export function ContextSearchView() {
                   min={5}
                   max={12}
                   value={input.maxKeywords}
-                  onChange={(event) => setInput((current) => ({ ...current, maxKeywords: Number(event.target.value) || 8 }))}
+                  onChange={(event) =>
+                    setInput((current) => ({
+                      ...current,
+                      maxKeywords: Number(event.target.value) || 8,
+                    }))
+                  }
                   className="w-28 rounded-xl border border-border-color bg-surface px-3 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-teal-500"
                 />
               </label>
@@ -503,15 +556,21 @@ export function ContextSearchView() {
                 </span>
                 <select
                   value={input.provider}
-                  onChange={(event) => setInput((current) => ({
-                    ...current,
-                    provider: event.target.value as typeof current.provider,
-                  }))}
+                  onChange={(event) =>
+                    setInput((current) => ({
+                      ...current,
+                      provider: event.target.value as typeof current.provider,
+                    }))
+                  }
                   className="w-44 rounded-xl border border-border-color bg-surface px-3 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-teal-500"
                 >
                   <option value="deterministic">deterministic</option>
-                  <option value="openai" disabled>openai (planned)</option>
-                  <option value="ollama" disabled>ollama (planned)</option>
+                  <option value="openai" disabled>
+                    openai (planned)
+                  </option>
+                  <option value="ollama" disabled>
+                    ollama (planned)
+                  </option>
                 </select>
               </label>
 
@@ -541,7 +600,8 @@ export function ContextSearchView() {
         {!result && !loading && !error ? (
           <section className="glass-panel p-8 text-center">
             <p className="text-sm text-ink-muted">
-              Enter a scenario to generate a grounded keyword bundle, search the repo deterministically, and build interview-ready reference artifacts.
+              Enter a scenario to generate a grounded keyword bundle, search the repo
+              deterministically, and build interview-ready reference artifacts.
             </p>
           </section>
         ) : null}
@@ -589,13 +649,17 @@ export function ContextSearchView() {
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                 <div className="rounded-xl bg-surface p-4 border border-border-color/60">
-                  <p className="text-xs uppercase tracking-[0.08em] text-ink-muted mb-2">unknown terms</p>
+                  <p className="text-xs uppercase tracking-[0.08em] text-ink-muted mb-2">
+                    unknown terms
+                  </p>
                   <p className="text-ink-muted">
                     {result.keywords.unknownTerms.join(", ") || "none"}
                   </p>
                 </div>
                 <div className="rounded-xl bg-surface p-4 border border-border-color/60">
-                  <p className="text-xs uppercase tracking-[0.08em] text-ink-muted mb-2">rejected terms</p>
+                  <p className="text-xs uppercase tracking-[0.08em] text-ink-muted mb-2">
+                    rejected terms
+                  </p>
                   <p className="text-ink-muted">
                     {result.keywords.rejectedTerms.join(", ") || "none"}
                   </p>
@@ -631,10 +695,15 @@ export function ContextSearchView() {
                 </div>
                 <div className="space-y-3">
                   {result.clusters.map((cluster) => (
-                    <article key={cluster.id} className="rounded-xl border border-border-color/60 bg-surface p-4">
+                    <article
+                      key={cluster.id}
+                      className="rounded-xl border border-border-color/60 bg-surface p-4"
+                    >
                       <div className="flex items-center justify-between gap-3">
                         <h3 className="text-sm font-medium text-ink">{cluster.label}</h3>
-                        <span className="font-mono text-[11px] text-teal-600">{formatScore(cluster.score)}</span>
+                        <span className="font-mono text-[11px] text-teal-600">
+                          {formatScore(cluster.score)}
+                        </span>
                       </div>
                       <p className="text-xs text-ink-muted mt-2">
                         terms: {cluster.matchedTerms.join(", ") || "none"}
@@ -686,11 +755,15 @@ export function ContextSearchView() {
                 </h2>
               </div>
               <p className="text-sm text-ink-muted">
-                Evidence hits are the truth layer. Graphs, clusters, transcript, and artifacts are derived from these grounded references.
+                Evidence hits are the truth layer. Graphs, clusters, transcript, and artifacts are
+                derived from these grounded references.
               </p>
               <div className="space-y-3">
                 {result.hits.map((hit) => (
-                  <article key={hit.id} className="rounded-xl border border-border-color/60 bg-surface p-4">
+                  <article
+                    key={hit.id}
+                    className="rounded-xl border border-border-color/60 bg-surface p-4"
+                  >
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <h3 className="text-sm font-medium text-ink">{hit.title}</h3>
@@ -698,7 +771,9 @@ export function ContextSearchView() {
                       </div>
                       <div className="text-right">
                         <p className="font-mono text-[11px] text-ink-muted uppercase">{hit.kind}</p>
-                        <p className="font-mono text-sm text-teal-600 mt-1">{formatScore(hit.score)}</p>
+                        <p className="font-mono text-sm text-teal-600 mt-1">
+                          {formatScore(hit.score)}
+                        </p>
                       </div>
                     </div>
                     <p className="text-sm text-ink-muted leading-6 mt-3">{hit.excerpt}</p>

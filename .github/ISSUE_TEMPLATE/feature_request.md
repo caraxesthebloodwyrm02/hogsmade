@@ -1,12 +1,12 @@
 ---
 name: Feature request
 about: Suggest a change or new capability
-title: ''
+title: ""
 labels: enhancement
-assignees: ''
+assignees: ""
 ---
 
-**Project** (e.g. pulse-server, root docs): 
+**Project** (e.g. pulse-server, root docs):
 
 **What you want**
 

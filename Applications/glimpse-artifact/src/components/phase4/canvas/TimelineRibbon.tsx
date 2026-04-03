@@ -12,11 +12,7 @@ interface TimelineRibbonProps {
   className?: string;
 }
 
-export function TimelineRibbon({
-  markers,
-  onSelect,
-  className,
-}: TimelineRibbonProps) {
+export function TimelineRibbon({ markers, onSelect, className }: TimelineRibbonProps) {
   if (markers.length === 0) return null;
 
   return (

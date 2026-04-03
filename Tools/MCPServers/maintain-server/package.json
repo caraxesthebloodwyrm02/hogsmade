@@ -1,7 +1,7 @@
 {
   "name": "maintain-server",
   "version": "1.0.0",
-  "description": "System optimization & maintenance MCP server — scans temp/cache, workspaces, git repos, system health; executes cleanup with safety checks",
+  "description": "System optimization & maintenance MCP server \u2014 scans temp/cache, workspaces, git repos, system health; executes cleanup with safety checks",
   "type": "module",
   "main": "src/server.ts",
   "scripts": {
@@ -13,7 +13,7 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "@cascade/shared-types": "file:../../Components/shared-types",
+    "@cascade/shared-types": "file:../../../Components/shared-types",
     "@modelcontextprotocol/sdk": "^1.28.0",
     "zod": "^3.25.0"
   },

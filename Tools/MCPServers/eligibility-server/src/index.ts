@@ -37,7 +37,7 @@ export type {
   RoutineResult,
   SafeRoutineEvaluation,
   TableScope,
-  WeightBand
+  WeightBand,
 } from "./types.js";
 
 export { DEFAULT_ATTRIBUTE_CATALOG, getDefaultAttributeCatalog } from "./catalog.js";
@@ -54,7 +54,7 @@ export {
   openEvolutionCase,
   recordCycleSignal,
   recordHandoff,
-  upsertEndpointSpec
+  upsertEndpointSpec,
 } from "./evolution.js";
 export { FIXTURE_CANDIDATES, getFixtureCandidateById, getFixtureCandidates } from "./examples.js";
 export { compileFormArtifacts } from "./forms.js";
@@ -69,13 +69,16 @@ export {
   normalizeRoutineArgs,
   resolveCandidates,
   safeEvaluateRoutine,
-  validateCandidates
+  validateCandidates,
 } from "./pipeline.js";
 export {
   advanceCycleHandler,
   buildServer,
   collectTableHandler,
-  compileFormsHandler, evaluateCandidateHandler, evaluatePromotionGateHandler, explainHierarchyHandler,
+  compileFormsHandler,
+  evaluateCandidateHandler,
+  evaluatePromotionGateHandler,
+  explainHierarchyHandler,
   getCycleSnapshotHandler,
   listActiveCyclesHandler,
   listAttributeCatalogHandler,
@@ -83,7 +86,7 @@ export {
   recordCycleSignalHandler,
   recordHandoffHandler,
   startServer,
-  upsertEndpointSpecHandler
+  upsertEndpointSpecHandler,
 } from "./server.js";
 export { buildCollectionTable } from "./table.js";
 export {
@@ -99,4 +102,10 @@ export {
 export type { EligibilityAuditMetadata } from "./routing.js";
 export { checkTheLine, holdTheLine } from "./line-audit.js";
 export type { LineFinding, LineAuditResult } from "./line-audit.js";
-export { onEvolutionCaseOpened, onCycleSignalRecorded, onPromotionGateEvaluated, onCaseStatusChanged, initializeHooks } from "./hooks.js";
+export {
+  onEvolutionCaseOpened,
+  onCycleSignalRecorded,
+  onPromotionGateEvaluated,
+  onCaseStatusChanged,
+  initializeHooks,
+} from "./hooks.js";

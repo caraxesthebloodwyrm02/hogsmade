@@ -1,5 +1,7 @@
 # MCP Server Capabilities Demo
 
+**Archival note**: This demo predates the 2026-04-04 layout reorg. Some example paths below still use the older flat workspace shape and are preserved for historical context only.
+
 Generated: 2026-03-24
 Purpose: Demonstrate all available MCP server tools and their capabilities
 
@@ -11,6 +13,7 @@ Purpose: Demonstrate all available MCP server tools and their capabilities
 **Data Directory**: `/home/caraxes/.afloat`
 
 ### Available Tools:
+
 - `mcp0_health_check` - Server health and workflow count
 - `mcp0_workflow_create` - Create new workflow definitions
 - `mcp0_workflow_execute` - Execute workflows (dry-run or live)
@@ -19,6 +22,7 @@ Purpose: Demonstrate all available MCP server tools and their capabilities
 - `mcp0_workflow_list` - List all workflow definitions
 
 ### Demo Output:
+
 ```json
 {
   "workflowCount": 0,
@@ -27,6 +31,7 @@ Purpose: Demonstrate all available MCP server tools and their capabilities
 ```
 
 **Created Demo Workflow**: `wf-1774379594118-x6i3dl`
+
 - Name: "Demo Workflow"
 - Description: "A simple demo workflow to showcase afloat-server capabilities"
 - Steps: 1 step (echo command)
@@ -39,6 +44,7 @@ Purpose: Demonstrate all available MCP server tools and their capabilities
 **Data Directory**: `/home/caraxes/.echoes`
 
 ### Available Tools:
+
 - `mcp2_health_check` - Server health and audit log integrity
 - `mcp2_audit_stats` - Aggregate statistics from audit log
 - `mcp2_list_telemetry` - List telemetry snapshots for trend analysis
@@ -47,6 +53,7 @@ Purpose: Demonstrate all available MCP server tools and their capabilities
 - `mcp2_save_telemetry` - Save workspace telemetry snapshot
 
 ### Demo Output:
+
 ```json
 {
   "auditLogBytes": 8240,
@@ -57,6 +64,7 @@ Purpose: Demonstrate all available MCP server tools and their capabilities
 ```
 
 **Recent Audit Events**: 2 entries from maintain-server
+
 - Security hardening operations
 - File integrity baseline creation
 - Firewall audit rules applied
@@ -69,10 +77,12 @@ Purpose: Demonstrate all available MCP server tools and their capabilities
 **Data Directory**: `/home/caraxes/.overview-server`
 
 ### Available Tools:
+
 - `mcp10_health_check` - Server health and data source connectivity
 - `mcp10_checkpoint` - Generate checkpoint assessment (trajectory, cluster health, drift, trust)
 
 ### Demo Output:
+
 ```json
 {
   "ecosystemScore": 96,
@@ -84,6 +94,7 @@ Purpose: Demonstrate all available MCP server tools and their capabilities
 ```
 
 **Cluster Health**:
+
 - GRID Family: 100/100
 - MCP Infrastructure: 85/100
 - Canopy Applications: 100/100
@@ -99,6 +110,7 @@ Purpose: Demonstrate all available MCP server tools and their capabilities
 **Data Directory**: `/home/caraxes/.pulse`
 
 ### Available Tools:
+
 - `mcp12_health_check` - Server health and data sources
 - `mcp12_briefing_preferences_set` - Configure morning briefing preferences
 - `mcp12_check_alerts` - Check for ecosystem alerts
@@ -112,6 +124,7 @@ Purpose: Demonstrate all available MCP server tools and their capabilities
 - `mcp12_what_should_i_work_on` - Get prioritized work queue
 
 ### Demo Output:
+
 ```json
 {
   "today": "2026-03-24",
@@ -132,6 +145,7 @@ Purpose: Demonstrate all available MCP server tools and their capabilities
 **Seeds Root**: `/home/caraxes/seed`
 
 ### Available Tools:
+
 - `mcp13_health_check` - Server health and data store status
 - `mcp13_bookmark_add` - Bookmark repository or file
 - `mcp13_bookmark_list` - List bookmarks with filters
@@ -140,6 +154,7 @@ Purpose: Demonstrate all available MCP server tools and their capabilities
 - `mcp13_repo_detail` - Get detailed health for single repo
 
 ### Demo Output:
+
 ```json
 {
   "reposDetected": 2,
@@ -149,12 +164,14 @@ Purpose: Demonstrate all available MCP server tools and their capabilities
 ```
 
 **Ecosystem Scan Results**:
+
 - Overall Score: 92/100
 - Total Repos: 7
 - Active: 7, Stale: 0
 - Issues: 1 (hogsmade has 17 uncommitted changes)
 
 **Repository Health**:
+
 - GRID: 100/100 (Python 3.13+, FastAPI, ChromaDB)
 - afloat: 95/100 (TypeScript, Next.js, Stripe)
 - echoes: 95/100 (Python 3.12+, FastAPI)
@@ -173,6 +190,7 @@ Purpose: Demonstrate all available MCP server tools and their capabilities
 **Data Directory**: `/home/caraxes/.maintain-server`
 
 ### Available Tools:
+
 - `mcp9_health_check` - Server health and data store status
 - `mcp9_cleanup_execute` - Execute cleanup actions
 - `mcp9_full_diagnostic` - Run all scans and generate unified report
@@ -183,6 +201,7 @@ Purpose: Demonstrate all available MCP server tools and their capabilities
 - `mcp9_scan_workspaces` - Scan workspaces for hygiene issues
 
 ### Demo Output:
+
 ```json
 {
   "reportCount": 2,
@@ -198,11 +217,13 @@ Purpose: Demonstrate all available MCP server tools and their capabilities
 ```
 
 **System Scan**:
+
 - RAM: 52% used (15GB free of 31GB)
 - Disk (/): 87% free (801GB free of 916GB)
 - Top Processes: windsurf-next (1.2GB), chrome (951MB), language_server (793MB)
 
 **Temp Scan**: No significant cleanup needed
+
 - /tmp: 375MB, 8013 files
 - npm cache: 432MB, 2300 files
 - pip cache: 101MB, 815 files
@@ -215,6 +236,7 @@ Purpose: Demonstrate all available MCP server tools and their capabilities
 **Experiments Directory**: `/home/caraxes/CascadeProjects/experiments`
 
 ### Available Tools:
+
 - `mcp8_health_check` - Server health and experiment catalog status
 - `mcp8_experiment_compare` - Compare two experiments side by side
 - `mcp8_experiment_create` - Register new experiment
@@ -224,6 +246,7 @@ Purpose: Demonstrate all available MCP server tools and their capabilities
 - `mcp8_experiment_suggest` - Generate experiment proposals from patterns
 
 ### Demo Output:
+
 ```json
 {
   "totalExperiments": 0,
@@ -240,6 +263,7 @@ Purpose: Demonstrate all available MCP server tools and their capabilities
 **Health Status**: ✅ OK (v1.0.0)
 
 ### Available Tools:
+
 - `mcp7_health_check` - Server health, GATE directory status, deployment targets
 - `mcp7_check_permission` - Check if action is permitted on deployment target
 - `mcp7_gate_audit` - Query GATE audit log for verification events
@@ -248,6 +272,7 @@ Purpose: Demonstrate all available MCP server tools and their capabilities
 - `mcp7_validate_envelope` - Validate GATE envelope
 
 ### Demo Output:
+
 ```json
 {
   "gate": {
@@ -268,6 +293,7 @@ Purpose: Demonstrate all available MCP server tools and their capabilities
 ```
 
 **Deployment Targets**:
+
 - grid-server: deploy, run_tests, start_server, write_results (port 8080)
 - afloat-server: deploy, start_server (port 3000)
 - echoes-server: deploy, run_tests, start_server, write_results (port 8000)
@@ -282,11 +308,13 @@ Purpose: Demonstrate all available MCP server tools and their capabilities
 **Workspace**: GRID only
 
 ### Available Tools:
+
 - `mcp1_analyze_code` - Analyze Python code for quality issues
 - `mcp1_check_security` - Check for security issues
 - `mcp1_get_complexity` - Get code complexity metrics
 
 ### Demo Output:
+
 ⚠️ **Access Restriction**: Only works within GRID workspace root (`/home/caraxes/roots/GRID`)
 
 ---
@@ -296,6 +324,7 @@ Purpose: Demonstrate all available MCP server tools and their capabilities
 **Health Status**: ✅ Available
 
 ### Available Tools:
+
 - `mcp3_glimpse_analyze` - Run full Glimpse pipeline on dataset
 - `mcp3_glimpse_complexity` - Detect data complexity level
 - `mcp3_glimpse_compress` - Score insight density
@@ -306,6 +335,7 @@ Purpose: Demonstrate all available MCP server tools and their capabilities
 - `mcp3_glimpse_track` - Track incremental session state
 
 ### Demo Output:
+
 ```json
 {
   "recordCount": 3,
@@ -335,6 +365,7 @@ Purpose: Demonstrate all available MCP server tools and their capabilities
 **Health Status**: ✅ Available
 
 ### Available Tools:
+
 - `mcp4_code_quality_gate` - Enforce code quality standards
 - `mcp4_dependency_health_monitor` - Monitor dependency health
 - `mcp4_documentation_generator` - Generate documentation from code
@@ -344,6 +375,7 @@ Purpose: Demonstrate all available MCP server tools and their capabilities
 - `mcp4_workflow_orchestrator` - Automate development workflows
 
 ### Demo Output:
+
 ```json
 {
   "success": true,
@@ -362,6 +394,7 @@ Purpose: Demonstrate all available MCP server tools and their capabilities
 **Issue**: No compatible embedding model found in Ollama
 
 ### Available Tools:
+
 - `mcp5_rag_add_document` - Add document to knowledge base
 - `mcp5_rag_index` - Index documents from directory
 - `mcp5_rag_on_demand` - Query-time RAG with temporary index
@@ -370,6 +403,7 @@ Purpose: Demonstrate all available MCP server tools and their capabilities
 - `mcp5_rag_stats` - Get knowledge base statistics
 
 ### Fix Required:
+
 ```bash
 ollama pull nomic-embed-text-v2-moe:latest
 ```
@@ -382,6 +416,7 @@ ollama pull nomic-embed-text-v2-moe:latest
 **Issue**: Same as grid-rag (Ollama embedding model missing)
 
 ### Available Tools:
+
 - `mcp6_create_session` - Create conversation session
 - `mcp6_delete_session` - Delete conversation session
 - `mcp6_get_session` - Get session information
@@ -399,12 +434,14 @@ ollama pull nomic-embed-text-v2-moe:latest
 **Issue**: Databricks runtime not configured
 
 ### Available Tools:
+
 - `mcp11_audit_log_tail` - Get recent security events (hashed IDs)
 - `mcp11_governance_lint` - Check portfolio data policy compliance
 - `mcp11_portfolio_risk_signal` - Get portfolio risk score and signals
 - `mcp11_portfolio_summary_safe` - Get sanitized portfolio metrics
 
 ### Fix Required:
+
 Install and configure Coinbase/Databricks runtime
 
 ---
@@ -415,6 +452,7 @@ Install and configure Coinbase/Databricks runtime
 **Issue**: Path resolution outside GRID workspace
 
 ### Available Tools:
+
 - `mcp14_discover_tests` - Discover available test files
 - `mcp14_get_test_summary` - Get test summary without running
 - `mcp14_run_coverage` - Run tests with coverage report
@@ -427,6 +465,7 @@ Install and configure Coinbase/Databricks runtime
 ## Summary
 
 ### Working Servers (10/15):
+
 1. ✅ afloat-server - Workflow orchestration
 2. ✅ echoes-server - Audit log & telemetry
 3. ✅ overview-server - Ecosystem overview
@@ -440,12 +479,14 @@ Install and configure Coinbase/Databricks runtime
 11. ✅ grid-enhanced-tools - Development workflow tools
 
 ### Servers with Issues (5/15):
+
 12. ❌ grid-rag - Missing Ollama embedding model
 13. ❌ grid-rag-enhanced - Missing Ollama embedding model
 14. ❌ portfolio-safety-lens - Databricks runtime not configured
 15. ❌ test-runner - GRID workspace restriction
 
 ### Key Capabilities Demonstrated:
+
 - **Workflow Orchestration**: Created and executed demo workflow
 - **Audit Trail**: Queryable audit log with statistics
 - **Ecosystem Health**: 96/100 overall score across 6 clusters
@@ -458,6 +499,7 @@ Install and configure Coinbase/Databricks runtime
 - **Code Quality**: Multi-metric quality gates
 
 ### Recommended Actions:
+
 1. Pull Ollama model: `ollama pull nomic-embed-text-v2-moe:latest`
 2. Configure Databricks runtime for portfolio-safety-lens
 3. Use test-runner within GRID workspace context

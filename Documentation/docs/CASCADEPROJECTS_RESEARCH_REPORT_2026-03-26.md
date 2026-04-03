@@ -16,6 +16,7 @@ CascadeProjects is a sophisticated multi-project workspace centered around the G
 ### 1. GRID-main System - The Central Intelligence Hub
 
 **Primary FastAPI Application**
+
 - **Location**: `GRID-main/src/application/mothership/`
 - **Port**: 8080 (external deployment ready on 0.0.0.0)
 - **Core Components**:
@@ -29,6 +30,7 @@ CascadeProjects is a sophisticated multi-project workspace centered around the G
 ### 2. MCP Ecosystem - 9 Specialized Servers
 
 #### First-Party TypeScript Servers (7):
+
 1. **grid-server** - Core intelligence processing and reasoning
 2. **lots-server** - Experimental workflow management
 3. **maintain-server** - System hygiene and maintenance operations
@@ -38,6 +40,7 @@ CascadeProjects is a sophisticated multi-project workspace centered around the G
 7. **seeds-server** - Health monitoring and ecosystem tracking
 
 #### Python Servers (2):
+
 - **agentic_mcp_server.py** - Agent lifecycle management
 - **memory_mcp_server.py** - Persistent memory operations
 
@@ -66,18 +69,21 @@ seeds-server + maintain-server (safety gates)
 ## 🔧 Recent Developments (March 2026)
 
 ### Security Enhancements
+
 - **Authentication Hardening**: 95% complete
 - **Role-to-Scope Policy**: Fixed drift issues
 - **Risk Reduction**: High → Low/Moderate
 - **Trust Boundaries**: Strengthened across all components
 
 ### RAG System Implementation
+
 - **Vector Store**: ChromaDB with cosine similarity
 - **Embedding Model**: nomic-embed-text-v2-moe (768 dimensions)
 - **Indexed Content**: 1,318 chunks from 78 documentation files
 - **Scope Architecture**: Metadata-based filtering ready for implementation
 
 ### Model Configuration Updates
+
 - **Issue**: Ollama model mismatch (`ministral-3:3b` not found)
 - **Resolution**: Updated to `ministral-3:latest`
 - **Environment Variable**: `RAG_LLM_MODEL_LOCAL`
@@ -85,6 +91,7 @@ seeds-server + maintain-server (safety gates)
 ## 📊 System Capabilities
 
 ### 1. RAG (Retrieval-Augmented Generation)
+
 - **Hybrid Search**: BM25 + vector similarity with RRF fusion
 - **Cross-Encoder Reranking**: Improves result relevance
 - **Metadata Filtering**: Enables scope-based queries
@@ -92,18 +99,21 @@ seeds-server + maintain-server (safety gates)
 - **Quality Scoring**: Configurable thresholds for content filtering
 
 ### 2. Workflow Management
+
 - **Afloat-server**: Orchestrates complex multi-step workflows
 - **Registry Pattern**: Dynamic workflow discovery and execution
 - **Rollback Support**: Atomic operations with failure recovery
 - **Timeout Management**: Per-step timeout controls
 
 ### 3. Monitoring & Observability
+
 - **Pulse-server**: Real-time system health aggregation
 - **Echoes-server**: Comprehensive audit logging
 - **Seeds-server**: Ecosystem-wide health tracking
 - **Metrics Collection**: Performance and operational metrics
 
 ### 4. Safety & Compliance
+
 - **Multiple Safety Gates**: Throughout data flow pipeline
 - **Audit Trail**: Complete operation persistence
 - **Access Control**: Role-based permissions
@@ -112,6 +122,7 @@ seeds-server + maintain-server (safety gates)
 ## 🛠️ Technology Stack
 
 ### Backend
+
 - **Python 3.13+** with uv package manager
 - **FastAPI** for REST APIs
 - **ChromaDB** for vector storage
@@ -119,6 +130,7 @@ seeds-server + maintain-server (safety gates)
 - **TypeScript** for MCP servers
 
 ### Key Libraries
+
 - **structlog** for structured logging
 - **Pydantic v2** for data validation
 - **httpx** for HTTP clients
@@ -128,12 +140,14 @@ seeds-server + maintain-server (safety gates)
 ## 📈 Performance Metrics
 
 ### Indexing Performance
+
 - **Throughput**: 5.07 chunks/second
 - **Batch Size**: 32 chunks
 - **Success Rate**: 98.9% (1318/1332 chunks)
 - **Total Processed**: 643.98 KB from 78 files
 
 ### Query Performance
+
 - **Retrieval**: < 1 second for 10 results
 - **Reranking**: Additional ~100ms
 - **Total Response**: ~2-3 seconds including LLM
@@ -141,16 +155,19 @@ seeds-server + maintain-server (safety gates)
 ## 🔮 Future Roadmap
 
 ### Immediate (Q2 2026)
+
 1. **Embedding Scopes**: Implement metadata-based scoping
 2. **Multi-Collection Strategy**: For larger datasets
 3. **Enhanced Security**: Complete remaining 5% of hardening
 
 ### Medium Term
+
 1. **Multi-Tenant Support**: Isolated workspaces
 2. **Advanced Analytics**: Query pattern analysis
 3. **Performance Optimization**: Caching and indexing improvements
 
 ### Long Term
+
 1. **Federated Learning**: Distributed model training
 2. **Real-time Collaboration**: Multi-user workflows
 3. **AI-Driven Optimization**: Self-tuning parameters
@@ -158,6 +175,7 @@ seeds-server + maintain-server (safety gates)
 ## 📚 Documentation Coverage
 
 The knowledgebase contains comprehensive documentation covering:
+
 - Architecture guides and API references
 - Security best practices and threat models
 - Operational procedures and troubleshooting
@@ -176,6 +194,6 @@ The knowledgebase contains comprehensive documentation covering:
 
 **Research Confidence**: 90%  
 **Source Relevance**: 10/10 documents highly relevant  
-**Knowledge Gaps**: None identified for core architecture  
+**Knowledge Gaps**: None identified for core architecture
 
-*This report was generated using the GRID RAG system with intelligent query processing and multi-source synthesis.*
+_This report was generated using the GRID RAG system with intelligent query processing and multi-source synthesis._

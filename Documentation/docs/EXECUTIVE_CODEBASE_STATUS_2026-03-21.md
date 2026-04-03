@@ -30,17 +30,17 @@ Commands run during this review:
 
 Results:
 
-| Area | Status | Notes |
-|---|---|---|
-| `shared-types` build | Green | TypeScript build passed |
-| MCP server builds | Green | `afloat`, `echoes`, `grid`, `lots`, `maintain`, `pulse`, `seeds` all built |
-| `glimpse-artifact` build | Green | Vite production build passed |
-| `glimpse-artifact` lint | Green | `tsc --noEmit` passed |
-| Server tests | Mixed | `afloat`, `lots`, `maintain`, `pulse`, `seeds` passed |
-| `grid-server` tests | Red | One smoke test fails on expected fail-closed flag |
-| `echoes-server` tests | Red | No test files present; `vitest` exits with code 1 |
-| `glimpse-artifact` tests | Red | Snapshot-style fixture test is stale |
-| Root `glimpse-engine` test | Red | Imports `glimpse-engine/engine.js`, which does not exist |
+| Area                       | Status | Notes                                                                      |
+| -------------------------- | ------ | -------------------------------------------------------------------------- |
+| `shared-types` build       | Green  | TypeScript build passed                                                    |
+| MCP server builds          | Green  | `afloat`, `echoes`, `grid`, `lots`, `maintain`, `pulse`, `seeds` all built |
+| `glimpse-artifact` build   | Green  | Vite production build passed                                               |
+| `glimpse-artifact` lint    | Green  | `tsc --noEmit` passed                                                      |
+| Server tests               | Mixed  | `afloat`, `lots`, `maintain`, `pulse`, `seeds` passed                      |
+| `grid-server` tests        | Red    | One smoke test fails on expected fail-closed flag                          |
+| `echoes-server` tests      | Red    | No test files present; `vitest` exits with code 1                          |
+| `glimpse-artifact` tests   | Red    | Snapshot-style fixture test is stale                                       |
+| Root `glimpse-engine` test | Red    | Imports `glimpse-engine/engine.js`, which does not exist                   |
 
 ## Architecture and Surface Area
 
@@ -59,15 +59,15 @@ The repo is organized as a workspace root with:
 
 Main server file sizes and registered tool counts show where maintenance cost sits:
 
-| Project | Main file size | Tool count | Assessment |
-|---|---:|---:|---|
-| `afloat-server` | 459 lines | 6 | Small and focused |
-| `echoes-server` | 427 lines | 6 | Small, stable, but under-tested |
-| `grid-server` | 509 lines | 6 | Medium complexity, safety-critical behavior |
-| `lots-server` | 947 lines | 7 | Medium-high complexity |
-| `maintain-server` | 1,946 lines | 8 | Large operational surface |
-| `pulse-server` | 1,651 lines | 11 | Large aggregation/orchestration surface |
-| `seeds-server` | 684 lines | 6 | Medium complexity |
+| Project           | Main file size | Tool count | Assessment                                  |
+| ----------------- | -------------: | ---------: | ------------------------------------------- |
+| `afloat-server`   |      459 lines |          6 | Small and focused                           |
+| `echoes-server`   |      427 lines |          6 | Small, stable, but under-tested             |
+| `grid-server`     |      509 lines |          6 | Medium complexity, safety-critical behavior |
+| `lots-server`     |      947 lines |          7 | Medium-high complexity                      |
+| `maintain-server` |    1,946 lines |          8 | Large operational surface                   |
+| `pulse-server`    |    1,651 lines |         11 | Large aggregation/orchestration surface     |
+| `seeds-server`    |      684 lines |          6 | Medium complexity                           |
 
 UI and engine complexity is concentrated in:
 

@@ -44,10 +44,7 @@ describe("eligibility routine smoke", () => {
 
   it("changes the overall hierarchy when governance and usability biases change", () => {
     const governanceHeavy = evaluateRoutine(
-      [
-        getFixtureCandidateById("governance-lattice")!,
-        getFixtureCandidateById("usability-orbit")!,
-      ],
+      [getFixtureCandidateById("governance-lattice")!, getFixtureCandidateById("usability-orbit")!],
       {
         governance: 1.8,
         usability: 0.7,
@@ -58,10 +55,7 @@ describe("eligibility routine smoke", () => {
     );
 
     const usabilityHeavy = evaluateRoutine(
-      [
-        getFixtureCandidateById("governance-lattice")!,
-        getFixtureCandidateById("usability-orbit")!,
-      ],
+      [getFixtureCandidateById("governance-lattice")!, getFixtureCandidateById("usability-orbit")!],
       {
         governance: 0.7,
         usability: 1.8,
@@ -71,10 +65,14 @@ describe("eligibility routine smoke", () => {
       },
     );
 
-    expect(governanceHeavy.hierarchy.find((slice) => slice.dimension === "overall" && slice.rank === 1)?.candidateId)
-      .toBe("governance-lattice");
-    expect(usabilityHeavy.hierarchy.find((slice) => slice.dimension === "overall" && slice.rank === 1)?.candidateId)
-      .toBe("usability-orbit");
+    expect(
+      governanceHeavy.hierarchy.find((slice) => slice.dimension === "overall" && slice.rank === 1)
+        ?.candidateId,
+    ).toBe("governance-lattice");
+    expect(
+      usabilityHeavy.hierarchy.find((slice) => slice.dimension === "overall" && slice.rank === 1)
+        ?.candidateId,
+    ).toBe("usability-orbit");
   });
 
   it("exposes handlers for catalog, forms, and hierarchy explanation", () => {

@@ -6,12 +6,7 @@ import { ScenarioCanvas } from "@/components/phase4/canvas/ScenarioCanvas";
 import { ScenarioSeedCard } from "@/components/phase4/canvas/ScenarioSeedCard";
 import type { TimelineMarker } from "@/components/phase4/canvas/TimelineRibbon";
 import { TimelineRibbon } from "@/components/phase4/canvas/TimelineRibbon";
-import type {
-  Annotation,
-  Branch,
-  GlimpseSnapshot,
-  ScenarioSeed,
-} from "@/components/phase4/types";
+import type { Annotation, Branch, GlimpseSnapshot, ScenarioSeed } from "@/components/phase4/types";
 import { useCanvasSeeds } from "@/hooks/useCanvasSeeds";
 import { loadCanvasState, useCanvasPersistence } from "@/hooks/useCanvasPersistence";
 import { cn } from "@/lib/utils";
@@ -48,13 +43,15 @@ export function ScenarioCanvasView() {
   const idCounter = useRef(initial?.idCounter ?? 100);
   const [seeds, setSeeds] = useState<ScenarioSeed[]>((initial?.seeds ?? []) as ScenarioSeed[]);
   const [branches, setBranches] = useState<Branch[]>((initial?.branches ?? []) as Branch[]);
-  const [snapshots, setSnapshots] = useState<GlimpseSnapshot[]>((initial?.snapshots ?? []) as GlimpseSnapshot[]);
-  const [annotations, setAnnotations] = useState<Annotation[]>((initial?.annotations ?? []) as Annotation[]);
+  const [snapshots, setSnapshots] = useState<GlimpseSnapshot[]>(
+    (initial?.snapshots ?? []) as GlimpseSnapshot[],
+  );
+  const [annotations, setAnnotations] = useState<Annotation[]>(
+    (initial?.annotations ?? []) as Annotation[],
+  );
   const [nodes, setNodes] = useState<CanvasNode[]>((initial?.nodes ?? []) as CanvasNode[]);
   const [edges, setEdges] = useState<ForkEdge[]>((initial?.edges ?? []) as ForkEdge[]);
-  const [selectedGlimpses, setSelectedGlimpses] = useState<Set<string>>(
-    new Set(),
-  );
+  const [selectedGlimpses, setSelectedGlimpses] = useState<Set<string>>(new Set());
   const [showShelf, setShowShelf] = useState(false);
   const [activeMarker, setActiveMarker] = useState<string | null>(null);
 
@@ -94,8 +91,7 @@ export function ScenarioCanvasView() {
       };
 
       const branchCount = branches.filter((b: Branch) => b.seedId === seedId).length;
-      const snapX =
-        seedNode.x + (branchCount % 2 === 0 ? -160 : 160) + branchCount * 60;
+      const snapX = seedNode.x + (branchCount % 2 === 0 ? -160 : 160) + branchCount * 60;
       const snapY = seedNode.y + 240;
 
       const snapshot: GlimpseSnapshot = {
@@ -140,7 +136,9 @@ export function ScenarioCanvasView() {
   }, []);
 
   const updateAnnotation = useCallback((id: string, text: string) => {
-    setAnnotations((a: Annotation[]) => a.map((n: Annotation) => (n.id === id ? { ...n, text } : n)));
+    setAnnotations((a: Annotation[]) =>
+      a.map((n: Annotation) => (n.id === id ? { ...n, text } : n)),
+    );
   }, []);
 
   const deleteAnnotation = useCallback((id: string) => {
@@ -177,10 +175,7 @@ export function ScenarioCanvasView() {
   );
 
   /* ── Memoized filtered nodes for performance ───────────────────── */
-  const seedNodes = useMemo(
-    () => nodes.filter((n: CanvasNode) => n.type === "seed"),
-    [nodes],
-  );
+  const seedNodes = useMemo(() => nodes.filter((n: CanvasNode) => n.type === "seed"), [nodes]);
   const glimpseNodes = useMemo(
     () => nodes.filter((n: CanvasNode) => n.type === "glimpse"),
     [nodes],
@@ -236,7 +231,7 @@ export function ScenarioCanvasView() {
           <rect x="12" y="4" width="6" height="12" rx="1" />
         </svg>
       ),
-      onClick: () => { },
+      onClick: () => {},
       disabled: selectedGlimpses.size < 2,
     },
     {
@@ -254,7 +249,15 @@ export function ScenarioCanvasView() {
         </svg>
       ),
       onClick: () => {
-        const payload = { seeds, branches, snapshots, annotations, nodes, edges, exportedAt: new Date().toISOString() };
+        const payload = {
+          seeds,
+          branches,
+          snapshots,
+          annotations,
+          nodes,
+          edges,
+          exportedAt: new Date().toISOString(),
+        };
         const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
@@ -280,8 +283,7 @@ export function ScenarioCanvasView() {
               Choose a seed to start
             </h2>
             <p className="font-body text-sm text-ink-muted mb-5">
-              A seed is a starting situation for your scenario. Pick one and
-              explore what happens.
+              A seed is a starting situation for your scenario. Pick one and explore what happens.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 stagger-children">
               {seedShelf.map((template) => (
@@ -296,9 +298,7 @@ export function ScenarioCanvasView() {
                 >
                   <div className="flex items-center gap-2 mb-2">
                     <div className="w-2 h-2 rounded-full bg-teal-500 group-hover:shadow-glow-emerald transition-shadow" />
-                    <h3 className="font-heading text-sm font-bold text-ink">
-                      {template.title}
-                    </h3>
+                    <h3 className="font-heading text-sm font-bold text-ink">{template.title}</h3>
                   </div>
                   <p className="font-body text-xs text-ink-muted line-clamp-3">
                     {template.description}
@@ -320,9 +320,9 @@ export function ScenarioCanvasView() {
       {/* Canvas */}
       <div
         className={cn(
-          'flex-1 min-h-0 relative',
-          timelineMarkers.length > 0 && 'pb-14',
-          selectedGlimpses.size >= 2 && 'pb-48'
+          "flex-1 min-h-0 relative",
+          timelineMarkers.length > 0 && "pb-14",
+          selectedGlimpses.size >= 2 && "pb-48",
         )}
       >
         <ScenarioCanvas className="w-full h-full">
@@ -405,9 +405,8 @@ export function ScenarioCanvasView() {
                 Your canvas is empty
               </h2>
               <p className="font-body text-sm text-ink-muted mb-6 leading-relaxed">
-                Start by choosing a seed — a starting situation for your
-                scenario. Then fork it to explore different paths and compare
-                glimpses side by side.
+                Start by choosing a seed — a starting situation for your scenario. Then fork it to
+                explore different paths and compare glimpses side by side.
               </p>
               <button
                 onClick={() => setShowShelf(true)}
@@ -425,10 +424,7 @@ export function ScenarioCanvasView() {
 
       {/* Timeline ribbon */}
       {timelineMarkers.length > 0 && (
-        <TimelineRibbon
-          markers={timelineMarkers}
-          onSelect={(id) => setActiveMarker(id)}
-        />
+        <TimelineRibbon markers={timelineMarkers} onSelect={(id) => setActiveMarker(id)} />
       )}
 
       {/* Comparison tray (C3: side-by-side, max 3) */}
@@ -460,9 +456,7 @@ export function ScenarioCanvasView() {
                     <h4 className="font-heading text-xs font-bold text-ink mb-1 truncate">
                       {snap.title}
                     </h4>
-                    <p className="font-body text-xs text-ink-muted line-clamp-4">
-                      {snap.content}
-                    </p>
+                    <p className="font-body text-xs text-ink-muted line-clamp-4">{snap.content}</p>
                   </div>
                 );
               })}

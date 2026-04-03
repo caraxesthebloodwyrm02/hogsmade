@@ -1,7 +1,7 @@
 {
   "name": "grid-server",
   "version": "1.0.0",
-  "description": "GATE envelope verification proxy MCP server — validates deployment envelopes and manages the transition gate pipeline",
+  "description": "GATE envelope verification proxy MCP server \u2014 validates deployment envelopes and manages the transition gate pipeline",
   "type": "module",
   "main": "src/server.ts",
   "scripts": {
@@ -13,8 +13,8 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "@cascade/shared-resilience": "file:../../Components/shared-resilience",
-    "@cascade/shared-types": "file:../../Components/shared-types",
+    "@cascade/shared-resilience": "file:../../../Components/shared-resilience",
+    "@cascade/shared-types": "file:../../../Components/shared-types",
     "@modelcontextprotocol/sdk": "^1.28.0",
     "zod": "^3.25.0"
   },

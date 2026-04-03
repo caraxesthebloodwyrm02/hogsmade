@@ -1,25 +1,19 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import {
-  evaluateRoutine,
-  getFixtureCandidateById,
-} from "../../eligibility-server/dist/index.js";
+import { evaluateRoutine, getFixtureCandidateById } from "../../eligibility-server/dist/index.js";
 
 test("compiled forms point back to the same candidate result ids", () => {
-  const result = evaluateRoutine(
-    [getFixtureCandidateById("balanced-bridge")],
-    {
-      governance: 1,
-      usability: 1,
-      integration: 1,
-      observability: 1,
-      operationalFit: 1,
-      seed: "forms-seed",
-      formTarget: "all",
-      tableScope: "all",
-    },
-  );
+  const result = evaluateRoutine([getFixtureCandidateById("balanced-bridge")], {
+    governance: 1,
+    usability: 1,
+    integration: 1,
+    observability: 1,
+    operationalFit: 1,
+    seed: "forms-seed",
+    formTarget: "all",
+    tableScope: "all",
+  });
 
   assert.equal(result.forms.length, 5);
   const expectedCandidateIds = ["balanced-bridge"];
@@ -32,19 +26,16 @@ test("compiled forms point back to the same candidate result ids", () => {
 });
 
 test("rule, agent, and skill artifacts remain projections while server and reference stay runtime-backed", () => {
-  const result = evaluateRoutine(
-    [getFixtureCandidateById("balanced-bridge")],
-    {
-      governance: 1,
-      usability: 1,
-      integration: 1,
-      observability: 1,
-      operationalFit: 1,
-      seed: "runtime-backed-seed",
-      formTarget: "all",
-      tableScope: "all",
-    },
-  );
+  const result = evaluateRoutine([getFixtureCandidateById("balanced-bridge")], {
+    governance: 1,
+    usability: 1,
+    integration: 1,
+    observability: 1,
+    operationalFit: 1,
+    seed: "runtime-backed-seed",
+    formTarget: "all",
+    tableScope: "all",
+  });
 
   const byKind = Object.fromEntries(result.forms.map((artifact) => [artifact.kind, artifact]));
   assert.equal(byKind.server_tool.runtimeBacked, true);

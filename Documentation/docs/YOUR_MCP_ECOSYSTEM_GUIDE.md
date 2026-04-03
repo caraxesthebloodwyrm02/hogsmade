@@ -13,6 +13,7 @@ MCP stands for **Model Context Protocol**. Think of it as a universal plug syste
 Without MCP, an AI assistant can only see what you paste into the chat window. With MCP, it can reach out to your file system, check your project health, run experiments, track workflows, and log audit trails — all through a standard, predictable interface.
 
 Each MCP server is a small standalone program that:
+
 - Listens for requests over a simple text pipe (stdin/stdout)
 - Exposes a set of "tools" — named operations the AI can call
 - Returns structured JSON results
@@ -27,9 +28,11 @@ When you open Windsurf and Cascade says "I have access to these tools…", those
 Here's that first-party slice of your ecosystem, in plain language:
 
 ### 1. Echoes (mcp-tool-experiment)
+
 **What it does:** The main safety-first productivity hub. Every tool call passes through an 8-stage pipeline: input validation, capability checking, rate limiting, network boundary enforcement, policy evaluation, execution, output filtering (scrubs PII and secrets), and audit logging.
 
 **Tools you can use:**
+
 - `health_check` — Is everything running correctly?
 - `quick_status` — Fast overview of a workspace (projects, health scores, urgent issues)
 - `productivity_pulse` — Real-time momentum check (velocity, focus, trend)
@@ -47,9 +50,11 @@ Here's that first-party slice of your ecosystem, in plain language:
 **When to use it:** Daily. It's your primary interface for understanding workspace health, checking productivity, and getting actionable recommendations. The safety pipeline means you can trust it to not leak secrets or execute dangerous operations.
 
 ### 2. Echoes-Server (echoes-server)
+
 **What it does:** The persistent audit and telemetry backend. While the main Echoes server processes requests in-memory, this one writes everything to disk so you have a permanent record across sessions.
 
 **Tools you can use:**
+
 - `health_check` — Server status and data store size
 - `record_audit` — Log an event (source, tool, status, duration, metadata)
 - `query_audit` — Search the audit log with filters (by tool, status, time range)
@@ -60,9 +65,11 @@ Here's that first-party slice of your ecosystem, in plain language:
 **When to use it:** You rarely call this directly — the main Echoes server feeds into it. But it's useful when you want to answer questions like "how many times did the safety pipeline block something this week?" or "show me my workspace health trend over the last month."
 
 ### 3. Grid-Server (grid-server)
+
 **What it does:** The GATE (Guarded Agent Transition Envelope) verification system. It manages deployment permissions and validates "envelopes" — cryptographically signed packages that prove code is safe to deploy.
 
 **Tools you can use:**
+
 - `health_check` — GATE directory status, pending envelopes, deployment targets
 - `list_targets` — All deployment targets with their paths, ports, and permission sets
 - `validate_envelope` — Check an envelope's required fields, trusted source, payload hash integrity, timestamp freshness, and test status — without deploying anything
@@ -73,9 +80,11 @@ Here's that first-party slice of your ecosystem, in plain language:
 **When to use it:** Before deploying anything. The whole point is to ensure that code changes meet your safety requirements before they hit a live server. Think of it as your personal code reviewer that checks cryptographic proof rather than reading the code.
 
 ### 4. Afloat-Server (afloat-server)
+
 **What it does:** Multi-step workflow orchestration with rollback support. You define workflows as ordered sequences of steps, then execute them (with dry-run by default).
 
 **Tools you can use:**
+
 - `health_check` — Workflow store status
 - `workflow_create` — Define a new workflow with named steps, commands, and rollback commands
 - `workflow_list` — See all your defined workflows
@@ -86,9 +95,11 @@ Here's that first-party slice of your ecosystem, in plain language:
 **When to use it:** Whenever you have a repeatable multi-step process — deploying docs, running a test suite then publishing results, setting up a new project. Define it once, then execute it any time. The dry-run default means you can preview what would happen before committing.
 
 ### 5. Lots-Server (lots-server)
+
 **What it does:** "Light of the Seven" — an experiment runner. Register experiments with scripts, run them in a sandboxed directory, and compare results.
 
 **Tools you can use:**
+
 - `health_check` — Catalog status and experiment counts by state
 - `experiment_create` — Register a new experiment (name, description, script, language, tags)
 - `experiment_list` — Browse experiments with status and tag filtering
@@ -99,9 +110,11 @@ Here's that first-party slice of your ecosystem, in plain language:
 **When to use it:** When you want to test a hypothesis, benchmark something, or try out a code snippet in a controlled way. Scripts are sandboxed to the experiments directory for security. Supports Python, Node, PowerShell, and Bash.
 
 ### 6. Seeds-Server (seeds-server)
+
 **What it does:** Cross-repository health monitor for your entire Seeds ecosystem (`$SEEDS_ROOT`). Scans all repos for git status, dependency health, test coverage, and activity freshness.
 
 **Tools you can use:**
+
 - `health_check` — Data store status and detected repos
 - `ecosystem_scan` — Full scan of all repos with health scores (0-100), git status, issues, and optionally saves a snapshot
 - `repo_detail` — Deep health check on a single repository
@@ -111,9 +124,11 @@ Here's that first-party slice of your ecosystem, in plain language:
 **When to use it:** Weekly or whenever you feel like things might be drifting. The health scores are calculated from git presence, dependency files, test directories, commit recency, and uncommitted changes. A score below 40 means something needs attention.
 
 ### 7. Pulse-Server (pulse-server) — NEW
+
 **What it does:** Your personal developer dashboard and session journal. Aggregates data from all other servers and helps you track your workday.
 
 **Tools you can use:**
+
 - `health_check` — Status and connected data sources
 - `morning_briefing` — Start-of-day summary: overnight events, ecosystem health, warnings, suggested priorities
 - `journal_add` — Log what you're working on, with tags and mood tracking
@@ -155,25 +170,16 @@ The key insight: each server is independent but they share data through files on
 ## Part 4: Typical Daily Workflow
 
 **Morning (health-scan chain):**
+
 1. `Use morning_briefing` — Pulse reads from echoes audit, seeds snapshots, and afloat history to tell you what happened overnight and what needs attention.
 2. `Use quick_status for <workspacePath> focus:all` — Fast ecosystem-level health check: active projects, urgent issues, immediate actions.
 3. Use `glimpse <workspacePath>` only when you need a **path-scoped** cognitive overview and stall detection for a specific directory (e.g. a subfolder or non–Seeds workspace). For the same root as your ecosystem, morning_briefing + quick_status are usually enough.
 
-**During the day:**
-3. `Use journal_add with entry="Working on GRID auth module"` — Log what you're doing.
-4. `Use focus_start with task="Fix auth token refresh bug" project="GRID-main"` — Start a deep work block.
-5. (Work on the task)
-6. `Use focus_end with outcome="Fixed token refresh, added 3 tests"` — End the block.
-7. `Use experiment_create with name="auth-perf-test" script="..." language="python"` — If you want to benchmark something.
-8. `Use workflow_execute with workflowId="..." dryRun=true` — Preview a deployment.
+**During the day:** 3. `Use journal_add with entry="Working on GRID auth module"` — Log what you're doing. 4. `Use focus_start with task="Fix auth token refresh bug" project="GRID-main"` — Start a deep work block. 5. (Work on the task) 6. `Use focus_end with outcome="Fixed token refresh, added 3 tests"` — End the block. 7. `Use experiment_create with name="auth-perf-test" script="..." language="python"` — If you want to benchmark something. 8. `Use workflow_execute with workflowId="..." dryRun=true` — Preview a deployment.
 
-**End of day:**
-9. `Use ecosystem_scan with saveSnapshot=true` — Capture the state of all repos.
-10. `Use daily_digest` — Get a complete summary of your day.
+**End of day:** 9. `Use ecosystem_scan with saveSnapshot=true` — Capture the state of all repos. 10. `Use daily_digest` — Get a complete summary of your day.
 
-**Weekly:**
-11. `Use ecosystem_trend` — See which repos are improving or degrading over time.
-12. `Use audit_stats` — Review pipeline activity for the week.
+**Weekly:** 11. `Use ecosystem_trend` — See which repos are improving or degrading over time. 12. `Use audit_stats` — Review pipeline activity for the week.
 
 ---
 
@@ -261,6 +267,7 @@ server.connect(new StdioServerTransport());
 5. **Register in mcp_config.json** and restart Windsurf
 
 The key rules from your `.windsurf/rules/mcp.md`:
+
 - Use `snake_case` for tool names, max 64 characters
 - Every tool needs a description
 - All parameters need types (Zod) and descriptions

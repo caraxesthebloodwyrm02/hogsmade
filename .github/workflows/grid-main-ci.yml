@@ -13,12 +13,12 @@ name: GRID-main CI
 
 on:
   push:
-    branches: ['**']
+    branches: ["**"]
     paths:
-      - 'Projects/GRID-main/**'
+      - "Projects/GRID-main/**"
   pull_request:
     paths:
-      - 'Projects/GRID-main/**'
+      - "Projects/GRID-main/**"
 
 permissions:
   contents: read
@@ -46,7 +46,7 @@ jobs:
       - name: Set up Python 3.13
         uses: actions/setup-python@v6
         with:
-          python-version: '3.13'
+          python-version: "3.13"
 
       - name: Install uv
         run: pip install uv

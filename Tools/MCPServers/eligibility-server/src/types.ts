@@ -7,13 +7,7 @@ export type IntegrationDimension =
   | "observability"
   | "operational_fit";
 
-export type CompileTarget =
-  | "server_tool"
-  | "rule"
-  | "agent"
-  | "skill"
-  | "reference"
-  | "all";
+export type CompileTarget = "server_tool" | "rule" | "agent" | "skill" | "reference" | "all";
 
 export type TableScope = "attributes" | "dimensions" | "all";
 export type WeightBand = "trace" | "steady" | "elevated" | "dominant";

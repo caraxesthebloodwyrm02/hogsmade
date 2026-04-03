@@ -164,13 +164,7 @@
           "type": "array",
           "items": {
             "type": "object",
-            "required": [
-              "step_number",
-              "name",
-              "description",
-              "on_failure",
-              "timeout_seconds"
-            ],
+            "required": ["step_number", "name", "description", "on_failure", "timeout_seconds"],
             "properties": {
               "step_number": { "type": "integer", "minimum": 1 },
               "name": { "type": "string" },
@@ -179,12 +173,7 @@
               "expected_output": { "type": "string" },
               "on_failure": {
                 "type": "string",
-                "enum": [
-                  "abort",
-                  "reject_envelope",
-                  "log_and_continue",
-                  "escalate"
-                ]
+                "enum": ["abort", "reject_envelope", "log_and_continue", "escalate"]
               },
               "timeout_seconds": { "type": "number", "minimum": 1 }
             }
@@ -195,12 +184,7 @@
     "dry_run_policy": {
       "type": "object",
       "description": "Governs what is permitted and forbidden during a dry-run invocation.",
-      "required": [
-        "permitted",
-        "forbidden",
-        "nonce_behavior",
-        "audit_behavior"
-      ],
+      "required": ["permitted", "forbidden", "nonce_behavior", "audit_behavior"],
       "properties": {
         "permitted": {
           "type": "array",
@@ -284,13 +268,7 @@
     },
     "audit": {
       "type": "object",
-      "required": [
-        "enabled",
-        "format",
-        "log_path",
-        "retention_days",
-        "overwatch_integration"
-      ],
+      "required": ["enabled", "format", "log_path", "retention_days", "overwatch_integration"],
       "properties": {
         "enabled": { "type": "boolean" },
         "format": { "type": "string", "enum": ["ndjson", "json", "csv"] },

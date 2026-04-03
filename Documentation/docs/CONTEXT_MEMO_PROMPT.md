@@ -7,15 +7,15 @@
 
 ## 1. Project identity
 
-| Field | Value |
-|-------|-------|
-| Workspace | `CascadeProjects` (root repo, `init.defaultBranch=main`) |
-| Remote | `origin` → `github.com/caraxesthebloodwyrm02/like-a-leaf` (private) |
-| OS / shell | Windows 10/11, PowerShell |
-| Python | 3.13, managed via `uv` — always `uv run <cmd>`, never bare `python` or `pip` |
-| Node | TypeScript MCP servers, `vitest` for tests |
-| Frontend | React 19, TypeScript strict, Vite 7, Electron 40, TailwindCSS 4 |
-| Safety rule | Never `eval()`, `exec()`, `pickle` in production. Never bypass auth. |
+| Field       | Value                                                                        |
+| ----------- | ---------------------------------------------------------------------------- |
+| Workspace   | `CascadeProjects` (root repo, `init.defaultBranch=main`)                     |
+| Remote      | `origin` → `github.com/caraxesthebloodwyrm02/like-a-leaf` (private)          |
+| OS / shell  | Windows 10/11, PowerShell                                                    |
+| Python      | 3.13, managed via `uv` — always `uv run <cmd>`, never bare `python` or `pip` |
+| Node        | TypeScript MCP servers, `vitest` for tests                                   |
+| Frontend    | React 19, TypeScript strict, Vite 7, Electron 40, TailwindCSS 4              |
+| Safety rule | Never `eval()`, `exec()`, `pickle` in production. Never bypass auth.         |
 
 ---
 
@@ -23,12 +23,12 @@
 
 **Phases 1–3 are closed. Phase 4 is next and not started.**
 
-| Phase | Status | Delivered |
-|-------|--------|-----------|
-| 1 — Housekeeping | **Closed** | Git history, env vars, smoke tests, Afloat cleanup |
-| 2 — Integration | **Closed** | Shared types, audit contract, cross-referencing, GATE + GRID optional, seeds snapshot contract |
+| Phase            | Status     | Delivered                                                                                                                                    |
+| ---------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1 — Housekeeping | **Closed** | Git history, env vars, smoke tests, Afloat cleanup                                                                                           |
+| 2 — Integration  | **Closed** | Shared types, audit contract, cross-referencing, GATE + GRID optional, seeds snapshot contract                                               |
 | 3 — Intelligence | **Closed** | Scheduled diagnostics E2E, threshold + scan_workspaces, pattern-driven experiments, adaptive briefings, rules-based "what should I work on?" |
-| 4 — Visual | **Next** | Not started |
+| 4 — Visual       | **Next**   | Not started                                                                                                                                  |
 
 Source: `docs/plans/2026-03-08-iteration-phases.md`, `docs/plans/2026-03-08-phase3-next-steps.md`
 
@@ -62,10 +62,10 @@ CascadeProjects/                      ← root repo
 
 ### Contract-backed data flows (today)
 
-| Contract | Location | Producers | Consumers |
-|----------|----------|-----------|-----------|
-| Echoes audit NDJSON | `~/.echoes/audit.ndjson` | lots-server, maintain-server, echoes-server | echoes-server (`query_audit`, `audit_stats`), pulse-server (briefing, correlation) |
-| Seeds ecosystem snapshots | `~/.seeds-server/snapshots/` | seeds-server `ecosystem_scan` | pulse-server (`check_alerts`, briefing, `what_should_i_work_on`) |
+| Contract                  | Location                     | Producers                                   | Consumers                                                                          |
+| ------------------------- | ---------------------------- | ------------------------------------------- | ---------------------------------------------------------------------------------- |
+| Echoes audit NDJSON       | `~/.echoes/audit.ndjson`     | lots-server, maintain-server, echoes-server | echoes-server (`query_audit`, `audit_stats`), pulse-server (briefing, correlation) |
+| Seeds ecosystem snapshots | `~/.seeds-server/snapshots/` | seeds-server `ecosystem_scan`               | pulse-server (`check_alerts`, briefing, `what_should_i_work_on`)                   |
 
 Source: `docs/DATA_CONTRACTS.md`
 
@@ -88,23 +88,23 @@ Source: `docs/VISION_AGENTS_AND_UI_UX_OWNERSHIP.md` (handoff rules, lines 72–7
 
 ### 4.1 Mycelium Dashboard
 
-| | |
-|---|---|
-| **What** | Surface seeds health grid, echoes audit stream, lots experiments, and pulse focus timer inside GRID-main Mycelium. |
-| **Owner** | Dev + design |
-| **Ownership anchor** | `docs/VISION_AGENTS_AND_UI_UX_OWNERSHIP.md#ownership-4-1` |
-| **Host** | `GRID-main/` Mycelium frontend |
-| **Data sources** | seeds-server → health grid; echoes-server → audit stream; lots-server → experiments; pulse-server → focus timer |
+|                      |                                                                                                                    |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| **What**             | Surface seeds health grid, echoes audit stream, lots experiments, and pulse focus timer inside GRID-main Mycelium. |
+| **Owner**            | Dev + design                                                                                                       |
+| **Ownership anchor** | `docs/VISION_AGENTS_AND_UI_UX_OWNERSHIP.md#ownership-4-1`                                                          |
+| **Host**             | `GRID-main/` Mycelium frontend                                                                                     |
+| **Data sources**     | seeds-server → health grid; echoes-server → audit stream; lots-server → experiments; pulse-server → focus timer    |
 
 **Acceptance criteria:**
 
-| Criterion | Description |
-|-----------|-------------|
-| Health grid | Ecosystem health grid visible from seeds-server data |
-| Audit stream | Audit event stream visible from echoes-server |
-| Experiments | Active experiments visible from lots-server |
-| Focus timer | Focus session timer visible from pulse-server |
-| Layout and binding | Layout and data binding documented and functional |
+| Criterion          | Description                                          |
+| ------------------ | ---------------------------------------------------- |
+| Health grid        | Ecosystem health grid visible from seeds-server data |
+| Audit stream       | Audit event stream visible from echoes-server        |
+| Experiments        | Active experiments visible from lots-server          |
+| Focus timer        | Focus session timer visible from pulse-server        |
+| Layout and binding | Layout and data binding documented and functional    |
 
 **Done when:** All four data sources connected and displayed in Mycelium; no regressions to existing GRID Mycelium behavior.
 
@@ -112,23 +112,23 @@ Source: `docs/VISION_AGENTS_AND_UI_UX_OWNERSHIP.md` (handoff rules, lines 72–7
 
 ### 4.2 Glimpse components
 
-| | |
-|---|---|
-| **What** | Build reusable health gauges, audit timeline, experiment charts, and workflow status cards for both dashboard and GATE views. |
-| **Owner** | Component library owner |
-| **Ownership anchor** | `docs/VISION_AGENTS_AND_UI_UX_OWNERSHIP.md#ownership-4-2` |
-| **Host** | `glimpse-artifact/` |
-| **Constraint** | Design tokens (palette, typography) are the single source for Phase 4 UI |
+|                      |                                                                                                                               |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| **What**             | Build reusable health gauges, audit timeline, experiment charts, and workflow status cards for both dashboard and GATE views. |
+| **Owner**            | Component library owner                                                                                                       |
+| **Ownership anchor** | `docs/VISION_AGENTS_AND_UI_UX_OWNERSHIP.md#ownership-4-2`                                                                     |
+| **Host**             | `glimpse-artifact/`                                                                                                           |
+| **Constraint**       | Design tokens (palette, typography) are the single source for Phase 4 UI                                                      |
 
 **Acceptance criteria:**
 
-| Criterion | Description |
-|-----------|-------------|
-| Health gauges | Health score gauges per repo available and used |
-| Audit timeline | Audit event timeline component available and used |
-| Experiment charts | Experiment comparison charts available and used |
-| Workflow cards | Workflow execution status cards available and used |
-| Reuse | Components reusable across dashboard and GATE viz |
+| Criterion         | Description                                        |
+| ----------------- | -------------------------------------------------- |
+| Health gauges     | Health score gauges per repo available and used    |
+| Audit timeline    | Audit event timeline component available and used  |
+| Experiment charts | Experiment comparison charts available and used    |
+| Workflow cards    | Workflow execution status cards available and used |
+| Reuse             | Components reusable across dashboard and GATE viz  |
 
 **Done when:** All four component types exist in glimpse-artifact and are integrated where specified; design system is the single source for Phase 4 UI.
 
@@ -138,20 +138,20 @@ Source: `docs/VISION_AGENTS_AND_UI_UX_OWNERSHIP.md` (handoff rules, lines 72–7
 
 ### 4.3 Real-time event stream
 
-| | |
-|---|---|
-| **What** | Add live updates for audit events, experiment completion, and health-score changes. |
-| **Owner** | Design doc first, then implementation |
-| **Ownership anchor** | `docs/VISION_AGENTS_AND_UI_UX_OWNERSHIP.md#ownership-4-3` |
-| **Blocker** | Design doc must exist and be approved before implementation begins |
+|                      |                                                                                     |
+| -------------------- | ----------------------------------------------------------------------------------- |
+| **What**             | Add live updates for audit events, experiment completion, and health-score changes. |
+| **Owner**            | Design doc first, then implementation                                               |
+| **Ownership anchor** | `docs/VISION_AGENTS_AND_UI_UX_OWNERSHIP.md#ownership-4-3`                           |
+| **Blocker**          | Design doc must exist and be approved before implementation begins                  |
 
 **Acceptance criteria:**
 
-| Criterion | Description |
-|-----------|-------------|
+| Criterion  | Description                                                                       |
+| ---------- | --------------------------------------------------------------------------------- |
 | Design doc | Covers hosting model, auth assumptions, event fan-out, coexistence with stdio MCP |
-| WebSocket | WebSocket support in pulse-server (or designated service) for live updates |
-| UX | Loading and error states defined and implemented |
+| WebSocket  | WebSocket support in pulse-server (or designated service) for live updates        |
+| UX         | Loading and error states defined and implemented                                  |
 
 **Done when:** Design doc approved; frontend updates live for audit events, experiment completion, and health score changes.
 
@@ -161,20 +161,20 @@ Source: `docs/VISION_AGENTS_AND_UI_UX_OWNERSHIP.md` (handoff rules, lines 72–7
 
 ### 4.4 GATE visualization
 
-| | |
-|---|---|
-| **What** | Show the envelope flow, nonce registry, and deployment history with risk scores as a calm, read-only view. |
-| **Owner** | Dev + design |
-| **Ownership anchor** | `docs/VISION_AGENTS_AND_UI_UX_OWNERSHIP.md#ownership-4-4` |
-| **Data source** | grid-server (GATE envelope validation, nonce registry, audit) |
+|                      |                                                                                                            |
+| -------------------- | ---------------------------------------------------------------------------------------------------------- |
+| **What**             | Show the envelope flow, nonce registry, and deployment history with risk scores as a calm, read-only view. |
+| **Owner**            | Dev + design                                                                                               |
+| **Ownership anchor** | `docs/VISION_AGENTS_AND_UI_UX_OWNERSHIP.md#ownership-4-4`                                                  |
+| **Data source**      | grid-server (GATE envelope validation, nonce registry, audit)                                              |
 
 **Acceptance criteria:**
 
-| Criterion | Description |
-|-----------|-------------|
-| Envelope flow | Submitted → validated → approved/rejected shown visually |
-| Nonce registry | Registry status visible |
-| Deployment history | Recent history with risk scores visible |
+| Criterion          | Description                                              |
+| ------------------ | -------------------------------------------------------- |
+| Envelope flow      | Submitted → validated → approved/rejected shown visually |
+| Nonce registry     | Registry status visible                                  |
+| Deployment history | Recent history with risk scores visible                  |
 
 **Done when:** Read-only visualization of the deployment pipeline is available and accurate.
 
@@ -213,18 +213,18 @@ Source: `docs/PHASE4_QUALITY_CONTRACT.md`
 
 `docs/progress-and-vision.html` is a static, human-maintained artifact. Its design constraints are frozen:
 
-| Constraint | Value |
-|------------|-------|
-| Fonts | Outfit (headings), DM Sans (body) via Google Fonts |
-| Palette | 14 CSS variables: `--base` through `--radius` (teal-on-neutral) |
-| Sections | Exactly 4: Current progress, Project map, Vision (Phase 4), Key docs and next steps |
-| Animation | Staggered `sectionIn` at 0s / 0.05s / 0.1s / 0.15s per `nth-child` |
-| Toolbar | 2 buttons: Grid layout toggle, Reset zoom |
-| Diagrams | 2 Mermaid diagrams: phase timeline (LR), project map (TB) |
-| Zoom | Click or Enter/Space on `.diagram-wrap.zoomable` toggles `.zoomed` (scale 1.4) |
-| Layout | `body.layout-grid` → 2-column CSS grid; mobile breakpoint 640px falls back to 1-col |
-| Print | `@media print` hides toolbar, removes shadows, forces `opacity: 1` |
-| Links | Stable fragment identifiers (`#ownership-4-x`), not text fragments or permalinks |
+| Constraint | Value                                                                               |
+| ---------- | ----------------------------------------------------------------------------------- |
+| Fonts      | Outfit (headings), DM Sans (body) via Google Fonts                                  |
+| Palette    | 14 CSS variables: `--base` through `--radius` (teal-on-neutral)                     |
+| Sections   | Exactly 4: Current progress, Project map, Vision (Phase 4), Key docs and next steps |
+| Animation  | Staggered `sectionIn` at 0s / 0.05s / 0.1s / 0.15s per `nth-child`                  |
+| Toolbar    | 2 buttons: Grid layout toggle, Reset zoom                                           |
+| Diagrams   | 2 Mermaid diagrams: phase timeline (LR), project map (TB)                           |
+| Zoom       | Click or Enter/Space on `.diagram-wrap.zoomable` toggles `.zoomed` (scale 1.4)      |
+| Layout     | `body.layout-grid` → 2-column CSS grid; mobile breakpoint 640px falls back to 1-col |
+| Print      | `@media print` hides toolbar, removes shadows, forces `opacity: 1`                  |
+| Links      | Stable fragment identifiers (`#ownership-4-x`), not text fragments or permalinks    |
 
 **Do not:** Add new controls, expand the color system, embed illustrations/backgrounds, or change section count without extending the animation selectors.
 
@@ -232,20 +232,20 @@ Source: `docs/PHASE4_QUALITY_CONTRACT.md`
 
 ## 8. Key doc index
 
-| Doc | Path | Purpose |
-|-----|------|---------|
-| Iteration phases | `docs/plans/2026-03-08-iteration-phases.md` | Full phase spec (Phases 1–4) |
-| Phase 3 next steps | `docs/plans/2026-03-08-phase3-next-steps.md` | Phase 3 closure, Phase 4 pointer |
-| Data contracts | `docs/DATA_CONTRACTS.md` | Echoes audit NDJSON, Seeds snapshots |
-| Quality contract | `docs/PHASE4_QUALITY_CONTRACT.md` | Acceptance criteria, quality gates |
-| Quality schema | `docs/schemas/phase4-quality-gates.schema.json` | JSON schema for gate reports |
-| Ownership | `docs/VISION_AGENTS_AND_UI_UX_OWNERSHIP.md` | Ownership anchors, handoff rules |
-| Progress summary | `docs/PROGRESS_SUMMARY.md` | Gist, contract pointers |
-| Visual artifact | `docs/progress-and-vision.html` | Browser-open progress and vision view |
-| Root README | `README.md` | Workspace overview and project table |
-| Contributing | `CONTRIBUTING.md` | Contribution guidelines |
-| Git conventions | `docs/GIT_REPO.md` | Staging, push, remotes, nested repos |
-| Submodules | `docs/SUBMODULES.md` | Dirty submodule remediation |
+| Doc                | Path                                            | Purpose                               |
+| ------------------ | ----------------------------------------------- | ------------------------------------- |
+| Iteration phases   | `docs/plans/2026-03-08-iteration-phases.md`     | Full phase spec (Phases 1–4)          |
+| Phase 3 next steps | `docs/plans/2026-03-08-phase3-next-steps.md`    | Phase 3 closure, Phase 4 pointer      |
+| Data contracts     | `docs/DATA_CONTRACTS.md`                        | Echoes audit NDJSON, Seeds snapshots  |
+| Quality contract   | `docs/PHASE4_QUALITY_CONTRACT.md`               | Acceptance criteria, quality gates    |
+| Quality schema     | `docs/schemas/phase4-quality-gates.schema.json` | JSON schema for gate reports          |
+| Ownership          | `docs/VISION_AGENTS_AND_UI_UX_OWNERSHIP.md`     | Ownership anchors, handoff rules      |
+| Progress summary   | `docs/PROGRESS_SUMMARY.md`                      | Gist, contract pointers               |
+| Visual artifact    | `docs/progress-and-vision.html`                 | Browser-open progress and vision view |
+| Root README        | `README.md`                                     | Workspace overview and project table  |
+| Contributing       | `CONTRIBUTING.md`                               | Contribution guidelines               |
+| Git conventions    | `docs/GIT_REPO.md`                              | Staging, push, remotes, nested repos  |
+| Submodules         | `docs/SUBMODULES.md`                            | Dirty submodule remediation           |
 
 ---
 

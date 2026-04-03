@@ -30,12 +30,7 @@ export class GroundingProvider {
  */
 export class LocalGroundingProvider extends GroundingProvider {
   getCapabilities() {
-    return [
-      "entity-cross-ref",
-      "relation-validation",
-      "pattern-corroboration",
-      "gap-filling",
-    ];
+    return ["entity-cross-ref", "relation-validation", "pattern-corroboration", "gap-filling"];
   }
 
   /**
@@ -63,9 +58,7 @@ export class LocalGroundingProvider extends GroundingProvider {
 
     // Strategy 3: Cross-reference with relation topology
     const entityRelations = claim.entityId
-      ? relations.filter(
-          (r) => r.source === claim.entityId || r.target === claim.entityId,
-        )
+      ? relations.filter((r) => r.source === claim.entityId || r.target === claim.entityId)
       : [];
     const wellConnected = entityRelations.length >= 2;
 
@@ -77,9 +70,7 @@ export class LocalGroundingProvider extends GroundingProvider {
         (e) =>
           e.payload?.relationType &&
           supportingEvidence.some(
-            (se) =>
-              se.payload?.relationType &&
-              se.payload.relationType !== e.payload.relationType,
+            (se) => se.payload?.relationType && se.payload.relationType !== e.payload.relationType,
           ),
       );
 
@@ -114,13 +105,9 @@ export class LocalGroundingProvider extends GroundingProvider {
 
     const avgEvConfidence =
       supportingEvidence.length > 0
-        ? supportingEvidence.reduce((s, e) => s + e.confidence, 0) /
-          supportingEvidence.length
+        ? supportingEvidence.reduce((s, e) => s + e.confidence, 0) / supportingEvidence.length
         : 0;
-    confidence = Math.max(
-      0,
-      Math.min(0.95, confidence + avgEvConfidence * 0.2),
-    );
+    confidence = Math.max(0, Math.min(0.95, confidence + avgEvConfidence * 0.2));
 
     return {
       confirmed: confidence >= 0.5,
@@ -236,9 +223,7 @@ function buildGroundedInsight(insight, result) {
     },
     // Adjust insight confidence based on grounding
     adjustedConfidence:
-      Math.round(
-        ((insight.densityScore || 0.5) * 0.7 + result.confidence * 0.3) * 1000,
-      ) / 1000,
+      Math.round(((insight.densityScore || 0.5) * 0.7 + result.confidence * 0.3) * 1000) / 1000,
   };
 }
 

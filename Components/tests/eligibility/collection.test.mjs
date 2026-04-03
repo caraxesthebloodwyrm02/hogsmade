@@ -1,17 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import {
-  evaluateRoutine,
-  getFixtureCandidateById,
-} from "../../eligibility-server/dist/index.js";
+import { evaluateRoutine, getFixtureCandidateById } from "../../eligibility-server/dist/index.js";
 
 test("collection table retains provenance credit and formula-ready columns", () => {
   const result = evaluateRoutine(
-    [
-      getFixtureCandidateById("balanced-bridge"),
-      getFixtureCandidateById("governance-lattice"),
-    ],
+    [getFixtureCandidateById("balanced-bridge"), getFixtureCandidateById("governance-lattice")],
     {
       governance: 1.2,
       usability: 1,

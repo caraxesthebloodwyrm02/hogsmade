@@ -4,11 +4,11 @@ Concise reference for what is in git vs not, and when to run the git sequence. S
 
 ## Git vs non-git (characteristic comparison)
 
-| Dimension | Git-covered | Not git-covered |
-|-----------|-------------|-----------------|
-| **Content** | Source code, shared docs, conventions, Cursor rules/skills/agents, submodule refs | Local hooks, secrets, build artifacts, audit NDJSON, session/debug state, generated or local-only docs |
-| **Purpose** | Reproducible project and team context | Machine-local or ephemeral state, security-sensitive data |
-| **Examples** | `docs/`, `*.server/`, `shared-types/`, `.cursor/agents/`, `.cursor/skills/`, `.cursor/rules/`, `.gitignore`, `.gitmodules` | `node_modules/`, `.venv/`, `dist/`, `.env*`, `*.ndjson`, `.cursor/hooks.json`, `output/`, `tmp/` |
+| Dimension    | Git-covered                                                                                                                | Not git-covered                                                                                        |
+| ------------ | -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| **Content**  | Source code, shared docs, conventions, Cursor rules/skills/agents, submodule refs                                          | Local hooks, secrets, build artifacts, audit NDJSON, session/debug state, generated or local-only docs |
+| **Purpose**  | Reproducible project and team context                                                                                      | Machine-local or ephemeral state, security-sensitive data                                              |
+| **Examples** | `docs/`, `*.server/`, `shared-types/`, `.cursor/agents/`, `.cursor/skills/`, `.cursor/rules/`, `.gitignore`, `.gitmodules` | `node_modules/`, `.venv/`, `dist/`, `.env*`, `*.ndjson`, `.cursor/hooks.json`, `output/`, `tmp/`       |
 
 **Recommendation**: Keep current tracking; add `output/` and `tmp/` to `.gitignore` if they are local-only. Decide policy for root-level `chart.csv`, `metadata.txt`, `snapshot.json` (ignore if generated/local).
 

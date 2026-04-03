@@ -1,13 +1,13 @@
-export const DEBUG_TIME_ZONE = 'Asia/Dhaka';
+export const DEBUG_TIME_ZONE = "Asia/Dhaka";
 
-const LOCAL_DATE_FORMAT = new Intl.DateTimeFormat('en-GB', {
+const LOCAL_DATE_FORMAT = new Intl.DateTimeFormat("en-GB", {
   timeZone: DEBUG_TIME_ZONE,
-  year: 'numeric',
-  month: 'short',
-  day: '2-digit',
-  hour: '2-digit',
-  minute: '2-digit',
-  second: '2-digit',
+  year: "numeric",
+  month: "short",
+  day: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+  second: "2-digit",
   hour12: false,
 });
 
@@ -42,7 +42,7 @@ export function createDebugLogContext(
 
   // Strip ISO date punctuation; regex uses Unicode escapes so Tailwind content scan does not emit invalid arbitrary-class CSS
   const stripIsoChars = /[\u002d\u003a\u002eTZ]/g;
-  const stripped = timestampUtc.replace(stripIsoChars, '');
+  const stripped = timestampUtc.replace(stripIsoChars, "");
   return {
     traceId: `${source}-${stripped.slice(0, 14)}`,
     spanId: stripped.slice(-8),

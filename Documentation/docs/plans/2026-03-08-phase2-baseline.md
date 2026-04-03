@@ -54,12 +54,14 @@
 ## Phase 2 closed (2026-03-08)
 
 All four close criteria met:
+
 1. One failure + one low-health repo → one ranked pulse action (pulse smoke test passing)
 2. grid-server validates locally without GRID-main, tests pass
 3. DATA_CONTRACTS.md and shared-types README match behavior
 4. shared-types health/telemetry adopted in 3+ or deferral documented (deferred with reason in README)
 
 Evidence validated:
+
 - Real seeds snapshot and audit events in `~/.echoes/audit.ndjson`
 - `relatedRepo` contract (single-root only, omit when ambiguous) documented in DATA_CONTRACTS.md
 - HealthCheckResponse / TelemetrySnapshot deferral and reason documented in shared-types README

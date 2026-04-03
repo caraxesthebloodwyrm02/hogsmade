@@ -467,9 +467,7 @@ export class HardenedMcpMeritGuard {
                 };
             }
             catch (handlerError) {
-                const errorMsg = handlerError instanceof Error
-                    ? handlerError.message
-                    : String(handlerError);
+                const errorMsg = handlerError instanceof Error ? handlerError.message : String(handlerError);
                 // Log handler errors explicitly
                 console.error(`[HANDLER_ERROR] Tool ${name} failed for ${entityId}:`, errorMsg);
                 return {

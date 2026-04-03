@@ -31,9 +31,7 @@ export function installCustomDefinition(registry, entry) {
     }
     const existing = registry.get?.(definition.id);
     if (existing) {
-      conflicts.push(
-        `Pattern "${definition.id}" already exists — overwriting.`
-      );
+      conflicts.push(`Pattern "${definition.id}" already exists — overwriting.`);
     }
     registry.register(definition);
     return { installed: true, conflicts };
@@ -48,9 +46,7 @@ export function installCustomDefinition(registry, entry) {
     }
     const existing = registry.get?.(definition.name);
     if (existing) {
-      conflicts.push(
-        `Function "${definition.name}" already exists — overwriting.`
-      );
+      conflicts.push(`Function "${definition.name}" already exists — overwriting.`);
     }
     registry.register(definition);
     return { installed: true, conflicts };

@@ -5,6 +5,7 @@ A comprehensive real-time activity monitoring and visualization system for the G
 ## Features
 
 ### 📊 Activity Monitoring Dashboard
+
 - **Real-time metrics**: Total sessions, success rate, processing time, activity streaks
 - **Activity heatmap**: Calendar-style visualization of daily activity levels
 - **Traffic charts**: Hour-by-hour activity monitoring
@@ -12,12 +13,14 @@ A comprehensive real-time activity monitoring and visualization system for the G
 - **Status monitoring**: Real-time system status indicators
 
 ### 🚦 Traffic Visualizer
+
 - **Live activity stream**: Real-time session monitoring
 - **Traffic statistics**: Hourly totals, peak activity, average rates
 - **Traffic meter**: Visual intensity indicator
 - **Activity patterns**: Peak and low activity identification
 
 ### 📈 Analytics View
+
 - **Activity overview**: Comprehensive session statistics
 - **Monthly breakdown**: Long-term activity trends
 - **Performance trends**: Confidence, duration, error rate tracking
@@ -26,10 +29,12 @@ A comprehensive real-time activity monitoring and visualization system for the G
 ## Installation & Setup
 
 ### Prerequisites
-- Node.js 18+ 
+
+- Node.js 18+
 - Glimpse engine installed
 
 ### Files Added
+
 ```
 glimpse-engine/
 ├── core/
@@ -67,6 +72,7 @@ glimpse help
 ### Web Dashboard
 
 1. Start the web server:
+
 ```bash
 cd glimpse-engine
 python -m http.server 8080
@@ -77,6 +83,7 @@ python -m http.server 8080
 ### Activity Tracking
 
 Activity is automatically tracked for all Glimpse sessions:
+
 - Built-in scenarios (standup, energy, portfolio, lending, recommend)
 - Custom data analysis (`glimpse run file.json`)
 - Processing time and success rates
@@ -85,6 +92,7 @@ Activity is automatically tracked for all Glimpse sessions:
 ## Dashboard Components
 
 ### Key Metrics
+
 - **Total Sessions**: All-time activity count
 - **Success Rate**: Processing reliability percentage
 - **Avg Processing Time**: Performance metric in milliseconds
@@ -92,24 +100,28 @@ Activity is automatically tracked for all Glimpse sessions:
 - **Last Activity**: Most recent session timestamp
 
 ### Activity Heatmap
+
 - Calendar-style grid showing last 30 days
 - Color intensity represents activity level
 - Hover tooltips show exact session counts
 - 5-level intensity scale (0-4)
 
 ### Traffic Chart
+
 - 24-hour activity timeline
 - Bar chart visualization
 - Real-time updates in live mode
 - Peak and low activity identification
 
 ### Performance Indicators
+
 - **Processing Speed**: Average session duration
 - **Success Rate**: Reliability percentage
 - **Activity Level**: Light/Moderate/Active/Heavy classification
 - **System Health**: Overall system status
 
 ### System Status
+
 - **Activity Monitor**: Tracking system status
 - **Current Streak**: Activity streak indicator
 - **Data Processing**: Normal/Warning/Error states
@@ -118,12 +130,14 @@ Activity is automatically tracked for all Glimpse sessions:
 ## Real-time Features
 
 ### Auto-refresh Mode
+
 ```bash
 glimpse monitor --realtime    # Dashboard updates every 5 seconds
 glimpse traffic --realtime    # Traffic stream updates every 5 seconds
 ```
 
 ### Live Activity Stream
+
 - Real-time session monitoring
 - Activity timestamps
 - Session count tracking
@@ -132,12 +146,14 @@ glimpse traffic --realtime    # Traffic stream updates every 5 seconds
 ## Data Storage
 
 ### Activity Data File
+
 - **Location**: `.glimpse-activity.json`
 - **Format**: JSON with metrics and sessions
 - **Retention**: Last 1000 sessions (configurable)
 - **Auto-backup**: Automatic persistence
 
 ### Metrics Tracked
+
 ```json
 {
   "metrics": {
@@ -158,64 +174,71 @@ glimpse traffic --realtime    # Traffic stream updates every 5 seconds
 ## Configuration
 
 ### ActivityTracker Options
+
 ```javascript
 const tracker = new ActivityTracker({
-  dataPath: '.glimpse-activity.json',  // Data storage file
-  maxEntries: 1000,                    // Max sessions to retain
-  updateInterval: 5000                 // Real-time update interval (ms)
+  dataPath: ".glimpse-activity.json", // Data storage file
+  maxEntries: 1000, // Max sessions to retain
+  updateInterval: 5000, // Real-time update interval (ms)
 });
 ```
 
 ### VisualFeedback Options
+
 ```javascript
 const feedback = new VisualFeedback({
-  width: 80,              // Console width for charts
-  height: 24,             // Console height for charts
-  refreshRate: 1000       // Dashboard refresh rate (ms)
+  width: 80, // Console width for charts
+  height: 24, // Console height for charts
+  refreshRate: 1000, // Dashboard refresh rate (ms)
 });
 ```
 
 ## Integration Examples
 
 ### Custom Activity Tracking
+
 ```javascript
-import { activityTracker } from './core/activity-tracker.js';
+import { activityTracker } from "./core/activity-tracker.js";
 
 // Track custom session
 activityTracker.recordSession({
-  scenario: 'custom-analysis',
+  scenario: "custom-analysis",
   duration: 150,
   recordCount: 25,
-  complexity: 'moderate',
+  complexity: "moderate",
   confidence: 0.85,
-  status: 'success'
+  status: "success",
 });
 ```
 
 ### Custom Dashboard Views
+
 ```javascript
-import { visualFeedback } from './core/visual-feedback.js';
+import { visualFeedback } from "./core/visual-feedback.js";
 
 // Render custom view
-visualFeedback.currentView = 'custom';
+visualFeedback.currentView = "custom";
 visualFeedback.renderCurrentView();
 ```
 
 ## Web Dashboard Features
 
 ### Interactive Elements
+
 - **Date Range Selection**: 1d, 7d, 30d, 90d, 1y
 - **Real-time Toggle**: Start/stop live updates
 - **Export Data**: Download activity data as JSON
 - **Refresh**: Manual data refresh
 
 ### Responsive Design
+
 - Mobile-friendly layout
 - Adaptive grid system
 - Touch-friendly controls
 - Dark theme optimized
 
 ### Visualizations
+
 - **Interactive Heatmap**: Hover tooltips, click-to-focus
 - **Traffic Charts**: Animated bars, real-time updates
 - **Metric Cards**: Hover effects, status indicators
@@ -224,12 +247,14 @@ visualFeedback.renderCurrentView();
 ## Performance
 
 ### Optimization Features
+
 - **Efficient Data Storage**: Map-based metrics for O(1) access
 - **Lazy Loading**: Data loaded on-demand
 - **Memory Management**: Automatic cleanup of old sessions
 - **Throttled Updates**: Configurable refresh intervals
 
 ### Benchmarks
+
 - **Session Tracking**: <1ms overhead
 - **Dashboard Rendering**: <50ms
 - **Data Persistence**: <10ms for 1000 sessions
@@ -250,6 +275,7 @@ visualFeedback.renderCurrentView();
    - Check `.glimpse-activity.json` file permissions
 
 ### Debug Mode
+
 ```bash
 DEBUG=1 glimpse monitor  # Enable debug logging
 ```
@@ -257,6 +283,7 @@ DEBUG=1 glimpse monitor  # Enable debug logging
 ## API Reference
 
 ### ActivityTracker Class
+
 ```javascript
 class ActivityTracker {
   recordSession(sessionData)     // Track new session
@@ -270,6 +297,7 @@ class ActivityTracker {
 ```
 
 ### VisualFeedback Class
+
 ```javascript
 class VisualFeedback {
   renderDashboard()              // Main dashboard view
@@ -283,6 +311,7 @@ class VisualFeedback {
 ## Future Enhancements
 
 ### Planned Features
+
 - [ ] WebSocket support for true real-time updates
 - [ ] Mobile app companion
 - [ ] Advanced analytics with ML insights
@@ -292,6 +321,7 @@ class VisualFeedback {
 - [ ] Integration with external monitoring tools
 
 ### Extensions
+
 - Plugin system for custom metrics
 - Third-party integrations (Slack, Discord)
 - Advanced filtering and search
@@ -301,6 +331,7 @@ class VisualFeedback {
 ## Contributing
 
 ### Development Setup
+
 ```bash
 cd glimpse-engine
 npm install  # If dependencies added
@@ -308,6 +339,7 @@ node cli.js monitor  # Test dashboard
 ```
 
 ### Code Style
+
 - Follow existing Glimpse engine patterns
 - Use ES6+ modules
 - Maintain backward compatibility

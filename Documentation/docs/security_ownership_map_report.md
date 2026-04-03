@@ -127,12 +127,12 @@ So the ownership script used the flag correctly, but Git in this environment did
 
 ### CODEOWNERS vs ownership map (drift check)
 
-| CODEOWNERS path | Ownership map (cleaned) | Notes |
-|-----------------|-------------------------|--------|
-| `/src/grid/auth/` | Bus-factor 1: `src/grid/auth/schemas.py`, `src/grid/auth/rbac.py`; top owner caraxesthebloodwyrm02 | Aligned |
-| `/safety/auth/` | Bus-factor 1: `safety/auth/manager.py`; top owner caraxesthebloodwyrm02 | Aligned |
-| `/src/application/mothership/security/` | Not in bus_factor_hotspots; auth/secrets concentration in summary | No hotspot file; still sensitive |
-| `/tests/auth/` | Bus-factor 1: `tests/auth/test_token_manager.py`; top owner irfankabir02 (cleaned run) | Aligned |
+| CODEOWNERS path                         | Ownership map (cleaned)                                                                            | Notes                            |
+| --------------------------------------- | -------------------------------------------------------------------------------------------------- | -------------------------------- |
+| `/src/grid/auth/`                       | Bus-factor 1: `src/grid/auth/schemas.py`, `src/grid/auth/rbac.py`; top owner caraxesthebloodwyrm02 | Aligned                          |
+| `/safety/auth/`                         | Bus-factor 1: `safety/auth/manager.py`; top owner caraxesthebloodwyrm02                            | Aligned                          |
+| `/src/application/mothership/security/` | Not in bus_factor_hotspots; auth/secrets concentration in summary                                  | No hotspot file; still sensitive |
+| `/tests/auth/`                          | Bus-factor 1: `tests/auth/test_token_manager.py`; top owner irfankabir02 (cleaned run)             | Aligned                          |
 
 Formal ownership (CODEOWNERS) and actual ownership (ownership map) cover the same sensitive paths. CODEOWNERS currently lists a single owner per path; the report recommends adding a second reviewer for these paths when available.
 

@@ -19,11 +19,13 @@ pi-mangrove/
 ## Key Conventions
 
 **Extensions**
+
 - Export default function receiving `pi: ExtensionAPI`
 - Register tools with `pi.registerTool({ name, description, parameters, execute })`
 - Handle errors in `execute` and return stringified JSON for structured payloads
 
 **Python Bridge Pattern (DIO)**
+
 ```typescript
 const cp = spawn("uv", ["run", "python", "-c", code], {
   cwd: dioRoot,
@@ -34,12 +36,12 @@ const cp = spawn("uv", ["run", "python", "-c", code], {
 
 ## Quick Reference
 
-| Task | Command |
-|------|---------|
-| Typecheck | `npm run typecheck` |
-| Build (optional) | `npm run build` |
-| Reload pi | `/reload` or restart |
-| Verify loaded | `/hotkeys` — check tool list |
+| Task             | Command                      |
+| ---------------- | ---------------------------- |
+| Typecheck        | `npm run typecheck`          |
+| Build (optional) | `npm run build`              |
+| Reload pi        | `/reload` or restart         |
+| Verify loaded    | `/hotkeys` — check tool list |
 
 ## Extension Template
 

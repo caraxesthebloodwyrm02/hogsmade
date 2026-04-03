@@ -1,5 +1,5 @@
-import React, { useState, useRef, useCallback } from 'react';
-import { cn } from '@/lib/utils';
+import React, { useState, useRef, useCallback } from "react";
+import { cn } from "@/lib/utils";
 
 interface ScenarioCanvasProps {
   children?: React.ReactNode;
@@ -21,20 +21,29 @@ export function ScenarioCanvas({ children, className }: ScenarioCanvasProps) {
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
     if (e.button !== 0) return;
     const target = e.target as HTMLElement;
-    if (target.closest('[data-draggable]') || target.closest('button') || target.closest('input') || target.closest('textarea')) return;
+    if (
+      target.closest("[data-draggable]") ||
+      target.closest("button") ||
+      target.closest("input") ||
+      target.closest("textarea")
+    )
+      return;
 
     setIsPanning(true);
     lastPos.current = { x: e.clientX, y: e.clientY };
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
   }, []);
 
-  const handlePointerMove = useCallback((e: React.PointerEvent) => {
-    if (!isPanning) return;
-    const dx = e.clientX - lastPos.current.x;
-    const dy = e.clientY - lastPos.current.y;
-    lastPos.current = { x: e.clientX, y: e.clientY };
-    setTransform((t: Transform) => ({ ...t, x: t.x + dx, y: t.y + dy }));
-  }, [isPanning]);
+  const handlePointerMove = useCallback(
+    (e: React.PointerEvent) => {
+      if (!isPanning) return;
+      const dx = e.clientX - lastPos.current.x;
+      const dy = e.clientY - lastPos.current.y;
+      lastPos.current = { x: e.clientX, y: e.clientY };
+      setTransform((t: Transform) => ({ ...t, x: t.x + dx, y: t.y + dy }));
+    },
+    [isPanning],
+  );
 
   const handlePointerUp = useCallback(() => {
     setIsPanning(false);
@@ -57,10 +66,10 @@ export function ScenarioCanvas({ children, className }: ScenarioCanvasProps) {
     <div
       ref={canvasRef}
       className={cn(
-        'relative w-full h-full overflow-hidden select-none',
-        'bg-canvas-bg',
-        isPanning ? 'cursor-grabbing' : 'cursor-grab',
-        className
+        "relative w-full h-full overflow-hidden select-none",
+        "bg-canvas-bg",
+        isPanning ? "cursor-grabbing" : "cursor-grab",
+        className,
       )}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
@@ -72,20 +81,22 @@ export function ScenarioCanvas({ children, className }: ScenarioCanvasProps) {
       tabIndex={0}
       onKeyDown={(e: React.KeyboardEvent<HTMLDivElement>) => {
         const step = 40;
-        if (e.key === 'ArrowLeft') setTransform((t: Transform) => ({ ...t, x: t.x + step }));
-        if (e.key === 'ArrowRight') setTransform((t: Transform) => ({ ...t, x: t.x - step }));
-        if (e.key === 'ArrowUp') setTransform((t: Transform) => ({ ...t, y: t.y + step }));
-        if (e.key === 'ArrowDown') setTransform((t: Transform) => ({ ...t, y: t.y - step }));
-        if (e.key === '0' || e.key === 'Home') resetView();
-        if (e.key === '+' || e.key === '=') setTransform((t: Transform) => ({ ...t, scale: Math.min(3, t.scale * 1.1) }));
-        if (e.key === '-') setTransform((t: Transform) => ({ ...t, scale: Math.max(0.25, t.scale * 0.9) }));
+        if (e.key === "ArrowLeft") setTransform((t: Transform) => ({ ...t, x: t.x + step }));
+        if (e.key === "ArrowRight") setTransform((t: Transform) => ({ ...t, x: t.x - step }));
+        if (e.key === "ArrowUp") setTransform((t: Transform) => ({ ...t, y: t.y + step }));
+        if (e.key === "ArrowDown") setTransform((t: Transform) => ({ ...t, y: t.y - step }));
+        if (e.key === "0" || e.key === "Home") resetView();
+        if (e.key === "+" || e.key === "=")
+          setTransform((t: Transform) => ({ ...t, scale: Math.min(3, t.scale * 1.1) }));
+        if (e.key === "-")
+          setTransform((t: Transform) => ({ ...t, scale: Math.max(0.25, t.scale * 0.9) }));
       }}
     >
       <div
         className="absolute origin-top-left"
         style={{
           transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`,
-          transition: isPanning ? 'none' : `transform var(--duration-normal) var(--easing-default)`,
+          transition: isPanning ? "none" : `transform var(--duration-normal) var(--easing-default)`,
         }}
       >
         {children}

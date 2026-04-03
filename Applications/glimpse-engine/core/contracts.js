@@ -93,39 +93,39 @@
  */
 export const Shapes = {
   Entity: {
-    required: ['id', 'name', 'type', 'dimensions', 'metrics', 'evidenceIds'],
+    required: ["id", "name", "type", "dimensions", "metrics", "evidenceIds"],
     types: {
-      id: 'string',
-      name: 'string',
-      type: 'string',
-      dimensions: 'object',
-      metrics: 'object',
-      evidenceIds: 'array',
-    }
+      id: "string",
+      name: "string",
+      type: "string",
+      dimensions: "object",
+      metrics: "object",
+      evidenceIds: "array",
+    },
   },
   Relation: {
-    required: ['id', 'source', 'target', 'type', 'weight', 'evidenceIds'],
+    required: ["id", "source", "target", "type", "weight", "evidenceIds"],
     types: {
-      id: 'string',
-      source: 'string',
-      target: 'string',
-      type: 'string',
-      weight: 'number',
-      evidenceIds: 'array',
-    }
+      id: "string",
+      source: "string",
+      target: "string",
+      type: "string",
+      weight: "number",
+      evidenceIds: "array",
+    },
   },
   Evidence: {
-    required: ['id', 'sourceRuleId', 'confidence', 'scope', 'targetId', 'affects', 'reason'],
+    required: ["id", "sourceRuleId", "confidence", "scope", "targetId", "affects", "reason"],
     types: {
-      id: 'string',
-      sourceRuleId: 'string',
-      confidence: 'number',
-      scope: 'string',
-      targetId: 'string',
-      affects: 'array',
-      reason: 'string',
-    }
-  }
+      id: "string",
+      sourceRuleId: "string",
+      confidence: "number",
+      scope: "string",
+      targetId: "string",
+      affects: "array",
+      reason: "string",
+    },
+  },
 };
 
 /**
@@ -147,34 +147,34 @@ export function validateShape(shapeName, data) {
   if (!shape) {
     return { valid: false, errors: [`Unknown shape: ${shapeName}`], warnings: [] };
   }
-  
+
   const errors = [];
   const warnings = [];
-  
+
   // Check required fields
   for (const field of shape.required) {
     if (data[field] === undefined || data[field] === null) {
       errors.push(`Missing required field: ${field}`);
     }
   }
-  
+
   // Check types
   for (const [field, expectedType] of Object.entries(shape.types)) {
     if (data[field] !== undefined && data[field] !== null) {
-      const actualType = Array.isArray(data[field]) ? 'array' : typeof data[field];
+      const actualType = Array.isArray(data[field]) ? "array" : typeof data[field];
       if (actualType !== expectedType) {
         errors.push(`Field ${field} expected ${expectedType}, got ${actualType}`);
       }
     }
   }
-  
+
   // Warn on extra fields
   const knownFields = new Set([...shape.required, ...Object.keys(shape.types)]);
-  const extraFields = Object.keys(data).filter(k => !knownFields.has(k));
+  const extraFields = Object.keys(data).filter((k) => !knownFields.has(k));
   if (extraFields.length > 0) {
-    warnings.push(`Extra fields present: ${extraFields.join(', ')}`);
+    warnings.push(`Extra fields present: ${extraFields.join(", ")}`);
   }
-  
+
   return { valid: errors.length === 0, errors, warnings };
 }
 
@@ -187,20 +187,20 @@ export function validateShape(shapeName, data) {
 export function createEntity(partial) {
   const entity = {
     id: partial.id || `entity-${Math.random().toString(36).slice(2, 10)}`,
-    name: partial.name || 'Unnamed',
-    type: partial.type || 'general',
+    name: partial.name || "Unnamed",
+    type: partial.type || "general",
     dimensions: partial.dimensions || {},
     metrics: partial.metrics || {},
     evidenceIds: partial.evidenceIds || [],
     domainKeywordHits: partial.domainKeywordHits || partial.domain_keyword_hits || {},
     tones: partial.tones || partial.tone_hits || {},
   };
-  
-  const validation = validateShape('Entity', entity);
+
+  const validation = validateShape("Entity", entity);
   if (!validation.valid) {
-    throw new TypeError(`Invalid Entity: ${validation.errors.join(', ')}`);
+    throw new TypeError(`Invalid Entity: ${validation.errors.join(", ")}`);
   }
-  
+
   return Object.freeze(entity);
 }
 
@@ -215,17 +215,17 @@ export function createRelation(partial) {
     id: partial.id || `relation-${Math.random().toString(36).slice(2, 10)}`,
     source: partial.source,
     target: partial.target,
-    type: partial.type || 'related',
+    type: partial.type || "related",
     weight: Number.isFinite(partial.weight) ? partial.weight : 0.5,
     tags: partial.tags || [],
     evidenceIds: partial.evidenceIds || [],
   };
-  
-  const validation = validateShape('Relation', relation);
+
+  const validation = validateShape("Relation", relation);
   if (!validation.valid) {
-    throw new TypeError(`Invalid Relation: ${validation.errors.join(', ')}`);
+    throw new TypeError(`Invalid Relation: ${validation.errors.join(", ")}`);
   }
-  
+
   return Object.freeze(relation);
 }
 
@@ -238,21 +238,21 @@ export function createRelation(partial) {
 export function createEvidence(partial) {
   const evidence = {
     id: partial.id || `evidence-${Math.random().toString(36).slice(2, 10)}`,
-    sourceRuleId: partial.sourceRuleId || 'unknown',
+    sourceRuleId: partial.sourceRuleId || "unknown",
     confidence: Number.isFinite(partial.confidence) ? partial.confidence : 0.5,
-    scope: partial.scope || 'dataset',
-    targetId: partial.targetId || 'unknown',
+    scope: partial.scope || "dataset",
+    targetId: partial.targetId || "unknown",
     affects: partial.affects || [],
-    reason: partial.reason || 'No reason provided',
+    reason: partial.reason || "No reason provided",
     payload: partial.payload || {},
     timestamp: partial.timestamp || Date.now(),
   };
-  
-  const validation = validateShape('Evidence', evidence);
+
+  const validation = validateShape("Evidence", evidence);
   if (!validation.valid) {
-    throw new TypeError(`Invalid Evidence: ${validation.errors.join(', ')}`);
+    throw new TypeError(`Invalid Evidence: ${validation.errors.join(", ")}`);
   }
-  
+
   return Object.freeze(evidence);
 }
 
@@ -264,8 +264,8 @@ export function createEvidence(partial) {
  * @returns {*} Resolved value or default
  */
 export function safePath(obj, path, defaultValue = undefined) {
-  if (!obj || typeof path !== 'string') return defaultValue;
-  return path.split('.').reduce((acc, part) => {
+  if (!obj || typeof path !== "string") return defaultValue;
+  return path.split(".").reduce((acc, part) => {
     return acc && acc[part] !== undefined ? acc[part] : defaultValue;
   }, obj);
 }
@@ -279,15 +279,15 @@ export function safePath(obj, path, defaultValue = undefined) {
 export function deepEqual(a, b) {
   if (a === b) return true;
   if (typeof a !== typeof b) return false;
-  if (typeof a !== 'object' || a === null || b === null) return false;
-  
+  if (typeof a !== "object" || a === null || b === null) return false;
+
   if (Array.isArray(a) !== Array.isArray(b)) return false;
-  
+
   const keysA = Object.keys(a);
   const keysB = Object.keys(b);
   if (keysA.length !== keysB.length) return false;
-  
-  return keysA.every(key => deepEqual(a[key], b[key]));
+
+  return keysA.every((key) => deepEqual(a[key], b[key]));
 }
 
 /**
@@ -300,13 +300,13 @@ export function computeDiff(oldObj, newObj) {
   const added = {};
   const removed = {};
   const modified = {};
-  
+
   const allKeys = new Set([...Object.keys(oldObj || {}), ...Object.keys(newObj || {})]);
-  
+
   for (const key of allKeys) {
     const hasOld = key in (oldObj || {});
     const hasNew = key in (newObj || {});
-    
+
     if (hasOld && !hasNew) {
       removed[key] = oldObj[key];
     } else if (!hasOld && hasNew) {
@@ -315,7 +315,7 @@ export function computeDiff(oldObj, newObj) {
       modified[key] = { from: oldObj[key], to: newObj[key] };
     }
   }
-  
+
   return { added, removed, modified };
 }
 
@@ -326,14 +326,14 @@ export function computeDiff(oldObj, newObj) {
  */
 export function createChecksum(content) {
   // Simple hash for browser compatibility
-  const str = typeof content === 'string' ? content : JSON.stringify(content);
+  const str = typeof content === "string" ? content : JSON.stringify(content);
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
     const char = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
+    hash = (hash << 5) - hash + char;
     hash = hash & hash; // Convert to 32bit integer
   }
-  return Math.abs(hash).toString(16).padStart(8, '0');
+  return Math.abs(hash).toString(16).padStart(8, "0");
 }
 
 /**
@@ -344,8 +344,8 @@ export function createChecksum(content) {
  */
 export function memoize(fn, keyFn = (...args) => JSON.stringify(args)) {
   const cache = new Map();
-  
-  const memoized = function(...args) {
+
+  const memoized = function (...args) {
     const key = keyFn(...args);
     if (cache.has(key)) {
       return cache.get(key);
@@ -354,9 +354,9 @@ export function memoize(fn, keyFn = (...args) => JSON.stringify(args)) {
     cache.set(key, result);
     return result;
   };
-  
+
   memoized.clear = () => cache.clear();
   memoized.size = () => cache.size;
-  
+
   return memoized;
 }

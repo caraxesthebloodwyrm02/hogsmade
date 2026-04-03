@@ -12,6 +12,7 @@
 CascadeProjects is a multi-project workspace organized as a layered developer operating system. Two pillars anchor the ecosystem:
 
 **Pillar 1: GRID-main (Intelligence Engine)**
+
 - Python 3.13+ full-stack AI framework at v2.6.1
 - 757 source files, 283+ tests, 80%+ coverage, lint-clean
 - 9 proprietary cognition patterns, 4-phase RAG, 51 auto-discoverable skills
@@ -20,12 +21,14 @@ CascadeProjects is a multi-project workspace organized as a layered developer op
 - Local-first: Ollama + ChromaDB, no external API dependencies
 
 **Pillar 2: MCP Server Constellation (Developer Workflow)**
+
 - 7 TypeScript MCP servers on identical stack (MCP SDK v1.27.1, Zod v3.22.0, tsx)
 - Each server is purpose-built with clear boundaries
 - All registered in a single `mcp_config.json` for editor integration
 - `mcp-tool-experiment` is the main safety-first workspace analysis entry point, but it is a peer server, not a mandatory proxy for the others
 
 **Connecting Tissue: GATE (Security Layer)**
+
 - Cryptographic envelope verification for deployment authorization
 - SHA-256 payload hashing, nonce-based replay protection, timestamp freshness
 - Formal contract templates and audit trails
@@ -34,32 +37,32 @@ CascadeProjects is a multi-project workspace organized as a layered developer op
 
 #### Production-Ready
 
-| Project | Version | What It Does |
-|---------|---------|-------------|
-| GRID-main | 2.6.1 | Cognitive AI framework with pattern recognition, RAG, agentic workflows, auth/billing |
-| mcp-tool-experiment | 1.0.0 | Primary MCP server with 8-stage safety pipeline (validation, rate limiting, SSRF protection, PII filtering) |
-| grid-server | 1.0.0 | GATE envelope validation — checks integrity, freshness, nonces, permissions before deployment |
-| echoes-server | 1.0.0 | Persistent audit backend — NDJSON logs, telemetry snapshots, aggregate statistics |
-| afloat-server | 1.0.0 | Workflow orchestration — ordered steps, rollback support, dry-run default |
-| lots-server | 1.0.0 | Experiment runner — sandboxed script execution in Python/Node/PowerShell/Bash |
-| seeds-server | 1.0.0 | Ecosystem health monitor — git status, dependency health, commit freshness scoring |
-| pulse-server | 1.0.0 | Developer dashboard — morning briefings, focus tracking, journal, daily digests |
-| maintain-server | 1.0.0 | System maintenance — temp cleanup, workspace hygiene, diagnostic reports |
+| Project             | Version | What It Does                                                                                                |
+| ------------------- | ------- | ----------------------------------------------------------------------------------------------------------- |
+| GRID-main           | 2.6.1   | Cognitive AI framework with pattern recognition, RAG, agentic workflows, auth/billing                       |
+| mcp-tool-experiment | 1.0.0   | Primary MCP server with 8-stage safety pipeline (validation, rate limiting, SSRF protection, PII filtering) |
+| grid-server         | 1.0.0   | GATE envelope validation — checks integrity, freshness, nonces, permissions before deployment               |
+| echoes-server       | 1.0.0   | Persistent audit backend — NDJSON logs, telemetry snapshots, aggregate statistics                           |
+| afloat-server       | 1.0.0   | Workflow orchestration — ordered steps, rollback support, dry-run default                                   |
+| lots-server         | 1.0.0   | Experiment runner — sandboxed script execution in Python/Node/PowerShell/Bash                               |
+| seeds-server        | 1.0.0   | Ecosystem health monitor — git status, dependency health, commit freshness scoring                          |
+| pulse-server        | 1.0.0   | Developer dashboard — morning briefings, focus tracking, journal, daily digests                             |
+| maintain-server     | 1.0.0   | System maintenance — temp cleanup, workspace hygiene, diagnostic reports                                    |
 
 #### Complete / Stable
 
-| Project | What It Does |
-|---------|-------------|
-| GATE/ | Contract templates, nonce registry, audit trail for deployment verification |
-| glimpse-artifact | React 18 component library — Tailwind + CVA variants, lucide-react icons |
+| Project          | What It Does                                                                |
+| ---------------- | --------------------------------------------------------------------------- |
+| GATE/            | Contract templates, nonce registry, audit trail for deployment verification |
+| glimpse-artifact | React 18 component library — Tailwind + CVA variants, lucide-react icons    |
 
 #### Nascent / Empty
 
-| Project | What It Does |
-|---------|-------------|
-| Afloat/ | Spec directory for workflow orchestration — currently empty aside from agents.md |
-| archive/ | Empty |
-| experiments/ | Empty (lots-server's sandbox target) |
+| Project      | What It Does                                                                     |
+| ------------ | -------------------------------------------------------------------------------- |
+| Afloat/      | Spec directory for workflow orchestration — currently empty aside from agents.md |
+| archive/     | Empty                                                                            |
+| experiments/ | Empty (lots-server's sandbox target)                                             |
 
 ### 1.3 Data Flow Architecture
 
@@ -85,6 +88,7 @@ Data flows downward through safety gates. Pulse reads upward from all servers. E
 ### 1.4 Development Velocity
 
 GRID-main saw 6 releases in 8 days (Feb 16-24):
+
 - v2.3.0: Async-first modernization, RBAC centralization
 - v2.4.0: 664 to 0 lint errors, StrEnum modernization
 - v2.4.1: Consolidation, async hardening
@@ -116,19 +120,19 @@ Last activity: Feb 26 (GRID-main DCoC commit), Mar 7-8 (MCP config and maintain-
 
 ### 1.7 Known Issues
 
-| Issue | Severity | Location | Impact |
-|-------|----------|----------|--------|
-| Workspace root has no git history | Medium | Root `.git/` | No version control at workspace level; can't track cross-project changes |
-| Hardcoded Windows paths | Medium | grid-server, seeds-server, maintain-server, lots-server | Not portable; breaks on different machines or OS |
-| Zero tests for MCP servers | Medium | All 7 TypeScript servers | No regression safety net; changes are untested |
-| Seeds prerequisite unresolved | Medium | seeds-server / E:\Seeds expectation | Alerting and trend features are limited until config is portable and the target repo root exists |
-| Afloat/ vs afloat-server/ confusion | Low | Both directories | Unclear which is canonical; spec is empty |
-| Aspirational security config | Low | mcp_config.json | References encryption keys, SOC2/GDPR/RBAC that aren't implemented |
-| No inter-server authentication | Low | All MCP servers | Safe for local stdio; risky if ever exposed as network services |
-| GRID-main not on main branch | Info | GRID-main git | Working on `custom-tools` branch with 11 cascade branches |
-| Empty archive/ and experiments/ | Info | Root directories | Unused storage; experiments/ is lots-server's target but has no catalog |
-| No backup path for operational state | Medium | `~/.echoes`, `~/.pulse`, `~/.seeds-server`, `~/.afloat`, `GATE/` | Disk loss would erase audit history, snapshots, workflow history, and nonce state |
-| Dependency update cadence undocumented | Low | MCP servers + GRID-main local overrides | Version drift can accumulate silently |
+| Issue                                  | Severity | Location                                                         | Impact                                                                                           |
+| -------------------------------------- | -------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| Workspace root has no git history      | Medium   | Root `.git/`                                                     | No version control at workspace level; can't track cross-project changes                         |
+| Hardcoded Windows paths                | Medium   | grid-server, seeds-server, maintain-server, lots-server          | Not portable; breaks on different machines or OS                                                 |
+| Zero tests for MCP servers             | Medium   | All 7 TypeScript servers                                         | No regression safety net; changes are untested                                                   |
+| Seeds prerequisite unresolved          | Medium   | seeds-server / E:\Seeds expectation                              | Alerting and trend features are limited until config is portable and the target repo root exists |
+| Afloat/ vs afloat-server/ confusion    | Low      | Both directories                                                 | Unclear which is canonical; spec is empty                                                        |
+| Aspirational security config           | Low      | mcp_config.json                                                  | References encryption keys, SOC2/GDPR/RBAC that aren't implemented                               |
+| No inter-server authentication         | Low      | All MCP servers                                                  | Safe for local stdio; risky if ever exposed as network services                                  |
+| GRID-main not on main branch           | Info     | GRID-main git                                                    | Working on `custom-tools` branch with 11 cascade branches                                        |
+| Empty archive/ and experiments/        | Info     | Root directories                                                 | Unused storage; experiments/ is lots-server's target but has no catalog                          |
+| No backup path for operational state   | Medium   | `~/.echoes`, `~/.pulse`, `~/.seeds-server`, `~/.afloat`, `GATE/` | Disk loss would erase audit history, snapshots, workflow history, and nonce state                |
+| Dependency update cadence undocumented | Low      | MCP servers + GRID-main local overrides                          | Version drift can accumulate silently                                                            |
 
 ---
 
@@ -191,16 +195,16 @@ These are working well — don't change them:
 
 ## 3. Risk Assessment
 
-| Risk | Likelihood | Impact | Mitigation |
-|------|-----------|--------|-----------|
-| MCP server regression (no tests) | High | Medium | Phase 1: add smoke tests |
-| Path breakage on machine change | High | High | Phase 1: env var migration |
-| Lost work (no workspace git) | Medium | High | Phase 1: initial commit |
-| Lost operational history (no backup) | Medium | High | Add scheduled backup for ignored state directories |
-| Config drift between servers | Medium | Low | Phase 2: shared types |
-| Aspirational security creating false confidence | Low | Medium | Document what's implemented vs. planned |
-| GRID-main branch divergence | Low | Medium | Merge custom-tools or rebase regularly |
-| Dependency drift | Medium | Medium | Add dependency review cadence and test upgrades incrementally |
+| Risk                                            | Likelihood | Impact | Mitigation                                                    |
+| ----------------------------------------------- | ---------- | ------ | ------------------------------------------------------------- |
+| MCP server regression (no tests)                | High       | Medium | Phase 1: add smoke tests                                      |
+| Path breakage on machine change                 | High       | High   | Phase 1: env var migration                                    |
+| Lost work (no workspace git)                    | Medium     | High   | Phase 1: initial commit                                       |
+| Lost operational history (no backup)            | Medium     | High   | Add scheduled backup for ignored state directories            |
+| Config drift between servers                    | Medium     | Low    | Phase 2: shared types                                         |
+| Aspirational security creating false confidence | Low        | Medium | Document what's implemented vs. planned                       |
+| GRID-main branch divergence                     | Low        | Medium | Merge custom-tools or rebase regularly                        |
+| Dependency drift                                | Medium     | Medium | Add dependency review cadence and test upgrades incrementally |
 
 ---
 

@@ -4,7 +4,14 @@
   "title": "Phase 4 Quality Gate Report",
   "description": "Schema for Phase 4 quality-gate reports as defined in PHASE4_QUALITY_CONTRACT.md",
   "type": "object",
-  "required": ["version", "timestamp", "initiatives", "checklist", "probabilityOfFullDelivery", "overallStatus"],
+  "required": [
+    "version",
+    "timestamp",
+    "initiatives",
+    "checklist",
+    "probabilityOfFullDelivery",
+    "overallStatus"
+  ],
   "additionalProperties": false,
   "properties": {
     "version": {

@@ -16,7 +16,10 @@ export function Screen({ focusedKnob }: ScreenProps) {
       {/* Screen header bar — CRT aesthetic */}
       <div className="flex items-center gap-2 px-4 py-2.5 border-b border-panel-border/50 bg-panel/30">
         <div className="flex items-center gap-1.5">
-          <div className="w-2 h-2 rounded-full bg-led-green/70" style={{ boxShadow: "var(--shadow-glow-green)" }} />
+          <div
+            className="w-2 h-2 rounded-full bg-led-green/70"
+            style={{ boxShadow: "var(--shadow-glow-green)" }}
+          />
           <div className="w-2 h-2 rounded-full bg-led-yellow/40" />
           <div className="w-2 h-2 rounded-full bg-led-red/40" />
         </div>
@@ -58,20 +61,38 @@ export function Screen({ focusedKnob }: ScreenProps) {
               {/* Parameter listing */}
               {focusedKnob.parameters.length > 0 && (
                 <div className="space-y-2">
-                  <div className="text-text-muted text-[11px] uppercase tracking-wider font-medium">Parameters</div>
+                  <div className="text-text-muted text-[11px] uppercase tracking-wider font-medium">
+                    Parameters
+                  </div>
                   {focusedKnob.parameters.map((param) => (
-                    <div key={param.name} className="flex items-start gap-2 pl-3 border-l-2 border-panel-border-light/50 py-1">
-                      <ChevronRight size={10} className="text-screen-text/50 mt-0.5 flex-shrink-0" />
+                    <div
+                      key={param.name}
+                      className="flex items-start gap-2 pl-3 border-l-2 border-panel-border-light/50 py-1"
+                    >
+                      <ChevronRight
+                        size={10}
+                        className="text-screen-text/50 mt-0.5 flex-shrink-0"
+                      />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="text-screen-text font-medium">{param.name}</span>
-                          <span className="text-led-blue text-[10px] bg-led-blue/10 px-1.5 py-0.5 rounded">{param.type}</span>
-                          {param.required && <span className="text-led-red text-[10px] bg-led-red/10 px-1.5 py-0.5 rounded">req</span>}
+                          <span className="text-led-blue text-[10px] bg-led-blue/10 px-1.5 py-0.5 rounded">
+                            {param.type}
+                          </span>
+                          {param.required && (
+                            <span className="text-led-red text-[10px] bg-led-red/10 px-1.5 py-0.5 rounded">
+                              req
+                            </span>
+                          )}
                           {param.default !== undefined && (
-                            <span className="text-text-muted text-[10px]">= {JSON.stringify(param.default)}</span>
+                            <span className="text-text-muted text-[10px]">
+                              = {JSON.stringify(param.default)}
+                            </span>
                           )}
                         </div>
-                        <p className="text-text-muted text-[10px] mt-0.5 leading-relaxed">{param.description}</p>
+                        <p className="text-text-muted text-[10px] mt-0.5 leading-relaxed">
+                          {param.description}
+                        </p>
                       </div>
                     </div>
                   ))}
@@ -83,7 +104,10 @@ export function Screen({ focusedKnob }: ScreenProps) {
                 <div className="flex items-center gap-2 pt-1">
                   <span className="text-text-muted text-[11px] font-medium">FLAGS</span>
                   {focusedKnob.flags.map((flag) => (
-                    <span key={flag} className="text-[10px] px-2 py-0.5 rounded-md bg-panel-raised/50 border border-panel-border-light/30 text-led-yellow">
+                    <span
+                      key={flag}
+                      className="text-[10px] px-2 py-0.5 rounded-md bg-panel-raised/50 border border-panel-border-light/30 text-led-yellow"
+                    >
                       {flag}
                     </span>
                   ))}

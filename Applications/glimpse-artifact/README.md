@@ -12,11 +12,11 @@ npm run build   # production build → dist/
 
 ## Views
 
-| View | What it does |
-|------|-------------|
-| **Canvas** | Pan/zoom workspace. Add seeds, fork branches, compare up to 3 glimpses side-by-side, annotate with sticky notes. |
-| **Dashboard** | Ecosystem health gauges, audit timeline, experiment comparison, focus session status. |
-| **GATE** | Read-only pipeline: envelope flow, nonce registry, deployment history with risk scores. |
+| View          | What it does                                                                                                     |
+| ------------- | ---------------------------------------------------------------------------------------------------------------- |
+| **Canvas**    | Pan/zoom workspace. Add seeds, fork branches, compare up to 3 glimpses side-by-side, annotate with sticky notes. |
+| **Dashboard** | Ecosystem health gauges, audit timeline, experiment comparison, focus session status.                            |
+| **GATE**      | Read-only pipeline: envelope flow, nonce registry, deployment history with risk scores.                          |
 
 ## File structure (26 source files)
 

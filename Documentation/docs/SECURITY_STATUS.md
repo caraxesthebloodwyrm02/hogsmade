@@ -17,15 +17,15 @@ Last reviewed: 2026-03-08
 
 These appear in `mcp_config.json` or documentation but have no backing implementation:
 
-| Reference | Where | Status |
-|-----------|-------|--------|
-| `${AFLOAT_ENCRYPTION_KEY}` | mcp_config.json | Env var referenced, not used in code |
-| SOC2 compliance | mcp_config.json security section | Schema placeholder only |
-| GDPR compliance | mcp_config.json security section | Schema placeholder only |
-| ISO27001 compliance | mcp_config.json security section | Schema placeholder only |
-| RBAC for MCP servers | mcp_config.json | GRID-main has RBAC; individual MCP servers do not |
-| Inter-server authentication | — | All servers use local stdio; no auth layer exists |
-| Encryption at rest for audit logs | — | NDJSON files are plaintext on disk |
+| Reference                         | Where                            | Status                                            |
+| --------------------------------- | -------------------------------- | ------------------------------------------------- |
+| `${AFLOAT_ENCRYPTION_KEY}`        | mcp_config.json                  | Env var referenced, not used in code              |
+| SOC2 compliance                   | mcp_config.json security section | Schema placeholder only                           |
+| GDPR compliance                   | mcp_config.json security section | Schema placeholder only                           |
+| ISO27001 compliance               | mcp_config.json security section | Schema placeholder only                           |
+| RBAC for MCP servers              | mcp_config.json                  | GRID-main has RBAC; individual MCP servers do not |
+| Inter-server authentication       | —                                | All servers use local stdio; no auth layer exists |
+| Encryption at rest for audit logs | —                                | NDJSON files are plaintext on disk                |
 
 ## Recommendations
 

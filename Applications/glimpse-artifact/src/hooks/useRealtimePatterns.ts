@@ -122,10 +122,7 @@ export function useRealtimePatterns(
           totalIngested: data.totalIngested,
           patterns: data.hybrid,
           lastChange: data.change,
-          anomalies: [
-            ...(data.anomalies ?? []),
-            ...prev.anomalies,
-          ].slice(0, maxAnomalies),
+          anomalies: [...(data.anomalies ?? []), ...prev.anomalies].slice(0, maxAnomalies),
         }));
         setError(null);
         setLoading(false);

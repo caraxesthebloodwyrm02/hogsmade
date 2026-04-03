@@ -3,12 +3,7 @@
  * Provides the core function evaluation infrastructure for rules.
  */
 
-import {
-  clamp,
-  compareFact,
-  includesWord,
-  resolvePath,
-} from "../utils/utils.js";
+import { clamp, compareFact, includesWord, resolvePath } from "../utils/utils.js";
 
 function listAllowedDomains(config) {
   return (config.taxonomy?.domains || []).map((domain) => domain.id);
@@ -30,43 +25,27 @@ function validateArgValue(typeName, value, config, label) {
   }
 
   if (type === "any") return errors;
-  if (type === "string" && typeof value !== "string")
-    errors.push(`${label} must be a string.`);
+  if (type === "string" && typeof value !== "string") errors.push(`${label} must be a string.`);
   if (type === "number" && !Number.isFinite(Number(value)))
     errors.push(`${label} must be a number.`);
-  if (type === "boolean" && typeof value !== "boolean")
-    errors.push(`${label} must be a boolean.`);
+  if (type === "boolean" && typeof value !== "boolean") errors.push(`${label} must be a boolean.`);
 
   if (argType.values && !argType.values.includes(value)) {
     errors.push(`${label} must be one of: ${argType.values.join(", ")}.`);
   }
 
-  if (
-    argType.source === "taxonomy.domains" &&
-    !listAllowedDomains(config).includes(value)
-  ) {
+  if (argType.source === "taxonomy.domains" && !listAllowedDomains(config).includes(value)) {
     errors.push(`${label} must reference a known taxonomy domain.`);
   }
-  if (
-    argType.source === "view_specs" &&
-    !listAllowedViews(config).includes(value)
-  ) {
+  if (argType.source === "view_specs" && !listAllowedViews(config).includes(value)) {
     errors.push(`${label} must reference a known view id.`);
   }
 
-  if (
-    type === "object" &&
-    argType.shape &&
-    typeof value === "object" &&
-    !Array.isArray(value)
-  ) {
+  if (type === "object" && argType.shape && typeof value === "object" && !Array.isArray(value)) {
     Object.entries(argType.shape).forEach(([key, nestedType]) => {
-      validateArgValue(
-        nestedType,
-        value[key],
-        config,
-        `${label}.${key}`,
-      ).forEach((error) => errors.push(error));
+      validateArgValue(nestedType, value[key], config, `${label}.${key}`).forEach((error) =>
+        errors.push(error),
+      );
     });
   }
 
@@ -75,12 +54,9 @@ function validateArgValue(typeName, value, config, label) {
       errors.push(`${label} must be an array.`);
     } else {
       value.forEach((item, index) => {
-        validateArgValue(
-          argType.items,
-          item,
-          config,
-          `${label}[${index}]`,
-        ).forEach((error) => errors.push(error));
+        validateArgValue(argType.items, item, config, `${label}[${index}]`).forEach((error) =>
+          errors.push(error),
+        );
       });
     }
   }
@@ -88,13 +64,7 @@ function validateArgValue(typeName, value, config, label) {
   return errors;
 }
 
-export function createEvaluationContext(
-  scopeType,
-  item,
-  datasetScope,
-  entitiesById,
-  config,
-) {
+export function createEvaluationContext(scopeType, item, datasetScope, entitiesById, config) {
   const base = {
     dataset: datasetScope.dataset,
     profile: datasetScope.profile,
@@ -106,8 +76,7 @@ export function createEvaluationContext(
       ...base,
       entity: {
         ...item,
-        domain_keyword_hits:
-          item.domainKeywordHits || item.domain_keyword_hits || {},
+        domain_keyword_hits: item.domainKeywordHits || item.domain_keyword_hits || {},
         tone_hits: item.tones || item.tone_hits || {},
       },
     };
@@ -133,36 +102,23 @@ function expandSemanticTerms(term, config) {
   const lower = String(term || "").toLowerCase();
   if (!lower) return [];
   const terms = new Set([lower]);
-  Object.entries(config.semantic_packs?.synonym_groups || {}).forEach(
-    ([group, values]) => {
-      const all = [group, ...(values || [])].map((value) =>
-        String(value).toLowerCase(),
-      );
-      if (all.includes(lower)) all.forEach((value) => terms.add(value));
-    },
-  );
-  Object.entries(config.semantic_packs?.phonetics || {}).forEach(
-    ([root, values]) => {
-      const all = [root, ...(values || [])].map((value) =>
-        String(value).toLowerCase(),
-      );
-      if (all.includes(lower)) all.forEach((value) => terms.add(value));
-    },
-  );
-  Object.entries(config.semantic_packs?.literary_variants || {}).forEach(
-    ([root, values]) => {
-      const all = [root, ...(values || [])].map((value) =>
-        String(value).toLowerCase(),
-      );
-      if (all.includes(lower)) all.forEach((value) => terms.add(value));
-    },
-  );
+  Object.entries(config.semantic_packs?.synonym_groups || {}).forEach(([group, values]) => {
+    const all = [group, ...(values || [])].map((value) => String(value).toLowerCase());
+    if (all.includes(lower)) all.forEach((value) => terms.add(value));
+  });
+  Object.entries(config.semantic_packs?.phonetics || {}).forEach(([root, values]) => {
+    const all = [root, ...(values || [])].map((value) => String(value).toLowerCase());
+    if (all.includes(lower)) all.forEach((value) => terms.add(value));
+  });
+  Object.entries(config.semantic_packs?.literary_variants || {}).forEach(([root, values]) => {
+    const all = [root, ...(values || [])].map((value) => String(value).toLowerCase());
+    if (all.includes(lower)) all.forEach((value) => terms.add(value));
+  });
   return [...terms];
 }
 
 function normalizeFunctionResult(result) {
-  if (result && typeof result === "object" && !Array.isArray(result))
-    return result;
+  if (result && typeof result === "object" && !Array.isArray(result)) return result;
   return {
     matched: Boolean(result),
     value: result,
@@ -207,9 +163,7 @@ export class FunctionRegistry {
     if (!definition) {
       return {
         ok: false,
-        errors: [
-          `Function "${name}" is listed in YAML but has no runtime handler.`,
-        ],
+        errors: [`Function "${name}" is listed in YAML but has no runtime handler.`],
       };
     }
 
@@ -222,12 +176,9 @@ export class FunctionRegistry {
     const schema = metadata.args || definition.argSchema || {};
     const argErrors = [];
     Object.entries(schema).forEach(([key, typeName]) => {
-      validateArgValue(
-        typeName,
-        args?.[key],
-        this.config,
-        `${name}.${key}`,
-      ).forEach((error) => argErrors.push(error));
+      validateArgValue(typeName, args?.[key], this.config, `${name}.${key}`).forEach((error) =>
+        argErrors.push(error),
+      );
     });
 
     return {
@@ -358,8 +309,7 @@ const BUILTIN_FUNCTIONS = [
     name: "semantic_proximity",
     scope: ["dataset", "entity"],
     returns: "score",
-    description:
-      "Measures whether expanded semantic terms appear in a target text.",
+    description: "Measures whether expanded semantic terms appear in a target text.",
     argSchema: {
       path: "field_selector",
       term: "semantic_term",
@@ -384,16 +334,13 @@ const BUILTIN_FUNCTIONS = [
     name: "shared_dimension",
     scope: ["relation"],
     returns: "boolean",
-    description:
-      "Checks whether the relation endpoints share a dimension value.",
+    description: "Checks whether the relation endpoints share a dimension value.",
     argSchema: { dimension: "dimension_name" },
     handler(context, args) {
       const left = context.source?.dimensions?.[args.dimension];
       const right = context.target?.dimensions?.[args.dimension];
       const matched =
-        left != null &&
-        right != null &&
-        String(left).toLowerCase() === String(right).toLowerCase();
+        left != null && right != null && String(left).toLowerCase() === String(right).toLowerCase();
       return {
         matched,
         value: left,
@@ -441,9 +388,7 @@ const BUILTIN_FUNCTIONS = [
       return {
         matched,
         value: matched,
-        reason: matched
-          ? "Influence structure is present."
-          : "No influence structure was found.",
+        reason: matched ? "Influence structure is present." : "No influence structure was found.",
       };
     },
   },
@@ -498,9 +443,7 @@ const BUILTIN_FUNCTIONS = [
     handler(context, args, config) {
       const preset = config.presets?.[args.preset] || {};
       const source =
-        args.target_type === "view"
-          ? preset.view_bias || {}
-          : preset.lens_weights || {};
+        args.target_type === "view" ? preset.view_bias || {} : preset.lens_weights || {};
       const score = Number(source[args.target] || 0);
       return {
         matched: score > 0,
@@ -538,18 +481,12 @@ const BUILTIN_FUNCTIONS = [
       const profile = context.profile || {};
       const n = ds.record_count || 0;
       const descriptors = profile.descriptors || [];
-      const numericCount = descriptors.filter(
-        (d) => d.type === "number",
-      ).length;
+      const numericCount = descriptors.filter((d) => d.type === "number").length;
       const stringCount = descriptors.filter((d) => d.type === "string").length;
       const totalDims = descriptors.length || 1;
       const quantRatio = numericCount / totalDims;
       const catRatio = stringCount / totalDims;
-      const complexity = clamp(
-        Math.log2(n + 1) / 10 + totalDims / 20 + quantRatio * 0.3,
-        0,
-        1,
-      );
+      const complexity = clamp(Math.log2(n + 1) / 10 + totalDims / 20 + quantRatio * 0.3, 0, 1);
       return {
         matched: n >= Number(args.min_records || 1),
         value: n,
@@ -583,11 +520,7 @@ const BUILTIN_FUNCTIONS = [
       return {
         matched: isDense,
         value: density,
-        score: clamp(
-          density / Math.max(Number(args.dense_threshold) || 1, 1),
-          0,
-          1,
-        ),
+        score: clamp(density / Math.max(Number(args.dense_threshold) || 1, 1), 0, 1),
         reason: isDense
           ? `High density (${density.toFixed(1)}): prefer matrix, heatmap, or parallel views.`
           : `Low density (${density.toFixed(1)}): prefer graph, tree, or flow views.`,
@@ -616,30 +549,18 @@ const BUILTIN_FUNCTIONS = [
         correlation: 0,
       };
 
-      if (
-        descriptors.some((d) => /parent|child|level|depth|nested/i.test(d.name))
-      )
+      if (descriptors.some((d) => /parent|child|level|depth|nested/i.test(d.name)))
         types.hierarchy += 2;
       if (flags.has_influence_links) types.network += 2;
-      if (descriptors.some((d) => /source|target|from|to|edge/i.test(d.name)))
-        types.network += 1;
+      if (descriptors.some((d) => /source|target|from|to|edge/i.test(d.name))) types.network += 1;
       if (flags.has_time_dimension) types.sequence += 2;
-      if (
-        descriptors.some((d) => /step|phase|stage|order|sequence/i.test(d.name))
-      )
+      if (descriptors.some((d) => /step|phase|stage|order|sequence/i.test(d.name)))
         types.sequence += 1;
-      if (descriptors.filter((d) => d.type === "number").length >= 2)
-        types.comparison += 1;
-      if (descriptors.some((d) => /group|category|class/i.test(d.name)))
-        types.comparison += 1;
-      if (
-        descriptors.some((d) =>
-          /percentage|share|portion|ratio|proportion/i.test(d.name),
-        )
-      )
+      if (descriptors.filter((d) => d.type === "number").length >= 2) types.comparison += 1;
+      if (descriptors.some((d) => /group|category|class/i.test(d.name))) types.comparison += 1;
+      if (descriptors.some((d) => /percentage|share|portion|ratio|proportion/i.test(d.name)))
         types.part_whole += 2;
-      if (descriptors.filter((d) => d.type === "number").length >= 2)
-        types.correlation += 1;
+      if (descriptors.filter((d) => d.type === "number").length >= 2) types.correlation += 1;
 
       const entries = Object.entries(types).sort((a, b) => b[1] - a[1]);
       const dominant = entries[0];
@@ -665,9 +586,7 @@ const BUILTIN_FUNCTIONS = [
       const flags = context.dataset?.flags || {};
       const descriptors = profile.descriptors || [];
       const view = args.view;
-      const numericCount = descriptors.filter(
-        (d) => d.type === "number",
-      ).length;
+      const numericCount = descriptors.filter((d) => d.type === "number").length;
       const catCount = descriptors.filter((d) => d.type === "string").length;
       const hasTime = flags.has_time_dimension;
       const hasSpace = flags.has_space_dimension;
@@ -726,9 +645,7 @@ const BUILTIN_FUNCTIONS = [
         matched: fit >= 0.5,
         value: fit,
         score: fit,
-        reason:
-          reasons.join("; ") ||
-          `View ${view} has a base fit of ${fit.toFixed(2)}.`,
+        reason: reasons.join("; ") || `View ${view} has a base fit of ${fit.toFixed(2)}.`,
       };
     },
   },
@@ -765,9 +682,7 @@ const BUILTIN_FUNCTIONS = [
     },
     handler(context, args) {
       const descriptors = context.profile?.descriptors || [];
-      const dimFields = descriptors.filter(
-        (d) => d.dimension === args.dimension,
-      );
+      const dimFields = descriptors.filter((d) => d.dimension === args.dimension);
       const maxCard = Math.max(...dimFields.map((d) => d.cardinality || 0), 0);
       const threshold = Number(args.max_distinct || 12);
       return {
@@ -783,8 +698,7 @@ const BUILTIN_FUNCTIONS = [
     name: "dimension_count",
     scope: ["dataset"],
     returns: "score",
-    description:
-      "Count how many active dimensions of a given type exist in the data.",
+    description: "Count how many active dimensions of a given type exist in the data.",
     argSchema: { dimension: "dimension_name", min_count: "numeric_threshold" },
     handler(context, args) {
       const count = context.dataset?.dimension_counts?.[args.dimension] || 0;
@@ -845,21 +759,15 @@ const BUILTIN_FUNCTIONS = [
         "gain",
         "spectrum",
       ];
-      const matched = fieldNames.filter((f) =>
-        signalTerms.some((t) => f.includes(t)),
-      );
+      const matched = fieldNames.filter((f) => signalTerms.some((t) => f.includes(t)));
       const min = Number(args.min_signal_fields || 2);
       const ratio = matched.length / Math.max(fieldNames.length, 1);
       const coherence = matched.length >= min ? 1 : matched.length / min;
       const spatial = ratio;
-      const reliability =
-        matched.length >= 3 ? 0.9 : matched.length >= 1 ? 0.6 : 0;
+      const reliability = matched.length >= 3 ? 0.9 : matched.length >= 1 ? 0.6 : 0;
       const connectivity = fieldNames.length > 4 ? 0.8 : 0.4;
       const score = clamp(
-        coherence * 0.4 +
-        spatial * 0.3 +
-        reliability * 0.2 +
-        connectivity * 0.1,
+        coherence * 0.4 + spatial * 0.3 + reliability * 0.2 + connectivity * 0.1,
         0,
         1,
       );
@@ -900,25 +808,17 @@ const BUILTIN_FUNCTIONS = [
         "subtree",
         "hierarchy",
       ];
-      const matched = fieldNames.filter((f) =>
-        branchTerms.some((t) => f.includes(t)),
-      );
+      const matched = fieldNames.filter((f) => branchTerms.some((t) => f.includes(t)));
       const min = Number(args.min_branch_signals || 2);
       const ds = context.dataset || {};
       const hasInfluence = ds.flags?.has_influence_links || false;
       const implicitBranch = hasInfluence ? 1 : 0;
       const totalSignals = matched.length + implicitBranch;
       const branchingFactor = clamp(totalSignals / Math.max(min, 1), 0, 1);
-      const depthSignal = fieldNames.some(
-        (f) => f.includes("depth") || f.includes("level"),
-      )
+      const depthSignal = fieldNames.some((f) => f.includes("depth") || f.includes("level"))
         ? 0.3
         : 0;
-      const score = clamp(
-        branchingFactor * 0.7 + depthSignal + (hasInfluence ? 0.15 : 0),
-        0,
-        1,
-      );
+      const score = clamp(branchingFactor * 0.7 + depthSignal + (hasInfluence ? 0.15 : 0), 0, 1);
       return {
         matched: totalSignals >= min,
         value: totalSignals,

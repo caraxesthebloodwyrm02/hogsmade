@@ -8,10 +8,10 @@
  *   4. summary    — reads all residue, produces summary (observant)
  */
 
-import type { Pass, PassInput, PassOutput } from '../types.js';
-import { findResidue } from '../residue.js';
-import { timestampPass } from '../passes.js';
-import { createPipeline } from '../pipeline.js';
+import type { Pass, PassInput, PassOutput } from "../types.js";
+import { findResidue } from "../residue.js";
+import { timestampPass } from "../passes.js";
+import { createPipeline } from "../pipeline.js";
 
 export interface GovernanceState {
   requestType: string;
@@ -23,14 +23,14 @@ export interface GovernanceState {
 }
 
 const classifyPass: Pass<GovernanceState> = {
-  id: 'governance:classify',
-  description: 'Classifies the governance request by context keywords',
+  id: "governance:classify",
+  description: "Classifies the governance request by context keywords",
   execute(input: PassInput<GovernanceState>): PassOutput<GovernanceState> {
     const ctx = input.state.context.toLowerCase();
-    let classification = 'general';
-    if (ctx.includes('security') || ctx.includes('auth')) classification = 'security';
-    else if (ctx.includes('data') || ctx.includes('privacy')) classification = 'data-governance';
-    else if (ctx.includes('deploy') || ctx.includes('release')) classification = 'release-gate';
+    let classification = "general";
+    if (ctx.includes("security") || ctx.includes("auth")) classification = "security";
+    else if (ctx.includes("data") || ctx.includes("privacy")) classification = "data-governance";
+    else if (ctx.includes("deploy") || ctx.includes("release")) classification = "release-gate";
 
     return {
       state: { ...input.state, classification },
@@ -40,43 +40,43 @@ const classifyPass: Pass<GovernanceState> = {
 };
 
 const evaluatePass: Pass<GovernanceState> = {
-  id: 'governance:evaluate',
-  description: 'Evaluates risk based on classification from prior pass',
+  id: "governance:evaluate",
+  description: "Evaluates risk based on classification from prior pass",
   execute(input: PassInput<GovernanceState>): PassOutput<GovernanceState> {
-    const classificationDeposit = findResidue(input.residue, 'governance:classify');
-    const classification = classificationDeposit?.data['classification'] as string | undefined;
+    const classificationDeposit = findResidue(input.residue, "governance:classify");
+    const classification = classificationDeposit?.data["classification"] as string | undefined;
 
-    let riskLevel = 'low';
-    let verdict = 'allow';
-    if (classification === 'security') {
-      riskLevel = 'high';
-      verdict = 'escalate';
-    } else if (classification === 'data-governance') {
-      riskLevel = 'medium';
-      verdict = 'review';
-    } else if (classification === 'release-gate') {
-      riskLevel = 'medium';
-      verdict = 'allow';
+    let riskLevel = "low";
+    let verdict = "allow";
+    if (classification === "security") {
+      riskLevel = "high";
+      verdict = "escalate";
+    } else if (classification === "data-governance") {
+      riskLevel = "medium";
+      verdict = "review";
+    } else if (classification === "release-gate") {
+      riskLevel = "medium";
+      verdict = "allow";
     }
 
     return {
       state: { ...input.state, riskLevel, verdict },
-      deposit: { riskLevel, verdict, basedOn: classification ?? 'unknown' },
+      deposit: { riskLevel, verdict, basedOn: classification ?? "unknown" },
     };
   },
 };
 
 const summaryPass: Pass<GovernanceState> = {
-  id: 'governance:summary',
-  description: 'Reads all prior residue and produces a governance summary',
+  id: "governance:summary",
+  description: "Reads all prior residue and produces a governance summary",
   execute(input: PassInput<GovernanceState>): PassOutput<GovernanceState> {
-    const passIds = input.residue.map(r => r.passId);
+    const passIds = input.residue.map((r) => r.passId);
     const summary = [
       `Governance intake processed through ${input.residue.length} prior passes`,
-      `Classification: ${input.state.classification ?? 'unknown'}`,
-      `Risk: ${input.state.riskLevel ?? 'unknown'}`,
-      `Verdict: ${input.state.verdict ?? 'pending'}`,
-    ].join('. ');
+      `Classification: ${input.state.classification ?? "unknown"}`,
+      `Risk: ${input.state.riskLevel ?? "unknown"}`,
+      `Verdict: ${input.state.verdict ?? "pending"}`,
+    ].join(". ");
 
     return {
       state: { ...input.state, summary },
@@ -86,7 +86,7 @@ const summaryPass: Pass<GovernanceState> = {
 };
 
 export function createGovernancePipeline() {
-  return createPipeline<GovernanceState>('governance-intake', [
+  return createPipeline<GovernanceState>("governance-intake", [
     timestampPass<GovernanceState>(),
     classifyPass,
     evaluatePass,

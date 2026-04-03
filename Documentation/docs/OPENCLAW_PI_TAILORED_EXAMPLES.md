@@ -3,6 +3,7 @@
 ## Reviewed Active Setup
 
 ### OpenClaw
+
 - Gateway runs in local loopback mode on port `18789`
 - Memory search uses `ollama` with `nomic-embed-text:latest`
 - Memory plugin slot is `memory-core`
@@ -11,6 +12,7 @@
 - Internal hooks enabled: `session-memory`, `command-logger`, `boot-md`, `bootstrap-extra-files`
 
 ### Pi
+
 - Workspace auto-loads `pi-mangrove`
 - Active local tools include `dio_episode_summary`, `dio:status`, and `security:audit`
 - `local-guard` blocks dangerous shell commands and writes to protected paths
@@ -18,6 +20,7 @@
 ## OpenClaw Examples
 
 ### `memory_search`
+
 - **Best fit**
   - when you need prior decisions, preferences, or setup details without loading full files into context
 - **Scenario**
@@ -31,6 +34,7 @@
   - answer from the recalled snippet instead of guessing
 
 ### `memory_get`
+
 - **Best fit**
   - when `memory_search` already found the relevant file and you only need exact lines
 - **Scenario**
@@ -43,6 +47,7 @@
   - pull a narrow snippet rather than reading a full workspace file
 
 ### Memory indexing workflow
+
 - **Best fit**
   - when a new durable note should become searchable
 - **Scenario**
@@ -54,6 +59,7 @@
   ```
 
 ### Boot hook behavior
+
 - **Best fit**
   - when you want deterministic startup context before the first real task
 - **Scenario**
@@ -71,6 +77,7 @@
 ## Pi / pi-mangrove Examples
 
 ### `dio_episode_summary`
+
 - **Best fit**
   - when you need a quick structural view of the DIO episode plan
 - **Scenario**
@@ -81,6 +88,7 @@
   ```
 
 ### `dio:status`
+
 - **Best fit**
   - when you need the live DIO control constants before planning work
 - **Scenario**
@@ -91,6 +99,7 @@
   ```
 
 ### `security:audit`
+
 - **Best fit**
   - when you want a targeted underscore-isolation or local DIO safety check
 - **Scenario**
@@ -101,6 +110,7 @@
   ```
 
 ### `local-guard` dangerous bash protection
+
 - **Best fit**
   - when a model tries to run risky shell commands
 - **Scenario**
@@ -114,6 +124,7 @@
   - in non-interactive mode: Pi blocks the command fail-closed
 
 ### `local-guard` protected path protection
+
 - **Best fit**
   - when a model attempts to edit secrets or sensitive control files
 - **Scenario**

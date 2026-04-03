@@ -29,7 +29,9 @@ describe("seeds-server smoke", () => {
     process.env.SEEDS_ROOT = primarySeedsRoot;
     process.env.SEEDS_ROOTS = `${primarySeedsRoot},${secondarySeedsRoot}`;
     process.env.SEEDS_DATA_DIR = path.join(tempRoot, ".seeds-server");
-    const serverModule = await import("../src/server.ts") as unknown as { buildServer: () => TestServer };
+    const serverModule = (await import("../src/server.ts")) as unknown as {
+      buildServer: () => TestServer;
+    };
     ({ buildServer } = serverModule);
     ({ getConfig } = await import("../src/config.ts"));
   });
@@ -59,17 +61,21 @@ describe("seeds-server smoke", () => {
 
   it("registers expected tools and runs bookmark_list", async () => {
     const server = buildServer();
-    expect(getToolNames(server)).toEqual(expect.arrayContaining([
-      "health_check",
-      "ecosystem_scan",
-      "repo_detail",
-      "bookmark_add",
-      "bookmark_list",
-      "ecosystem_trend",
-    ]));
+    expect(getToolNames(server)).toEqual(
+      expect.arrayContaining([
+        "health_check",
+        "ecosystem_scan",
+        "repo_detail",
+        "bookmark_add",
+        "bookmark_list",
+        "ecosystem_trend",
+      ]),
+    );
 
-    const health = await invokeTool(server, "health_check") as { isError?: boolean };
-    const bookmarks = await invokeTool(server, "bookmark_list", { limit: 5 }) as { isError?: boolean };
+    const health = (await invokeTool(server, "health_check")) as { isError?: boolean };
+    const bookmarks = (await invokeTool(server, "bookmark_list", { limit: 5 })) as {
+      isError?: boolean;
+    };
     expect(health.isError).not.toBe(true);
     expect(bookmarks.isError).not.toBe(true);
   });
@@ -86,7 +92,10 @@ describe("seeds-server smoke", () => {
     require("fs").mkdirSync(path.join(secondarySeedsRoot, "archive"), { recursive: true });
     require("fs").mkdirSync(path.join(secondarySeedsRoot, "templates"), { recursive: true });
 
-    const result = await invokeTool(server, "ecosystem_scan", { saveSnapshot: false }) as { isError?: boolean; content?: Array<{ type: string; text?: string }> };
+    const result = (await invokeTool(server, "ecosystem_scan", { saveSnapshot: false })) as {
+      isError?: boolean;
+      content?: Array<{ type: string; text?: string }>;
+    };
     expect(result.isError).not.toBe(true);
 
     const text = result.content?.[0]?.text;
@@ -109,7 +118,10 @@ describe("seeds-server smoke", () => {
     await invokeTool(server, "ecosystem_scan", { saveSnapshot: true });
     await invokeTool(server, "ecosystem_scan", { saveSnapshot: true });
 
-    const result = await invokeTool(server, "ecosystem_trend", { limit: 5 }) as { isError?: boolean; content?: Array<{ type: string; text?: string }> };
+    const result = (await invokeTool(server, "ecosystem_trend", { limit: 5 })) as {
+      isError?: boolean;
+      content?: Array<{ type: string; text?: string }>;
+    };
     expect(result.isError).not.toBe(true);
 
     const text = result.content?.[0]?.text;

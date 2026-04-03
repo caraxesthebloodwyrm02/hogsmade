@@ -1,53 +1,73 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Glimpse Coding Assistant - AI-Powered Task Solutions</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        .fade-in { animation: fadeIn 0.3s ease-in; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        .slide-up { animation: slideUp 0.2s ease-out; }
-        @keyframes slideUp { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+      .fade-in {
+        animation: fadeIn 0.3s ease-in;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+      .slide-up {
+        animation: slideUp 0.2s ease-out;
+      }
+      @keyframes slideUp {
+        from {
+          transform: translateY(10px);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
     </style>
-</head>
-<body class="bg-gray-50 min-h-screen">
+  </head>
+  <body class="bg-gray-50 min-h-screen">
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect } = React;
+      const { useState, useEffect } = React;
 
-        // Sample workspace insights data
-        const SAMPLE_INSIGHTS = [
+      // Sample workspace insights data
+      const SAMPLE_INSIGHTS = [
+        {
+          type: "health",
+          title: "Project Health Issues",
+          description: "Address critical health issues to prevent future blockers",
+          priority: "high",
+          tasks: [
             {
-                type: 'health',
-                title: 'Project Health Issues',
-                description: 'Address critical health issues to prevent future blockers',
-                priority: 'high',
-                tasks: [
-                    {
-                        id: 'fix-test-coverage',
-                        title: 'Improve Test Coverage',
-                        description: 'Add comprehensive tests to experimental-ml project',
-                        priority: 'high',
-                        category: 'refactor',
-                        estimatedTime: '2-3 hours',
-                        difficulty: 'medium',
-                        dependencies: ['jest', 'testing-library'],
-                        solution: {
-                            approach: 'Add unit and integration tests to improve code reliability',
-                            steps: [
-                                'Install testing dependencies',
-                                'Create test directory structure',
-                                'Write unit tests for core functions',
-                                'Add integration tests for API endpoints',
-                                'Configure test coverage reporting'
-                            ],
-                            code: `// Example test structure
+              id: "fix-test-coverage",
+              title: "Improve Test Coverage",
+              description: "Add comprehensive tests to experimental-ml project",
+              priority: "high",
+              category: "refactor",
+              estimatedTime: "2-3 hours",
+              difficulty: "medium",
+              dependencies: ["jest", "testing-library"],
+              solution: {
+                approach: "Add unit and integration tests to improve code reliability",
+                steps: [
+                  "Install testing dependencies",
+                  "Create test directory structure",
+                  "Write unit tests for core functions",
+                  "Add integration tests for API endpoints",
+                  "Configure test coverage reporting",
+                ],
+                code: `// Example test structure
 describe('ML Model', () => {
   test('should process input correctly', () => {
     const input = [1, 2, 3, 4, 5];
@@ -55,37 +75,38 @@ describe('ML Model', () => {
     expect(result).toBeDefined();
   });
 });`,
-                            explanation: 'Testing ensures code reliability and prevents regressions during future changes.'
-                        },
-                        status: 'pending'
-                    }
-                ]
+                explanation:
+                  "Testing ensures code reliability and prevents regressions during future changes.",
+              },
+              status: "pending",
             },
+          ],
+        },
+        {
+          type: "productivity",
+          title: "Productivity Optimization",
+          description: "Streamline development workflow for better velocity",
+          priority: "medium",
+          tasks: [
             {
-                type: 'productivity',
-                title: 'Productivity Optimization',
-                description: 'Streamline development workflow for better velocity',
-                priority: 'medium',
-                tasks: [
-                    {
-                        id: 'setup-ci-cd',
-                        title: 'Implement CI/CD Pipeline',
-                        description: 'Add automated testing and deployment pipeline',
-                        priority: 'medium',
-                        category: 'feature',
-                        estimatedTime: '4-6 hours',
-                        difficulty: 'hard',
-                        dependencies: ['github-actions', 'docker'],
-                        solution: {
-                            approach: 'Automate the build, test, and deployment process',
-                            steps: [
-                                'Create GitHub Actions workflow',
-                                'Configure automated testing',
-                                'Set up deployment to staging',
-                                'Add production deployment pipeline',
-                                'Configure monitoring and alerts'
-                            ],
-                            code: `# .github/workflows/ci.yml
+              id: "setup-ci-cd",
+              title: "Implement CI/CD Pipeline",
+              description: "Add automated testing and deployment pipeline",
+              priority: "medium",
+              category: "feature",
+              estimatedTime: "4-6 hours",
+              difficulty: "hard",
+              dependencies: ["github-actions", "docker"],
+              solution: {
+                approach: "Automate the build, test, and deployment process",
+                steps: [
+                  "Create GitHub Actions workflow",
+                  "Configure automated testing",
+                  "Set up deployment to staging",
+                  "Add production deployment pipeline",
+                  "Configure monitoring and alerts",
+                ],
+                code: `# .github/workflows/ci.yml
 name: CI
 on: [push]
 jobs:
@@ -99,330 +120,376 @@ jobs:
           node-version: '18'
       - run: npm ci
       - run: npm test`,
-                            explanation: 'CI/CD automation reduces manual work and ensures consistent quality.'
-                        },
-                        status: 'pending'
-                    }
-                ]
+                explanation: "CI/CD automation reduces manual work and ensures consistent quality.",
+              },
+              status: "pending",
             },
+          ],
+        },
+        {
+          type: "risk",
+          title: "Security & Risk Mitigation",
+          description: "Address security vulnerabilities and technical debt",
+          priority: "high",
+          tasks: [
             {
-                type: 'risk',
-                title: 'Security & Risk Mitigation',
-                description: 'Address security vulnerabilities and technical debt',
-                priority: 'high',
-                tasks: [
-                    {
-                        id: 'update-dependencies',
-                        title: 'Update Vulnerable Dependencies',
-                        description: 'Update lodash and request packages to secure versions',
-                        priority: 'high',
-                        category: 'optimization',
-                        estimatedTime: '1-2 hours',
-                        difficulty: 'easy',
-                        dependencies: ['npm-audit'],
-                        solution: {
-                            approach: 'Update dependencies to latest secure versions',
-                            steps: [
-                                'Run npm audit to identify vulnerabilities',
-                                'Update package.json with secure versions',
-                                'Test application functionality',
-                                'Run security tests',
-                                'Deploy updated version'
-                            ],
-                            code: `# Update dependencies
+              id: "update-dependencies",
+              title: "Update Vulnerable Dependencies",
+              description: "Update lodash and request packages to secure versions",
+              priority: "high",
+              category: "optimization",
+              estimatedTime: "1-2 hours",
+              difficulty: "easy",
+              dependencies: ["npm-audit"],
+              solution: {
+                approach: "Update dependencies to latest secure versions",
+                steps: [
+                  "Run npm audit to identify vulnerabilities",
+                  "Update package.json with secure versions",
+                  "Test application functionality",
+                  "Run security tests",
+                  "Deploy updated version",
+                ],
+                code: `# Update dependencies
 npm audit fix
 
 # Or manually update
 npm install lodash@latest
 npm install --save-dev jest@latest`,
-                            explanation: 'Keeping dependencies updated prevents security vulnerabilities.'
-                        },
-                        status: 'pending'
-                    }
-                ]
-            }
-        ];
+                explanation: "Keeping dependencies updated prevents security vulnerabilities.",
+              },
+              status: "pending",
+            },
+          ],
+        },
+      ];
 
-        function App() {
-            const [insights, setInsights] = useState(SAMPLE_INSIGHTS);
-            const [selectedTask, setSelectedTask] = useState(null);
-            const [searchTerm, setSearchTerm] = useState('');
-            const [activeTab, setActiveTab] = useState('overview');
+      function App() {
+        const [insights, setInsights] = useState(SAMPLE_INSIGHTS);
+        const [selectedTask, setSelectedTask] = useState(null);
+        const [searchTerm, setSearchTerm] = useState("");
+        const [activeTab, setActiveTab] = useState("overview");
 
-            const filteredInsights = insights.filter(insight =>
-                insight.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                insight.tasks.some(task =>
-                    task.title.toLowerCase().includes(searchTerm.toLowerCase())
-                )
-            );
+        const filteredInsights = insights.filter(
+          (insight) =>
+            insight.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            insight.tasks.some((task) =>
+              task.title.toLowerCase().includes(searchTerm.toLowerCase()),
+            ),
+        );
 
-            const getPriorityColor = (priority) => {
-                switch (priority) {
-                    case 'high': return 'bg-red-100 text-red-800 border-red-200';
-                    case 'medium': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-                    case 'low': return 'bg-green-100 text-green-800 border-green-200';
-                    default: return 'bg-gray-100 text-gray-800 border-gray-200';
-                }
-            };
+        const getPriorityColor = (priority) => {
+          switch (priority) {
+            case "high":
+              return "bg-red-100 text-red-800 border-red-200";
+            case "medium":
+              return "bg-yellow-100 text-yellow-800 border-yellow-200";
+            case "low":
+              return "bg-green-100 text-green-800 border-green-200";
+            default:
+              return "bg-gray-100 text-gray-800 border-gray-200";
+          }
+        };
 
-            const getPriorityIcon = (priority) => {
-                switch (priority) {
-                    case 'high': return '🚨';
-                    case 'medium': return '⚠️';
-                    case 'low': return '✅';
-                    default: return '📋';
-                }
-            };
+        const getPriorityIcon = (priority) => {
+          switch (priority) {
+            case "high":
+              return "🚨";
+            case "medium":
+              return "⚠️";
+            case "low":
+              return "✅";
+            default:
+              return "📋";
+          }
+        };
 
-            const getCategoryIcon = (category) => {
-                switch (category) {
-                    case 'bug': return '🐛';
-                    case 'feature': return '✨';
-                    case 'refactor': return '🔄';
-                    case 'optimization': return '⚡';
-                    case 'documentation': return '📚';
-                    default: return '💻';
-                }
-            };
+        const getCategoryIcon = (category) => {
+          switch (category) {
+            case "bug":
+              return "🐛";
+            case "feature":
+              return "✨";
+            case "refactor":
+              return "🔄";
+            case "optimization":
+              return "⚡";
+            case "documentation":
+              return "📚";
+            default:
+              return "💻";
+          }
+        };
 
-            return (
-                <div className="min-h-screen bg-gray-50 p-6">
-                    <div className="max-w-7xl mx-auto">
-                        {/* Header */}
-                        <div className="mb-8 fade-in">
-                            <h1 className="text-4xl font-bold text-gray-900 mb-2">Glimpse Coding Assistant</h1>
-                            <p className="text-lg text-gray-600">
-                                AI-powered coding task solutions based on workspace intelligence
-                            </p>
-                            <div className="mt-4 flex items-center space-x-4 text-sm text-gray-500">
-                                <span>🧠 Cognitive synthesis</span>
-                                <span>⚡ Real-time analysis</span>
-                                <span>🎯 Actionable solutions</span>
-                            </div>
-                        </div>
-
-                        {/* Search */}
-                        <div className="mb-6 slide-up">
-                            <input
-                                type="text"
-                                placeholder="Search tasks, projects, or solutions..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full max-w-md px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            />
-                        </div>
-
-                        {/* Main Content */}
-                        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-                            {/* Tabs */}
-                            <div className="border-b border-gray-200">
-                                <div className="flex">
-                                    <button
-                                        onClick={() => setActiveTab('overview')}
-                                        className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
-                                            activeTab === 'overview'
-                                                ? 'border-blue-500 text-blue-600'
-                                                : 'border-transparent text-gray-500 hover:text-gray-700'
-                                        }`}
-                                    >
-                                        Workspace Overview
-                                    </button>
-                                    <button
-                                        onClick={() => setActiveTab('tasks')}
-                                        className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
-                                            activeTab === 'tasks'
-                                                ? 'border-blue-500 text-blue-600'
-                                                : 'border-transparent text-gray-500 hover:text-gray-700'
-                                        }`}
-                                    >
-                                        Coding Tasks
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div className="p-6">
-                                {activeTab === 'overview' && (
-                                    <div className="space-y-6">
-                                        {/* Workspace Summary */}
-                                        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 border border-blue-200">
-                                            <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-                                                <span className="mr-2">📊</span>
-                                                Workspace Intelligence Summary
-                                            </h2>
-                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                                <div className="text-center">
-                                                    <div className="text-2xl font-bold text-green-600">4</div>
-                                                    <div className="text-sm text-gray-600">Active Projects</div>
-                                                </div>
-                                                <div className="text-center">
-                                                    <div className="text-2xl font-bold text-yellow-600">1</div>
-                                                    <div className="text-sm text-gray-600">Needs Attention</div>
-                                                </div>
-                                                <div className="text-center">
-                                                    <div className="text-2xl font-bold text-blue-600">78</div>
-                                                    <div className="text-sm text-gray-600">Avg Health Score</div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* Insights Grid */}
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            {filteredInsights.map((insight, index) => (
-                                                <div key={index} className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
-                                                    <div className="flex items-center justify-between mb-4">
-                                                        <h3 className="text-lg font-semibold text-gray-900">{insight.title}</h3>
-                                                        <span className={`px-2 py-1 text-xs font-medium rounded-full border ${getPriorityColor(insight.priority)}`}>
-                                                            {getPriorityIcon(insight.priority)} {insight.priority}
-                                                        </span>
-                                                    </div>
-                                                    <p className="text-gray-600 mb-4">{insight.description}</p>
-
-                                                    <div className="space-y-3">
-                                                        {insight.tasks.map((task) => (
-                                                            <div key={task.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                                                                <div className="flex items-center space-x-3">
-                                                                    <span className="text-lg">{getCategoryIcon(task.category)}</span>
-                                                                    <div>
-                                                                        <div className="font-medium text-gray-900">{task.title}</div>
-                                                                        <div className="text-sm text-gray-500">{task.estimatedTime}</div>
-                                                                    </div>
-                                                                </div>
-                                                                <button
-                                                                    onClick={() => setSelectedTask(task)}
-                                                                    className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
-                                                                >
-                                                                    View Solution
-                                                                </button>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-
-                                {activeTab === 'tasks' && (
-                                    <div className="space-y-4">
-                                        {filteredInsights.flatMap(insight => insight.tasks).map((task) => (
-                                            <div key={task.id} className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow cursor-pointer">
-                                                <div className="flex items-start justify-between">
-                                                    <div className="flex-1">
-                                                        <div className="flex items-center space-x-3 mb-2">
-                                                            <span className="text-lg">{getCategoryIcon(task.category)}</span>
-                                                            <h3 className="text-lg font-semibold text-gray-900">{task.title}</h3>
-                                                            <span className={`px-2 py-1 text-xs font-medium rounded-full border ${getPriorityColor(task.priority)}`}>
-                                                                {task.priority}
-                                                            </span>
-                                                            <span className="px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded-full">
-                                                                {task.difficulty}
-                                                            </span>
-                                                        </div>
-                                                        <p className="text-gray-600 mb-3">{task.description}</p>
-                                                        <div className="flex items-center space-x-4 text-sm text-gray-500">
-                                                            <span>⏱️ {task.estimatedTime}</span>
-                                                            <span>📋 {task.dependencies.length} dependencies</span>
-                                                        </div>
-                                                    </div>
-                                                    <button
-                                                        onClick={() => setSelectedTask(task)}
-                                                        className="ml-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
-                                                    >
-                                                        <span>💡</span>
-                                                        <span>Get Solution</span>
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Task Solution Modal */}
-                        {selectedTask && (
-                            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                                <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-                                    <div className="p-6">
-                                        <div className="flex items-center justify-between mb-6">
-                                            <h2 className="text-2xl font-bold text-gray-900 flex items-center space-x-2">
-                                                <span>💻</span>
-                                                <span>{selectedTask.title}</span>
-                                            </h2>
-                                            <button
-                                                onClick={() => setSelectedTask(null)}
-                                                className="text-gray-400 hover:text-gray-600"
-                                            >
-                                                ✕
-                                            </button>
-                                        </div>
-
-                                        <div className="space-y-6">
-                                            {/* Approach Alert */}
-                                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                                                <div className="flex items-start space-x-3">
-                                                    <span className="text-blue-600 mt-1">🎯</span>
-                                                    <div>
-                                                        <h3 className="font-semibold text-blue-900">Approach</h3>
-                                                        <p className="text-blue-800 mt-1">{selectedTask.solution.approach}</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {/* Implementation Steps */}
-                                            <div>
-                                                <h3 className="text-lg font-semibold text-gray-900 mb-3">Implementation Steps</h3>
-                                                <ol className="list-decimal list-inside space-y-2">
-                                                    {selectedTask.solution.steps.map((step, index) => (
-                                                        <li key={index} className="text-gray-700">{step}</li>
-                                                    ))}
-                                                </ol>
-                                            </div>
-
-                                            {/* Code Solution */}
-                                            <div>
-                                                <h3 className="text-lg font-semibold text-gray-900 mb-3">Code Solution</h3>
-                                                <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-sm">
-                                                    <code>{selectedTask.solution.code}</code>
-                                                </pre>
-                                            </div>
-
-                                            {/* Explanation */}
-                                            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                                                <div className="flex items-start space-x-3">
-                                                    <span className="text-green-600 mt-1">💡</span>
-                                                    <div>
-                                                        <h3 className="font-semibold text-green-900">Why this solution?</h3>
-                                                        <p className="text-green-800 mt-1">{selectedTask.solution.explanation}</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {/* Metadata */}
-                                            <div className="flex flex-wrap gap-2">
-                                                <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
-                                                    Difficulty: {selectedTask.difficulty}
-                                                </span>
-                                                <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">
-                                                    Time: {selectedTask.estimatedTime}
-                                                </span>
-                                                {selectedTask.dependencies.length > 0 && (
-                                                    <span className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm">
-                                                        Dependencies: {selectedTask.dependencies.join(', ')}
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                    </div>
+        return (
+          <div className="min-h-screen bg-gray-50 p-6">
+            <div className="max-w-7xl mx-auto">
+              {/* Header */}
+              <div className="mb-8 fade-in">
+                <h1 className="text-4xl font-bold text-gray-900 mb-2">Glimpse Coding Assistant</h1>
+                <p className="text-lg text-gray-600">
+                  AI-powered coding task solutions based on workspace intelligence
+                </p>
+                <div className="mt-4 flex items-center space-x-4 text-sm text-gray-500">
+                  <span>🧠 Cognitive synthesis</span>
+                  <span>⚡ Real-time analysis</span>
+                  <span>🎯 Actionable solutions</span>
                 </div>
-            );
-        }
+              </div>
 
-        ReactDOM.render(<App />, document.getElementById('root'));
+              {/* Search */}
+              <div className="mb-6 slide-up">
+                <input
+                  type="text"
+                  placeholder="Search tasks, projects, or solutions..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full max-w-md px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              {/* Main Content */}
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+                {/* Tabs */}
+                <div className="border-b border-gray-200">
+                  <div className="flex">
+                    <button
+                      onClick={() => setActiveTab("overview")}
+                      className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
+                        activeTab === "overview"
+                          ? "border-blue-500 text-blue-600"
+                          : "border-transparent text-gray-500 hover:text-gray-700"
+                      }`}
+                    >
+                      Workspace Overview
+                    </button>
+                    <button
+                      onClick={() => setActiveTab("tasks")}
+                      className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
+                        activeTab === "tasks"
+                          ? "border-blue-500 text-blue-600"
+                          : "border-transparent text-gray-500 hover:text-gray-700"
+                      }`}
+                    >
+                      Coding Tasks
+                    </button>
+                  </div>
+                </div>
+
+                <div className="p-6">
+                  {activeTab === "overview" && (
+                    <div className="space-y-6">
+                      {/* Workspace Summary */}
+                      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 border border-blue-200">
+                        <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                          <span className="mr-2">📊</span>
+                          Workspace Intelligence Summary
+                        </h2>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div className="text-center">
+                            <div className="text-2xl font-bold text-green-600">4</div>
+                            <div className="text-sm text-gray-600">Active Projects</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-2xl font-bold text-yellow-600">1</div>
+                            <div className="text-sm text-gray-600">Needs Attention</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-2xl font-bold text-blue-600">78</div>
+                            <div className="text-sm text-gray-600">Avg Health Score</div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Insights Grid */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {filteredInsights.map((insight, index) => (
+                          <div
+                            key={index}
+                            className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow"
+                          >
+                            <div className="flex items-center justify-between mb-4">
+                              <h3 className="text-lg font-semibold text-gray-900">
+                                {insight.title}
+                              </h3>
+                              <span
+                                className={`px-2 py-1 text-xs font-medium rounded-full border ${getPriorityColor(insight.priority)}`}
+                              >
+                                {getPriorityIcon(insight.priority)} {insight.priority}
+                              </span>
+                            </div>
+                            <p className="text-gray-600 mb-4">{insight.description}</p>
+
+                            <div className="space-y-3">
+                              {insight.tasks.map((task) => (
+                                <div
+                                  key={task.id}
+                                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                                >
+                                  <div className="flex items-center space-x-3">
+                                    <span className="text-lg">
+                                      {getCategoryIcon(task.category)}
+                                    </span>
+                                    <div>
+                                      <div className="font-medium text-gray-900">{task.title}</div>
+                                      <div className="text-sm text-gray-500">
+                                        {task.estimatedTime}
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <button
+                                    onClick={() => setSelectedTask(task)}
+                                    className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
+                                  >
+                                    View Solution
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {activeTab === "tasks" && (
+                    <div className="space-y-4">
+                      {filteredInsights
+                        .flatMap((insight) => insight.tasks)
+                        .map((task) => (
+                          <div
+                            key={task.id}
+                            className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow cursor-pointer"
+                          >
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center space-x-3 mb-2">
+                                  <span className="text-lg">{getCategoryIcon(task.category)}</span>
+                                  <h3 className="text-lg font-semibold text-gray-900">
+                                    {task.title}
+                                  </h3>
+                                  <span
+                                    className={`px-2 py-1 text-xs font-medium rounded-full border ${getPriorityColor(task.priority)}`}
+                                  >
+                                    {task.priority}
+                                  </span>
+                                  <span className="px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded-full">
+                                    {task.difficulty}
+                                  </span>
+                                </div>
+                                <p className="text-gray-600 mb-3">{task.description}</p>
+                                <div className="flex items-center space-x-4 text-sm text-gray-500">
+                                  <span>⏱️ {task.estimatedTime}</span>
+                                  <span>📋 {task.dependencies.length} dependencies</span>
+                                </div>
+                              </div>
+                              <button
+                                onClick={() => setSelectedTask(task)}
+                                className="ml-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
+                              >
+                                <span>💡</span>
+                                <span>Get Solution</span>
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Task Solution Modal */}
+              {selectedTask && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                  <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+                    <div className="p-6">
+                      <div className="flex items-center justify-between mb-6">
+                        <h2 className="text-2xl font-bold text-gray-900 flex items-center space-x-2">
+                          <span>💻</span>
+                          <span>{selectedTask.title}</span>
+                        </h2>
+                        <button
+                          onClick={() => setSelectedTask(null)}
+                          className="text-gray-400 hover:text-gray-600"
+                        >
+                          ✕
+                        </button>
+                      </div>
+
+                      <div className="space-y-6">
+                        {/* Approach Alert */}
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                          <div className="flex items-start space-x-3">
+                            <span className="text-blue-600 mt-1">🎯</span>
+                            <div>
+                              <h3 className="font-semibold text-blue-900">Approach</h3>
+                              <p className="text-blue-800 mt-1">{selectedTask.solution.approach}</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Implementation Steps */}
+                        <div>
+                          <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                            Implementation Steps
+                          </h3>
+                          <ol className="list-decimal list-inside space-y-2">
+                            {selectedTask.solution.steps.map((step, index) => (
+                              <li key={index} className="text-gray-700">
+                                {step}
+                              </li>
+                            ))}
+                          </ol>
+                        </div>
+
+                        {/* Code Solution */}
+                        <div>
+                          <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                            Code Solution
+                          </h3>
+                          <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-sm">
+                            <code>{selectedTask.solution.code}</code>
+                          </pre>
+                        </div>
+
+                        {/* Explanation */}
+                        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                          <div className="flex items-start space-x-3">
+                            <span className="text-green-600 mt-1">💡</span>
+                            <div>
+                              <h3 className="font-semibold text-green-900">Why this solution?</h3>
+                              <p className="text-green-800 mt-1">
+                                {selectedTask.solution.explanation}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Metadata */}
+                        <div className="flex flex-wrap gap-2">
+                          <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
+                            Difficulty: {selectedTask.difficulty}
+                          </span>
+                          <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">
+                            Time: {selectedTask.estimatedTime}
+                          </span>
+                          {selectedTask.dependencies.length > 0 && (
+                            <span className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm">
+                              Dependencies: {selectedTask.dependencies.join(", ")}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      }
+
+      ReactDOM.render(<App />, document.getElementById("root"));
     </script>
-</body>
+  </body>
 </html>

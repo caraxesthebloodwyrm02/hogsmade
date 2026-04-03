@@ -30,14 +30,11 @@ export function detectDataComplexity(profile, entities, relations) {
 
   // Dimension coverage: how many of the 4 dimensions are populated
   const dims = ["time", "space", "domain", "catalyst"];
-  const dimCoverage = dims.filter((d) =>
-    entities.some((e) => e.dimensions?.[d] != null)
-  ).length / dims.length;
+  const dimCoverage =
+    dims.filter((d) => entities.some((e) => e.dimensions?.[d] != null)).length / dims.length;
 
   // Taxonomy diversity: unique domains across entities
-  const domains = new Set(
-    entities.map((e) => e.dimensions?.domain).filter(Boolean)
-  );
+  const domains = new Set(entities.map((e) => e.dimensions?.domain).filter(Boolean));
   const taxonomyDiversity = Math.min(1, domains.size / Math.max(entityCount, 1));
 
   // Composite complexity score

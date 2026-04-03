@@ -55,7 +55,10 @@ export function PresetBar({
             aria-label={showNewPreset ? "Cancel new preset" : "Create new preset"}
             className="p-1.5 rounded-lg hover:bg-panel-light transition-colors text-text-muted hover:text-text-primary cursor-pointer"
           >
-            <Plus size={12} className={`transition-transform duration-200 ${showNewPreset ? "rotate-45" : ""}`} />
+            <Plus
+              size={12}
+              className={`transition-transform duration-200 ${showNewPreset ? "rotate-45" : ""}`}
+            />
           </button>
         </div>
       </div>
@@ -68,10 +71,11 @@ export function PresetBar({
             role="option"
             aria-selected={activePresetId === preset.id}
             onClick={() => onLoadPreset(preset.id)}
-            className={`press-scale group w-full flex items-center gap-2 px-3 py-2.5 rounded-xl cursor-pointer transition-all duration-150 text-left border ${activePresetId === preset.id
+            className={`press-scale group w-full flex items-center gap-2 px-3 py-2.5 rounded-xl cursor-pointer transition-all duration-150 text-left border ${
+              activePresetId === preset.id
                 ? "bg-panel-light border-white/10 shadow-sm"
                 : "hover:bg-panel-light/60 border-transparent"
-              }`}
+            }`}
           >
             <div className="flex-1 min-w-0">
               <div className="text-xs text-text-secondary truncate font-medium">{preset.name}</div>
@@ -100,7 +104,12 @@ export function PresetBar({
       {showNewPreset && (
         <div className="px-3 pb-3 space-y-2 border-t border-panel-border pt-3 animate-fade-in-up">
           <div>
-            <label htmlFor="preset-name" className="text-[10px] text-text-muted uppercase tracking-wider block mb-1">Name</label>
+            <label
+              htmlFor="preset-name"
+              className="text-[10px] text-text-muted uppercase tracking-wider block mb-1"
+            >
+              Name
+            </label>
             <input
               ref={nameInputRef}
               id="preset-name"
@@ -113,7 +122,12 @@ export function PresetBar({
             />
           </div>
           <div>
-            <label htmlFor="preset-desc" className="text-[10px] text-text-muted uppercase tracking-wider block mb-1">Description</label>
+            <label
+              htmlFor="preset-desc"
+              className="text-[10px] text-text-muted uppercase tracking-wider block mb-1"
+            >
+              Description
+            </label>
             <input
               id="preset-desc"
               type="text"
@@ -161,25 +175,35 @@ export function PresetBar({
         </div>
 
         {showSnapshots && snapshots.length > 0 && (
-          <div className="px-2 pb-2 space-y-0.5 animate-expand" role="list" aria-label="Board snapshots">
-            {snapshots.slice(-10).reverse().map((snap) => (
-              <button
-                key={snap.id}
-                role="listitem"
-                onClick={() => onRestoreSnapshot(snap.id)}
-                className="press-scale group w-full flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-panel-light cursor-pointer transition-colors text-left"
-              >
-                <RotateCcw size={11} className="text-text-muted group-hover:text-led-blue flex-shrink-0 transition-colors" />
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs text-text-tertiary truncate">
-                    {snap.label || snap.id.slice(0, 12)}
+          <div
+            className="px-2 pb-2 space-y-0.5 animate-expand"
+            role="list"
+            aria-label="Board snapshots"
+          >
+            {snapshots
+              .slice(-10)
+              .reverse()
+              .map((snap) => (
+                <button
+                  key={snap.id}
+                  role="listitem"
+                  onClick={() => onRestoreSnapshot(snap.id)}
+                  className="press-scale group w-full flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-panel-light cursor-pointer transition-colors text-left"
+                >
+                  <RotateCcw
+                    size={11}
+                    className="text-text-muted group-hover:text-led-blue flex-shrink-0 transition-colors"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs text-text-tertiary truncate">
+                      {snap.label || snap.id.slice(0, 12)}
+                    </div>
+                    <div className="text-[10px] text-text-muted">
+                      {new Date(snap.timestamp).toLocaleTimeString()} · #{snap.hash.slice(0, 6)}
+                    </div>
                   </div>
-                  <div className="text-[10px] text-text-muted">
-                    {new Date(snap.timestamp).toLocaleTimeString()} · #{snap.hash.slice(0, 6)}
-                  </div>
-                </div>
-              </button>
-            ))}
+                </button>
+              ))}
           </div>
         )}
       </div>

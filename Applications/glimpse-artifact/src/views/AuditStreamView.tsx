@@ -30,11 +30,15 @@ export function AuditStreamView() {
             <Radio className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="font-heading text-2xl font-bold text-ink tracking-tight" style={{ letterSpacing: '-0.02em' }}>
+            <h1
+              className="font-heading text-2xl font-bold text-ink tracking-tight"
+              style={{ letterSpacing: "-0.02em" }}
+            >
               Audit Stream
             </h1>
             <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-muted mt-1">
-              <span className="text-teal-500">◉</span> Live event feed from MCP servers with filtering and detail inspection.
+              <span className="text-teal-500">◉</span> Live event feed from MCP servers with
+              filtering and detail inspection.
             </p>
           </div>
         </div>

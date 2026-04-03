@@ -62,13 +62,13 @@ All original return fields from `runContextPipeline()` are preserved. Existing c
 
 ## Test Results
 
-| Suite | Tests | Pass | Fail |
-|-------|-------|------|------|
-| similarity.test.js | 20 | 20 | 0 |
-| temporal.test.js | 17 | 17 | 0 |
-| confidence.test.js | 16 | 16 | 0 |
-| compression.test.js | 10 | 10 | 0 |
-| **Total** | **63** | **63** | **0** |
+| Suite               | Tests  | Pass   | Fail  |
+| ------------------- | ------ | ------ | ----- |
+| similarity.test.js  | 20     | 20     | 0     |
+| temporal.test.js    | 17     | 17     | 0     |
+| confidence.test.js  | 16     | 16     | 0     |
+| compression.test.js | 10     | 10     | 0     |
+| **Total**           | **63** | **63** | **0** |
 
 Integration examples: `use-case-basic.mjs`, `use-case-innovation-network.mjs`, `citation-network.mjs` — all pass (exit 0).
 
@@ -102,21 +102,21 @@ const result = runContextPipeline(data, "json", config);
 
 ```js
 // Complexity assessment
-console.log(result.complexity.level);        // "simple" | "moderate" | "complex"
-console.log(result.complexity.factors);      // { entityCount, density, dimCoverage, ... }
+console.log(result.complexity.level); // "simple" | "moderate" | "complex"
+console.log(result.complexity.factors); // { entityCount, density, dimCoverage, ... }
 
 // Mode settings
-console.log(result.modeSettings.passCount);  // 1, 2, or 3
+console.log(result.modeSettings.passCount); // 1, 2, or 3
 console.log(result.modeSettings.compressionDepth); // "light" | "standard" | "deep"
 
 // Invariant patterns (ranked by density)
-result.invariantPatterns.forEach(p => {
+result.invariantPatterns.forEach((p) => {
   console.log(`${p.pattern} — density: ${p.densityScore}, domains: ${p.domainCount}`);
 });
 
 // Confidence report
 console.log(result.confidenceReport.overallScore);
-result.confidenceReport.topGaps.forEach(g => {
+result.confidenceReport.topGaps.forEach((g) => {
   console.log(`Gap: ${g.type} — ${g.description} (severity: ${g.severity})`);
 });
 ```
@@ -125,8 +125,8 @@ result.confidenceReport.topGaps.forEach(g => {
 
 ```js
 const result = runContextPipeline(data, "json", config, {
-  grounding: true,             // Force grounding even for simple datasets
-  groundingMode: "local",      // "local" (default) | "session" | "web"
+  grounding: true, // Force grounding even for simple datasets
+  groundingMode: "local", // "local" (default) | "session" | "web"
 });
 // result.groundedInsights will have grounding.confirmed and grounding.confidence
 ```

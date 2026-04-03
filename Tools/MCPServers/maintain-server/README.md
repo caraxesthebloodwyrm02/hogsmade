@@ -4,20 +4,21 @@ System optimization & maintenance MCP server for development workstations.
 
 ## Tools
 
-| Tool | Description |
-|------|-------------|
-| `health_check` | Server status and quick system vitals |
-| `scan_temp` | Scan temp/cache directories for cleanup opportunities |
+| Tool              | Description                                                                     |
+| ----------------- | ------------------------------------------------------------------------------- |
+| `health_check`    | Server status and quick system vitals                                           |
+| `scan_temp`       | Scan temp/cache directories for cleanup opportunities                           |
 | `scan_workspaces` | Scan dev workspaces for hygiene issues (node_modules, build artifacts, pycache) |
-| `scan_git_repos` | Git repository health (loose objects, stale branches, sync status) |
-| `scan_system` | RAM, disk volumes, top processes, uptime |
-| `full_diagnostic` | Run all scans, produce unified report with health score |
-| `cleanup_execute` | Execute cleanup actions (dry-run by default, requires confirmation) |
-| `report_history` | Query past diagnostic reports for trend analysis |
+| `scan_git_repos`  | Git repository health (loose objects, stale branches, sync status)              |
+| `scan_system`     | RAM, disk volumes, top processes, uptime                                        |
+| `full_diagnostic` | Run all scans, produce unified report with health score                         |
+| `cleanup_execute` | Execute cleanup actions (dry-run by default, requires confirmation)             |
+| `report_history`  | Query past diagnostic reports for trend analysis                                |
 
 ## Cleanup Actions
 
 Supported cleanup types:
+
 - `temp_clean` — Purge stale files from temp directories
 - `npm_cache` — Run `npm cache clean --force`
 - `pip_cache` — Run `pip cache purge`

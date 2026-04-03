@@ -1,26 +1,32 @@
 # Recovery Playbooks
 
 ## Overview
+
 Standardized procedures for recovering from common ecosystem failures and health degradation events.
 
 ## Playbook Index
 
 ### 1. Repository Health Degradation (>5 points)
+
 **Trigger**: Ecosystem score drops by 5+ points in snapshot comparison
 
 **Symptoms**:
+
 - Repository health score decrease
 - Increased uncommitted changes
 - Test failures or build issues
 
 **Recovery Steps**:
+
 1. **Immediate Assessment**
+
    ```bash
    mcp14_ecosystem_scan --saveSnapshot=true
    mcp14_ecosystem_trend --limit=5
    ```
 
 2. **Identify Affected Repositories**
+
    ```bash
    mcp14_repo_detail --repoName=<affected-repo>
    ```
@@ -37,15 +43,19 @@ Standardized procedures for recovering from common ecosystem failures and health
    ```
 
 ### 2. MCP Server Health Issues
+
 **Trigger**: MCP server becomes unresponsive or returns errors
 
 **Symptoms**:
+
 - Server health check failures
 - Timeout errors in workflows
 - Missing telemetry data
 
 **Recovery Steps**:
+
 1. **Server Status Check**
+
    ```bash
    mcpX_health_check  # Replace X with server number
    ```
@@ -56,6 +66,7 @@ Standardized procedures for recovering from common ecosystem failures and health
    - Restart: Navigate to server directory and run `npm run dev`
 
 3. **Dependency Issues**
+
    ```bash
    cd <server-directory>
    npm install
@@ -68,21 +79,26 @@ Standardized procedures for recovering from common ecosystem failures and health
    - Validate port availability
 
 ### 3. Audit Pipeline Failures
+
 **Trigger**: Audit log shows failures or parsing errors
 
 **Symptoms**:
+
 - Increased audit parse errors
 - Missing audit entries
 - Incomplete telemetry
 
 **Recovery Steps**:
+
 1. **Audit System Check**
+
    ```bash
    mcp2_health_check
    mcp2_audit_stats
    ```
 
 2. **Clear Corrupted Data**
+
    ```bash
    # Backup current audit log
    cp audit.ndjson audit.ndjson.backup
@@ -100,15 +116,19 @@ Standardized procedures for recovering from common ecosystem failures and health
    ```
 
 ### 4. Workflow Execution Failures
+
 **Trigger**: Workflow steps fail or timeout
 
 **Symptoms**:
+
 - Workflow execution stops midway
 - Timeout errors
 - Step validation failures
 
 **Recovery Steps**:
+
 1. **Workflow Status Check**
+
    ```bash
    mcp0_workflow_get --workflowId=<workflow-id>
    mcp0_workflow_history --limit=10
@@ -130,15 +150,19 @@ Standardized procedures for recovering from common ecosystem failures and health
    ```
 
 ### 5. Ecosystem Scan Failures
+
 **Trigger**: Ecosystem scan returns errors or incomplete data
 
 **Symptoms**:
+
 - Missing repositories in scan results
 - Incorrect health scores
 - Scan timeouts
 
 **Recovery Steps**:
+
 1. **Scan System Check**
+
    ```bash
    mcp14_health_check
    ```
@@ -160,6 +184,7 @@ Standardized procedures for recovering from common ecosystem failures and health
 ## Emergency Procedures
 
 ### Critical System Failure
+
 **When multiple systems fail simultaneously**:
 
 1. **Stop All Automated Processes**
@@ -168,6 +193,7 @@ Standardized procedures for recovering from common ecosystem failures and health
    - Prevent cascade failures
 
 2. **Core System Assessment**
+
    ```bash
    mcp10_full_diagnostic
    ```
@@ -183,6 +209,7 @@ Standardized procedures for recovering from common ecosystem failures and health
    - Monitor for stability
 
 ### Data Corruption Events
+
 **When audit logs or snapshots become corrupted**:
 
 1. **Isolate Corrupted Data**
@@ -201,6 +228,7 @@ Standardized procedures for recovering from common ecosystem failures and health
 ## Monitoring and Prevention
 
 ### Daily Health Checks
+
 ```bash
 # Morning ecosystem assessment
 mcp13_morning_briefing
@@ -213,12 +241,14 @@ mcp13_check_alerts --healthThreshold=85
 ```
 
 ### Weekly Maintenance
+
 - Review and rotate audit logs
 - Update dependencies across all projects
 - Validate backup integrity
 - Performance tuning of MCP servers
 
 ### Monthly Review
+
 - Analyze long-term trends
 - Update recovery procedures based on incidents
 - Review and update alert thresholds
@@ -227,16 +257,19 @@ mcp13_check_alerts --healthThreshold=85
 ## Contact and Escalation
 
 ### Primary Response
+
 - Automated workflows handle 90% of common issues
 - Recovery playbooks cover standard scenarios
 
 ### Escalation Criteria
+
 - Multiple simultaneous system failures
 - Data corruption events
 - Security incidents
 - Performance degradation >20%
 
 ### Manual Intervention Points
+
 - When automated recovery fails 3+ times
 - During security events
 - For infrastructure changes

@@ -3,18 +3,13 @@
  * Transforms records into enriched entities with dimensions and metrics.
  */
 
-import {
-  flattenRecord,
-  normalizeName,
-  normalizeScalar,
-  slugify,
-} from "../utils/utils.js";
+import { flattenRecord, normalizeName, normalizeScalar, slugify } from "../utils/utils.js";
 import {
   chooseEntityColumn,
   chooseTypeColumn,
   detectTones,
   inferEntityType,
-  scoreTaxonomy
+  scoreTaxonomy,
 } from "./profiling.js";
 
 export function buildEntities(records, profile, config) {
@@ -33,10 +28,12 @@ export function buildEntities(records, profile, config) {
     const domainKeywordHits = scoreTaxonomy(recordText, config);
     const tones = detectTones(recordText, config);
     const metrics = {};
-    profile.descriptors.filter((descriptor) => descriptor.type === "number").forEach((descriptor) => {
-      const value = normalizeScalar(record[descriptor.name]);
-      if (typeof value === "number") metrics[descriptor.name] = value;
-    });
+    profile.descriptors
+      .filter((descriptor) => descriptor.type === "number")
+      .forEach((descriptor) => {
+        const value = normalizeScalar(record[descriptor.name]);
+        if (typeof value === "number") metrics[descriptor.name] = value;
+      });
 
     const rawName = String(record[entityColumn] || `Record ${index + 1}`);
     const normalizedName = normalizeName(rawName);
@@ -55,7 +52,9 @@ export function buildEntities(records, profile, config) {
     return {
       id: stableId,
       name: uniqueName,
-      type: typeColumn ? String(record[typeColumn] || "object").toLowerCase() : inferEntityType(recordText),
+      type: typeColumn
+        ? String(record[typeColumn] || "object").toLowerCase()
+        : inferEntityType(recordText),
       dimensions: {
         time: normalizeScalar(record[timeColumn]),
         space: normalizeScalar(record[spaceColumn]),

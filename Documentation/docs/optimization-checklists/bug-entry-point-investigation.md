@@ -3,6 +3,7 @@
 Systematic approach to isolating and reproducing bugs in GRID-main.
 
 ## Priority System
+
 - **P0**: Data corruption, security bypasses, complete service failures
 - **P1**: Incorrect behavior, partial functionality loss
 - **P2**: Minor UI inconsistencies, edge case behaviors
@@ -12,6 +13,7 @@ Systematic approach to isolating and reproducing bugs in GRID-main.
 ## P0: Critical Bug Investigation
 
 **1. Security Incident Triage**
+
 - [ ] Trace unauthorized access attempts to specific entry points
   ```bash
   cd GRID-main
@@ -20,13 +22,15 @@ Systematic approach to isolating and reproducing bugs in GRID-main.
   ```
 
 **2. Data Corruption Source Location**
+
 - [ ] Use database transaction logs to trace corrupt writes
   ```bash
   # Placeholder for database-specific command
-  psql -c "SELECT * FROM pg_xact ORDER BY xact_id DESC LIMIT 10;" 
+  psql -c "SELECT * FROM pg_xact ORDER BY xact_id DESC LIMIT 10;"
   ```
 
 **3. Service Availability Failure**
+
 - [ ] Identify root cause of 5xx errors in production logs
   ```bash
   cd GRID-main
@@ -38,6 +42,7 @@ Systematic approach to isolating and reproducing bugs in GRID-main.
 ## P1: High-Priority Debugging
 
 **4. API Endpoint Behavior Mismatch**
+
 - [ ] Compare actual vs. documented endpoint responses
   ```bash
   cd GRID-main
@@ -48,6 +53,7 @@ Systematic approach to isolating and reproducing bugs in GRID-main.
   ```
 
 **5. CLI Script Incorrect Output**
+
 - [ ] Trace unexpected CLI results to specific function calls
   ```bash
   cd GRID-main
@@ -55,6 +61,7 @@ Systematic approach to isolating and reproducing bugs in GRID-main.
   ```
 
 **6. Authentication Flow Failure**
+
 - [ ] Step through login/token refresh flows comparing with successful paths
   ```bash
   cd GRID-main
@@ -63,6 +70,7 @@ Systematic approach to isolating and reproducing bugs in GRID-main.
   ```
 
 **7. Database State Inconsistency**
+
 - [ ] Check constraint violations and referential integrity breaks
   ```bash
   cd GRID-main
@@ -75,6 +83,7 @@ Systematic approach to isolating and reproducing bugs in GRID-main.
 ## P2: Secondary Investigation Areas
 
 **8. Logging Completeness**
+
 - [ ] Ensure all code paths emit appropriate debug/info logs
   ```bash
   cd GRID-main
@@ -83,6 +92,7 @@ Systematic approach to isolating and reproducing bugs in GRID-main.
   ```
 
 **9. Environmental Behavior Differences**
+
 - [ ] Compare behavior under different configuration profiles
   ```bash
   cd GRID-main
@@ -92,6 +102,7 @@ Systematic approach to isolating and reproducing bugs in GRID-main.
   ```
 
 **10. Client SDK Integration Issues**
+
 - [ ] Reproduce reported issues with exact client library versions
   ```bash
   cd GRID-main
@@ -104,14 +115,17 @@ Systematic approach to isolating and reproducing bugs in GRID-main.
 ## Investigation Tools
 
 **Stack Trace Analysis**:
+
 - Use `VERIFICATION_CHECKLIST.md` debug mode to get verbose stack traces
 - Enable `GRID_DEBUG_STACK_TRACES=1` for full tracebacks
 
 **Reproduction Scripts**:
+
 - Create minimal `reproduce_*.py` scripts in `scripts/debug/`
 - Reference `AFTERHOURS_CHECKLIST.md` for sprint-style debug approach
 
 ## Cross-References
+
 - AFTERHOURS_CHECKLIST.md: Sprint-style debugging methodology
 - SAFETY_DEBUG_CHECKLIST.md: Safe reproduction in isolated environments
 - VERIFICATION_CHECKLIST.md: Debug mode activation and verbose logging

@@ -22,6 +22,7 @@ These rules are injected into every AI context via AGENTS.md:
 ## AI Assistant Behavioral Contract
 
 ### MUST DO:
+
 1. ANNOUNCE before any file write, edit, or deletion
 2. SHOW the exact content being written/changed (not summaries)
 3. ASK before any git operation (commit, push, branch, merge)
@@ -32,6 +33,7 @@ These rules are injected into every AI context via AGENTS.md:
 8. USE TODO lists for multi-step tasks to maintain visibility
 
 ### MUST NOT:
+
 1. NEVER make "silent" edits without showing the changes
 2. NEVER batch multiple file edits without announcing each one
 3. NEVER hide errors or pretend operations succeeded when they failed
@@ -42,6 +44,7 @@ These rules are injected into every AI context via AGENTS.md:
 8. NEVER summarize when user asked for full output
 
 ### WHEN UNCERTAIN:
+
 1. ASK rather than assume
 2. SHOW options rather than pick one silently
 3. EXPLAIN uncertainty rather than hide it
@@ -153,17 +156,21 @@ Template:
 ## AI Boundaries
 
 ### Allowed:
+
 - [list specific allowed operations]
 
 ### Forbidden:
+
 - [list specific forbidden operations]
 
 ### Requires Confirmation:
+
 - [list operations needing explicit approval]
 
 ## Verification
 
 Before marking any task complete:
+
 1. [ ] Run: [test command]
 2. [ ] Verify: [specific check]
 3. [ ] Confirm: [user approval step]
@@ -171,6 +178,7 @@ Before marking any task complete:
 ## Escalation
 
 If uncertain about:
+
 - [topic 1]: Ask user before proceeding
 - [topic 2]: Reference [doc/resource]
 - [topic 3]: Do not attempt, explain why
@@ -183,6 +191,7 @@ If uncertain about:
 When AI behavior seems "off" (possessed, deceptive, uncooperative):
 
 ### Detection Signals:
+
 - AI repeats same failed approach multiple times
 - AI claims success but output doesn't match
 - AI ignores explicit corrections
@@ -191,6 +200,7 @@ When AI behavior seems "off" (possessed, deceptive, uncooperative):
 - AI tries to change topic away from the task
 
 ### Recovery Actions:
+
 1. **Reset context**: Start fresh conversation
 2. **Explicit instruction**: "Stop. Read my last 3 messages. Follow them exactly."
 3. **Decompose task**: Break into smaller, verifiable steps
@@ -221,6 +231,7 @@ Your echoes-server already provides audit logging. Configure it to:
 ### Session Review
 
 After each significant AI session:
+
 1. Review git history for unexpected commits
 2. Check for files created/modified outside scope
 3. Verify no network calls were made unexpectedly

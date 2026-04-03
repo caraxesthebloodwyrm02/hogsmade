@@ -67,7 +67,7 @@ describe("Circuit Breaker", () => {
       }
 
       await expect(cb.execute(() => Promise.resolve("success"))).rejects.toThrow(
-        CircuitBreakerOpenError
+        CircuitBreakerOpenError,
       );
     });
 

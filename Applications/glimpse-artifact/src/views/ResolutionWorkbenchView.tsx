@@ -4,12 +4,7 @@ import { BrainCircuit, Network, Radar, ShieldAlert, Sparkles } from "lucide-reac
 import { DataError } from "@/components/phase4/DataError";
 import { cn } from "@/lib/utils";
 
-type ResolutionMode =
-  | "recognition"
-  | "reward"
-  | "review"
-  | "restriction"
-  | "penalty";
+type ResolutionMode = "recognition" | "reward" | "review" | "restriction" | "penalty";
 
 interface KeywordTerm {
   canonicalTerm: string;
@@ -168,13 +163,7 @@ function layoutGraph(nodes: ResolutionNode[]): GraphLayoutNode[] {
   return laidOut;
 }
 
-function GraphPanel({
-  nodes,
-  edges,
-}: {
-  nodes: ResolutionNode[];
-  edges: ResolutionEdge[];
-}) {
+function GraphPanel({ nodes, edges }: { nodes: ResolutionNode[]; edges: ResolutionEdge[] }) {
   const layout = useMemo(() => layoutGraph(nodes), [nodes]);
   const nodeMap = useMemo(() => new Map(layout.map((node) => [node.id, node])), [layout]);
 
@@ -281,7 +270,9 @@ function HeatmapPanel({
             <tr key={keyword} className="border-b border-border-color/40">
               <td className="py-2 pr-3 font-mono text-ink">{keyword}</td>
               {clusters.map((cluster) => {
-                const cell = heatmap.find((entry) => entry.keyword === keyword && entry.clusterId === cluster.id);
+                const cell = heatmap.find(
+                  (entry) => entry.keyword === keyword && entry.clusterId === cluster.id,
+                );
                 const score = cell?.score ?? 0;
                 const intensity = maxScore > 0 ? clamp(score / maxScore, 0, 1) : 0;
                 return (
@@ -336,9 +327,11 @@ export function ResolutionWorkbenchView() {
         }),
       });
 
-      const payload = await res.json() as ResolutionWorkbenchResult | { error?: string };
+      const payload = (await res.json()) as ResolutionWorkbenchResult | { error?: string };
       if (!res.ok) {
-        throw new Error("error" in payload && payload.error ? payload.error : `Resolution failed (${res.status})`);
+        throw new Error(
+          "error" in payload && payload.error ? payload.error : `Resolution failed (${res.status})`,
+        );
       }
 
       setResult(payload as ResolutionWorkbenchResult);
@@ -358,11 +351,15 @@ export function ResolutionWorkbenchView() {
             <Radar className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="font-heading text-2xl font-bold text-ink tracking-tight" style={{ letterSpacing: "-0.02em" }}>
+            <h1
+              className="font-heading text-2xl font-bold text-ink tracking-tight"
+              style={{ letterSpacing: "-0.02em" }}
+            >
               Resolution Workbench
             </h1>
             <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-muted mt-1">
-              <span className="text-teal-500">◎</span> Stream-thread planning, endpoint ranking, and question-driven sharpening.
+              <span className="text-teal-500">◎</span> Stream-thread planning, endpoint ranking, and
+              question-driven sharpening.
             </p>
           </div>
         </div>
@@ -415,10 +412,13 @@ export function ResolutionWorkbenchView() {
               </label>
 
               <div className="rounded-2xl border border-amber-400/30 bg-[rgba(212,162,74,0.08)] p-4 space-y-2">
-                <p className="font-body text-xs font-medium uppercase tracking-[0.08em] text-ink">How it behaves</p>
+                <p className="font-body text-xs font-medium uppercase tracking-[0.08em] text-ink">
+                  How it behaves
+                </p>
                 <p className="text-sm text-ink-muted leading-6">
-                  The workbench stays evidence-first. It grounds the prompt, ranks endpoint candidates,
-                  shows the graph and cluster field, then asks focused questions before recommending a next move.
+                  The workbench stays evidence-first. It grounds the prompt, ranks endpoint
+                  candidates, shows the graph and cluster field, then asks focused questions before
+                  recommending a next move.
                 </p>
               </div>
 
@@ -442,33 +442,55 @@ export function ResolutionWorkbenchView() {
               <article className="glass-panel p-4 space-y-2">
                 <div className="flex items-center gap-2 text-teal-500">
                   <Sparkles className="w-4 h-4" />
-                  <span className="font-body text-xs font-medium uppercase tracking-[0.08em] text-ink">Confidence</span>
+                  <span className="font-body text-xs font-medium uppercase tracking-[0.08em] text-ink">
+                    Confidence
+                  </span>
                 </div>
-                <p className="font-heading text-2xl text-ink">{formatPercent(result.observation.confidenceScore)}</p>
-                <p className="text-sm text-ink-muted leading-6">{result.observation.confidenceSummary}</p>
+                <p className="font-heading text-2xl text-ink">
+                  {formatPercent(result.observation.confidenceScore)}
+                </p>
+                <p className="text-sm text-ink-muted leading-6">
+                  {result.observation.confidenceSummary}
+                </p>
               </article>
               <article className="glass-panel p-4 space-y-2">
                 <div className="flex items-center gap-2 text-amber-400">
                   <Network className="w-4 h-4" />
-                  <span className="font-body text-xs font-medium uppercase tracking-[0.08em] text-ink">Dominant Cluster</span>
+                  <span className="font-body text-xs font-medium uppercase tracking-[0.08em] text-ink">
+                    Dominant Cluster
+                  </span>
                 </div>
-                <p className="font-heading text-xl text-ink">{result.observation.dominantCluster ?? "none"}</p>
-                <p className="text-sm text-ink-muted leading-6">{result.observation.ambiguitySummary}</p>
+                <p className="font-heading text-xl text-ink">
+                  {result.observation.dominantCluster ?? "none"}
+                </p>
+                <p className="text-sm text-ink-muted leading-6">
+                  {result.observation.ambiguitySummary}
+                </p>
               </article>
               <article className="glass-panel p-4 space-y-2">
                 <div className="flex items-center gap-2 text-teal-500">
                   <BrainCircuit className="w-4 h-4" />
-                  <span className="font-body text-xs font-medium uppercase tracking-[0.08em] text-ink">Top Endpoint</span>
+                  <span className="font-body text-xs font-medium uppercase tracking-[0.08em] text-ink">
+                    Top Endpoint
+                  </span>
                 </div>
-                <p className="font-heading text-xl text-ink">{result.observation.dominantCandidate ?? "none"}</p>
-                <p className="text-sm text-ink-muted leading-6">{result.candidates[0]?.recommendedAction ?? "No action yet."}</p>
+                <p className="font-heading text-xl text-ink">
+                  {result.observation.dominantCandidate ?? "none"}
+                </p>
+                <p className="text-sm text-ink-muted leading-6">
+                  {result.candidates[0]?.recommendedAction ?? "No action yet."}
+                </p>
               </article>
               <article className="glass-panel p-4 space-y-2">
                 <div className="flex items-center gap-2 text-rose-500">
                   <ShieldAlert className="w-4 h-4" />
-                  <span className="font-body text-xs font-medium uppercase tracking-[0.08em] text-ink">Next Step</span>
+                  <span className="font-body text-xs font-medium uppercase tracking-[0.08em] text-ink">
+                    Next Step
+                  </span>
                 </div>
-                <p className="text-sm text-ink leading-6">{result.observation.recommendedNextStep}</p>
+                <p className="text-sm text-ink leading-6">
+                  {result.observation.recommendedNextStep}
+                </p>
                 {result.observation.warnings.length > 0 ? (
                   <p className="text-xs text-amber-500">{result.observation.warnings[0]}</p>
                 ) : null}
@@ -495,22 +517,33 @@ export function ResolutionWorkbenchView() {
                 </div>
                 <div className="space-y-3">
                   {result.candidates.map((candidate, index) => (
-                    <article key={candidate.id} className="rounded-2xl border border-border-color/60 bg-surface-raised p-4 space-y-2">
+                    <article
+                      key={candidate.id}
+                      className="rounded-2xl border border-border-color/60 bg-surface-raised p-4 space-y-2"
+                    >
                       <div className="flex items-start justify-between gap-3">
                         <div>
-                          <p className="font-body text-sm font-medium text-ink">{index + 1}. {candidate.label}</p>
+                          <p className="font-body text-sm font-medium text-ink">
+                            {index + 1}. {candidate.label}
+                          </p>
                           <p className="font-mono text-[11px] text-ink-muted">
                             {candidate.endpointType} · {candidate.cluster}
                           </p>
                         </div>
                         <span className="font-mono text-[11px] text-teal-600">
-                          {candidate.score.toFixed(candidate.score >= 10 ? 1 : 2)} / {formatPercent(candidate.confidence)}
+                          {candidate.score.toFixed(candidate.score >= 10 ? 1 : 2)} /{" "}
+                          {formatPercent(candidate.confidence)}
                         </span>
                       </div>
-                      <p className="text-sm text-ink-muted leading-6">{candidate.recommendedAction}</p>
+                      <p className="text-sm text-ink-muted leading-6">
+                        {candidate.recommendedAction}
+                      </p>
                       <div className="flex flex-wrap gap-2">
                         {candidate.matchedTerms.map((term) => (
-                          <span key={term} className="rounded-full bg-teal-500/10 px-2 py-1 text-[11px] font-mono text-teal-600">
+                          <span
+                            key={term}
+                            className="rounded-full bg-teal-500/10 px-2 py-1 text-[11px] font-mono text-teal-600"
+                          >
                             {term}
                           </span>
                         ))}
@@ -537,10 +570,17 @@ export function ResolutionWorkbenchView() {
                 </div>
                 <div className="space-y-4">
                   {result.questions.map((question) => (
-                    <article key={question.id} className="rounded-2xl border border-border-color/60 bg-surface-raised p-4 space-y-3">
+                    <article
+                      key={question.id}
+                      className="rounded-2xl border border-border-color/60 bg-surface-raised p-4 space-y-3"
+                    >
                       <div className="flex items-center justify-between gap-3">
-                        <p className="font-body text-sm font-medium text-ink">{question.question}</p>
-                        <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-ink-muted">{question.kind}</span>
+                        <p className="font-body text-sm font-medium text-ink">
+                          {question.question}
+                        </p>
+                        <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-ink-muted">
+                          {question.kind}
+                        </span>
                       </div>
                       <p className="text-sm text-ink-muted leading-6">{question.rationale}</p>
                       <textarea
@@ -587,10 +627,15 @@ export function ResolutionWorkbenchView() {
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {result.artifacts.map((artifact) => (
-                      <article key={artifact.id} className="rounded-2xl border border-border-color/60 bg-surface-raised p-4 space-y-2">
+                      <article
+                        key={artifact.id}
+                        className="rounded-2xl border border-border-color/60 bg-surface-raised p-4 space-y-2"
+                      >
                         <div className="flex items-center justify-between gap-3">
                           <p className="font-body text-sm font-medium text-ink">{artifact.title}</p>
-                          <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-ink-muted">{artifact.kind}</span>
+                          <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-ink-muted">
+                            {artifact.kind}
+                          </span>
                         </div>
                         <p className="text-sm text-ink-muted leading-6">{artifact.content}</p>
                       </article>
@@ -607,7 +652,10 @@ export function ResolutionWorkbenchView() {
                   </div>
                   <div className="space-y-3">
                     {result.transcript.map((turn) => (
-                      <article key={turn.id} className="rounded-2xl border border-border-color/60 bg-surface-raised p-4 space-y-2">
+                      <article
+                        key={turn.id}
+                        className="rounded-2xl border border-border-color/60 bg-surface-raised p-4 space-y-2"
+                      >
                         <div className="flex items-center justify-between gap-3">
                           <p className="font-body text-sm font-medium text-ink">{turn.speaker}</p>
                           <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-ink-muted">

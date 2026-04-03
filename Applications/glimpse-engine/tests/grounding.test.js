@@ -56,10 +56,7 @@ describe("LocalGroundingProvider", () => {
 
   it("returns no-evidence basis when claim has no evidence or relations", () => {
     const provider = new LocalGroundingProvider();
-    const result = provider.verify(
-      { text: "test", evidenceIds: [] },
-      makeContext(),
-    );
+    const result = provider.verify({ text: "test", evidenceIds: [] }, makeContext());
     assert.equal(result.basis, "no-evidence");
     assert.equal(result.confidence, 0.25);
     assert.equal(result.confirmed, false);
@@ -131,9 +128,7 @@ describe("LocalGroundingProvider", () => {
       { text: "test", evidenceIds: ["ev-1"] },
       makeContext({ evidences: [evidences[0]] }),
     );
-    assert.ok(
-      withContradiction.confidence < withoutContradiction.confidence + 0.25,
-    );
+    assert.ok(withContradiction.confidence < withoutContradiction.confidence + 0.25);
     assert.ok(withContradiction.basis.includes("contradictions"));
   });
 
@@ -310,14 +305,10 @@ describe("applyGrounding", () => {
 
   it("adjustedConfidence blends densityScore and grounding confidence", () => {
     const provider = new LocalGroundingProvider();
-    const insights = [
-      { compressed: "test", densityScore: 0.8, supportingEvidence: [] },
-    ];
+    const insights = [{ compressed: "test", densityScore: 0.8, supportingEvidence: [] }];
     const result = applyGrounding(provider, insights, makeContext());
     // 0.8 * 0.7 + groundingConf * 0.3
-    const expected =
-      Math.round((0.8 * 0.7 + result[0].grounding.confidence * 0.3) * 1000) /
-      1000;
+    const expected = Math.round((0.8 * 0.7 + result[0].grounding.confidence * 0.3) * 1000) / 1000;
     assert.equal(result[0].adjustedConfidence, expected);
   });
 
@@ -328,9 +319,7 @@ describe("applyGrounding", () => {
   });
 
   it("throws when an async provider is used on the sync path", () => {
-    const provider = new WebGroundingProvider(async () => [
-      { title: "result" },
-    ]);
+    const provider = new WebGroundingProvider(async () => [{ title: "result" }]);
     assert.throws(
       () =>
         applyGrounding(
@@ -345,9 +334,7 @@ describe("applyGrounding", () => {
 
 describe("applyGroundingAsync", () => {
   it("awaits async grounding providers", async () => {
-    const provider = new WebGroundingProvider(async () => [
-      { title: "result" },
-    ]);
+    const provider = new WebGroundingProvider(async () => [{ title: "result" }]);
     const insights = [
       {
         compressed: "Entity X is notable",
@@ -359,16 +346,11 @@ describe("applyGroundingAsync", () => {
     assert.equal(result.length, 1);
     assert.equal(result[0].grounding.basis, "web-cross-reference");
     assert.equal(result[0].grounding.confirmed, true);
-    assert.equal(
-      result[0].adjustedConfidence,
-      Math.round((0.6 * 0.7 + 0.35 * 0.3) * 1000) / 1000,
-    );
+    assert.equal(result[0].adjustedConfidence, Math.round((0.6 * 0.7 + 0.35 * 0.3) * 1000) / 1000);
   });
 
   it("handles empty insights array", async () => {
-    const provider = new WebGroundingProvider(async () => [
-      { title: "result" },
-    ]);
+    const provider = new WebGroundingProvider(async () => [{ title: "result" }]);
     const result = await applyGroundingAsync(provider, [], makeContext());
     assert.deepEqual(result, []);
   });

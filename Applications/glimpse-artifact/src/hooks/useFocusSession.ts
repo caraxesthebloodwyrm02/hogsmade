@@ -32,7 +32,12 @@ export function parseFocusStatusResponse(payload: unknown): WorkflowRun | null {
 }
 
 export function useFocusSession(): UseFocusSessionResult {
-  const { data: session, loading, error, retry } = useDataSource<WorkflowRun | null>({
+  const {
+    data: session,
+    loading,
+    error,
+    retry,
+  } = useDataSource<WorkflowRun | null>({
     fetcher: async (signal) => {
       const res = await fetch("/api/focus/session", { signal });
       if (!res.ok) throw new Error(`Focus fetch failed (${res.status})`);

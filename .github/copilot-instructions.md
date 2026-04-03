@@ -12,20 +12,20 @@ This is a **multi-project workspace**. Each subdirectory is an independent proje
 
 ## Workspace layout
 
-| Project | Stack | Notes |
-|---|---|---|
-| `afloat-server/` | TypeScript, MCP SDK, Vitest | Workflow orchestration |
-| `echoes-server/` | TypeScript, MCP SDK, Vitest | Audit/telemetry persistence |
-| `grid-server/` | TypeScript, MCP SDK, Vitest | GRID/GATE integration |
-| `lots-server/` | TypeScript, MCP SDK, Vitest | Experiment catalog and runner |
-| `maintain-server/` | TypeScript, MCP SDK, Vitest | Diagnostics and cleanup |
-| `pulse-server/` | TypeScript, MCP SDK, Vitest | Briefings, focus, journaling |
-| `seeds-server/` | TypeScript, MCP SDK, Vitest | Ecosystem snapshots |
-| `shared-types/` | TypeScript | Shared types + audit client; **build first** |
-| `glimpse-artifact/` | React 18, Vite, TailwindCSS | Component library |
-| `glimpse-engine/` | JavaScript (ES modules) | Browser-only viz engine; no package.json |
-| `GRID-main/` | Python 3.13+, FastAPI, uv | Nested repo — manage in its own git root |
-| `mcp-tool-experiment/` | TypeScript, pnpm | Nested repo — manage in its own git root |
+| Project                | Stack                       | Notes                                        |
+| ---------------------- | --------------------------- | -------------------------------------------- |
+| `afloat-server/`       | TypeScript, MCP SDK, Vitest | Workflow orchestration                       |
+| `echoes-server/`       | TypeScript, MCP SDK, Vitest | Audit/telemetry persistence                  |
+| `grid-server/`         | TypeScript, MCP SDK, Vitest | GRID/GATE integration                        |
+| `lots-server/`         | TypeScript, MCP SDK, Vitest | Experiment catalog and runner                |
+| `maintain-server/`     | TypeScript, MCP SDK, Vitest | Diagnostics and cleanup                      |
+| `pulse-server/`        | TypeScript, MCP SDK, Vitest | Briefings, focus, journaling                 |
+| `seeds-server/`        | TypeScript, MCP SDK, Vitest | Ecosystem snapshots                          |
+| `shared-types/`        | TypeScript                  | Shared types + audit client; **build first** |
+| `glimpse-artifact/`    | React 18, Vite, TailwindCSS | Component library                            |
+| `glimpse-engine/`      | JavaScript (ES modules)     | Browser-only viz engine; no package.json     |
+| `GRID-main/`           | Python 3.13+, FastAPI, uv   | Nested repo — manage in its own git root     |
+| `mcp-tool-experiment/` | TypeScript, pnpm            | Nested repo — manage in its own git root     |
 
 ## Build and test commands
 
@@ -40,11 +40,13 @@ npm run dev             # tsx --watch src/server.ts
 ```
 
 Run a single test file:
+
 ```bash
 npx vitest run tests/my-test.test.ts
 ```
 
 **Build order**: `shared-types` must be built before any server that depends on it:
+
 ```bash
 cd shared-types && npm run build
 ```
@@ -62,6 +64,7 @@ npm run lint
 ### glimpse-engine
 
 No build step — runs directly in browser via `glimpse-engine.html`. To sync YAML config into the engine:
+
 ```bash
 node scripts/sync-default-master.mjs
 ```

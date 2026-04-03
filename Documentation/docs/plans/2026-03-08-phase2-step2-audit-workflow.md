@@ -10,10 +10,10 @@ Override with env: `ECHOES_AUDIT_PATH`.
 
 ## Evidence chain (requirements)
 
-| Producer    | Tool             | When `emitAudit` runs | Required env / state |
-|------------|------------------|------------------------|-----------------------|
-| lots-server | `experiment_run` | After every run (success or failure) | `LOTS_EXPERIMENTS_DIR`; catalog with one experiment with `script` under that dir |
-| maintain-server | `cleanup_execute` | After action loop (dry-run or executed) | `CASCADE_WORKSPACE_ROOT`, `SEEDS_ROOT` |
+| Producer        | Tool              | When `emitAudit` runs                   | Required env / state                                                             |
+| --------------- | ----------------- | --------------------------------------- | -------------------------------------------------------------------------------- |
+| lots-server     | `experiment_run`  | After every run (success or failure)    | `LOTS_EXPERIMENTS_DIR`; catalog with one experiment with `script` under that dir |
+| maintain-server | `cleanup_execute` | After action loop (dry-run or executed) | `CASCADE_WORKSPACE_ROOT`, `SEEDS_ROOT`                                           |
 
 - **lots-server:** `emitAudit` is in `lots-server/src/server.ts` after `saveCatalog`; it runs whether the experiment script exits 0 or not. You need a catalog (e.g. from `experiment_create`) with one experiment that has `script` under `LOTS_EXPERIMENTS_DIR`, then call `experiment_run` with that `experimentId`.
 - **maintain-server:** `emitAudit` is in `maintain-server/src/server.ts` after the cleanup loop. One call to `cleanup_execute` with `actions: [{ type: "temp_clean" }]` (dry-run is enough) produces one audit line.

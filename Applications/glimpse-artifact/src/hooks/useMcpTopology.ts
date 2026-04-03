@@ -25,7 +25,11 @@ interface McpConfig {
 
 function deriveDescription(id: string, entry: McpServerEntry): string {
   const last = entry.args.at(-1) ?? "";
-  const file = last.split("/").pop()?.replace(/\.(ts|py)$/, "") ?? id;
+  const file =
+    last
+      .split("/")
+      .pop()
+      ?.replace(/\.(ts|py)$/, "") ?? id;
   return file.replace(/[_-]/g, " ");
 }
 
@@ -35,7 +39,14 @@ function parseTopology(cfg: McpConfig): { nodes: McpServerNode[]; edges: McpEdge
 
   // Nodes
   const nodes: McpServerNode[] = [
-    { id: "shared-types", name: "shared-types", description: "Zod contracts, audit client, security policy", enabled: true, toolCount: 0, port: undefined },
+    {
+      id: "shared-types",
+      name: "shared-types",
+      description: "Zod contracts, audit client, security policy",
+      enabled: true,
+      toolCount: 0,
+      port: undefined,
+    },
     ...entries.map(([id, entry]) => ({
       id,
       name: id,
@@ -63,7 +74,12 @@ function parseTopology(cfg: McpConfig): { nodes: McpServerNode[]; edges: McpEdge
 
     // Servers with GRID_API_URL connect to grid-rag
     if (entry.env?.GRID_API_URL && serverIds.has("grid-rag")) {
-      edges.push({ source: id, target: "grid-rag", type: "dataflow", label: entry.env.GRID_API_URL });
+      edges.push({
+        source: id,
+        target: "grid-rag",
+        type: "dataflow",
+        label: entry.env.GRID_API_URL,
+      });
     }
   }
 
@@ -82,15 +98,78 @@ async function fetchTopology(signal: AbortSignal) {
 // ── Mock fallback ─────────────────────────────────────────────────────
 
 const MOCK_NODES: McpServerNode[] = [
-  { id: "shared-types", name: "shared-types", description: "Zod contracts, audit client, security policy", enabled: true, toolCount: 0, port: undefined },
-  { id: "afloat-server", name: "afloat-server", description: "Workflow orchestration", enabled: true, toolCount: 5, port: 3001 },
-  { id: "echoes-server", name: "echoes-server", description: "Audit persistence", enabled: true, toolCount: 4, port: 3002 },
-  { id: "grid-server", name: "grid-server", description: "GATE verification", enabled: true, toolCount: 6, port: 3003 },
-  { id: "lots-server", name: "lots-server", description: "Experiment catalog", enabled: true, toolCount: 3, port: 3004 },
-  { id: "maintain-server", name: "maintain-server", description: "System diagnostics", enabled: true, toolCount: 4, port: 3005 },
-  { id: "pulse-server", name: "pulse-server", description: "Briefings & focus", enabled: true, toolCount: 5, port: 3006 },
-  { id: "seeds-server", name: "seeds-server", description: "Ecosystem health", enabled: true, toolCount: 4, port: 3007 },
-  { id: "grid-rag", name: "grid-rag", description: "RAG via MCP (Python)", enabled: true, toolCount: 3, port: 8000 },
+  {
+    id: "shared-types",
+    name: "shared-types",
+    description: "Zod contracts, audit client, security policy",
+    enabled: true,
+    toolCount: 0,
+    port: undefined,
+  },
+  {
+    id: "afloat-server",
+    name: "afloat-server",
+    description: "Workflow orchestration",
+    enabled: true,
+    toolCount: 5,
+    port: 3001,
+  },
+  {
+    id: "echoes-server",
+    name: "echoes-server",
+    description: "Audit persistence",
+    enabled: true,
+    toolCount: 4,
+    port: 3002,
+  },
+  {
+    id: "grid-server",
+    name: "grid-server",
+    description: "GATE verification",
+    enabled: true,
+    toolCount: 6,
+    port: 3003,
+  },
+  {
+    id: "lots-server",
+    name: "lots-server",
+    description: "Experiment catalog",
+    enabled: true,
+    toolCount: 3,
+    port: 3004,
+  },
+  {
+    id: "maintain-server",
+    name: "maintain-server",
+    description: "System diagnostics",
+    enabled: true,
+    toolCount: 4,
+    port: 3005,
+  },
+  {
+    id: "pulse-server",
+    name: "pulse-server",
+    description: "Briefings & focus",
+    enabled: true,
+    toolCount: 5,
+    port: 3006,
+  },
+  {
+    id: "seeds-server",
+    name: "seeds-server",
+    description: "Ecosystem health",
+    enabled: true,
+    toolCount: 4,
+    port: 3007,
+  },
+  {
+    id: "grid-rag",
+    name: "grid-rag",
+    description: "RAG via MCP (Python)",
+    enabled: true,
+    toolCount: 3,
+    port: 8000,
+  },
 ];
 
 const MOCK_EDGES: McpEdge[] = [

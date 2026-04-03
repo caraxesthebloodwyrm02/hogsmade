@@ -18,9 +18,14 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const WORKSPACE_ROOT = path.resolve(__dirname, "..");
 
 async function invokeTool(
-  server: { _registeredTools: Record<string, { inputSchema?: unknown; handler: (args: unknown, extra: unknown) => Promise<unknown> }> },
+  server: {
+    _registeredTools: Record<
+      string,
+      { inputSchema?: unknown; handler: (args: unknown, extra: unknown) => Promise<unknown> }
+    >;
+  },
   name: string,
-  args: Record<string, unknown> = {}
+  args: Record<string, unknown> = {},
 ): Promise<unknown> {
   const tool = server._registeredTools[name];
   if (!tool) throw new Error(`Tool not found: ${name}`);
@@ -34,8 +39,7 @@ function getTextContent(result: unknown): string | undefined {
 
 function main() {
   const auditPath =
-    process.env.ECHOES_AUDIT_PATH?.trim() ||
-    path.join(homedir(), ".echoes", "audit.ndjson");
+    process.env.ECHOES_AUDIT_PATH?.trim() || path.join(homedir(), ".echoes", "audit.ndjson");
 
   const experimentsDir =
     process.env.LOTS_EXPERIMENTS_DIR?.trim() ||

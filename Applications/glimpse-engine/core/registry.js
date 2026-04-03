@@ -1,6 +1,6 @@
 /**
  * Pattern Registry System
- * 
+ *
  * Provides infrastructure for loading, matching, and managing analytical patterns.
  * Patterns are reusable templates that detect common structures in datasets.
  */
@@ -44,13 +44,13 @@ export class PatternRegistry {
    */
   register(pattern) {
     if (!pattern.id || !pattern.name || !pattern.category) {
-      throw new Error('Pattern must have id, name, and category');
+      throw new Error("Pattern must have id, name, and category");
     }
 
     this.patterns.set(pattern.id, {
       ...pattern,
       slug: slugify(pattern.name),
-      registeredAt: new Date().toISOString()
+      registeredAt: new Date().toISOString(),
     });
 
     return this;
@@ -60,7 +60,7 @@ export class PatternRegistry {
    * Load multiple patterns from an array
    */
   loadPatterns(patterns) {
-    patterns.forEach(pattern => this.register(pattern));
+    patterns.forEach((pattern) => this.register(pattern));
     return this;
   }
 
@@ -76,9 +76,7 @@ export class PatternRegistry {
    */
   list(category = null) {
     const patterns = Array.from(this.patterns.values());
-    return category 
-      ? patterns.filter(p => p.category === category)
-      : patterns;
+    return category ? patterns.filter((p) => p.category === category) : patterns;
   }
 
   /**
@@ -86,7 +84,7 @@ export class PatternRegistry {
    */
   matchPatterns(context, registry) {
     const datasetId = this.generateDatasetId(context);
-    
+
     // Check cache first
     if (this.matches.has(datasetId)) {
       return this.matches.get(datasetId);
@@ -105,11 +103,11 @@ export class PatternRegistry {
           score: match.score,
           confidence: match.confidence,
           evidence: match.evidence,
-          insights: pattern.insights.map(insight => ({
+          insights: pattern.insights.map((insight) => ({
             ...insight,
-            generated: this.generateInsight(insight.template, match.evidence)
+            generated: this.generateInsight(insight.template, match.evidence),
           })),
-          viewRecommendations: pattern.viewRecommendations
+          viewRecommendations: pattern.viewRecommendations,
         });
       }
     }
@@ -131,7 +129,7 @@ export class PatternRegistry {
 
     for (const condition of pattern.conditions) {
       const result = this.evaluateCondition(condition, context, functionRegistry);
-      
+
       if (result.passed) {
         totalScore += result.score || 1;
         evidence.push(result);
@@ -143,14 +141,13 @@ export class PatternRegistry {
     }
 
     // Normalize score by number of conditions
-    const normalizedScore = pattern.conditions.length > 0 
-      ? totalScore / pattern.conditions.length 
-      : 0;
+    const normalizedScore =
+      pattern.conditions.length > 0 ? totalScore / pattern.conditions.length : 0;
 
     return {
       score: Math.min(normalizedScore, 1),
       confidence,
-      evidence
+      evidence,
     };
   }
 
@@ -159,11 +156,19 @@ export class PatternRegistry {
    */
   evaluateCondition(condition, context, functionRegistry) {
     try {
-      const scopeType = condition.type === 'entity' ? 'entity' : 
-                       condition.type === 'relation' ? 'relation' : 'dataset';
-      
-      const items = condition.type === 'entity' ? context.entities :
-                   condition.type === 'relation' ? context.relations : [context];
+      const scopeType =
+        condition.type === "entity"
+          ? "entity"
+          : condition.type === "relation"
+            ? "relation"
+            : "dataset";
+
+      const items =
+        condition.type === "entity"
+          ? context.entities
+          : condition.type === "relation"
+            ? context.relations
+            : [context];
 
       let passed = false;
       let score = 0;
@@ -171,8 +176,12 @@ export class PatternRegistry {
 
       for (const item of items) {
         const evalContext = this.createEvaluationContext(scopeType, item, context);
-        const result = functionRegistry.invoke(condition.function, evalContext, condition.args || {});
-        
+        const result = functionRegistry.invoke(
+          condition.function,
+          evalContext,
+          condition.args || {},
+        );
+
         if (result.matched) {
           passed = true;
           score = Math.max(score, result.score || 1);
@@ -198,19 +207,19 @@ export class PatternRegistry {
       semantic_packs: datasetContext.config?.semantic_packs || {},
     };
 
-    if (scopeType === 'entity') {
+    if (scopeType === "entity") {
       return {
         ...base,
-        entity: item
+        entity: item,
       };
     }
 
-    if (scopeType === 'relation') {
+    if (scopeType === "relation") {
       return {
         ...base,
         relation: item,
-        source: datasetContext.entities?.find(e => e.id === item.source),
-        target: datasetContext.entities?.find(e => e.id === item.target)
+        source: datasetContext.entities?.find((e) => e.id === item.source),
+        target: datasetContext.entities?.find((e) => e.id === item.target),
       };
     }
 
@@ -225,19 +234,21 @@ export class PatternRegistry {
     let text = template;
 
     evidence.forEach((ev, index) => {
-      text = text.replace(`{${index}}`, ev.reason || 'detected pattern');
+      text = text.replace(`{${index}}`, ev.reason || "detected pattern");
       text = text.replace(`{score${index}}`, (ev.score || 0).toFixed(2));
-      text = text.replace(`{value${index}}`, ev.value || 'unknown');
+      text = text.replace(`{value${index}}`, ev.value || "unknown");
     });
 
     // Enhanced: return structured insight
     const evidenceIds = evidence.map((ev) => ev.id || ev.reason).filter(Boolean);
-    const avgConfidence = evidence.length > 0
-      ? evidence.reduce((s, e) => s + (e.confidence || e.score || 0.5), 0) / evidence.length
-      : 0;
+    const avgConfidence =
+      evidence.length > 0
+        ? evidence.reduce((s, e) => s + (e.confidence || e.score || 0.5), 0) / evidence.length
+        : 0;
 
     // Confidence qualifier
-    const qualifier = avgConfidence >= 0.8 ? "high" : avgConfidence >= 0.5 ? "moderate" : "tentative";
+    const qualifier =
+      avgConfidence >= 0.8 ? "high" : avgConfidence >= 0.5 ? "moderate" : "tentative";
 
     return {
       text,
@@ -319,7 +330,7 @@ export class PatternRegistry {
     return {
       totalPatterns: this.patterns.size,
       categories,
-      cachedMatches: this.matches.size
+      cachedMatches: this.matches.size,
     };
   }
 }
@@ -329,7 +340,7 @@ export class PatternRegistry {
  */
 export function createPatternRegistry() {
   const registry = new PatternRegistry();
-  
+
   // Load built-in patterns
   const builtInPatterns = getBuiltinPatterns();
   registry.loadPatterns(builtInPatterns);
@@ -344,160 +355,176 @@ function getBuiltinPatterns() {
   return [
     // Temporal Patterns
     {
-      id: 'temporal-clustering',
-      name: 'Temporal Clustering',
-      description: 'Innovations cluster in specific time periods with high activity',
-      category: 'temporal',
+      id: "temporal-clustering",
+      name: "Temporal Clustering",
+      description: "Innovations cluster in specific time periods with high activity",
+      category: "temporal",
       conditions: [
         {
-          type: 'dataset',
-          function: 'dimension_count',
-          args: { dimension: 'time', min_count: 1 },
-          threshold: 0.5
+          type: "dataset",
+          function: "dimension_count",
+          args: { dimension: "time", min_count: 1 },
+          threshold: 0.5,
         },
         {
-          type: 'entity',
-          function: 'temporal_distance',
+          type: "entity",
+          function: "temporal_distance",
           args: { max_gap: 10 },
-          threshold: 0.3
-        }
+          threshold: 0.3,
+        },
       ],
       insights: [
         {
-          type: 'temporal-hotspot',
-          template: 'Temporal clustering detected: {0} innovations within 10-year periods',
-          priority: 80
-        }
+          type: "temporal-hotspot",
+          template: "Temporal clustering detected: {0} innovations within 10-year periods",
+          priority: 80,
+        },
       ],
       viewRecommendations: [
-        { view: 'timeline', score: 0.9, reason: 'Temporal patterns best visualized chronologically' },
-        { view: 'clusters', score: 0.6, reason: 'Time-based clustering benefits from cluster view' }
-      ]
+        {
+          view: "timeline",
+          score: 0.9,
+          reason: "Temporal patterns best visualized chronologically",
+        },
+        {
+          view: "clusters",
+          score: 0.6,
+          reason: "Time-based clustering benefits from cluster view",
+        },
+      ],
     },
 
     // Influence Patterns
     {
-      id: 'influence-cascade',
-      name: 'Influence Cascade',
-      description: 'Key influencers create branching influence trees across domains',
-      category: 'influence',
+      id: "influence-cascade",
+      name: "Influence Cascade",
+      description: "Key influencers create branching influence trees across domains",
+      category: "influence",
       conditions: [
         {
-          type: 'dataset',
-          function: 'influence_link',
-          threshold: 0.5
+          type: "dataset",
+          function: "influence_link",
+          threshold: 0.5,
         },
         {
-          type: 'relation',
-          function: 'shared_dimension',
-          args: { dimension: 'domain' },
-          threshold: 0.2 // Allow cross-domain
-        }
+          type: "relation",
+          function: "shared_dimension",
+          args: { dimension: "domain" },
+          threshold: 0.2, // Allow cross-domain
+        },
       ],
       insights: [
         {
-          type: 'influence-network',
-          template: 'Influence cascade detected: {0} with cross-domain connections',
-          priority: 90
-        }
+          type: "influence-network",
+          template: "Influence cascade detected: {0} with cross-domain connections",
+          priority: 90,
+        },
       ],
       viewRecommendations: [
-        { view: 'flow', score: 0.95, reason: 'Influence relationships best shown as flow' },
-        { view: 'constellation', score: 0.8, reason: 'Network structure visible in constellation' }
-      ]
+        { view: "flow", score: 0.95, reason: "Influence relationships best shown as flow" },
+        { view: "constellation", score: 0.8, reason: "Network structure visible in constellation" },
+      ],
     },
 
     // Geographic Patterns
     {
-      id: 'geographic-hotspot',
-      name: 'Geographic Hotspot',
-      description: 'Innovation activity concentrates in specific locations',
-      category: 'geographic',
+      id: "geographic-hotspot",
+      name: "Geographic Hotspot",
+      description: "Innovation activity concentrates in specific locations",
+      category: "geographic",
       conditions: [
         {
-          type: 'dataset',
-          function: 'dimension_count',
-          args: { dimension: 'space', min_count: 1 },
-          threshold: 0.5
+          type: "dataset",
+          function: "dimension_count",
+          args: { dimension: "space", min_count: 1 },
+          threshold: 0.5,
         },
         {
-          type: 'entity',
-          function: 'shared_dimension',
-          args: { dimension: 'space' },
-          threshold: 0.3
-        }
+          type: "entity",
+          function: "shared_dimension",
+          args: { dimension: "space" },
+          threshold: 0.3,
+        },
       ],
       insights: [
         {
-          type: 'geographic-concentration',
-          template: 'Geographic hotspot detected: {0} innovations in same location',
-          priority: 70
-        }
+          type: "geographic-concentration",
+          template: "Geographic hotspot detected: {0} innovations in same location",
+          priority: 70,
+        },
       ],
       viewRecommendations: [
-        { view: 'map', score: 0.9, reason: 'Geographic patterns require map visualization' },
-        { view: 'clusters', score: 0.5, reason: 'Location-based clustering' }
-      ]
+        { view: "map", score: 0.9, reason: "Geographic patterns require map visualization" },
+        { view: "clusters", score: 0.5, reason: "Location-based clustering" },
+      ],
     },
 
     // Domain Bridge Patterns
     {
-      id: 'domain-bridging',
-      name: 'Domain Bridging',
-      description: 'Cross-domain influence and interdisciplinary connections',
-      category: 'domain',
+      id: "domain-bridging",
+      name: "Domain Bridging",
+      description: "Cross-domain influence and interdisciplinary connections",
+      category: "domain",
       conditions: [
         {
-          type: 'relation',
-          function: 'shared_dimension',
-          args: { dimension: 'domain' },
-          threshold: 0.1 // Low threshold = different domains
-        }
+          type: "relation",
+          function: "shared_dimension",
+          args: { dimension: "domain" },
+          threshold: 0.1, // Low threshold = different domains
+        },
       ],
       insights: [
         {
-          type: 'interdisciplinary',
-          template: 'Domain bridging detected: {0} cross-domain influences',
-          priority: 85
-        }
+          type: "interdisciplinary",
+          template: "Domain bridging detected: {0} cross-domain influences",
+          priority: 85,
+        },
       ],
       viewRecommendations: [
-        { view: 'constellation', score: 0.8, reason: 'Cross-domain connections visible in network' },
-        { view: 'matrix', score: 0.6, reason: 'Domain relationships shown in matrix' }
-      ]
+        {
+          view: "constellation",
+          score: 0.8,
+          reason: "Cross-domain connections visible in network",
+        },
+        { view: "matrix", score: 0.6, reason: "Domain relationships shown in matrix" },
+      ],
     },
 
     // Structural Patterns
     {
-      id: 'complex-network',
-      name: 'Complex Network',
-      description: 'Dense network with multiple relationship types',
-      category: 'structural',
+      id: "complex-network",
+      name: "Complex Network",
+      description: "Dense network with multiple relationship types",
+      category: "structural",
       conditions: [
         {
-          type: 'dataset',
-          function: 'record_range',
+          type: "dataset",
+          function: "record_range",
           args: { min: 15, max: 100 },
-          threshold: 0.5
+          threshold: 0.5,
         },
         {
-          type: 'dataset',
-          function: 'data_shape',
+          type: "dataset",
+          function: "data_shape",
           args: { min_records: 10 },
-          threshold: 0.4
-        }
+          threshold: 0.4,
+        },
       ],
       insights: [
         {
-          type: 'network-complexity',
-          template: 'Complex network structure: {0} entities with {1} relationship types',
-          priority: 75
-        }
+          type: "network-complexity",
+          template: "Complex network structure: {0} entities with {1} relationship types",
+          priority: 75,
+        },
       ],
       viewRecommendations: [
-        { view: 'constellation', score: 0.9, reason: 'Complex networks best shown as constellation' },
-        { view: 'matrix', score: 0.7, reason: 'Network complexity benefits from matrix view' }
-      ]
-    }
+        {
+          view: "constellation",
+          score: 0.9,
+          reason: "Complex networks best shown as constellation",
+        },
+        { view: "matrix", score: 0.7, reason: "Network complexity benefits from matrix view" },
+      ],
+    },
   ];
 }

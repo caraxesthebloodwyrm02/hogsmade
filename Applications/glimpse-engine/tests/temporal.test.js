@@ -113,7 +113,7 @@ describe("computeTemporalDensity", () => {
     if (around1991 && around2010) {
       assert.ok(
         around1991.density > around2010.density,
-        "Density should be higher near the cluster"
+        "Density should be higher near the cluster",
       );
     }
   });

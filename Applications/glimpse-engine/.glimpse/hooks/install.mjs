@@ -4,17 +4,17 @@
  * @description Install git hooks for structured routines
  */
 
-import { writeFileSync, existsSync, mkdirSync, chmodSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import path from 'node:path';
+import { writeFileSync, existsSync, mkdirSync, chmodSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const ROOT = path.resolve(__dirname, '../..');
-const GIT_HOOKS_DIR = path.join(ROOT, '.git', 'hooks');
+const ROOT = path.resolve(__dirname, "../..");
+const GIT_HOOKS_DIR = path.join(ROOT, ".git", "hooks");
 
 // Ensure .git/hooks exists
 if (!existsSync(GIT_HOOKS_DIR)) {
-  console.error('No .git directory found. Are you in a git repository?');
+  console.error("No .git directory found. Are you in a git repository?");
   process.exit(1);
 }
 
@@ -44,25 +44,25 @@ exit $?
 
 // Install hooks
 const hooks = [
-  { name: 'pre-commit', content: preCommitHook },
-  { name: 'pre-push', content: prePushHook }
+  { name: "pre-commit", content: preCommitHook },
+  { name: "pre-push", content: prePushHook },
 ];
 
 for (const hook of hooks) {
   const hookPath = path.join(GIT_HOOKS_DIR, hook.name);
-  
+
   if (existsSync(hookPath)) {
     console.log(`⚠️  ${hook.name} already exists, backing up to ${hook.name}.backup`);
-    writeFileSync(`${hookPath}.backup`, require('node:fs').readFileSync(hookPath));
+    writeFileSync(`${hookPath}.backup`, require("node:fs").readFileSync(hookPath));
   }
-  
+
   writeFileSync(hookPath, hook.content);
   chmodSync(hookPath, 0o755); // Make executable
-  
+
   console.log(`✅ Installed ${hook.name}`);
 }
 
-console.log('\n📋 Hooks installed successfully!');
-console.log('   - pre-commit: Runs structured routine before commits');
-console.log('   - pre-push: Runs strict CI check before pushes');
-console.log('\nTo uninstall: restore .git/hooks/*.backup files');
+console.log("\n📋 Hooks installed successfully!");
+console.log("   - pre-commit: Runs structured routine before commits");
+console.log("   - pre-push: Runs strict CI check before pushes");
+console.log("\nTo uninstall: restore .git/hooks/*.backup files");

@@ -3,9 +3,9 @@
  * @description Event logging, state persistence, and trend analysis
  */
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
-import path from 'node:path';
-import { VERSION, LOG_PATH, DEFAULT_STATE_PATH } from './formulas.js';
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
+import path from "node:path";
+import { VERSION, LOG_PATH, DEFAULT_STATE_PATH } from "./formulas.js";
 
 // ═══════════════════════════════════════════════════════════════════
 // TELEMETRY — Event Logging & Metrics
@@ -30,15 +30,16 @@ export class DriftTelemetry {
    * @param {Object} event
    */
   log(event) {
-    const entry = JSON.stringify({
-      timestamp: new Date().toISOString(),
-      ...event
-    }) + '\n';
+    const entry =
+      JSON.stringify({
+        timestamp: new Date().toISOString(),
+        ...event,
+      }) + "\n";
 
     try {
-      writeFileSync(this.logPath, entry, { flag: 'a' });
+      writeFileSync(this.logPath, entry, { flag: "a" });
     } catch (e) {
-      console.error('Telemetry log failed:', e.message);
+      console.error("Telemetry log failed:", e.message);
     }
   }
 
@@ -52,17 +53,17 @@ export class DriftTelemetry {
       const updated = {
         ...existing,
         ...state,
-        lastUpdated: new Date().toISOString()
+        lastUpdated: new Date().toISOString(),
       };
       writeFileSync(this.statePath, JSON.stringify(updated, null, 2));
     } catch (e) {
-      console.error('State save failed:', e.message);
+      console.error("State save failed:", e.message);
     }
   }
 
   loadState() {
     try {
-      return JSON.parse(readFileSync(this.statePath, 'utf8'));
+      return JSON.parse(readFileSync(this.statePath, "utf8"));
     } catch {
       return { version: VERSION, runs: [] };
     }
@@ -81,14 +82,14 @@ export class DriftTelemetry {
     }
 
     const recent = runs.slice(-10);
-    const driftRate = recent.filter(r => r.driftDetected).length / recent.length;
+    const driftRate = recent.filter((r) => r.driftDetected).length / recent.length;
     const avgDuration = recent.reduce((a, r) => a + (r.duration || 0), 0) / recent.length;
 
     return {
       driftRate,
       avgDuration,
       totalRuns: runs.length,
-      trend: driftRate > 0.3 ? 'DEGRADING' : driftRate === 0 ? 'STABLE' : 'FLUCTUATING'
+      trend: driftRate > 0.3 ? "DEGRADING" : driftRate === 0 ? "STABLE" : "FLUCTUATING",
     };
   }
 }

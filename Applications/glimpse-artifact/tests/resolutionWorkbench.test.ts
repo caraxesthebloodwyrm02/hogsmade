@@ -48,7 +48,12 @@ test("buildQuestionQueue asks disambiguation questions when the top candidates a
 
   const candidates = [
     createCandidate({ id: "a", label: "admission_apply_penalty", score: 6.4 }),
-    createCandidate({ id: "b", label: "report_corruption_event", score: 5.5, cluster: "GRID-main" }),
+    createCandidate({
+      id: "b",
+      label: "report_corruption_event",
+      score: 5.5,
+      cluster: "GRID-main",
+    }),
   ];
 
   const observation: ResolutionWorkbenchResult["observation"] = {
@@ -84,7 +89,9 @@ test("runResolutionWorkbench resolves recognition prompts toward eligibility-sty
   assert.ok(result.graph.nodes.length >= 1);
   assert.ok(
     result.candidates.some((candidate) =>
-      /eligibility|collect|compile|evaluate|trace|knowledge/i.test(candidate.label + " " + candidate.filePath),
+      /eligibility|collect|compile|evaluate|trace|knowledge/i.test(
+        candidate.label + " " + candidate.filePath,
+      ),
     ),
   );
 });
@@ -104,7 +111,9 @@ test("runResolutionWorkbench resolves penalty prompts toward gate, admission, or
   assert.ok(result.candidates.length >= 1);
   assert.ok(
     result.candidates.some((candidate) =>
-      /penalty|admission|corruption|gate|accountability/i.test(candidate.label + " " + candidate.filePath),
+      /penalty|admission|corruption|gate|accountability/i.test(
+        candidate.label + " " + candidate.filePath,
+      ),
     ),
   );
   assert.ok(result.observation.confidenceScore > 0);

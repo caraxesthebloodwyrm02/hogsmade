@@ -1,4 +1,5 @@
 # DRIFTGUARD PHASE 1 HANDOFF SCHEMA
+
 ## Structured Input for Planning/Research Agent
 
 **Handoff ID**: DG-P1-001  
@@ -7,28 +8,34 @@
 **To**: Planning/Research Agent  
 **Priority**: P0 - BLOCKING  
 **Estimated Duration**: 8 hours  
-**Dependencies**: None (foundational)  
+**Dependencies**: None (foundational)
 
 ---
 
 ## 1. EXECUTIVE CONTEXT
 
 ### What Exists Now
+
 DriftGuard is a **functional but monolithic** anti-drift subsystem with:
+
 - **1 monolithic file**: `core/drift-guard/index.js` (595 lines, 4 classes, complexity 97)
 - **1 test file**: `tests/drift-guard/orchestrator.test.js` (249 lines)
 - **~71% test coverage** (estimated)
 - **0% integration coverage** with Glimpse pipeline
 
 ### The Problem
+
 The monolithic structure blocks:
+
 - Parallel development (merge conflicts likely)
 - Isolated testing (must import entire module)
 - Tree-shaking (bundlers can't optimize)
 - Code comprehension (595 lines = cognitive overload)
 
 ### What Needs to Happen
+
 **Phase 1: Split monolith into focused modules** (THIS HANDOFF)
+
 - Break `index.js` into 5 files by responsibility
 - Maintain 100% backward compatibility (exports remain same)
 - Keep all existing tests passing
@@ -39,6 +46,7 @@ The monolithic structure blocks:
 ## 2. SPECIFIC TASKS (CHECKLIST FORMAT)
 
 ### Task 2.1: Create Directory Structure
+
 ```
 current:
 core/drift-guard/
@@ -58,6 +66,7 @@ core/drift-guard/
 ```
 
 **Instructions**:
+
 1. Create `core/drift-guard/core/` directory
 2. Copy existing `index.js` to backup: `index.js.bak`
 3. Keep `adapter.js` untouched
@@ -69,6 +78,7 @@ core/drift-guard/
 **Target Location**: `core/drift-guard/core/formulas.js`
 
 **Extraction Rules**:
+
 ```javascript
 // What moves:
 - class DriftFormulas
@@ -87,6 +97,7 @@ core/drift-guard/
 ```
 
 **Validation Steps**:
+
 ```bash
 # After extraction, verify:
 node -e "import('./core/drift-guard/core/formulas.js').then(m => {
@@ -102,6 +113,7 @@ node -e "import('./core/drift-guard/core/formulas.js').then(m => {
 **Target Location**: `core/drift-guard/core/detector.js`
 
 **Extraction Rules**:
+
 ```javascript
 // What moves:
 - class DriftDetector
@@ -123,6 +135,7 @@ node -e "import('./core/drift-guard/core/formulas.js').then(m => {
 ```
 
 **Validation Steps**:
+
 ```bash
 # Test file read functionality
 node -e "import('./core/drift-guard/core/detector.js').then(async m => {
@@ -138,6 +151,7 @@ node -e "import('./core/drift-guard/core/detector.js').then(async m => {
 **Target Location**: `core/drift-guard/core/resolver.js`
 
 **Extraction Rules**:
+
 ```javascript
 // What moves:
 - class DriftResolver
@@ -167,6 +181,7 @@ Option B: Create separate `core/drift-guard/core/policies.js`
 **Target Location**: `core/drift-guard/core/telemetry.js`
 
 **Extraction Rules**:
+
 ```javascript
 // What moves:
 - class DriftTelemetry
@@ -194,6 +209,7 @@ Option B: Create separate `core/drift-guard/core/policies.js`
 **Target Location**: `core/drift-guard/core/guard.js`
 
 **Extraction Rules**:
+
 ```javascript
 // What moves:
 - class DriftGuard
@@ -219,6 +235,7 @@ Option B: Create separate `core/drift-guard/core/policies.js`
 **Target Location**: `core/drift-guard/index.js` (OVERWRITE)
 
 **Contents**:
+
 ```javascript
 /**
  * @file core/drift-guard/index.js
@@ -234,39 +251,30 @@ export {
   calculateSeverity,
   coverageGap,
   compoundSeverity,
-  suggestAdjustment
-} from './core/formulas.js';
+  suggestAdjustment,
+} from "./core/formulas.js";
 
 // Detector (stateless inspection)
-export { DriftDetector } from './core/detector.js';
+export { DriftDetector } from "./core/detector.js";
 
 // Resolver (decision engine)
-export { 
-  DriftResolver,
-  DRIFT_POLICIES
-} from './core/resolver.js';
+export { DriftResolver, DRIFT_POLICIES } from "./core/resolver.js";
 
 // Telemetry (state persistence)
-export { DriftTelemetry } from './core/telemetry.js';
+export { DriftTelemetry } from "./core/telemetry.js";
 
 // Main orchestrator
-export { 
-  DriftGuard, 
-  VERSION,
-  createDriftGuard
-} from './core/guard.js';
+export { DriftGuard, VERSION, createDriftGuard } from "./core/guard.js";
 
 // Re-export policies for convenience
-export { DRIFT_POLICIES } from './core/resolver.js';
+export { DRIFT_POLICIES } from "./core/resolver.js";
 
 // Re-export adapter (existing file)
-export { 
-  withDriftProtection, 
-  createGuardedFrame 
-} from './adapter.js';
+export { withDriftProtection, createGuardedFrame } from "./adapter.js";
 ```
 
 **Validation**:
+
 ```bash
 # This MUST work after refactoring:
 node -e "import('./core/drift-guard/index.js').then(m => {
@@ -285,6 +293,7 @@ node -e "import('./core/drift-guard/index.js').then(m => {
 ### 3.1 Regression Testing Command
 
 **MUST PASS before handoff complete**:
+
 ```bash
 cd /home/caraxes/CascadeProjects/glimpse-engine
 
@@ -298,6 +307,7 @@ node --test tests/drift-guard/*.test.js
 ### 3.2 Import Validation Commands
 
 **Validate each module loads independently**:
+
 ```bash
 # Test 1: Formulas
 node -e "import('./core/drift-guard/core/formulas.js').then(m => {
@@ -331,9 +341,9 @@ node -e "import('./core/drift-guard/core/guard.js').then(m => {
 
 # Test 6: Full barrel
 node -e "import('./core/drift-guard/index.js').then(m => {
-  console.log('Barrel OK:', 
-    !!m.DriftGuard && 
-    !!m.DriftFormulas && 
+  console.log('Barrel OK:',
+    !!m.DriftGuard &&
+    !!m.DriftFormulas &&
     !!m.createDriftGuard
   );
 })"
@@ -342,6 +352,7 @@ node -e "import('./core/drift-guard/index.js').then(m => {
 ### 3.3 Engine Integration Test
 
 **CRITICAL - Must not break existing engine**:
+
 ```bash
 # This imports through core/engine.js
 node -e "import('./core/engine.js').then(m => {
@@ -359,9 +370,10 @@ node -e "import('./core/engine.js').then(m => {
 ### 4.1 Hard Constraints (MUST NOT VIOLATE)
 
 1. **Backward Compatibility**: All existing exports must remain available
+
    ```javascript
    // This import MUST work after refactoring:
-   import { DriftGuard, DriftFormulas } from './core/drift-guard/index.js';
+   import { DriftGuard, DriftFormulas } from "./core/drift-guard/index.js";
    ```
 
 2. **Test Compatibility**: All existing tests must pass without modification
@@ -408,30 +420,30 @@ static calculateSeverity(lineDiff) {
 
 ### 5.1 Source Files (Reference)
 
-| Purpose | Path | Lines | Notes |
-|---------|------|-------|-------|
-| Current monolith | `core/drift-guard/index.js` | 595 | SPLIT THIS |
-| Adapter (untouch) | `core/drift-guard/adapter.js` | 120 | Keep as-is |
-| Formulas target | `core/drift-guard/core/formulas.js` | NEW | Create |
-| Detector target | `core/drift-guard/core/detector.js` | NEW | Create |
-| Resolver target | `core/drift-guard/core/resolver.js` | NEW | Create |
-| Telemetry target | `core/drift-guard/core/telemetry.js` | NEW | Create |
-| Guard target | `core/drift-guard/core/guard.js` | NEW | Create |
+| Purpose           | Path                                 | Lines | Notes      |
+| ----------------- | ------------------------------------ | ----- | ---------- |
+| Current monolith  | `core/drift-guard/index.js`          | 595   | SPLIT THIS |
+| Adapter (untouch) | `core/drift-guard/adapter.js`        | 120   | Keep as-is |
+| Formulas target   | `core/drift-guard/core/formulas.js`  | NEW   | Create     |
+| Detector target   | `core/drift-guard/core/detector.js`  | NEW   | Create     |
+| Resolver target   | `core/drift-guard/core/resolver.js`  | NEW   | Create     |
+| Telemetry target  | `core/drift-guard/core/telemetry.js` | NEW   | Create     |
+| Guard target      | `core/drift-guard/core/guard.js`     | NEW   | Create     |
 
 ### 5.2 Documentation (Reference)
 
-| Document | Purpose |
-|----------|---------|
+| Document                               | Purpose                |
+| -------------------------------------- | ---------------------- |
 | `docs/drift-guard-improvement-plan.md` | Implementation roadmap |
-| `COVERAGE-DEBT-ANALYSIS.md` | Research findings |
-| `docs/drift-guard-usage-patterns.md` | API usage examples |
-| `docs/drift-guard-cli-reference.md` | CLI commands |
+| `COVERAGE-DEBT-ANALYSIS.md`            | Research findings      |
+| `docs/drift-guard-usage-patterns.md`   | API usage examples     |
+| `docs/drift-guard-cli-reference.md`    | CLI commands           |
 
 ### 5.3 Tests (MUST Pass)
 
-| Test File | Cases | Purpose |
-|-----------|-------|---------|
-| `tests/drift-guard/orchestrator.test.js` | 16 | Current validation |
+| Test File                                | Cases | Purpose            |
+| ---------------------------------------- | ----- | ------------------ |
+| `tests/drift-guard/orchestrator.test.js` | 16    | Current validation |
 
 ---
 
@@ -448,13 +460,13 @@ static calculateSeverity(lineDiff) {
 
 ### 6.2 Quality Metrics
 
-| Metric | Before | After | Validation |
-|--------|--------|-------|------------|
-| Max lines/file | 595 | <200 | `wc -l core/drift-guard/core/*.js` |
-| Max complexity | 97 | <50 | Code review + jscpd |
-| Files | 2 | 7 | `ls core/drift-guard/**/*.js | wc -l` |
-| Test pass rate | 16/16 | 16/16 | `node --test` |
-| Backward compat | 100% | 100% | Import validation |
+| Metric          | Before | After | Validation                         |
+| --------------- | ------ | ----- | ---------------------------------- | ------ |
+| Max lines/file  | 595    | <200  | `wc -l core/drift-guard/core/*.js` |
+| Max complexity  | 97     | <50   | Code review + jscpd                |
+| Files           | 2      | 7     | `ls core/drift-guard/\*_/_.js      | wc -l` |
+| Test pass rate  | 16/16  | 16/16 | `node --test`                      |
+| Backward compat | 100%   | 100%  | Import validation                  |
 
 ### 6.3 Definition of Done
 
@@ -474,7 +486,8 @@ static calculateSeverity(lineDiff) {
 
 ### 7.1 Risk: Breaking Changes
 
-**Mitigation**: 
+**Mitigation**:
+
 - Keep `index.js.bak` until Phase 2 starts
 - Run all validation commands before committing
 - Have rollback plan: `mv index.js.bak index.js`
@@ -482,6 +495,7 @@ static calculateSeverity(lineDiff) {
 ### 7.2 Risk: Import Cycles
 
 **Prevention**:
+
 ```
 ✅ Correct: Guard → Detector, Resolver, Telemetry
 ✅ Correct: Detector → Formulas
@@ -495,6 +509,7 @@ npx madge --circular core/drift-guard/
 ### 7.3 Risk: Missing Exports
 
 **Detection**:
+
 ```bash
 # List all exports before and after
 grep "export " core/drift-guard/index.js.bak > exports-before.txt
@@ -549,6 +564,7 @@ diff exports-before.txt exports-after.txt
 ### If Scope Creep Detected
 
 **Stick to Phase 1 only**:
+
 - ✅ File splitting
 - ✅ Barrel exports
 - ✅ Test compatibility
@@ -560,10 +576,12 @@ diff exports-before.txt exports-after.txt
 ### When Complete
 
 Create `.handoff/PHASE1-COMPLETE.md` with:
+
 ```markdown
 # Phase 1 Complete
 
 ## Summary
+
 - Files created: [list]
 - Tests passing: [count/16]
 - Lines per file: [list]
@@ -571,7 +589,9 @@ Create `.handoff/PHASE1-COMPLETE.md` with:
 
 ## Validation Results
 ```
+
 [output of all 6 validation commands]
+
 ```
 
 ## Notes for Phase 2 Agent
@@ -615,15 +635,15 @@ adapter.js (untouched)
 
 ```javascript
 // These must remain exported from barrel:
-DriftGuard
-DriftFormulas
-DriftDetector
-DriftResolver
-DriftTelemetry
-DRIFT_POLICIES
-createDriftGuard
-withDriftProtection  // from adapter
-createGuardedFrame   // from adapter
+DriftGuard;
+DriftFormulas;
+DriftDetector;
+DriftResolver;
+DriftTelemetry;
+DRIFT_POLICIES;
+createDriftGuard;
+withDriftProtection; // from adapter
+createGuardedFrame; // from adapter
 ```
 
 ---

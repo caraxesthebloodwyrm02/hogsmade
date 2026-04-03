@@ -55,6 +55,7 @@ Run the narrowest relevant checks for the project being changed. Typical gates i
 
 User: "I need to build a Python API for data processing."
 Use the iterate skill to:
+
 1. capture requirements
 2. define milestones and module order
 3. implement incrementally

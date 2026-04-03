@@ -1,11 +1,13 @@
 # WSL Quick Reference - One-Liners
 
 ## 🚀 FASTEST CLEANUP (30 seconds)
+
 ```bash
 sudo bash -c 'apt update && apt upgrade -y && apt autoremove -y && apt clean && rm -rf /tmp/* && sync && echo 3 > /proc/sys/vm/drop_caches'
 ```
 
 ## 📊 CHECK STATUS
+
 ```bash
 # Full system report
 echo "DISK:" && df -h / && echo "MEMORY:" && free -h && echo "CACHE:" && du -sh /var/cache && echo "TEMP:" && du -sh /tmp
@@ -16,7 +18,7 @@ watch -n 1 'echo "=== DISK ===" && df -h / && echo "=== MEMORY ===" && free -h &
 # Simple memory check
 free -h
 
-# Simple disk check  
+# Simple disk check
 df -h /
 ```
 
@@ -25,6 +27,7 @@ df -h /
 ## 🧹 CORE CLEANUP COMMANDS
 
 ### Package Management
+
 ```bash
 # Update & upgrade everything
 sudo apt update && sudo apt upgrade -y
@@ -43,6 +46,7 @@ dpkg-query -W -f='${Installed-Size}\t${Package}\n' | sort -rn | awk '{print int(
 ```
 
 ### Clear Temporary Files
+
 ```bash
 # Remove all temp files
 sudo rm -rf /tmp/* /var/tmp/* /var/cache/apt/archives/*
@@ -55,6 +59,7 @@ sudo rm -rf /var/tmp/*
 ```
 
 ### Clean Logs
+
 ```bash
 # Vacuum journal (keep 50MB)
 sudo journalctl --vacuum=size:50M
@@ -73,6 +78,7 @@ sudo find /var/log -type f -name "*.log" -mtime +30 -delete
 ```
 
 ### Clear Caches
+
 ```bash
 # Clear pip cache
 rm -rf ~/.cache/pip
@@ -95,6 +101,7 @@ rm -rf ~/.cache/pip ~/.cache/npm ~/.npm ~/.yarn/cache
 ## 💾 MEMORY OPTIMIZATION
 
 ### Release Memory (Free up RAM)
+
 ```bash
 # Drop ALL caches (page cache, dentries, inodes)
 sync && echo 3 | sudo tee /proc/sys/vm/drop_caches > /dev/null
@@ -104,6 +111,7 @@ sync && echo 1 | sudo tee /proc/sys/vm/drop_caches > /dev/null
 ```
 
 ### Check Memory Usage
+
 ```bash
 # Simple view
 free -h
@@ -119,6 +127,7 @@ sudo smem -s rss -n 20
 ```
 
 ### Optimize Swappiness
+
 ```bash
 # Check current swappiness
 cat /proc/sys/vm/swappiness
@@ -136,6 +145,7 @@ sudo sysctl -w vm.swappiness=10
 ## 🔍 DIAGNOSTIC COMMANDS
 
 ### Find What's Taking Space
+
 ```bash
 # Largest directories in root
 du -sh /* 2>/dev/null | sort -rh | head -10
@@ -151,6 +161,7 @@ du -sh /home /var /opt /tmp /root 2>/dev/null
 ```
 
 ### System Information
+
 ```bash
 # Full overview
 cat << 'EOF' | bash
@@ -175,31 +186,37 @@ systemd-analyze critical-chain
 ## 🎯 ATOMIC OPERATIONS (Pick & Use)
 
 ### Just Updated System
+
 ```bash
 sudo apt update && sudo apt upgrade -y
 ```
 
 ### Just Remove Unused Packages
+
 ```bash
 sudo apt autoremove -y && sudo apt autopurge -y
 ```
 
 ### Just Clear Caches
+
 ```bash
 sudo apt clean && sudo apt autoclean && sudo rm -rf /var/cache/apt/archives/*
 ```
 
 ### Just Clean Logs
+
 ```bash
 sudo journalctl --vacuum=size:50M && sudo find /var/log -type f -name "*.log" -exec truncate -s 0 {} \;
 ```
 
 ### Just Free Memory
+
 ```bash
 sync && echo 3 | sudo tee /proc/sys/vm/drop_caches > /dev/null
 ```
 
 ### Just Clean Temp Files
+
 ```bash
 sudo rm -rf /tmp/* /var/tmp/*
 ```
@@ -243,16 +260,19 @@ crontab -e
 ## 🛡️ BEFORE & AFTER COMPARISON
 
 Run before cleanup:
+
 ```bash
 echo "=== BEFORE ===" && df -h / && free -h
 ```
 
 Run after cleanup:
+
 ```bash
 echo "=== AFTER ===" && df -h / && free -h
 ```
 
 Full comparison:
+
 ```bash
 (echo "=== BEFORE ===" && df -h / && free -h) > /tmp/before.txt
 # Run cleanup commands here
@@ -265,16 +285,19 @@ diff /tmp/before.txt /tmp/after.txt
 ## 🚀 FASTEST SCRIPTS
 
 ### Ultra-Quick (5 seconds)
+
 ```bash
 sudo bash -c 'apt clean && rm -rf /tmp/* && sync && echo 3 > /proc/sys/vm/drop_caches'
 ```
 
 ### Quick (15 seconds)
+
 ```bash
 sudo bash -c 'apt autoremove -y && apt clean && rm -rf /tmp/* /var/tmp/* && journalctl --vacuum=size:50M'
 ```
 
 ### Thorough (45 seconds)
+
 ```bash
 sudo bash -c 'apt update && apt upgrade -y && apt autoremove -y && apt autoclean && apt clean && rm -rf /tmp/* /var/tmp/* && journalctl --vacuum=size:50M && find /var/log -type f -name "*.log" -exec truncate -s 0 {} \; && sync && echo 3 > /proc/sys/vm/drop_caches'
 ```
@@ -284,6 +307,7 @@ sudo bash -c 'apt update && apt upgrade -y && apt autoremove -y && apt autoclean
 ## 🔐 SAFETY NOTES
 
 ✅ **Safe to run:**
+
 - `apt update/upgrade/autoremove`
 - Clearing `/tmp`, `/var/tmp`
 - Truncating logs (not deleting directory)
@@ -291,12 +315,14 @@ sudo bash -c 'apt update && apt upgrade -y && apt autoremove -y && apt autoclean
 - Package cache cleanup
 
 ⚠️ **Be careful with:**
+
 - Don't delete `/var/log` directory itself
 - Don't modify critical services
 - Don't use `rm -rf` on important directories
 - Test on non-critical systems first
 
 ❌ **NEVER do:**
+
 - `rm -rf /` or `rm -rf /*`
 - Delete core system directories
 - Run untested scripts with `-r` flags
@@ -306,16 +332,15 @@ sudo bash -c 'apt update && apt upgrade -y && apt autoremove -y && apt autoclean
 
 ## 📝 CHEAT SHEET SUMMARY
 
-| Goal | Command |
-|------|---------|
-| Update system | `sudo apt update && sudo apt upgrade -y` |
-| Remove unused | `sudo apt autoremove -y` |
-| Clear caches | `sudo apt clean` |
-| Clean logs | `sudo journalctl --vacuum=50M` |
-| Free memory | `sync && echo 3 \| sudo tee /proc/sys/vm/drop_caches` |
-| Check disk | `df -h /` |
-| Check memory | `free -h` |
-| Find large files | `find / -size +100M 2>/dev/null` |
-| Check status | `df -h / && free -h` |
-| Full cleanup | See "FASTEST CLEANUP" section above |
-
+| Goal             | Command                                               |
+| ---------------- | ----------------------------------------------------- |
+| Update system    | `sudo apt update && sudo apt upgrade -y`              |
+| Remove unused    | `sudo apt autoremove -y`                              |
+| Clear caches     | `sudo apt clean`                                      |
+| Clean logs       | `sudo journalctl --vacuum=50M`                        |
+| Free memory      | `sync && echo 3 \| sudo tee /proc/sys/vm/drop_caches` |
+| Check disk       | `df -h /`                                             |
+| Check memory     | `free -h`                                             |
+| Find large files | `find / -size +100M 2>/dev/null`                      |
+| Check status     | `df -h / && free -h`                                  |
+| Full cleanup     | See "FASTEST CLEANUP" section above                   |

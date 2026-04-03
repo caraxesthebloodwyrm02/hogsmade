@@ -64,7 +64,7 @@ export class GuardCircuitBreaker {
 
   constructor(
     private name: string,
-    private config: CircuitBreakerConfig = DEFAULT_CIRCUIT_BREAKER_CONFIG
+    private config: CircuitBreakerConfig = DEFAULT_CIRCUIT_BREAKER_CONFIG,
   ) {}
 
   /**
@@ -110,7 +110,7 @@ export class GuardCircuitBreaker {
         this.rejectedCalls++;
         throw new CircuitBreakerOpenError(
           this.name,
-          this.config.resetTimeoutMs - timeSinceLastFailure
+          this.config.resetTimeoutMs - timeSinceLastFailure,
         );
       }
     }
@@ -119,10 +119,7 @@ export class GuardCircuitBreaker {
     if (this.state === CircuitState.HALF_OPEN) {
       if (this.halfOpenCalls >= this.config.halfOpenMaxCalls) {
         this.rejectedCalls++;
-        throw new CircuitBreakerOpenError(
-          this.name,
-          this.config.resetTimeoutMs
-        );
+        throw new CircuitBreakerOpenError(this.name, this.config.resetTimeoutMs);
       }
       this.halfOpenCalls++;
     }
@@ -209,11 +206,9 @@ export class GuardCircuitBreaker {
 export class CircuitBreakerOpenError extends Error {
   constructor(
     public readonly circuitName: string,
-    public readonly retryAfterMs: number
+    public readonly retryAfterMs: number,
   ) {
-    super(
-      `Circuit breaker "${circuitName}" is OPEN. Retry after ${retryAfterMs}ms`
-    );
+    super(`Circuit breaker "${circuitName}" is OPEN. Retry after ${retryAfterMs}ms`);
     this.name = "CircuitBreakerOpenError";
   }
 }
@@ -228,7 +223,7 @@ const circuitBreakerRegistry = new Map<string, GuardCircuitBreaker>();
  */
 export function getCircuitBreaker(
   name: string,
-  config?: Partial<CircuitBreakerConfig>
+  config?: Partial<CircuitBreakerConfig>,
 ): GuardCircuitBreaker {
   if (!circuitBreakerRegistry.has(name)) {
     const fullConfig = { ...DEFAULT_CIRCUIT_BREAKER_CONFIG, ...config };

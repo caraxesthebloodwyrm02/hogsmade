@@ -26,7 +26,12 @@ interface CognitionApiResponse {
 }
 
 export function useCognitionStats(): UseCognitionStatsResult {
-  const { data: patterns, loading, error, retry } = useDataSource<CognitionPattern[]>({
+  const {
+    data: patterns,
+    loading,
+    error,
+    retry,
+  } = useDataSource<CognitionPattern[]>({
     fetcher: async (signal) => {
       const res = await fetch("/api/cognition/health", { signal });
       if (!res.ok) throw new Error(`Cognition API error: ${res.status}`);

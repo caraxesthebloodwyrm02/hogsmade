@@ -79,9 +79,7 @@ describe("detectGaps", () => {
       profile: {},
     };
     detectGaps(frame, ctx);
-    const orphanGap = frame.gaps.find(
-      (g) => g.type === GAP_TYPES.ORPHAN_ENTITY
-    );
+    const orphanGap = frame.gaps.find((g) => g.type === GAP_TYPES.ORPHAN_ENTITY);
     assert.ok(orphanGap, "Should detect orphan entity");
     assert.ok(orphanGap.affectedIds.includes("e-3"));
   });
@@ -100,9 +98,7 @@ describe("detectGaps", () => {
       profile: {},
     };
     detectGaps(frame, ctx);
-    const coverageGap = frame.gaps.find(
-      (g) => g.type === GAP_TYPES.LOW_COVERAGE
-    );
+    const coverageGap = frame.gaps.find((g) => g.type === GAP_TYPES.LOW_COVERAGE);
     assert.ok(coverageGap, "Should detect low time coverage (25%)");
   });
 
@@ -145,10 +141,7 @@ describe("calibrateConfidence", () => {
   it("penalizes low completeness", () => {
     const complete = calibrateConfidence(0.7, { completeness: 1 });
     const incomplete = calibrateConfidence(0.7, { completeness: 0.3 });
-    assert.ok(
-      complete > incomplete,
-      `complete=${complete} should > incomplete=${incomplete}`
-    );
+    assert.ok(complete > incomplete, `complete=${complete} should > incomplete=${incomplete}`);
   });
 
   it("never exceeds 1.0", () => {
@@ -178,10 +171,7 @@ describe("summarizeConfidence", () => {
     recordGap(frame, { severity: 0.5 });
     recordGap(frame, { severity: 0.7 });
     const summary = summarizeConfidence(frame);
-    assert.ok(
-      summary.overallScore < summary.avgConfidence,
-      "Gaps should reduce overall score"
-    );
+    assert.ok(summary.overallScore < summary.avgConfidence, "Gaps should reduce overall score");
   });
 
   it("sorts topGaps by severity descending", () => {

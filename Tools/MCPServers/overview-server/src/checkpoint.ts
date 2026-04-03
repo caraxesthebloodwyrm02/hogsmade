@@ -22,12 +22,9 @@ export interface CheckpointParams {
   depth?: Depth;
 }
 
-export async function aggregateCheckpoint(
-  params: CheckpointParams,
-): Promise<Checkpoint> {
+export async function aggregateCheckpoint(params: CheckpointParams): Promise<Checkpoint> {
   const depth: Depth = params.depth ?? "standard";
-  const sinceBoundary =
-    params.since ?? new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const sinceBoundary = params.since ?? new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
   const focus = params.focus ?? null;
 
   // 1. Gather all source data
@@ -91,9 +88,7 @@ function computeTrajectory(data: AggregatedData): Trajectory {
   const ecosystemScore = data.latestSnapshot?.overallScore ?? null;
   const previousScore = data.previousSnapshot?.overallScore ?? null;
   const scoreDelta =
-    ecosystemScore != null && previousScore != null
-      ? ecosystemScore - previousScore
-      : null;
+    ecosystemScore != null && previousScore != null ? ecosystemScore - previousScore : null;
 
   const evidence: string[] = [];
   let direction: Trajectory["direction"] = "unknown";

@@ -4,11 +4,11 @@ Dedicated MCP server for the Mangrove DIO bridge and security audit tools.
 
 ## Tools
 
-| Tool | Description |
-|------|-------------|
-| `dio_episode_summary` | Read DIO episode structure from the local DIO workspace |
-| `dio_status` | Query DIO constants such as cadence and pass counts |
-| `security_audit` | Run the underscore-isolation security audit in read-only mode |
+| Tool                  | Description                                                   |
+| --------------------- | ------------------------------------------------------------- |
+| `dio_episode_summary` | Read DIO episode structure from the local DIO workspace       |
+| `dio_status`          | Query DIO constants such as cadence and pass counts           |
+| `security_audit`      | Run the underscore-isolation security audit in read-only mode |
 
 ## Setup
 

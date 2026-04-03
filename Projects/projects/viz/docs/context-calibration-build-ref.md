@@ -58,14 +58,14 @@ Design constraint: **single HTML file, zero dependencies, opens in any browser.*
 
 ## File Map
 
-| File | Purpose | Status |
-|------|---------|--------|
-| `projects/viz/context_calibration.html` | Main tool — EQ + Phase + Delay calibration | Built, functional |
-| `projects/viz/parametric_eq.html` | Predecessor — single-band parametric EQ | Built, standalone |
-| `projects/viz/angle_automation_phase_drift.html` | LFO/orbit phase visualizer | Existing, not yet wired |
-| `projects/viz/docs/context-calibration-study-guide.md` | Easy-difficulty study guide | This session |
-| `projects/viz/docs/context-calibration-build-ref.md` | This file | This session |
-| `.claude/plans/replicated-herding-shore.md` | Full design plan (approved) | Reference |
+| File                                                   | Purpose                                    | Status                  |
+| ------------------------------------------------------ | ------------------------------------------ | ----------------------- |
+| `projects/viz/context_calibration.html`                | Main tool — EQ + Phase + Delay calibration | Built, functional       |
+| `projects/viz/parametric_eq.html`                      | Predecessor — single-band parametric EQ    | Built, standalone       |
+| `projects/viz/angle_automation_phase_drift.html`       | LFO/orbit phase visualizer                 | Existing, not yet wired |
+| `projects/viz/docs/context-calibration-study-guide.md` | Easy-difficulty study guide                | This session            |
+| `projects/viz/docs/context-calibration-build-ref.md`   | This file                                  | This session            |
+| `.claude/plans/replicated-herding-shore.md`            | Full design plan (approved)                | Reference               |
 
 ---
 
@@ -127,9 +127,7 @@ Design constraint: **single HTML file, zero dependencies, opens in any browser.*
 {
   "version": 1,
   "timestamp": "ISO-8601",
-  "bands": [
-    { "dimension": "constraints", "gain": 14.0, "q": 2.4, "phase": 62, "type": "bell" }
-  ],
+  "bands": [{ "dimension": "constraints", "gain": 14.0, "q": 2.4, "phase": 62, "type": "bell" }],
   "metrics": { "avgPhase": 47, "gapCount": 3, "drift": 12, "aligned": false },
   "corrections": [
     { "dimension": "Constraints", "gain": 14.0, "q": 2.4, "phase": 62, "action": "..." }
@@ -154,6 +152,7 @@ alpha = sin(w0) / (2 × Q)
 ```
 
 Bell:
+
 ```
 b0 = 1 + alpha×A     a0 = 1 + alpha/A
 b1 = -2×cos(w0)      a1 = -2×cos(w0)
@@ -176,34 +175,35 @@ Discrete dimensions mapped to pseudo-frequencies for biquad curve rendering:
 
 ```js
 function dimToFreq(dimIdx) {
-  const fMin = 80, fMax = 8000;
+  const fMin = 80,
+    fMax = 8000;
   return fMin * Math.pow(fMax / fMin, dimIdx / (DIM_COUNT - 1));
 }
 ```
 
 | dimIdx | Dimension   | Pseudo-freq (Hz) |
-|--------|-------------|-------------------|
-| 0      | Specificity | 80                |
-| 1      | Clarity     | 148               |
-| 2      | Constraints | 274               |
-| 3      | Domain      | 506               |
-| 4      | Assumptions | 936               |
-| 5      | Evidence    | 1,731             |
-| 6      | Confidence  | 3,202             |
-| 7      | Tension     | 8,000             |
+| ------ | ----------- | ---------------- |
+| 0      | Specificity | 80               |
+| 1      | Clarity     | 148              |
+| 2      | Constraints | 274              |
+| 3      | Domain      | 506              |
+| 4      | Assumptions | 936              |
+| 5      | Evidence    | 1,731            |
+| 6      | Confidence  | 3,202            |
+| 7      | Tension     | 8,000            |
 
 **Note**: These frequencies are cosmetic — they exist so the biquad curves render smoothly between discrete dimension positions. The math is real (identical to `parametric_eq.html`), but the frequency values have no physical meaning in context calibration.
 
 ### Normalization Functions
 
-| Function | Domain | Range | Formula |
-|----------|--------|-------|---------|
-| `gainToNorm(g)` | [-24, +24] | [0, 1] | `(g - GAIN_MIN) / (GAIN_MAX - GAIN_MIN)` |
-| `normToGain(n)` | [0, 1] | [-24, +24] | `GAIN_MIN + n * (GAIN_MAX - GAIN_MIN)` |
-| `qToNorm(q)` | [0.1, 18.0] | [0, 1] | `log(q / Q_MIN) / log(Q_MAX / Q_MIN)` (log-scale) |
-| `normToQ(n)` | [0, 1] | [0.1, 18.0] | `Q_MIN * (Q_MAX / Q_MIN)^n` |
-| `phaseToNorm(p)` | [0, 360] | [0, 1] | `p / 360` (linear) |
-| `normToPhase(n)` | [0, 1] | [0, 360] | `n * 360` |
+| Function         | Domain      | Range       | Formula                                           |
+| ---------------- | ----------- | ----------- | ------------------------------------------------- |
+| `gainToNorm(g)`  | [-24, +24]  | [0, 1]      | `(g - GAIN_MIN) / (GAIN_MAX - GAIN_MIN)`          |
+| `normToGain(n)`  | [0, 1]      | [-24, +24]  | `GAIN_MIN + n * (GAIN_MAX - GAIN_MIN)`            |
+| `qToNorm(q)`     | [0.1, 18.0] | [0, 1]      | `log(q / Q_MIN) / log(Q_MAX / Q_MIN)` (log-scale) |
+| `normToQ(n)`     | [0, 1]      | [0.1, 18.0] | `Q_MIN * (Q_MAX / Q_MIN)^n`                       |
+| `phaseToNorm(p)` | [0, 360]    | [0, 1]      | `p / 360` (linear)                                |
+| `normToPhase(n)` | [0, 1]      | [0, 360]    | `n * 360`                                         |
 
 ---
 
@@ -211,16 +211,16 @@ function dimToFreq(dimIdx) {
 
 ### Sources
 
-| Dimension | Source Module | Original Metric |
-|-----------|-------------|-----------------|
+| Dimension   | Source Module              | Original Metric                                        |
+| ----------- | -------------------------- | ------------------------------------------------------ |
 | Specificity | GRID `context_provider.py` | `sparsity` (inverted: high sparsity = low specificity) |
-| Clarity | GRID `context_provider.py` | `clarity` (0-1 scale) |
-| Constraints | Glimpse `confidence.js` | `LOW_COVERAGE` gap type |
-| Domain | Prompt-specific | No direct code source |
-| Assumptions | Glimpse `confidence.js` | `WEAK_BASIS` gap type |
-| Evidence | Glimpse `confidence.js` | `CONFLICTING_EVIDENCE` gap type |
-| Confidence | GRID `context_provider.py` | `confidence` (0-1 scale) |
-| Tension | GRID `context_provider.py` | `attention_tension` (0-1 scale) |
+| Clarity     | GRID `context_provider.py` | `clarity` (0-1 scale)                                  |
+| Constraints | Glimpse `confidence.js`    | `LOW_COVERAGE` gap type                                |
+| Domain      | Prompt-specific            | No direct code source                                  |
+| Assumptions | Glimpse `confidence.js`    | `WEAK_BASIS` gap type                                  |
+| Evidence    | Glimpse `confidence.js`    | `CONFLICTING_EVIDENCE` gap type                        |
+| Confidence  | GRID `context_provider.py` | `confidence` (0-1 scale)                               |
+| Tension     | GRID `context_provider.py` | `attention_tension` (0-1 scale)                        |
 
 ### X-axis Layout
 
@@ -263,12 +263,12 @@ aligned = avgPhase < 15° AND drift < 10° AND gapCount === 0
 
 ### Thresholds
 
-| Metric | Threshold | Meaning |
-|--------|-----------|---------|
-| Gap | \|gain\| > 3 dB | Significant distortion on this dimension |
-| Alignment: phase | < 15° avg | Directions mostly aligned |
-| Alignment: drift | < 10° stddev | Consistent alignment across dimensions |
-| Alignment: gap | 0 dimensions | No significant distortions remaining |
+| Metric           | Threshold       | Meaning                                  |
+| ---------------- | --------------- | ---------------------------------------- |
+| Gap              | \|gain\| > 3 dB | Significant distortion on this dimension |
+| Alignment: phase | < 15° avg       | Directions mostly aligned                |
+| Alignment: drift | < 10° stddev    | Consistent alignment across dimensions   |
+| Alignment: gap   | 0 dimensions    | No significant distortions remaining     |
 
 ### Display
 
@@ -305,7 +305,7 @@ Results sorted by `severity = abs(gain)` descending — fix the worst distortion
 
 ### Known Limitation
 
-The correction text is template-based. It describes the *type* of problem (over-assuming vs blind spot, narrow vs wide, phase direction) but does not generate case-specific advice. This is the main area where the phaser mechanism would add value.
+The correction text is template-based. It describes the _type_ of problem (over-assuming vs blind spot, narrow vs wide, phase direction) but does not generate case-specific advice. This is the main area where the phaser mechanism would add value.
 
 ---
 
@@ -314,6 +314,7 @@ The correction text is template-based. It describes the *type* of problem (over-
 ### `draw()` — Full canvas redraw (called on every state change)
 
 Render order (back to front):
+
 1. Background fill (#1e1e24)
 2. dB grid lines + labels (9 markers, 0 dB thicker)
 3. Dimension zone lines + labels + color markers
@@ -352,6 +353,7 @@ Each band's response is calculated independently and summed (dB addition). This 
 ### Band Handle Rendering
 
 Each handle shows:
+
 - Colored dot (4px inactive, 6px active)
 - Radial glow (active only, 16px radius)
 - Phase arc indicator (when phase > 5deg, arc from -90deg proportional to phase angle)
@@ -410,6 +412,7 @@ Dropdown `<select>` with all 8 dimensions. Changes active band's `dimIdx`.
 ### Export
 
 On "Export JSON" click:
+
 - Builds object with `version`, `timestamp`, `bands[]`, `metrics`, `corrections[]`
 - Bands store dimension by `id` string (not index) for portability
 - Gains rounded to 1 decimal, Q to 2 decimals, phase to integer
@@ -418,6 +421,7 @@ On "Export JSON" click:
 ### Import
 
 On "Import" click → hidden `<input type="file">`:
+
 - Parses JSON, validates `data.bands` is array
 - Maps `dimension` id strings back to `dimIdx` via `DIMENSIONS.findIndex()`
 - Rebuilds `bands[]` with fresh `id` counters
@@ -429,27 +433,27 @@ On "Import" click → hidden `<input type="file">`:
 
 ### Holds well (reliable foundation)
 
-| Component | Why it holds |
-|-----------|-------------|
+| Component                      | Why it holds                                                                                 |
+| ------------------------------ | -------------------------------------------------------------------------------------------- |
 | EQ spectrum + named dimensions | Clean mapping: dimensions as discrete positions, gain as severity, composite as full profile |
-| Biquad math | Real math, not approximation. Identical to parametric_eq.html which renders correctly |
-| Multi-band system | Add/select/remove works. Each band is independent. Composite sums correctly |
-| Visual design | Modeled after FabFilter Pro-Q / Ableton EQ Eight — professional audio tool aesthetic |
-| Export/Import | Round-trips cleanly. Profiles are portable and diffable |
+| Biquad math                    | Real math, not approximation. Identical to parametric_eq.html which renders correctly        |
+| Multi-band system              | Add/select/remove works. Each band is independent. Composite sums correctly                  |
+| Visual design                  | Modeled after FabFilter Pro-Q / Ableton EQ Eight — professional audio tool aesthetic         |
+| Export/Import                  | Round-trips cleanly. Profiles are portable and diffable                                      |
 
 ### Partially holds (useful but imperfect)
 
-| Component | Issue |
-|-----------|-------|
-| Phase knob | Manual user judgment, no measurement backing. You set it because it "feels" ~90deg off. |
-| Q (bandwidth) | On 8 discrete positions, bandwidth doesn't mean much. A Q of 2.4 on "Constraints" bleeds into adjacent dimensions visually, but that adjacency is arbitrary (left = Clarity, right = Domain). |
-| Biquad curves between dimensions | The smooth curves between discrete dimension positions are cosmetic. The math is real, but there's nothing between "Clarity" and "Constraints" to measure. |
+| Component                        | Issue                                                                                                                                                                                         |
+| -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Phase knob                       | Manual user judgment, no measurement backing. You set it because it "feels" ~90deg off.                                                                                                       |
+| Q (bandwidth)                    | On 8 discrete positions, bandwidth doesn't mean much. A Q of 2.4 on "Constraints" bleeds into adjacent dimensions visually, but that adjacency is arbitrary (left = Clarity, right = Domain). |
+| Biquad curves between dimensions | The smooth curves between discrete dimension positions are cosmetic. The math is real, but there's nothing between "Clarity" and "Constraints" to measure.                                    |
 
 ### Doesn't hold (needs replacement or removal)
 
-| Component | Issue |
-|-----------|-------|
-| Delay correction text | Template-based output. `"Broad over-confidence in clarity. Reduce emphasis..."` — same text regardless of case. No analysis of *what* the model actually said. |
+| Component               | Issue                                                                                                                                                                   |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Delay correction text   | Template-based output. `"Broad over-confidence in clarity. Reduce emphasis..."` — same text regardless of case. No analysis of _what_ the model actually said.          |
 | Phase as circular 0-360 | Phase in audio is periodic (360deg = 0deg). In context calibration, intent displacement doesn't wrap around. A linear scale (0-100% misalignment) would be more honest. |
 
 ### Quantified: ~40% functional diagnostic, ~40% structured reflection exercise, ~20% aesthetic
@@ -480,6 +484,7 @@ From user specification: "the tool should use phasing in multiple turns to patch
 ### Source for phaser visuals
 
 `angle_automation_phase_drift.html` contains:
+
 - Phase accumulator logic
 - Angular displacement calculation
 - LFO orbit visualization
@@ -491,6 +496,7 @@ These can provide the visual language for phase iteration tracking.
 ### Batch Synthesis (not yet designed)
 
 The synthesis step merges per-band corrections. Open questions:
+
 - How to handle conflicting corrections (adding specificity may reduce constraints flexibility)?
 - Priority: severity-ordered or dependency-ordered?
 - What does the "synthesized patch" artifact look like? Structured JSON? Prose document? Annotated prompt?
@@ -520,13 +526,13 @@ context_calibration.html
 
 ### Research inputs
 
-| Source | What it contributed |
-|--------|-------------------|
-| FabFilter Pro-Q 3 | Visual language: spectrum + draggable handles + per-band curves |
-| Ableton EQ Eight | Minimalist 8-band approach, clean UI |
-| REW (Room EQ Wizard) docs | 7-step room calibration process → directly mapped to context calibration |
-| Sound On Sound (phase article) | Complete phase theory: 0deg-180deg displacement, cancellation, comb filtering |
-| LANDR (phase article) | Pre-ringing, transient smearing from out-of-phase signals |
-| GRID ContextProvider (`context_provider.py`) | Dimension definitions: sparsity, clarity, confidence, attention_tension |
-| Glimpse Engine (`confidence.js`) | Gap types: MISSING_DIMENSION, LOW_COVERAGE, CONFLICTING_EVIDENCE, WEAK_BASIS |
-| Robert Bristow-Johnson Audio EQ Cookbook | Biquad filter coefficient formulas (all 4 types) |
+| Source                                       | What it contributed                                                           |
+| -------------------------------------------- | ----------------------------------------------------------------------------- |
+| FabFilter Pro-Q 3                            | Visual language: spectrum + draggable handles + per-band curves               |
+| Ableton EQ Eight                             | Minimalist 8-band approach, clean UI                                          |
+| REW (Room EQ Wizard) docs                    | 7-step room calibration process → directly mapped to context calibration      |
+| Sound On Sound (phase article)               | Complete phase theory: 0deg-180deg displacement, cancellation, comb filtering |
+| LANDR (phase article)                        | Pre-ringing, transient smearing from out-of-phase signals                     |
+| GRID ContextProvider (`context_provider.py`) | Dimension definitions: sparsity, clarity, confidence, attention_tension       |
+| Glimpse Engine (`confidence.js`)             | Gap types: MISSING_DIMENSION, LOW_COVERAGE, CONFLICTING_EVIDENCE, WEAK_BASIS  |
+| Robert Bristow-Johnson Audio EQ Cookbook     | Biquad filter coefficient formulas (all 4 types)                              |

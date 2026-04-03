@@ -11,8 +11,20 @@ function makeData(overrides: Partial<AggregatedData> = {}): AggregatedData {
     focusSessionActive: false,
     workflowsRunToday: 0,
     dataSources: [
-      { name: "echoes-audit", available: true, lastModified: new Date().toISOString(), recordCount: 10, stale: false },
-      { name: "seeds-snapshots", available: true, lastModified: new Date().toISOString(), recordCount: 5, stale: false },
+      {
+        name: "echoes-audit",
+        available: true,
+        lastModified: new Date().toISOString(),
+        recordCount: 10,
+        stale: false,
+      },
+      {
+        name: "seeds-snapshots",
+        available: true,
+        lastModified: new Date().toISOString(),
+        recordCount: 5,
+        stale: false,
+      },
     ],
     sinceBoundary: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
     ...overrides,
@@ -30,8 +42,13 @@ function makeClusters(overrides: Partial<ClusterInsight>[] = []): ClusterInsight
       label: "GRID Family",
       entities: [
         {
-          name: "GRID", type: "repo", healthScore: 90, branch: "main",
-          uncommittedChanges: 0, lastActivity: new Date().toISOString(), issues: [],
+          name: "GRID",
+          type: "repo",
+          healthScore: 90,
+          branch: "main",
+          uncommittedChanges: 0,
+          lastActivity: new Date().toISOString(),
+          issues: [],
           auditSummary: { eventsInWindow: 5, failures: 0, lastStatus: "success" },
         },
       ],
@@ -44,8 +61,13 @@ function makeClusters(overrides: Partial<ClusterInsight>[] = []): ClusterInsight
       label: "MCP Infrastructure",
       entities: [
         {
-          name: "hogsmade", type: "repo", healthScore: 80, branch: "hogsmade",
-          uncommittedChanges: 0, lastActivity: new Date().toISOString(), issues: [],
+          name: "hogsmade",
+          type: "repo",
+          healthScore: 80,
+          branch: "hogsmade",
+          uncommittedChanges: 0,
+          lastActivity: new Date().toISOString(),
+          issues: [],
           auditSummary: { eventsInWindow: 3, failures: 0, lastStatus: "success" },
         },
       ],
@@ -83,7 +105,12 @@ describe("relational trust computation", () => {
         overallScore: 85,
       },
       auditEvents: [
-        { timestamp: new Date().toISOString(), source: "seeds-server", tool: "scan", status: "success" },
+        {
+          timestamp: new Date().toISOString(),
+          source: "seeds-server",
+          tool: "scan",
+          status: "success",
+        },
       ],
     });
 
@@ -100,8 +127,20 @@ describe("relational trust computation", () => {
   it("newcomer gets null confidence with insufficient data sources", () => {
     const data = makeData({
       dataSources: [
-        { name: "echoes-audit", available: false, lastModified: null, recordCount: null, stale: true },
-        { name: "seeds-snapshots", available: false, lastModified: null, recordCount: null, stale: true },
+        {
+          name: "echoes-audit",
+          available: false,
+          lastModified: null,
+          recordCount: null,
+          stale: true,
+        },
+        {
+          name: "seeds-snapshots",
+          available: false,
+          lastModified: null,
+          recordCount: null,
+          stale: true,
+        },
       ],
     });
 
@@ -117,8 +156,20 @@ describe("relational trust computation", () => {
       totalDriftItems: 2,
       severity: "high",
       items: [
-        { entity: "GRID", type: "uncommitted-changes", detail: "30 uncommitted", severity: "critical", firstDetected: null },
-        { entity: "GRID", type: "audit-anomaly", detail: "burst", severity: "critical", firstDetected: null },
+        {
+          entity: "GRID",
+          type: "uncommitted-changes",
+          detail: "30 uncommitted",
+          severity: "critical",
+          firstDetected: null,
+        },
+        {
+          entity: "GRID",
+          type: "audit-anomaly",
+          detail: "burst",
+          severity: "critical",
+          firstDetected: null,
+        },
       ],
     };
 
@@ -144,31 +195,49 @@ describe("relational trust computation", () => {
       ],
     });
 
-    const clusters: ClusterInsight[] = [{
-      id: "grid-family",
-      label: "GRID Family",
-      entities: [{
-        name: "grid-server", type: "mcp-server", healthScore: 70, branch: null,
-        uncommittedChanges: null, lastActivity: now, issues: [],
-        auditSummary: { eventsInWindow: 2, failures: 2, lastStatus: "failure" },
-      }],
-      clusterHealth: 70,
-      issueCount: 0,
-      driftItems: [],
-    }];
+    const clusters: ClusterInsight[] = [
+      {
+        id: "grid-family",
+        label: "GRID Family",
+        entities: [
+          {
+            name: "grid-server",
+            type: "mcp-server",
+            healthScore: 70,
+            branch: null,
+            uncommittedChanges: null,
+            lastActivity: now,
+            issues: [],
+            auditSummary: { eventsInWindow: 2, failures: 2, lastStatus: "failure" },
+          },
+        ],
+        clusterHealth: 70,
+        issueCount: 0,
+        driftItems: [],
+      },
+    ];
 
-    const cleanClusters: ClusterInsight[] = [{
-      id: "grid-family",
-      label: "GRID Family",
-      entities: [{
-        name: "grid-server", type: "mcp-server", healthScore: 70, branch: null,
-        uncommittedChanges: null, lastActivity: now, issues: [],
-        auditSummary: { eventsInWindow: 2, failures: 0, lastStatus: "success" },
-      }],
-      clusterHealth: 70,
-      issueCount: 0,
-      driftItems: [],
-    }];
+    const cleanClusters: ClusterInsight[] = [
+      {
+        id: "grid-family",
+        label: "GRID Family",
+        entities: [
+          {
+            name: "grid-server",
+            type: "mcp-server",
+            healthScore: 70,
+            branch: null,
+            uncommittedChanges: null,
+            lastActivity: now,
+            issues: [],
+            auditSummary: { eventsInWindow: 2, failures: 0, lastStatus: "success" },
+          },
+        ],
+        clusterHealth: 70,
+        issueCount: 0,
+        driftItems: [],
+      },
+    ];
 
     const withFailures = computeTrust(dataWithFailures, emptyDrift(), clusters);
     const clean = computeTrust(makeData(), emptyDrift(), cleanClusters);
@@ -212,17 +281,53 @@ describe("relational trust computation", () => {
     const goodData = makeData({
       latestSnapshot: { timestamp: new Date().toISOString(), repos: [], overallScore: 85 },
       dataSources: [
-        { name: "echoes-audit", available: true, lastModified: new Date().toISOString(), recordCount: 10, stale: false },
-        { name: "seeds-snapshots", available: true, lastModified: new Date().toISOString(), recordCount: 5, stale: false },
-        { name: "pulse-journal", available: true, lastModified: new Date().toISOString(), recordCount: 2, stale: false },
+        {
+          name: "echoes-audit",
+          available: true,
+          lastModified: new Date().toISOString(),
+          recordCount: 10,
+          stale: false,
+        },
+        {
+          name: "seeds-snapshots",
+          available: true,
+          lastModified: new Date().toISOString(),
+          recordCount: 5,
+          stale: false,
+        },
+        {
+          name: "pulse-journal",
+          available: true,
+          lastModified: new Date().toISOString(),
+          recordCount: 2,
+          stale: false,
+        },
       ],
     });
 
     const poorData = makeData({
       dataSources: [
-        { name: "echoes-audit", available: false, lastModified: null, recordCount: null, stale: true },
-        { name: "seeds-snapshots", available: false, lastModified: null, recordCount: null, stale: true },
-        { name: "pulse-journal", available: false, lastModified: null, recordCount: null, stale: true },
+        {
+          name: "echoes-audit",
+          available: false,
+          lastModified: null,
+          recordCount: null,
+          stale: true,
+        },
+        {
+          name: "seeds-snapshots",
+          available: false,
+          lastModified: null,
+          recordCount: null,
+          stale: true,
+        },
+        {
+          name: "pulse-journal",
+          available: false,
+          lastModified: null,
+          recordCount: null,
+          stale: true,
+        },
       ],
     });
 

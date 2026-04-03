@@ -10,7 +10,8 @@
 import { emitAudit } from "@cascade/shared-types/audit-client";
 import type { CycleSignal, EvolutionCase, PromotionGateResult } from "./types.js";
 
-const ELIGIBILITY_DATA_DIR = process.env.ELIGIBILITY_DATA_DIR || "/home/caraxes/.eligibility-server";
+const ELIGIBILITY_DATA_DIR =
+  process.env.ELIGIBILITY_DATA_DIR || "/home/caraxes/.eligibility-server";
 
 /**
  * Hook: when an evolution case is opened
@@ -39,16 +40,15 @@ export async function onEvolutionCaseOpened(caseRecord: EvolutionCase): Promise<
 
   // Seeds bookmark for tracking
   // Note: In real implementation, this would call seeds-server MCP tool
-  console.error(`[SEEDS_HOOK] Would bookmark evolution case ${caseRecord.caseId} in repo: eligibility-server`);
+  console.error(
+    `[SEEDS_HOOK] Would bookmark evolution case ${caseRecord.caseId} in repo: eligibility-server`,
+  );
 }
 
 /**
  * Hook: when a cycle signal is recorded
  */
-export async function onCycleSignalRecorded(
-  caseId: string,
-  signal: CycleSignal,
-): Promise<void> {
+export async function onCycleSignalRecorded(caseId: string, signal: CycleSignal): Promise<void> {
   const timestamp = new Date().toISOString();
 
   // Echoes audit
@@ -71,7 +71,9 @@ export async function onCycleSignalRecorded(
   // Pulse journal for significant signals
   if (signal.type === "condition_escalated" || signal.type === "integration_call_failed") {
     // Note: In real implementation, this would call pulse-server MCP tool
-    console.error(`[PULSE_HOOK] Would journal ${signal.type} signal for case ${caseId}: ${signal.note}`);
+    console.error(
+      `[PULSE_HOOK] Would journal ${signal.type} signal for case ${caseId}: ${signal.note}`,
+    );
   }
 }
 
@@ -108,13 +110,17 @@ export async function onPromotionGateEvaluated(
   // Pulse focus session tracking for blocked promotions
   if (decision === "hold_for_tighten" || decision === "return_to_balance") {
     // Note: In real implementation, this would call pulse-server MCP tool
-    console.error(`[PULSE_HOOK] Would start focus session for blocked promotion case ${caseRecord.caseId}`);
+    console.error(
+      `[PULSE_HOOK] Would start focus session for blocked promotion case ${caseRecord.caseId}`,
+    );
   }
 
   // Seeds ecosystem scan trigger for major decisions
   if (decision === "allow_promotion") {
     // Note: In real implementation, this would call seeds-server MCP tool
-    console.error(`[SEEDS_HOOK] Would trigger ecosystem scan after promotion of case ${caseRecord.caseId}`);
+    console.error(
+      `[SEEDS_HOOK] Would trigger ecosystem scan after promotion of case ${caseRecord.caseId}`,
+    );
   }
 }
 
@@ -148,7 +154,9 @@ export async function onCaseStatusChanged(
   // Seeds snapshot for major transitions
   if (caseRecord.status === "promoted") {
     // Note: In real implementation, this would call seeds-server MCP tool
-    console.error(`[SEEDS_HOOK] Would create ecosystem snapshot for promoted case ${caseRecord.caseId}`);
+    console.error(
+      `[SEEDS_HOOK] Would create ecosystem snapshot for promoted case ${caseRecord.caseId}`,
+    );
   }
 }
 

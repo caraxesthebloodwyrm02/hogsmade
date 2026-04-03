@@ -3,6 +3,7 @@
 Identify and eliminate duplicated code, configurations, and dependencies in GRID-main.
 
 ## Priority System
+
 - **P0**: Security-relevant duplicates, runtime-breaking conflicts
 - **P1**: Performance impact, maintenance burden
 - **P2**: Code hygiene, developer experience
@@ -12,6 +13,7 @@ Identify and eliminate duplicated code, configurations, and dependencies in GRID
 ## P0: Critical Duplicates (Security/Runtime)
 
 **1. Authentication Logic Duplication**
+
 - [ ] Compare `src/grid/auth/` and `src/application/mothership/security/` for conflicting JWT implementations
   ```bash
   cd GRID-main
@@ -24,6 +26,7 @@ Identify and eliminate duplicated code, configurations, and dependencies in GRID
   ```
 
 **2. Configuration Value Conflicts**
+
 - [ ] Find duplicated configuration keys in `.env`, `.env.local`, and `settings.py`
   ```bash
   cd GRID-main
@@ -31,6 +34,7 @@ Identify and eliminate duplicated code, configurations, and dependencies in GRID
   ```
 
 **3. Critical Dependency Version Conflicts**
+
 - [ ] Check for multiple versions of security-relevant packages
   ```bash
   cd GRID-main
@@ -42,6 +46,7 @@ Identify and eliminate duplicated code, configurations, and dependencies in GRID
 ## P1: High-Impact Duplicates (Performance/Maintainability)
 
 **4. Router Endpoint Overlaps**
+
 - [ ] Find duplicate route definitions across routers
   ```bash
   cd GRID-main
@@ -49,6 +54,7 @@ Identify and eliminate duplicated code, configurations, and dependencies in GRID
   ```
 
 **5. Model/Schema Redundancy**
+
 - [ ] Identify structurally identical Pydantic models or SQLAlchemy tables
   ```bash
   cd GRID-main
@@ -56,6 +62,7 @@ Identify and eliminate duplicated code, configurations, and dependencies in GRID
   ```
 
 **6. Utility Function Clones**
+
 - [ ] Detect nearly identical helper functions in utils/
   ```bash
   cd GRID-main
@@ -63,6 +70,7 @@ Identify and eliminate duplicated code, configurations, and dependencies in GRID
   ```
 
 **7. Database Query Repetition**
+
 - [ ] Look for similar SQL queries or ORM statements
   ```bash
   cd GRID-main
@@ -74,6 +82,7 @@ Identify and eliminate duplicated code, configurations, and dependencies in GRID
 ## P2: Low-Priority Duplicates (Hygiene)
 
 **8. Comment/Docstring Redundancy**
+
 - [ ] Identify copy-pasted documentation or comments
   ```bash
   cd GRID-main
@@ -81,6 +90,7 @@ Identify and eliminate duplicated code, configurations, and dependencies in GRID
   ```
 
 **9. Import Statement Duplication**
+
 - [ ] Consolidate redundant imports across files
   ```bash
   cd GRID-main
@@ -88,6 +98,7 @@ Identify and eliminate duplicated code, configurations, and dependencies in GRID
   ```
 
 **10. Template Literal Reuse**
+
 - [ ] Find hardcoded strings duplicated in Jinja2 templates or f-strings
   ```bash
   cd GRID-main
@@ -97,6 +108,7 @@ Identify and eliminate duplicated code, configurations, and dependencies in GRID
 ---
 
 ## Cross-References
+
 - VERIFICATION_CHECKLIST.md: Test coverage for identifying behavioral clones
 - REMEDIATION_CHECKLIST.md: Steps for safely removing duplicates
 - SAFETY_DEBUG_CHECKLIST.md: Ensuring no functional loss when consolidating code

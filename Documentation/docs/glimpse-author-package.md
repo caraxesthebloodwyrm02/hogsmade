@@ -9,7 +9,7 @@
 ## The single idea
 
 An author drops a seed (a situation, a premise, a tension). The tool
-helps them see what that seed *contains* — which narrative angles are
+helps them see what that seed _contains_ — which narrative angles are
 present, which structural patterns emerge, which directions the draft
 can grow. Then the author forks, revises, compares, and promotes
 the strongest branch to production.
@@ -27,17 +27,17 @@ The 9 presets in `glimpse.master.yaml` are not data-analysis modes.
 They are **voices** — ways of reading the same draft from different
 angles.
 
-| Voice | What it amplifies | When an author uses it |
-|-------|-------------------|----------------------|
-| Storyteller | narrative, arts, geography | Default for fiction drafts |
-| Historian | history, innovation, narrative | Period pieces, research-heavy chapters |
-| Educator | education, social, narrative | Explainer sections, dialogue-heavy scenes |
-| Economist | economics, analytics, geography | World-building with systems |
-| Scientist | biology, innovation, analytics | Hard sci-fi, technical accuracy passes |
-| Technologist | technology, innovation, communication | Near-future, speculative fiction |
-| Signature | botany, sound, structured_data | The tool's own interpretive lens — for when you want the engine's instinct |
-| Analyst | analytics, geography, communication | Structural editing — neutral, no amplification |
-| Researcher | innovation, analytics, history | Fact-checking pass, source alignment |
+| Voice        | What it amplifies                     | When an author uses it                                                     |
+| ------------ | ------------------------------------- | -------------------------------------------------------------------------- |
+| Storyteller  | narrative, arts, geography            | Default for fiction drafts                                                 |
+| Historian    | history, innovation, narrative        | Period pieces, research-heavy chapters                                     |
+| Educator     | education, social, narrative          | Explainer sections, dialogue-heavy scenes                                  |
+| Economist    | economics, analytics, geography       | World-building with systems                                                |
+| Scientist    | biology, innovation, analytics        | Hard sci-fi, technical accuracy passes                                     |
+| Technologist | technology, innovation, communication | Near-future, speculative fiction                                           |
+| Signature    | botany, sound, structured_data        | The tool's own interpretive lens — for when you want the engine's instinct |
+| Analyst      | analytics, geography, communication   | Structural editing — neutral, no amplification                             |
+| Researcher   | innovation, analytics, history        | Fact-checking pass, source alignment                                       |
 
 **In the UI:** A small voice selector in the nav. Not a dropdown with 9
 items — a compact row showing the current voice name + a popover on click
@@ -80,21 +80,21 @@ and which voice amplifies this grain.
 The 7 view types are not visualization modes. They are **directions**
 the draft can grow:
 
-| View | Draft direction |
-|------|----------------|
-| **Flow** | The draft has a chain — cause leads to effect leads to consequence. Follow the thread. |
-| **Constellation** | The draft has a web — characters, places, ideas connected in multiple directions. Map the connections. |
-| **Clusters** | The draft has groupings — scenes that rhyme, characters that mirror, themes that recur. See the patterns. |
-| **Timeline** | The draft has time — events in sequence, flashbacks, parallel timelines. Order the story. |
-| **Explorer** | The draft has density — lots of detail, many facts. Lay it out flat and scan. |
-| **Matrix** | The draft has comparisons — characters against each other, versions against versions. Compare side by side. |
-| **Map** | The draft has place — locations matter, geography shapes the story. See the landscape. |
+| View              | Draft direction                                                                                             |
+| ----------------- | ----------------------------------------------------------------------------------------------------------- |
+| **Flow**          | The draft has a chain — cause leads to effect leads to consequence. Follow the thread.                      |
+| **Constellation** | The draft has a web — characters, places, ideas connected in multiple directions. Map the connections.      |
+| **Clusters**      | The draft has groupings — scenes that rhyme, characters that mirror, themes that recur. See the patterns.   |
+| **Timeline**      | The draft has time — events in sequence, flashbacks, parallel timelines. Order the story.                   |
+| **Explorer**      | The draft has density — lots of detail, many facts. Lay it out flat and scan.                               |
+| **Matrix**        | The draft has comparisons — characters against each other, versions against versions. Compare side by side. |
+| **Map**           | The draft has place — locations matter, geography shapes the story. See the landscape.                      |
 
 After an author forks a seed, the engine scores each direction.
 The top 2-3 directions appear as **subtle suggestions below the
 snapshot card** — not a ranked ribbon, not 7 options. Just:
 
-> *This branch has strong flow. It also clusters well.*
+> _This branch has strong flow. It also clusters well._
 
 The author decides. The engine observed.
 
@@ -156,9 +156,9 @@ Your Storyteller voice is consistent."
 This is the **structural outline** from the floor revision — branches
 per floor, direction, appearance — but phrased as:
 
-> *Your draft is growing as a flow. Narrative and geography are your
+> _Your draft is growing as a flow. Narrative and geography are your
 > strongest grains. Three branches are dormant — consider pruning or
-> revisiting.*
+> revisiting._
 
 **Impression:** "The tool remembers what I've been doing, even when
 I've lost the thread."
@@ -167,12 +167,12 @@ I've lost the thread."
 
 ## What stays, what changes
 
-| Current | Stays | Changes |
-|---------|-------|---------|
-| Canvas (seeds, branches, snapshots, compare) | Yes — this is the workspace | Snapshots gain quiet grain marks + direction hints |
-| Dashboard (health, timeline, experiments, focus) | Yes — operational layer | Add voice selector; health section reflects draft state not repo state |
-| GATE (envelope verification, audit, nonces) | Yes — integrity layer | Rule evidence panel added (same component pattern, expand-on-demand) |
-| AppShell nav (Canvas / Dashboard / GATE) | Yes — 3 tabs | Voice selector added to nav bar (compact, not a new tab) |
+| Current                                          | Stays                       | Changes                                                                |
+| ------------------------------------------------ | --------------------------- | ---------------------------------------------------------------------- |
+| Canvas (seeds, branches, snapshots, compare)     | Yes — this is the workspace | Snapshots gain quiet grain marks + direction hints                     |
+| Dashboard (health, timeline, experiments, focus) | Yes — operational layer     | Add voice selector; health section reflects draft state not repo state |
+| GATE (envelope verification, audit, nonces)      | Yes — integrity layer       | Rule evidence panel added (same component pattern, expand-on-demand)   |
+| AppShell nav (Canvas / Dashboard / GATE)         | Yes — 3 tabs                | Voice selector added to nav bar (compact, not a new tab)               |
 
 ---
 

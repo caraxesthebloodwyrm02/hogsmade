@@ -4,7 +4,7 @@
  * @description Coverage gate — fails if coverage drops below threshold
  */
 
-import { execSync } from 'node:child_process';
+import { execSync } from "node:child_process";
 
 const THRESHOLD = 70; // Start at 70%, ratchet up as coverage improves
 
@@ -12,16 +12,16 @@ console.log(`🔍 Running coverage check (threshold: ${THRESHOLD}%)...\n`);
 
 try {
   const output = execSync(
-    'node --test --experimental-test-coverage tests/drift-guard/*.test.js 2>&1',
-    { encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }
+    "node --test --experimental-test-coverage tests/drift-guard/*.test.js 2>&1",
+    { encoding: "utf8", stdio: ["pipe", "pipe", "pipe"] },
   );
 
   // Extract coverage from output
-  const lines = output.split('\n');
+  const lines = output.split("\n");
   let coverageFound = false;
 
   for (const line of lines) {
-    if (line.includes('%') && (line.includes('coverage') || line.includes(' Coverage'))) {
+    if (line.includes("%") && (line.includes("coverage") || line.includes(" Coverage"))) {
       console.log(line);
       const match = line.match(/(\d+(?:\.\d+)?)%/);
       if (match) {
@@ -39,13 +39,13 @@ try {
   }
 
   if (!coverageFound) {
-    console.log('\n⚠️  Could not parse coverage output, check manually');
+    console.log("\n⚠️  Could not parse coverage output, check manually");
     console.log(output.slice(-500)); // Last 500 chars for debugging
     process.exit(0); // Soft pass if we can't parse
   }
 } catch (error) {
   // Even on test failure, try to extract coverage
-  const output = error.stdout || error.message || '';
+  const output = error.stdout || error.message || "";
   console.log(output);
 
   const match = output.match(/(\d+(?:\.\d+)?)%/);

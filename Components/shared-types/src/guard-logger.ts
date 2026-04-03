@@ -64,11 +64,7 @@ const COLORS = {
 /**
  * Determine if a message should be printed based on level and scope
  */
-export function shouldPrint(
-  level: PrintLevel,
-  scope: MitigationScope,
-  verbosity: number
-): boolean {
+export function shouldPrint(level: PrintLevel, scope: MitigationScope, verbosity: number): boolean {
   const minLevel = SCOPE_MIN_LEVEL[scope];
   return level <= verbosity && level >= minLevel;
 }
@@ -237,14 +233,14 @@ export function createGuardLogger(
   serverName: string,
   scope: MitigationScope,
   config: GuardRuntimeConfig,
-  correlationId?: string
+  correlationId?: string,
 ): GuardLogger {
   const writer = new GuardLogWriter(config);
 
   function createEvent(
     level: GuardPrintEvent["level"],
     msg: string,
-    meta?: Record<string, unknown>
+    meta?: Record<string, unknown>,
   ): GuardPrintEvent {
     return {
       timestamp: new Date().toISOString(),
@@ -313,7 +309,7 @@ export function createSilentLogger(): GuardLogger {
 export function createLogger(
   serverName: string,
   scope: MitigationScope = "STANDARD",
-  config?: GuardRuntimeConfig
+  config?: GuardRuntimeConfig,
 ): GuardLogger {
   const runtimeConfig = config || {
     enabled: true,

@@ -17,21 +17,14 @@
   "packages": [
     {
       "source": "../pi-mangrove",
-      "extensions": [
-        "extensions/dio-bridge.ts",
-        "extensions/local-guard.ts"
-      ],
+      "extensions": ["extensions/dio-bridge.ts", "extensions/local-guard.ts"],
       "skills": [
         "skills/iterate/**",
         "skills/glimpse/**",
         "skills/lifeguard-review/**",
         "skills/trust-layer-review/**"
       ],
-      "prompts": [
-        "prompts/mangrove-dev.md",
-        "prompts/tuv-review.md",
-        "prompts/safety-gate.md"
-      ]
+      "prompts": ["prompts/mangrove-dev.md", "prompts/tuv-review.md", "prompts/safety-gate.md"]
     }
   ]
 }

@@ -10,11 +10,12 @@ Successfully hardened Claude Code configuration by removing external plugins, di
 
 ### 1. Settings Updated (`~/.claude/settings.json`)
 
-| Setting | Before | After |
-|---------|--------|-------|
+| Setting                             | Before | After   |
+| ----------------------------------- | ------ | ------- |
 | `skipDangerousModePermissionPrompt` | `true` | `false` |
 
 **Plugins Removed (5 external):**
+
 - `qodo-skills` - Qodo/CodiumAI external service
 - `superpowers` - External hooks, Windows .cmd files causing errors
 - `serena` - External LSP service
@@ -22,6 +23,7 @@ Successfully hardened Claude Code configuration by removing external plugins, di
 - `semgrep` - External scanner causing hook delivery errors
 
 **Plugins Retained (14 official Anthropic):**
+
 - `frontend-design`, `code-review`, `feature-dev`, `code-simplifier`
 - `typescript-lsp`, `security-guidance`, `claude-md-management`
 - `commit-commands`, `ralph-loop`, `pyright-lsp`, `plugin-dev`
@@ -36,18 +38,22 @@ Successfully hardened Claude Code configuration by removing external plugins, di
 ### 3. Global State Cleaned (`~/.claude.json`)
 
 **MCP Servers:**
+
 - Removed `filesystem` server (was pointed at placeholder `/your/nested/repo`)
 - Kept `memory` server (useful for session memory)
 
 **Duplicate Project Entries Removed (3):**
+
 - `/mnt/c/Users/USER/CascadeProjects`
 - `/mnt/c/users/USER/cascadeprojects`
 - `/mnt/c/users/user/CascadeProjects`
 
 **Canonical Path Retained:**
+
 - `/mnt/c/Users/USER/cascadeprojects`
 
 **GitHub Repo Paths Cleaned:**
+
 - Removed duplicate path references
 - All repos now point to canonical paths only
 
@@ -72,6 +78,7 @@ Both plugins have been disabled.
 ## Permission Rejection Investigation
 
 During cleanup, encountered `PermissionRejectedError` with `_tag` field when attempting to:
+
 - Read `~/.claude/settings.json` via bash cat
 - Read `~/.claude/plugins/blocklist.json`
 - Write to `~/.claude-memory/`
@@ -81,6 +88,7 @@ During cleanup, encountered `PermissionRejectedError` with `_tag` field when att
 This is the OpenCode CLI configuration file. The permission system is part of the OpenCode tool framework, not a local denylist. The config contains provider settings for Ollama models but the permission restrictions are enforced at the tool level.
 
 **OpenCode Config Contents:**
+
 ```json
 {
   "$schema": "https://opencode.ai/config.json",
@@ -104,16 +112,17 @@ The permission rejections are **runtime tool restrictions**, not config-based de
 
 ## Items Not Completed (Cancelled)
 
-| Item | Reason |
-|------|--------|
-| Centralized memory directory | Permission rejected by tool framework |
-| Full duplicate cleanup via single edit | Pattern restriction on large edits |
+| Item                                   | Reason                                |
+| -------------------------------------- | ------------------------------------- |
+| Centralized memory directory           | Permission rejected by tool framework |
+| Full duplicate cleanup via single edit | Pattern restriction on large edits    |
 
 ---
 
 ## Final State
 
 ### Projects in `.claude.json` (Cleaned)
+
 ```
 /home/user
 /home/user/projects/web
@@ -127,9 +136,11 @@ The permission rejections are **runtime tool restrictions**, not config-based de
 ```
 
 ### Enabled Plugins (14)
+
 All official Anthropic plugins from `claude-plugins-official` marketplace.
 
 ### MCP Servers
+
 - Project-level `memory` server only
 - Gmail and Calendar connections retained (user preference)
 
@@ -159,5 +170,5 @@ du -sh ~/.claude/debug/
 
 ---
 
-*Report generated: 2026-03-18*
-*Session: OpenCode + claude-opus-4.5*
+_Report generated: 2026-03-18_
+_Session: OpenCode + claude-opus-4.5_

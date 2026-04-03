@@ -2,7 +2,7 @@ export interface HealthScore {
   repoName: string;
   score: number;
   label: string;
-  trend: 'up' | 'down' | 'stable';
+  trend: "up" | "down" | "stable";
 }
 
 export interface AuditEvent {
@@ -10,7 +10,7 @@ export interface AuditEvent {
   timestamp: string;
   tool: string;
   source: string;
-  status: 'success' | 'failure' | 'blocked' | 'dry_run' | 'error';
+  status: "success" | "failure" | "blocked" | "dry_run" | "error";
   durationMs?: number;
   summary?: string;
 }
@@ -18,7 +18,7 @@ export interface AuditEvent {
 export interface Experiment {
   id: string;
   name: string;
-  status: 'running' | 'completed' | 'failed' | 'queued';
+  status: "running" | "completed" | "failed" | "queued";
   metric: string;
   baselineValue: number;
   currentValue: number;
@@ -29,7 +29,7 @@ export interface Experiment {
 export interface WorkflowRun {
   id: string;
   workflowName: string;
-  status: 'pending' | 'running' | 'completed' | 'failed';
+  status: "pending" | "running" | "completed" | "failed";
   steps: WorkflowStep[];
   startedAt: string;
   completedAt?: string;
@@ -38,7 +38,7 @@ export interface WorkflowRun {
 
 export interface WorkflowStep {
   name: string;
-  status: 'pending' | 'running' | 'done' | 'failed' | 'skipped';
+  status: "pending" | "running" | "done" | "failed" | "skipped";
   durationMs?: number;
 }
 
@@ -87,7 +87,7 @@ export interface McpServerNode {
 export interface McpEdge {
   source: string;
   target: string;
-  type: 'dependency' | 'dataflow';
+  type: "dependency" | "dataflow";
   label?: string;
 }
 
@@ -131,7 +131,7 @@ export interface RealtimePatternState {
 }
 
 export interface RealtimeAnomaly {
-  type: 'LOW_CONFIDENCE' | 'HIGH_GAP_COUNT';
+  type: "LOW_CONFIDENCE" | "HIGH_GAP_COUNT";
   score?: number;
   gapCount?: number;
   timestamp: string;
@@ -143,10 +143,10 @@ export interface PipelinePR {
   id: string;
   title: string;
   author: string;
-  source: 'dependabot' | 'human';
-  status: 'pending' | 'scanning' | 'building' | 'merged' | 'fix-queue';
+  source: "dependabot" | "human";
+  status: "pending" | "scanning" | "building" | "merged" | "fix-queue";
   labels: string[];
-  runnerType?: 'self-hosted' | 'github';
+  runnerType?: "self-hosted" | "github";
   createdAt: string;
   updatedAt: string;
   repo?: string;
@@ -157,7 +157,7 @@ export interface PipelinePR {
 
 export interface EnvelopeStage {
   name: string;
-  status: 'passed' | 'failed' | 'pending' | 'skipped';
+  status: "passed" | "failed" | "pending" | "skipped";
   details?: string;
   durationMs?: number;
 }
@@ -169,11 +169,11 @@ export interface KeywordTerm {
   canonicalTerm: string;
   weight: number;
   expansions: string[];
-  source: 'deterministic' | 'openai' | 'ollama';
+  source: "deterministic" | "openai" | "ollama";
 }
 
 export interface KeywordBundle {
-  provider: 'deterministic' | 'openai' | 'ollama';
+  provider: "deterministic" | "openai" | "ollama";
   accepted: KeywordTerm[];
   rejectedTerms: string[];
   unknownTerms: string[];
@@ -197,7 +197,7 @@ export interface ContextSearchHit {
 export interface ReferenceGraphNode {
   id: string;
   label: string;
-  type: 'cluster' | 'file';
+  type: "cluster" | "file";
   cluster?: string;
   score: number;
 }
@@ -205,7 +205,7 @@ export interface ReferenceGraphNode {
 export interface ReferenceGraphEdge {
   source: string;
   target: string;
-  type: 'belongs_to' | 'references' | 'transfer';
+  type: "belongs_to" | "references" | "transfer";
   weight: number;
   label?: string;
 }
@@ -226,14 +226,14 @@ export interface HeatmapCell {
 }
 
 export interface InterviewSpeaker {
-  id: 'interviewer' | 'retriever' | 'mapper' | 'skeptic' | 'synthesizer';
+  id: "interviewer" | "retriever" | "mapper" | "skeptic" | "synthesizer";
   label: string;
   role: string;
 }
 
 export interface ArtifactCard {
   id: string;
-  type: 'paragraph' | 'graph' | 'cluster_map' | 'heatmap' | 'checklist';
+  type: "paragraph" | "graph" | "cluster_map" | "heatmap" | "checklist";
   title: string;
   content: string;
   evidenceRefs: string[];
@@ -241,7 +241,7 @@ export interface ArtifactCard {
 
 export interface InterviewTurn {
   id: string;
-  speakerId: InterviewSpeaker['id'];
+  speakerId: InterviewSpeaker["id"];
   text: string;
   evidenceRefs: string[];
   artifactRefs: string[];
@@ -250,7 +250,7 @@ export interface InterviewTurn {
 
 export interface CollectionRow {
   rowId: string;
-  rowType: 'attribute' | 'dimension';
+  rowType: "attribute" | "dimension";
   candidateId: string;
   dimension: string;
   attributeId: string | null;
@@ -277,7 +277,7 @@ export interface ConditionNote {
   id: string;
   candidateId: string;
   dimension: string;
-  severity: 'info' | 'watch' | 'priority';
+  severity: "info" | "watch" | "priority";
   message: string;
   sourceWeightIds: string[];
 }
@@ -318,7 +318,7 @@ export interface ContextSearchObservation {
 
 export interface ContextSearchStageResult {
   stage: string;
-  status: 'completed' | 'skipped';
+  status: "completed" | "skipped";
   message: string;
   counts: Record<string, number>;
 }
@@ -345,20 +345,20 @@ export interface ContextSearchResult {
 
 // ── Evolution Cycle ─────────────────────────────────────────────────
 
-export type CycleBeat = 'map' | 'balance' | 'tighten' | 'verify';
-export type CycleStatus = 'active' | 'promotion_pending' | 'promoted' | 'returned' | 'archived';
+export type CycleBeat = "map" | "balance" | "tighten" | "verify";
+export type CycleStatus = "active" | "promotion_pending" | "promoted" | "returned" | "archived";
 export type PromotionGateDecision =
-  | 'allow_promotion'
-  | 'hold_for_tighten'
-  | 'return_to_balance'
-  | 'deny_promotion';
+  | "allow_promotion"
+  | "hold_for_tighten"
+  | "return_to_balance"
+  | "deny_promotion";
 
 export interface EndpointSpec {
   id: string;
   label: string;
   owner?: string;
   contract?: string;
-  status: 'draft' | 'ready' | 'blocked' | 'verified';
+  status: "draft" | "ready" | "blocked" | "verified";
   required: boolean;
   readiness?: number;
   notes?: string;
@@ -370,7 +370,7 @@ export interface HandoffRecord {
   caseId: string;
   from: string;
   to: string;
-  status: 'submitted' | 'accepted' | 'rejected';
+  status: "submitted" | "accepted" | "rejected";
   summary: string;
   beat: CycleBeat;
   recordedAt: string;
@@ -380,16 +380,16 @@ export interface CycleSignal {
   id: string;
   caseId: string;
   type:
-    | 'endpoint_spec_changed'
-    | 'integration_call_succeeded'
-    | 'integration_call_failed'
-    | 'handoff_submitted'
-    | 'handoff_accepted'
-    | 'handoff_rejected'
-    | 'test_passed'
-    | 'test_failed'
-    | 'condition_escalated'
-    | 'heartbeat_stale';
+    | "endpoint_spec_changed"
+    | "integration_call_succeeded"
+    | "integration_call_failed"
+    | "handoff_submitted"
+    | "handoff_accepted"
+    | "handoff_rejected"
+    | "test_passed"
+    | "test_failed"
+    | "condition_escalated"
+    | "heartbeat_stale";
   weight: number;
   beat: CycleBeat;
   source: string;
@@ -438,14 +438,14 @@ export interface CycleTimelineEntry {
   id: string;
   caseId: string;
   event:
-    | 'case_opened'
-    | 'beat_advanced'
-    | 'case_returned'
-    | 'signal_recorded'
-    | 'endpoint_upserted'
-    | 'handoff_recorded'
-    | 'promotion_blocked'
-    | 'promotion_allowed';
+    | "case_opened"
+    | "beat_advanced"
+    | "case_returned"
+    | "signal_recorded"
+    | "endpoint_upserted"
+    | "handoff_recorded"
+    | "promotion_blocked"
+    | "promotion_allowed";
   beat: CycleBeat;
   status: CycleStatus;
   timestamp: string;
@@ -462,7 +462,7 @@ export interface ReturnRecord {
 
 export interface BeatRailEntry {
   beat: CycleBeat;
-  state: 'complete' | 'current' | 'pending';
+  state: "complete" | "current" | "pending";
 }
 
 export interface EvolutionCase {
@@ -497,7 +497,7 @@ export interface CycleSnapshot {
 
 // ── Shader Pipeline Types ────────────────────────────────────────────
 
-export type WeightBand = 'trace' | 'steady' | 'elevated' | 'dominant';
+export type WeightBand = "trace" | "steady" | "elevated" | "dominant";
 
 export interface ShaderDataPayload {
   snapshot: CycleSnapshot;

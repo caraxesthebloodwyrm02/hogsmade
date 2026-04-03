@@ -1,6 +1,6 @@
-import React from 'react';
-import { cn } from '@/lib/utils';
-import type { ScenarioSeed } from '../types';
+import React from "react";
+import { cn } from "@/lib/utils";
+import type { ScenarioSeed } from "../types";
 
 interface ScenarioSeedCardProps {
   seed: ScenarioSeed;
@@ -13,8 +13,8 @@ export function ScenarioSeedCard({ seed, onFork, className, style }: ScenarioSee
   return (
     <div
       className={cn(
-        'w-64 glass-panel border-2 border-teal-500/50 p-4 shadow-token-md card-glow',
-        className
+        "w-64 glass-panel border-2 border-teal-500/50 p-4 shadow-token-md card-glow",
+        className,
       )}
       style={style}
       data-draggable
@@ -31,9 +31,7 @@ export function ScenarioSeedCard({ seed, onFork, className, style }: ScenarioSee
         </h3>
       </div>
 
-      <p className="font-body text-sm text-ink-muted line-clamp-3 mb-3">
-        {seed.description}
-      </p>
+      <p className="font-body text-sm text-ink-muted line-clamp-3 mb-3">{seed.description}</p>
 
       {onFork && (
         <button

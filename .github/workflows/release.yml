@@ -96,7 +96,7 @@ jobs:
 
       - name: Build eligibility-server
         env:
-          NODE_OPTIONS: '--max-old-space-size=8192'
+          NODE_OPTIONS: "--max-old-space-size=8192"
         run: cd Tools/MCPServers/eligibility-server && npm ci && npm run build
 
       - name: Build MCP Servers

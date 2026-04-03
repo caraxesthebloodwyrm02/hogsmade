@@ -54,40 +54,45 @@ function registerSignal(name, layer, fn) {
 registerSignal("hot_file", "file", (ctx, args) => {
   const minAppearances = args.min_appearances || 3;
   const fileIndex = ctx.history?.fileIndex || {};
-  const hotFiles = ctx.records.filter(r => {
+  const hotFiles = ctx.records.filter((r) => {
     const idx = fileIndex[r.path];
     return idx && idx.appearances >= minAppearances;
   });
   return {
     matched: hotFiles.length > 0,
     value: hotFiles.length,
-    reason: hotFiles.length > 0
-      ? `${hotFiles.length} hot file${hotFiles.length > 1 ? "s" : ""} (${hotFiles.slice(0, 3).map(f => f.name).join(", ")})`
-      : "no hot files in this session",
-    payload: { files: hotFiles.map(f => f.name) },
+    reason:
+      hotFiles.length > 0
+        ? `${hotFiles.length} hot file${hotFiles.length > 1 ? "s" : ""} (${hotFiles
+            .slice(0, 3)
+            .map((f) => f.name)
+            .join(", ")})`
+        : "no hot files in this session",
+    payload: { files: hotFiles.map((f) => f.name) },
   };
 });
 
 registerSignal("cooling_file", "file", (ctx, args) => {
   const maxAppearances = args.max_appearances || 1;
   const fileIndex = ctx.history?.fileIndex || {};
-  const cooling = ctx.records.filter(r => {
+  const cooling = ctx.records.filter((r) => {
     const idx = fileIndex[r.path];
     return idx && idx.appearances <= maxAppearances && idx.totalChurn > 0;
   });
   return {
     matched: cooling.length > 0,
     value: cooling.length,
-    reason: cooling.length > 0
-      ? `${cooling.length} file${cooling.length > 1 ? "s" : ""} cooling down (rarely touched)`
-      : "no cooling files",
+    reason:
+      cooling.length > 0
+        ? `${cooling.length} file${cooling.length > 1 ? "s" : ""} cooling down (rarely touched)`
+        : "no cooling files",
   };
 });
 
 registerSignal("churn_accelerating", "file", (ctx, args) => {
   const threshold = args.churn_ratio || 1.5;
   const fileIndex = ctx.history?.fileIndex || {};
-  const accelerating = ctx.records.filter(r => {
+  const accelerating = ctx.records.filter((r) => {
     const idx = fileIndex[r.path];
     if (!idx || idx.appearances < 2) return false;
     const avgChurn = idx.totalChurn / idx.appearances;
@@ -96,10 +101,14 @@ registerSignal("churn_accelerating", "file", (ctx, args) => {
   return {
     matched: accelerating.length > 0,
     value: accelerating.length,
-    reason: accelerating.length > 0
-      ? `${accelerating.length} file${accelerating.length > 1 ? "s" : ""} with accelerating churn (${accelerating.slice(0, 2).map(f => f.name).join(", ")})`
-      : "churn is stable across files",
-    payload: { files: accelerating.map(f => f.name) },
+    reason:
+      accelerating.length > 0
+        ? `${accelerating.length} file${accelerating.length > 1 ? "s" : ""} with accelerating churn (${accelerating
+            .slice(0, 2)
+            .map((f) => f.name)
+            .join(", ")})`
+        : "churn is stable across files",
+    payload: { files: accelerating.map((f) => f.name) },
   };
 });
 
@@ -107,14 +116,15 @@ registerSignal("consecutive_file", "file", (ctx, args) => {
   const minConsecutive = args.min_consecutive || 3;
   const trend = ctx.history?.confidenceTrend || [];
   const recentN = trend.slice(-minConsecutive);
-  if (recentN.length < minConsecutive) return { matched: false, value: 0, reason: "not enough history" };
+  if (recentN.length < minConsecutive)
+    return { matched: false, value: 0, reason: "not enough history" };
 
-  const currentFiles = new Set(ctx.records.map(r => r.path));
+  const currentFiles = new Set(ctx.records.map((r) => r.path));
   const fileStreaks = {};
   for (const file of currentFiles) {
     let streak = 1;
     for (let i = recentN.length - 1; i >= 0; i--) {
-      const sessionFiles = (recentN[i].files_list || []);
+      const sessionFiles = recentN[i].files_list || [];
       if (sessionFiles.includes(file)) streak++;
       else break;
     }
@@ -125,16 +135,17 @@ registerSignal("consecutive_file", "file", (ctx, args) => {
   return {
     matched: streakFiles.length > 0,
     value: streakFiles.length,
-    reason: streakFiles.length > 0
-      ? `${streakFiles.length} file${streakFiles.length > 1 ? "s" : ""} in ${Object.values(fileStreaks)[0]}+ consecutive sessions`
-      : "no consecutive file streaks",
+    reason:
+      streakFiles.length > 0
+        ? `${streakFiles.length} file${streakFiles.length > 1 ? "s" : ""} in ${Object.values(fileStreaks)[0]}+ consecutive sessions`
+        : "no consecutive file streaks",
     payload: { streaks: fileStreaks },
   };
 });
 
 registerSignal("file_vector_shift", "file", (ctx, args) => {
   const fileIndex = ctx.history?.fileIndex || {};
-  const shifted = ctx.records.filter(r => {
+  const shifted = ctx.records.filter((r) => {
     const idx = fileIndex[r.path];
     if (!idx || !idx.vectors) return false;
     const historicalTop = topKey(idx.vectors);
@@ -143,10 +154,17 @@ registerSignal("file_vector_shift", "file", (ctx, args) => {
   return {
     matched: shifted.length > 0,
     value: shifted.length,
-    reason: shifted.length > 0
-      ? `${shifted.length} file${shifted.length > 1 ? "s" : ""} shifted vector (e.g. ${shifted[0]?.name}: was ${topKey(fileIndex[shifted[0]?.path]?.vectors)}, now ${shifted[0]?.vector})`
-      : "file vectors are consistent with history",
-    payload: { files: shifted.map(f => ({ name: f.name, current: f.vector, historical: topKey(fileIndex[f.path]?.vectors) })) },
+    reason:
+      shifted.length > 0
+        ? `${shifted.length} file${shifted.length > 1 ? "s" : ""} shifted vector (e.g. ${shifted[0]?.name}: was ${topKey(fileIndex[shifted[0]?.path]?.vectors)}, now ${shifted[0]?.vector})`
+        : "file vectors are consistent with history",
+    payload: {
+      files: shifted.map((f) => ({
+        name: f.name,
+        current: f.vector,
+        historical: topKey(fileIndex[f.path]?.vectors),
+      })),
+    },
   };
 });
 
@@ -158,16 +176,21 @@ registerSignal("home_turf", "directory", (ctx, args) => {
   const minSessions = args.min_sessions || 5;
   const trend = ctx.history?.confidenceTrend || [];
   const dirCounts = {};
-  trend.forEach(t => (t.dirs || []).forEach(d => { dirCounts[d] = (dirCounts[d] || 0) + 1; }));
+  trend.forEach((t) =>
+    (t.dirs || []).forEach((d) => {
+      dirCounts[d] = (dirCounts[d] || 0) + 1;
+    }),
+  );
 
-  const currentDirs = [...new Set(ctx.records.map(r => r.directory))];
-  const familiar = currentDirs.filter(d => (dirCounts[d] || 0) >= minSessions);
+  const currentDirs = [...new Set(ctx.records.map((r) => r.directory))];
+  const familiar = currentDirs.filter((d) => (dirCounts[d] || 0) >= minSessions);
   return {
     matched: familiar.length > 0,
     value: familiar.length,
-    reason: familiar.length > 0
-      ? `${familiar.length} dir${familiar.length > 1 ? "s" : ""} are home turf (${familiar.slice(0, 3).join(", ")})`
-      : "no familiar directories",
+    reason:
+      familiar.length > 0
+        ? `${familiar.length} dir${familiar.length > 1 ? "s" : ""} are home turf (${familiar.slice(0, 3).join(", ")})`
+        : "no familiar directories",
     payload: { dirs: familiar },
   };
 });
@@ -175,16 +198,17 @@ registerSignal("home_turf", "directory", (ctx, args) => {
 registerSignal("new_territory", "directory", (ctx, args) => {
   const trend = ctx.history?.confidenceTrend || [];
   const allHistoricalDirs = new Set();
-  trend.forEach(t => (t.dirs || []).forEach(d => allHistoricalDirs.add(d)));
+  trend.forEach((t) => (t.dirs || []).forEach((d) => allHistoricalDirs.add(d)));
 
-  const currentDirs = [...new Set(ctx.records.map(r => r.directory))];
-  const novel = currentDirs.filter(d => !allHistoricalDirs.has(d));
+  const currentDirs = [...new Set(ctx.records.map((r) => r.directory))];
+  const novel = currentDirs.filter((d) => !allHistoricalDirs.has(d));
   return {
     matched: novel.length > 0,
     value: novel.length,
-    reason: novel.length > 0
-      ? `${novel.length} new area${novel.length > 1 ? "s" : ""} (${novel.slice(0, 3).join(", ")})`
-      : "all areas previously visited",
+    reason:
+      novel.length > 0
+        ? `${novel.length} new area${novel.length > 1 ? "s" : ""} (${novel.slice(0, 3).join(", ")})`
+        : "all areas previously visited",
     payload: { dirs: novel },
   };
 });
@@ -192,21 +216,25 @@ registerSignal("new_territory", "directory", (ctx, args) => {
 registerSignal("abandoned_zone", "directory", (ctx, args) => {
   const staleThreshold = args.sessions_since || 10;
   const trend = ctx.history?.confidenceTrend || [];
-  const currentDirs = [...new Set(ctx.records.map(r => r.directory))];
+  const currentDirs = [...new Set(ctx.records.map((r) => r.directory))];
 
-  const returning = currentDirs.filter(d => {
+  const returning = currentDirs.filter((d) => {
     let lastSeen = -1;
     for (let i = trend.length - 1; i >= 0; i--) {
-      if ((trend[i].dirs || []).includes(d)) { lastSeen = trend.length - i; break; }
+      if ((trend[i].dirs || []).includes(d)) {
+        lastSeen = trend.length - i;
+        break;
+      }
     }
     return lastSeen >= staleThreshold;
   });
   return {
     matched: returning.length > 0,
     value: returning.length,
-    reason: returning.length > 0
-      ? `returning to ${returning.length} abandoned area${returning.length > 1 ? "s" : ""} (${returning.join(", ")})`
-      : "no abandoned zones revisited",
+    reason:
+      returning.length > 0
+        ? `returning to ${returning.length} abandoned area${returning.length > 1 ? "s" : ""} (${returning.join(", ")})`
+        : "no abandoned zones revisited",
     payload: { dirs: returning },
   };
 });
@@ -217,9 +245,9 @@ registerSignal("dir_vector_shift", "directory", (ctx, args) => {
   const recent = trend.slice(-recentN);
 
   const historicalDirVectors = {};
-  recent.forEach(t => {
+  recent.forEach((t) => {
     for (const [v, c] of Object.entries(t.vectorMix || {})) {
-      (t.dirs || []).forEach(d => {
+      (t.dirs || []).forEach((d) => {
         if (!historicalDirVectors[d]) historicalDirVectors[d] = {};
         historicalDirVectors[d][v] = (historicalDirVectors[d][v] || 0) + c;
       });
@@ -227,14 +255,14 @@ registerSignal("dir_vector_shift", "directory", (ctx, args) => {
   });
 
   const currentDirVectors = {};
-  ctx.records.forEach(r => {
+  ctx.records.forEach((r) => {
     if (!currentDirVectors[r.directory]) currentDirVectors[r.directory] = {};
-    (r.vectors || []).forEach(v => {
+    (r.vectors || []).forEach((v) => {
       currentDirVectors[r.directory][v] = (currentDirVectors[r.directory][v] || 0) + 1;
     });
   });
 
-  const shifted = Object.keys(currentDirVectors).filter(d => {
+  const shifted = Object.keys(currentDirVectors).filter((d) => {
     const histTop = topKey(historicalDirVectors[d]);
     const currTop = topKey(currentDirVectors[d]);
     return histTop && currTop && histTop !== currTop;
@@ -243,9 +271,10 @@ registerSignal("dir_vector_shift", "directory", (ctx, args) => {
   return {
     matched: shifted.length > 0,
     value: shifted.length,
-    reason: shifted.length > 0
-      ? `${shifted.length} dir${shifted.length > 1 ? "s" : ""} shifted work type`
-      : "directory work types are consistent",
+    reason:
+      shifted.length > 0
+        ? `${shifted.length} dir${shifted.length > 1 ? "s" : ""} shifted work type`
+        : "directory work types are consistent",
   };
 });
 
@@ -259,7 +288,7 @@ registerSignal("deep_stint", "project", (ctx, args) => {
   const recentN = trend.slice(-(minConsecutive + 1));
 
   // Infer project from dirs
-  const currentProject = inferProject(ctx.records.map(r => r.directory));
+  const currentProject = inferProject(ctx.records.map((r) => r.directory));
   if (!currentProject) return { matched: false, value: 0, reason: "project could not be inferred" };
 
   let consecutiveInProject = 0;
@@ -272,9 +301,10 @@ registerSignal("deep_stint", "project", (ctx, args) => {
   return {
     matched: consecutiveInProject >= minConsecutive,
     value: consecutiveInProject,
-    reason: consecutiveInProject >= minConsecutive
-      ? `${consecutiveInProject + 1} consecutive sessions in ${currentProject}`
-      : `session ${consecutiveInProject + 1} in ${currentProject}`,
+    reason:
+      consecutiveInProject >= minConsecutive
+        ? `${consecutiveInProject + 1} consecutive sessions in ${currentProject}`
+        : `session ${consecutiveInProject + 1} in ${currentProject}`,
     payload: { project: currentProject, consecutive: consecutiveInProject + 1 },
   };
 });
@@ -286,19 +316,20 @@ registerSignal("project_hopping", "project", (ctx, args) => {
   const recentN = trend.slice(-windowSize);
 
   const projects = new Set();
-  recentN.forEach(t => {
+  recentN.forEach((t) => {
     const p = inferProject(t.dirs || []);
     if (p) projects.add(p);
   });
-  const currentProject = inferProject(ctx.records.map(r => r.directory));
+  const currentProject = inferProject(ctx.records.map((r) => r.directory));
   if (currentProject) projects.add(currentProject);
 
   return {
     matched: projects.size >= minProjects,
     value: projects.size,
-    reason: projects.size >= minProjects
-      ? `${projects.size} different projects in last ${windowSize} sessions (${[...projects].join(", ")})`
-      : `staying focused: ${projects.size} project${projects.size > 1 ? "s" : ""} in last ${windowSize} sessions`,
+    reason:
+      projects.size >= minProjects
+        ? `${projects.size} different projects in last ${windowSize} sessions (${[...projects].join(", ")})`
+        : `staying focused: ${projects.size} project${projects.size > 1 ? "s" : ""} in last ${windowSize} sessions`,
     payload: { projects: [...projects] },
   };
 });
@@ -306,7 +337,7 @@ registerSignal("project_hopping", "project", (ctx, args) => {
 registerSignal("returning_after_absence", "project", (ctx, args) => {
   const minAbsence = args.min_absence || 5;
   const trend = ctx.history?.confidenceTrend || [];
-  const currentProject = inferProject(ctx.records.map(r => r.directory));
+  const currentProject = inferProject(ctx.records.map((r) => r.directory));
   if (!currentProject) return { matched: false, value: 0, reason: "project could not be inferred" };
 
   let sessionsSinceLast = 0;
@@ -319,9 +350,10 @@ registerSignal("returning_after_absence", "project", (ctx, args) => {
   return {
     matched: sessionsSinceLast >= minAbsence,
     value: sessionsSinceLast,
-    reason: sessionsSinceLast >= minAbsence
-      ? `returning to ${currentProject} after ${sessionsSinceLast} sessions away`
-      : `${currentProject} is recent (${sessionsSinceLast} sessions since last visit)`,
+    reason:
+      sessionsSinceLast >= minAbsence
+        ? `returning to ${currentProject} after ${sessionsSinceLast} sessions away`
+        : `${currentProject} is recent (${sessionsSinceLast} sessions since last visit)`,
     payload: { project: currentProject, absence: sessionsSinceLast },
   };
 });
@@ -333,22 +365,27 @@ registerSignal("returning_after_absence", "project", (ctx, args) => {
 registerSignal("is_deep", "shape", (ctx, args) => {
   const maxDirs = args.max_dirs || 2;
   const minFiles = args.min_files || 3;
-  const dirs = [...new Set(ctx.records.map(r => r.directory))];
+  const dirs = [...new Set(ctx.records.map((r) => r.directory))];
   const deep = dirs.length <= maxDirs && ctx.records.length >= minFiles;
   return {
     matched: deep,
     value: dirs.length,
-    reason: deep ? `deep session: ${ctx.records.length} files in ${dirs.length} dir${dirs.length > 1 ? "s" : ""}` : "not a deep session",
+    reason: deep
+      ? `deep session: ${ctx.records.length} files in ${dirs.length} dir${dirs.length > 1 ? "s" : ""}`
+      : "not a deep session",
   };
 });
 
 registerSignal("is_scattered", "shape", (ctx, args) => {
   const minDirs = args.min_dirs || 5;
-  const dirs = [...new Set(ctx.records.map(r => r.directory))];
+  const dirs = [...new Set(ctx.records.map((r) => r.directory))];
   return {
     matched: dirs.length >= minDirs,
     value: dirs.length,
-    reason: dirs.length >= minDirs ? `scattered across ${dirs.length} directories` : `focused: ${dirs.length} directories`,
+    reason:
+      dirs.length >= minDirs
+        ? `scattered across ${dirs.length} directories`
+        : `focused: ${dirs.length} directories`,
   };
 });
 
@@ -356,14 +393,21 @@ registerSignal("vector_dominant", "shape", (ctx, args) => {
   const target = args.vector;
   const minRatio = args.min_ratio || 0.5;
   const vectorCounts = {};
-  ctx.records.forEach(r => (r.vectors || []).forEach(v => { vectorCounts[v] = (vectorCounts[v] || 0) + 1; }));
+  ctx.records.forEach((r) =>
+    (r.vectors || []).forEach((v) => {
+      vectorCounts[v] = (vectorCounts[v] || 0) + 1;
+    }),
+  );
   const total = Object.values(vectorCounts).reduce((s, v) => s + v, 0) || 1;
   const targetCount = vectorCounts[target] || 0;
   const ratio = targetCount / total;
   return {
     matched: ratio >= minRatio,
     value: ratio,
-    reason: ratio >= minRatio ? `${target} is dominant (${(ratio * 100).toFixed(0)}% of vectors)` : `${target} is ${(ratio * 100).toFixed(0)}% of vectors`,
+    reason:
+      ratio >= minRatio
+        ? `${target} is dominant (${(ratio * 100).toFixed(0)}% of vectors)`
+        : `${target} is ${(ratio * 100).toFixed(0)}% of vectors`,
   };
 });
 
@@ -371,7 +415,8 @@ registerSignal("session_size", "shape", (ctx, args) => {
   const op = args.op || "gte";
   const threshold = args.files || 10;
   const count = ctx.records.length;
-  const matched = op === "gte" ? count >= threshold : op === "lte" ? count <= threshold : count === threshold;
+  const matched =
+    op === "gte" ? count >= threshold : op === "lte" ? count <= threshold : count === threshold;
   return {
     matched,
     value: count,
@@ -398,7 +443,7 @@ registerSignal("add_delete_ratio", "shape", (ctx, args) => {
 // ---------------------------------------------------------------------------
 
 registerSignal("no_tests", "risk", (ctx) => {
-  const hasTests = ctx.records.some(r => /test|spec/i.test(r.path));
+  const hasTests = ctx.records.some((r) => /test|spec/i.test(r.path));
   return {
     matched: !hasTests,
     value: !hasTests,
@@ -407,7 +452,7 @@ registerSignal("no_tests", "risk", (ctx) => {
 });
 
 registerSignal("has_tests", "risk", (ctx) => {
-  const hasTests = ctx.records.some(r => /test|spec/i.test(r.path));
+  const hasTests = ctx.records.some((r) => /test|spec/i.test(r.path));
   return {
     matched: hasTests,
     value: hasTests,
@@ -418,14 +463,15 @@ registerSignal("has_tests", "risk", (ctx) => {
 registerSignal("high_concentration", "risk", (ctx, args) => {
   const threshold = args.churn_pct || 0.6;
   const totalChurn = ctx.records.reduce((s, r) => s + (r.churn || 0), 0) || 1;
-  const max = ctx.records.reduce((best, r) => r.churn > (best?.churn || 0) ? r : best, null);
+  const max = ctx.records.reduce((best, r) => (r.churn > (best?.churn || 0) ? r : best), null);
   const ratio = max ? max.churn / totalChurn : 0;
   return {
     matched: ratio >= threshold && ctx.records.length > 3,
     value: ratio,
-    reason: ratio >= threshold && ctx.records.length > 3
-      ? `${max.name} holds ${(ratio * 100).toFixed(0)}% of total churn`
-      : "churn is distributed",
+    reason:
+      ratio >= threshold && ctx.records.length > 3
+        ? `${max.name} holds ${(ratio * 100).toFixed(0)}% of total churn`
+        : "churn is distributed",
     payload: max ? { file: max.name, ratio } : {},
   };
 });
@@ -436,9 +482,10 @@ registerSignal("low_confidence", "risk", (ctx, args) => {
   return {
     matched: conf < threshold,
     value: conf,
-    reason: conf < threshold
-      ? `confidence is low (${(conf * 100).toFixed(0)}%)`
-      : `confidence is ${(conf * 100).toFixed(0)}%`,
+    reason:
+      conf < threshold
+        ? `confidence is low (${(conf * 100).toFixed(0)}%)`
+        : `confidence is ${(conf * 100).toFixed(0)}%`,
   };
 });
 
@@ -458,31 +505,37 @@ registerSignal("confidence_trending", "risk", (ctx, args) => {
 registerSignal("mixed_vectors", "risk", (ctx, args) => {
   const minTypes = args.min_types || 4;
   const vectorCounts = {};
-  ctx.records.forEach(r => (r.vectors || []).forEach(v => { vectorCounts[v] = (vectorCounts[v] || 0) + 1; }));
+  ctx.records.forEach((r) =>
+    (r.vectors || []).forEach((v) => {
+      vectorCounts[v] = (vectorCounts[v] || 0) + 1;
+    }),
+  );
   const types = Object.keys(vectorCounts).length;
   return {
     matched: types >= minTypes,
     value: types,
-    reason: types >= minTypes
-      ? `${types} different vector types — mixed session`
-      : `${types} vector types`,
+    reason:
+      types >= minTypes
+        ? `${types} different vector types — mixed session`
+        : `${types} vector types`,
   };
 });
 
 registerSignal("config_blast", "risk", (ctx) => {
   // Only match files that ARE config files by extension, not source files named "config"
   const configExts = /\.(json|yaml|yml|toml|env|ini|cfg|conf)$/i;
-  const configFiles = ctx.records.filter(r => configExts.test(r.path));
+  const configFiles = ctx.records.filter((r) => configExts.test(r.path));
   const configRatio = configFiles.length / (ctx.records.length || 1);
   const isConfigDominated = configRatio >= 0.5 && configFiles.length >= 1;
   const smallSession = ctx.records.length <= 4;
   return {
     matched: isConfigDominated && smallSession,
     value: configFiles.length,
-    reason: isConfigDominated && smallSession
-      ? `config-dominated session (${configFiles.length}/${ctx.records.length} files are config)`
-      : "not a config-dominated session",
-    payload: { configFiles: configFiles.map(f => f.name), ratio: configRatio },
+    reason:
+      isConfigDominated && smallSession
+        ? `config-dominated session (${configFiles.length}/${ctx.records.length} files are config)`
+        : "not a config-dominated session",
+    payload: { configFiles: configFiles.map((f) => f.name), ratio: configRatio },
   };
 });
 
@@ -570,15 +623,15 @@ export function evaluatePath(pathDef, ctx) {
  * @returns {{ winner: object|null, all: Array }}
  */
 export function evaluateAllPaths(paths, ctx) {
-  const results = paths.map(p => evaluatePath(p, ctx));
-  const activated = results.filter(r => r.activated);
+  const results = paths.map((p) => evaluatePath(p, ctx));
+  const activated = results.filter((r) => r.activated);
 
   // Sort by score descending, then priority descending
   activated.sort((a, b) => {
     const scoreDiff = b.score - a.score;
     if (scoreDiff !== 0) return scoreDiff;
-    const pA = paths.find(p => p.id === a.pathId)?.priority || 0;
-    const pB = paths.find(p => p.id === b.pathId)?.priority || 0;
+    const pA = paths.find((p) => p.id === a.pathId)?.priority || 0;
+    const pB = paths.find((p) => p.id === b.pathId)?.priority || 0;
     return pB - pA;
   });
 
@@ -598,22 +651,23 @@ export function getBuiltinPaths() {
       id: "scattered-expansion-no-tests-novel",
       name: "Wide expansion into new untested areas",
       signals: [
-        { fn: "is_scattered",      args: { min_dirs: 5 },        weight: 2 },
-        { fn: "vector_dominant",   args: { vector: "expansion", min_ratio: 0.4 }, weight: 3 },
-        { fn: "no_tests",          args: {},                      weight: 2 },
-        { fn: "new_territory",     args: {},                      weight: 2 },
+        { fn: "is_scattered", args: { min_dirs: 5 }, weight: 2 },
+        { fn: "vector_dominant", args: { vector: "expansion", min_ratio: 0.4 }, weight: 3 },
+        { fn: "no_tests", args: {}, weight: 2 },
+        { fn: "new_territory", args: {}, weight: 2 },
       ],
       threshold: 7,
-      nudge: "wide expansion into {new_territory} new areas with no tests — integration risk is high",
+      nudge:
+        "wide expansion into {new_territory} new areas with no tests — integration risk is high",
       priority: 100,
     },
     {
       id: "heavy-expansion-no-tests",
       name: "Heavy expansion without tests",
       signals: [
-        { fn: "vector_dominant",   args: { vector: "expansion", min_ratio: 0.4 }, weight: 3 },
-        { fn: "add_delete_ratio",  args: { op: "gte", ratio: 3 }, weight: 2 },
-        { fn: "no_tests",          args: {},                      weight: 3 },
+        { fn: "vector_dominant", args: { vector: "expansion", min_ratio: 0.4 }, weight: 3 },
+        { fn: "add_delete_ratio", args: { op: "gte", ratio: 3 }, weight: 2 },
+        { fn: "no_tests", args: {}, weight: 3 },
       ],
       threshold: 6,
       nudge: "lots of new code, no tests in this diff — consider a test pass next",
@@ -623,8 +677,8 @@ export function getBuiltinPaths() {
       id: "scattered-low-confidence",
       name: "Scattered changes with low confidence",
       signals: [
-        { fn: "is_scattered",      args: { min_dirs: 5 },        weight: 3 },
-        { fn: "low_confidence",    args: { max_confidence: 0.7 }, weight: 3 },
+        { fn: "is_scattered", args: { min_dirs: 5 }, weight: 3 },
+        { fn: "low_confidence", args: { max_confidence: 0.7 }, weight: 3 },
       ],
       threshold: 5,
       nudge: "changes are spread thin and confidence is low — might be worth consolidating focus",
@@ -634,8 +688,8 @@ export function getBuiltinPaths() {
       id: "cleanup-removal",
       name: "Cleanup/removal session",
       signals: [
-        { fn: "vector_dominant",   args: { vector: "removal", min_ratio: 0.5 }, weight: 3 },
-        { fn: "add_delete_ratio",  args: { op: "lte", ratio: 0.33 }, weight: 3 },
+        { fn: "vector_dominant", args: { vector: "removal", min_ratio: 0.5 }, weight: 3 },
+        { fn: "add_delete_ratio", args: { op: "lte", ratio: 0.33 }, weight: 3 },
       ],
       threshold: 5,
       nudge: "cleanup session — verify nothing downstream depends on what was removed",
@@ -645,9 +699,9 @@ export function getBuiltinPaths() {
       id: "deep-refactor",
       name: "Deep refactor in focused area",
       signals: [
-        { fn: "is_deep",           args: { max_dirs: 2, min_files: 3 }, weight: 3 },
-        { fn: "vector_dominant",   args: { vector: "refactor", min_ratio: 0.4 }, weight: 3 },
-        { fn: "home_turf",         args: { min_sessions: 3 },    weight: 1 },
+        { fn: "is_deep", args: { max_dirs: 2, min_files: 3 }, weight: 3 },
+        { fn: "vector_dominant", args: { vector: "refactor", min_ratio: 0.4 }, weight: 3 },
+        { fn: "home_turf", args: { min_sessions: 3 }, weight: 1 },
       ],
       threshold: 5,
       nudge: "deep refactor in familiar territory — run existing tests before moving on",
@@ -657,21 +711,22 @@ export function getBuiltinPaths() {
       id: "deep-refactor-hot-file",
       name: "Deep refactor with hot file churn accumulation",
       signals: [
-        { fn: "is_deep",             args: { max_dirs: 2, min_files: 3 }, weight: 2 },
-        { fn: "vector_dominant",     args: { vector: "refactor", min_ratio: 0.4 }, weight: 2 },
-        { fn: "hot_file",            args: { min_appearances: 3 }, weight: 2 },
-        { fn: "churn_accelerating",  args: { churn_ratio: 1.5 },  weight: 2 },
+        { fn: "is_deep", args: { max_dirs: 2, min_files: 3 }, weight: 2 },
+        { fn: "vector_dominant", args: { vector: "refactor", min_ratio: 0.4 }, weight: 2 },
+        { fn: "hot_file", args: { min_appearances: 3 }, weight: 2 },
+        { fn: "churn_accelerating", args: { churn_ratio: 1.5 }, weight: 2 },
       ],
       threshold: 6,
-      nudge: "sustained refactor with {hot_file} hot file(s) under accelerating churn — {churn_accelerating_reason}",
+      nudge:
+        "sustained refactor with {hot_file} hot file(s) under accelerating churn — {churn_accelerating_reason}",
       priority: 78,
     },
     {
       id: "config-blast",
       name: "Config-only changes with blast radius",
       signals: [
-        { fn: "config_blast",      args: {},                      weight: 4 },
-        { fn: "no_tests",          args: {},                      weight: 2 },
+        { fn: "config_blast", args: {}, weight: 4 },
+        { fn: "no_tests", args: {}, weight: 2 },
       ],
       threshold: 4,
       nudge: "config changes can have wide blast radius — quick smoke test recommended",
@@ -681,8 +736,8 @@ export function getBuiltinPaths() {
       id: "novel-areas-stale-assumptions",
       name: "Working in novel or abandoned areas",
       signals: [
-        { fn: "new_territory",     args: {},                      weight: 3 },
-        { fn: "abandoned_zone",    args: { sessions_since: 8 },   weight: 3 },
+        { fn: "new_territory", args: {}, weight: 3 },
+        { fn: "abandoned_zone", args: { sessions_since: 8 }, weight: 3 },
       ],
       threshold: 3,
       nudge: "touching areas you haven't been in recently — check for stale assumptions",
@@ -693,18 +748,19 @@ export function getBuiltinPaths() {
       name: "Returning to a project after absence",
       signals: [
         { fn: "returning_after_absence", args: { min_absence: 5 }, weight: 4 },
-        { fn: "file_vector_shift",       args: {},                 weight: 2 },
+        { fn: "file_vector_shift", args: {}, weight: 2 },
       ],
       threshold: 4,
-      nudge: "returning to {returning_after_absence_reason} — context may have drifted, review recent changes first",
+      nudge:
+        "returning to {returning_after_absence_reason} — context may have drifted, review recent changes first",
       priority: 68,
     },
     {
       id: "high-churn-concentration",
       name: "Single file holds most of the churn",
       signals: [
-        { fn: "high_concentration", args: { churn_pct: 0.6 },    weight: 4 },
-        { fn: "session_size",       args: { op: "gte", files: 4 }, weight: 2 },
+        { fn: "high_concentration", args: { churn_pct: 0.6 }, weight: 4 },
+        { fn: "session_size", args: { op: "gte", files: 4 }, weight: 2 },
       ],
       threshold: 5,
       nudge: "{high_concentration_reason} — might be doing too much in one file",
@@ -713,9 +769,7 @@ export function getBuiltinPaths() {
     {
       id: "mixed-vectors",
       name: "Mixed change types in one session",
-      signals: [
-        { fn: "mixed_vectors",     args: { min_types: 4 },       weight: 4 },
-      ],
+      signals: [{ fn: "mixed_vectors", args: { min_types: 4 }, weight: 4 }],
       threshold: 4,
       nudge: "mixed change types in one session — consider splitting into focused commits",
       priority: 55,
@@ -723,9 +777,7 @@ export function getBuiltinPaths() {
     {
       id: "confidence-dropping",
       name: "Confidence dropping vs baseline",
-      signals: [
-        { fn: "confidence_trending", args: { direction: "down" }, weight: 4 },
-      ],
+      signals: [{ fn: "confidence_trending", args: { direction: "down" }, weight: 4 }],
       threshold: 4,
       nudge: "confidence dropped vs your recent baseline — this diff may be harder to reason about",
       priority: 50,
@@ -734,9 +786,9 @@ export function getBuiltinPaths() {
       id: "deep-stint-project",
       name: "Deep project stint",
       signals: [
-        { fn: "deep_stint",        args: { min_consecutive: 4 },  weight: 2 },
-        { fn: "has_tests",         args: {},                      weight: 2 },
-        { fn: "home_turf",         args: { min_sessions: 5 },    weight: 1 },
+        { fn: "deep_stint", args: { min_consecutive: 4 }, weight: 2 },
+        { fn: "has_tests", args: {}, weight: 2 },
+        { fn: "home_turf", args: { min_sessions: 5 }, weight: 1 },
       ],
       threshold: 4,
       nudge: "{deep_stint_reason} with tests — solid sustained work",
@@ -746,8 +798,8 @@ export function getBuiltinPaths() {
       id: "expansion-with-tests",
       name: "Expansion with tests — positive",
       signals: [
-        { fn: "vector_dominant",   args: { vector: "expansion", min_ratio: 0.4 }, weight: 3 },
-        { fn: "has_tests",         args: {},                      weight: 3 },
+        { fn: "vector_dominant", args: { vector: "expansion", min_ratio: 0.4 }, weight: 3 },
+        { fn: "has_tests", args: {}, weight: 3 },
       ],
       threshold: 5,
       nudge: "new code with tests — solid session",
@@ -757,8 +809,8 @@ export function getBuiltinPaths() {
       id: "surgical-precision",
       name: "Small, precise surgical change",
       signals: [
-        { fn: "vector_dominant",   args: { vector: "surgical", min_ratio: 0.5 }, weight: 3 },
-        { fn: "session_size",       args: { op: "lte", files: 3 }, weight: 3 },
+        { fn: "vector_dominant", args: { vector: "surgical", min_ratio: 0.5 }, weight: 3 },
+        { fn: "session_size", args: { op: "lte", files: 3 }, weight: 3 },
       ],
       threshold: 5,
       nudge: "small, precise change — low risk",
@@ -767,9 +819,7 @@ export function getBuiltinPaths() {
     {
       id: "project-hopping",
       name: "Hopping between projects",
-      signals: [
-        { fn: "project_hopping",   args: { window: 5, min_projects: 3 }, weight: 4 },
-      ],
+      signals: [{ fn: "project_hopping", args: { window: 5, min_projects: 3 }, weight: 4 }],
       threshold: 4,
       nudge: "{project_hopping_reason} — context switching has a cost, consider deeper stints",
       priority: 48,
@@ -778,9 +828,9 @@ export function getBuiltinPaths() {
       id: "clean-session",
       name: "Clean session — good to commit",
       signals: [
-        { fn: "low_confidence",    args: { max_confidence: 0.85 }, weight: -3 },
-        { fn: "no_tests",          args: {},                      weight: -1 },
-        { fn: "mixed_vectors",     args: { min_types: 4 },       weight: -2 },
+        { fn: "low_confidence", args: { max_confidence: 0.85 }, weight: -3 },
+        { fn: "no_tests", args: {}, weight: -1 },
+        { fn: "mixed_vectors", args: { min_types: 4 }, weight: -2 },
       ],
       threshold: 0,
       nudge: "clean session — good to commit",
@@ -816,7 +866,7 @@ export function savePaths(paths, filePath) {
 export function mergePaths(builtins, custom) {
   const merged = new Map();
   for (const p of builtins) merged.set(p.id, p);
-  for (const p of (custom || [])) merged.set(p.id, p);
+  for (const p of custom || []) merged.set(p.id, p);
   return [...merged.values()];
 }
 
@@ -867,9 +917,13 @@ export function getSignalInventory() {
 // ============================================================================
 
 function topKey(obj) {
-  let best = null, bestV = -1;
+  let best = null,
+    bestV = -1;
   for (const [k, v] of Object.entries(obj || {})) {
-    if (v > bestV) { best = k; bestV = v; }
+    if (v > bestV) {
+      best = k;
+      bestV = v;
+    }
   }
   return best;
 }
@@ -879,7 +933,7 @@ function topKey(obj) {
  * Maps directory prefixes to known project names.
  */
 function inferProject(rawDirs) {
-  const dirs = (rawDirs || []).filter(d => d != null);
+  const dirs = (rawDirs || []).filter((d) => d != null);
   const projectPrefixes = [
     { prefix: "glimpse-engine", project: "glimpse-engine" },
     { prefix: "apiguard", project: "apiguard" },

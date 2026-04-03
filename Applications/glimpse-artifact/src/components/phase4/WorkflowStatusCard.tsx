@@ -1,7 +1,17 @@
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import type { WorkflowRun, WorkflowStep } from "./types";
-import { Clock, Activity, CheckCircle2, XCircle, CircleDashed, PlayCircle, MinusCircle, ChevronDown, ChevronUp } from "lucide-react";
+import {
+  Clock,
+  Activity,
+  CheckCircle2,
+  XCircle,
+  CircleDashed,
+  PlayCircle,
+  MinusCircle,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
 
 interface WorkflowStatusCardProps {
   data?: WorkflowRun;
@@ -41,10 +51,7 @@ const RUN_STATUS: Record<
   },
 };
 
-const STEP_ICONS: Record<
-  WorkflowStep["status"],
-  { icon: React.ElementType; color: string }
-> = {
+const STEP_ICONS: Record<WorkflowStep["status"], { icon: React.ElementType; color: string }> = {
   pending: { icon: CircleDashed, color: "var(--ink-muted)" },
   running: { icon: PlayCircle, color: "var(--teal-500)" },
   done: { icon: CheckCircle2, color: "var(--emerald-500)" },
@@ -60,26 +67,16 @@ function formatElapsed(ms?: number): string {
   return `${Math.floor(s / 60)}m ${s % 60}s`;
 }
 
-export function WorkflowStatusCard({
-  data,
-  loading,
-  error,
-  className,
-}: WorkflowStatusCardProps) {
+export function WorkflowStatusCard({ data, loading, error, className }: WorkflowStatusCardProps) {
   const [expanded, setExpanded] = useState(false);
 
   if (error) {
     return (
       <div
-        className={cn(
-          "rounded-lg border border-rose-500 bg-rose-100 p-4",
-          className,
-        )}
+        className={cn("rounded-lg border border-rose-500 bg-rose-100 p-4", className)}
         role="alert"
       >
-        <p className="font-body text-sm text-rose-600 font-medium">
-          Could not load workflow.
-        </p>
+        <p className="font-body text-sm text-rose-600 font-medium">Could not load workflow.</p>
         <p className="font-body text-sm text-ink-muted mt-1">{error}</p>
       </div>
     );
@@ -88,10 +85,7 @@ export function WorkflowStatusCard({
   if (loading || !data) {
     return (
       <div
-        className={cn(
-          "glass-panel p-4",
-          className,
-        )}
+        className={cn("glass-panel p-4", className)}
         aria-busy="true"
         aria-label="Loading workflow"
       >
@@ -173,7 +167,11 @@ export function WorkflowStatusCard({
             const stepCfg = STEP_ICONS[step.status];
             const StepIcon = stepCfg.icon;
             return (
-              <li key={i} className="flex items-center gap-3 p-1 rounded-md hover:bg-surface-raised transition-colors" role="listitem">
+              <li
+                key={i}
+                className="flex items-center gap-3 p-1 rounded-md hover:bg-surface-raised transition-colors"
+                role="listitem"
+              >
                 <span
                   className="w-5 h-5 flex items-center justify-center shrink-0"
                   style={{ color: stepCfg.color }}

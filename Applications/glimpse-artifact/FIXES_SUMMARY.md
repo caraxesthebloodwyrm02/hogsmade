@@ -1,41 +1,48 @@
 # Glimpse Artifact Bug Fixes - Summary
 
 ## Overview
+
 Fixed multiple mismatches, errors, and performance issues in the glimpse-artifact React component library. All fixes are minimal, focused, and maintain backward compatibility.
 
 ## Issues Fixed
 
 ### 1. GateView Data/Loading Mismatch (High Severity)
+
 **File**: `src/views/GateView.tsx`
 **Problem**: Components received `data={loading ? undefined : run}` causing logical conflicts between loading state and undefined data.
 **Solution**: Separated loading and data rendering paths with explicit conditional rendering.
 **Impact**: Eliminates UI inconsistencies and potential undefined property access errors.
 
 ### 2. Random durationMs Inconsistency (High Severity)
+
 **File**: `src/hooks/useGateData.ts`
 **Problem**: `Math.random()` in mock data initialization caused different values on every render, leading to flickering UI.
 **Solution**: Pre-generated mock data in a function and stored in constant to ensure consistency.
 **Impact**: Stable mock data across renders, no visual flickering.
 
 ### 3. Module-level ID Counter Collisions (High Severity)
+
 **File**: `src/views/ScenarioCanvasView.tsx`
 **Problem**: Module-level `let _idCounter = 100` persisted across component lifecycles, causing ID collisions on remount.
 **Solution**: Replaced with `useRef(100)` for component-scoped counter.
 **Impact**: Prevents React key warnings and duplicate ID issues.
 
 ### 4. Performance Optimization - State Updates (Medium Severity)
+
 **File**: `src/views/ScenarioCanvasView.tsx`
 **Problem**: Multiple `setState` calls in sequence (4 calls in forkFromSeed) could trigger multiple re-renders.
 **Solution**: React 18 automatically batches state updates; verified implementation leverages this.
 **Impact**: Single re-render per fork operation, improved performance.
 
 ### 5. Performance Optimization - Memoization (Medium Severity)
+
 **File**: `src/views/ScenarioCanvasView.tsx`
 **Problem**: Filtering operations on nodes ran on every render, causing performance degradation with many nodes.
 **Solution**: Added `useMemo` for expensive filtering operations (seedNodes, glimpseNodes, timelineMarkers).
 **Impact**: Reduced unnecessary recalculations, improved canvas performance.
 
 ### 6. Artificial Lag Reduction (Low Severity)
+
 **Files**: All hooks in `src/hooks/`
 **Problem**: Mock data hooks used 500-800ms setTimeout delays, causing sluggish UX.
 **Solution**: Reduced all delays to 200ms while maintaining loading state visualization.
@@ -44,6 +51,7 @@ Fixed multiple mismatches, errors, and performance issues in the glimpse-artifac
 ## Code Quality Metrics
 
 ### Before Fixes
+
 - TypeScript errors: 6 (in ScenarioCanvasView.tsx)
 - Build status: Failing
 - Linter status: Passing
@@ -51,6 +59,7 @@ Fixed multiple mismatches, errors, and performance issues in the glimpse-artifac
 - Data consistency: Random values causing flickering
 
 ### After Fixes
+
 - TypeScript errors: 0
 - Build status: Passing ✓
 - Linter status: Passing ✓
@@ -60,6 +69,7 @@ Fixed multiple mismatches, errors, and performance issues in the glimpse-artifac
 ## Changes Summary
 
 ### Files Modified
+
 1. `src/views/GateView.tsx` - Fixed data/loading mismatch
 2. `src/hooks/useGateData.ts` - Fixed random durationMs, reduced lag
 3. `src/hooks/useHealthData.ts` - Reduced lag
@@ -69,11 +79,13 @@ Fixed multiple mismatches, errors, and performance issues in the glimpse-artifac
 7. `src/views/ScenarioCanvasView.tsx` - Fixed ID counter, added memoization, optimized state updates
 
 ### Lines of Code Changed
+
 - Total: ~150 LOC modified across 7 files
 - Average per file: ~21 LOC
 - All changes are minimal and focused
 
 ### Complexity Impact
+
 - Cyclomatic complexity: Reduced (removed module-level state, added memoization)
 - Maintainability: Improved (clearer separation of concerns)
 - Performance: Improved (memoization, reduced lag)
@@ -81,16 +93,19 @@ Fixed multiple mismatches, errors, and performance issues in the glimpse-artifac
 ## Testing
 
 ### Build Verification
+
 ```bash
 npm run build  # ✓ Passes
 ```
 
 ### Linter Verification
+
 ```bash
 npm run lint   # ✓ Passes
 ```
 
 ### Manual Testing
+
 - Dev server starts successfully on http://localhost:5173
 - DashboardView loads without errors
 - GateView loads without errors
@@ -124,6 +139,7 @@ git reset --hard HEAD~7
 Created comprehensive debugging guide: `DEBUGGING.md`
 
 Includes:
+
 - Common issues and fixes
 - Debugging workflow
 - Afterhours sprint checklist
@@ -147,7 +163,7 @@ All timestamps stored in UTC (ISO 8601 format). For Asia/Dhaka local time (UTC+0
 
 ```typescript
 const utcTime = new Date().toISOString();
-const localTime = new Date().toLocaleString('en-US', { timeZone: 'Asia/Dhaka' });
+const localTime = new Date().toLocaleString("en-US", { timeZone: "Asia/Dhaka" });
 ```
 
 ## Sign-off

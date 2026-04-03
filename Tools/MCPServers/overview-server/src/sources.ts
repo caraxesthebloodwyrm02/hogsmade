@@ -70,7 +70,9 @@ export async function readAuditEvents(
     source.stale = isStale(stat.mtime);
 
     if (stat.size > MAX_AUDIT_FILE_BYTES) {
-      console.error(`[overview-server] Audit log too large (${Math.round(stat.size / (1024 * 1024))}MB) — skipping`);
+      console.error(
+        `[overview-server] Audit log too large (${Math.round(stat.size / (1024 * 1024))}MB) — skipping`,
+      );
       return { events: [], source };
     }
 
@@ -322,12 +324,7 @@ export async function aggregateAllSources(sinceBoundary: string): Promise<Aggreg
     journalEntryCount: pulseResult.journalEntryCount,
     focusSessionActive: pulseResult.focusSessionActive,
     workflowsRunToday: afloatResult.workflowsRunToday,
-    dataSources: [
-      auditResult.source,
-      seedsResult.source,
-      pulseResult.source,
-      afloatResult.source,
-    ],
+    dataSources: [auditResult.source, seedsResult.source, pulseResult.source, afloatResult.source],
     sinceBoundary,
   };
 }

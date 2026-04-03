@@ -4,8 +4,8 @@ import {
   CircuitBreakerMetrics,
   CircuitBreakerOpenError,
   ResilienceContext,
-  ResilientFunction
-} from '../types/index.js';
+  ResilientFunction,
+} from "../types/index.js";
 
 export interface CircuitBreakerOptions extends CircuitBreakerConfig {
   onStateChange?: (state: CircuitState, metrics: CircuitBreakerMetrics) => void;
@@ -26,7 +26,7 @@ export class CircuitBreaker {
 
   constructor(
     private readonly serviceName: string,
-    private readonly config: CircuitBreakerOptions
+    private readonly config: CircuitBreakerOptions,
   ) {}
 
   getMetrics(): CircuitBreakerMetrics {
@@ -37,7 +37,7 @@ export class CircuitBreaker {
       lastFailureTime: this.lastFailureTime,
       lastSuccessTime: this.lastSuccessTime,
       consecutiveFailures: this.consecutiveFailures,
-      consecutiveSuccesses: this.consecutiveSuccesses
+      consecutiveSuccesses: this.consecutiveSuccesses,
     };
   }
 
@@ -45,10 +45,7 @@ export class CircuitBreaker {
     return this.state;
   }
 
-  async execute<T>(
-    operation: ResilientFunction<T>,
-    context: ResilienceContext
-  ): Promise<T> {
+  async execute<T>(operation: ResilientFunction<T>, context: ResilienceContext): Promise<T> {
     this.checkStateTransition();
 
     if (this.state === CircuitState.OPEN) {

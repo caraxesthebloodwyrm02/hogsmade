@@ -32,10 +32,10 @@ const PULSE_GLOW: Record<PulseColor, string> = {
 
 const MOOD_ICONS: Record<EcosystemMood, string> = {
   thriving: "\u25C9", // fisheye
-  steady: "\u25CB",   // circle
+  steady: "\u25CB", // circle
   drifting: "\u223F", // sine wave
   recovering: "\u21BA", // ccw arrow
-  quiet: "\u00B7",    // middle dot
+  quiet: "\u00B7", // middle dot
 };
 
 // ── Component ──
@@ -66,13 +66,7 @@ export function MoodSurface() {
   } = data;
 
   return (
-    <div
-      className={cn(
-        "h-full overflow-auto",
-        "bg-gradient-to-b",
-        PULSE_GRADIENTS[pulseColor],
-      )}
-    >
+    <div className={cn("h-full overflow-auto", "bg-gradient-to-b", PULSE_GRADIENTS[pulseColor])}>
       {/* Atmospheric glow */}
       <div
         className="fixed inset-0 pointer-events-none z-0"
@@ -82,7 +76,6 @@ export function MoodSurface() {
       />
 
       <div className="relative z-10 max-w-2xl mx-auto px-6 py-12 space-y-10 stagger-children">
-
         {/* ── Pulse Header ── */}
         <header className="space-y-4">
           <div className="flex items-center gap-3">
@@ -96,9 +89,7 @@ export function MoodSurface() {
             >
               {MOOD_ICONS[mood]}
             </span>
-            <span className="stat-label tracking-widest">
-              {mood}
-            </span>
+            <span className="stat-label tracking-widest">{mood}</span>
             {ecosystemScore !== null && (
               <span className="stat-label ml-auto opacity-0 hover:opacity-100 transition-opacity duration-slow">
                 {ecosystemScore}/100
@@ -206,7 +197,8 @@ export function MoodSurface() {
               <span className="section-divider-line" />
             </div>
             <p className="font-body text-sm text-[var(--ink-muted)]">
-              {driftCount} {driftCount === 1 ? "area" : "areas"} {driftSeverity === "high" ? "need pruning" : "showing new growth"}.
+              {driftCount} {driftCount === 1 ? "area" : "areas"}{" "}
+              {driftSeverity === "high" ? "need pruning" : "showing new growth"}.
             </p>
           </div>
         )}
@@ -281,10 +273,7 @@ function ClusterCard({ cluster }: { cluster: ClusterSummary }) {
         >
           {cluster.label}
         </span>
-        <span
-          className="w-2 h-2 rounded-full"
-          style={{ backgroundColor: healthColor }}
-        />
+        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: healthColor }} />
       </div>
 
       {/* Health bar */}
@@ -312,20 +301,12 @@ function ClusterCard({ cluster }: { cluster: ClusterSummary }) {
 
 function TrustBar({ confidence }: { confidence: number }) {
   const pct = Math.round(confidence * 100);
-  const color =
-    pct >= 75
-      ? "var(--teal-500)"
-      : pct >= 50
-        ? "var(--amber-400)"
-        : "var(--rose-500)";
+  const color = pct >= 75 ? "var(--teal-500)" : pct >= 50 ? "var(--amber-400)" : "var(--rose-500)";
 
   return (
     <div className="flex items-center gap-2">
       <div className="confidence-track w-16">
-        <div
-          className="confidence-fill"
-          style={{ width: `${pct}%`, backgroundColor: color }}
-        />
+        <div className="confidence-fill" style={{ width: `${pct}%`, backgroundColor: color }} />
       </div>
       <span className="font-mono text-xs" style={{ color }}>
         {pct}%

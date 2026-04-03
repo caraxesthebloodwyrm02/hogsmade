@@ -48,22 +48,22 @@ function normalizeBias(value: number | undefined): number {
 
 function normalizeFormTarget(value: CompileTarget | undefined): CompileTarget {
   if (
-    value === "server_tool"
-    || value === "rule"
-    || value === "agent"
-    || value === "skill"
-    || value === "reference"
-    || value === "all"
+    value === "server_tool" ||
+    value === "rule" ||
+    value === "agent" ||
+    value === "skill" ||
+    value === "reference" ||
+    value === "all"
   ) {
     return value;
   }
   return "all";
 }
 
-function normalizeTableScope(value: RoutineArgs["tableScope"] | undefined): RoutineArgs["tableScope"] {
-  return value === "attributes" || value === "dimensions" || value === "all"
-    ? value
-    : "all";
+function normalizeTableScope(
+  value: RoutineArgs["tableScope"] | undefined,
+): RoutineArgs["tableScope"] {
+  return value === "attributes" || value === "dimensions" || value === "all" ? value : "all";
 }
 
 function sanitizeSeed(value: string | undefined): string | undefined {
@@ -110,7 +110,10 @@ function buildDeterministicTimestamp(seed: string, argvSignature: string): strin
 function buildSeed(candidates: EligibilityCandidate[], args: RoutineArgs): string {
   const explicitSeed = sanitizeSeed(args.seed);
   if (explicitSeed) return explicitSeed;
-  return `${candidates.map((candidate) => candidate.id).sort().join(",")}::${buildArgvSignature(args)}::${args.formTarget}`;
+  return `${candidates
+    .map((candidate) => candidate.id)
+    .sort()
+    .join(",")}::${buildArgvSignature(args)}::${args.formTarget}`;
 }
 
 function classifyBand(value: number): WeightBand {
@@ -129,7 +132,10 @@ function average(values: number[]): number {
   return values.reduce((sum, value) => sum + value, 0) / values.length;
 }
 
-function getPropertyScore(candidate: EligibilityCandidate, attribute: EligibilityAttribute): { value: number; sourcePropertyIds: string[] } {
+function getPropertyScore(
+  candidate: EligibilityCandidate,
+  attribute: EligibilityAttribute,
+): { value: number; sourcePropertyIds: string[] } {
   const values: number[] = [];
   const sourcePropertyIds: string[] = [];
 
@@ -159,16 +165,16 @@ function scoreWeights(
   for (const candidate of candidates) {
     for (const attribute of catalog) {
       const bandSpan = attribute.baseBand[1] - attribute.baseBand[0];
-      const analogBase = attribute.baseBand[0] + bandSpan * stableFraction(seed, `${candidate.id}:${attribute.id}`);
+      const analogBase =
+        attribute.baseBand[0] + bandSpan * stableFraction(seed, `${candidate.id}:${attribute.id}`);
       const propertyScore = getPropertyScore(candidate, attribute);
-      const biasDelta = (getArgValue(args, attribute.dimension) - 1)
-        * (0.22 + (attribute.argMultipliers[attribute.dimension] ?? 0.2) * 0.35);
+      const biasDelta =
+        (getArgValue(args, attribute.dimension) - 1) *
+        (0.22 + (attribute.argMultipliers[attribute.dimension] ?? 0.2) * 0.35);
       const runtimeInfluence = round(clamp(1 + biasDelta, 0.5, 1.5));
-      const weightRaw = round(clamp(
-        analogBase * 0.4 + propertyScore.value * 0.45 + biasDelta,
-        0,
-        1,
-      ));
+      const weightRaw = round(
+        clamp(analogBase * 0.4 + propertyScore.value * 0.45 + biasDelta, 0, 1),
+      );
 
       weights.push({
         id: `${candidate.id}:${attribute.id}`,
@@ -188,7 +194,10 @@ function scoreWeights(
   return weights;
 }
 
-function rankDimensionSlices(weights: AnalogWeight[], dimension: IntegrationDimension): HierarchySlice[] {
+function rankDimensionSlices(
+  weights: AnalogWeight[],
+  dimension: IntegrationDimension,
+): HierarchySlice[] {
   const grouped = new Map<string, AnalogWeight[]>();
 
   for (const weight of weights.filter((entry) => entry.dimension === dimension)) {
@@ -227,13 +236,19 @@ function rankOverallSlices(slices: HierarchySlice[], args: RoutineArgs): Hierarc
 
   return [...grouped.entries()]
     .map(([candidateId, bucket]) => {
-      const weightedScore = bucket.reduce((sum, slice) => {
-        const multiplier = Math.pow(getArgValue(args, slice.dimension as IntegrationDimension), 1.35);
-        return sum + slice.score * multiplier;
-      }, 0) / bucket.reduce(
-        (sum, slice) => sum + Math.pow(getArgValue(args, slice.dimension as IntegrationDimension), 1.35),
-        0,
-      );
+      const weightedScore =
+        bucket.reduce((sum, slice) => {
+          const multiplier = Math.pow(
+            getArgValue(args, slice.dimension as IntegrationDimension),
+            1.35,
+          );
+          return sum + slice.score * multiplier;
+        }, 0) /
+        bucket.reduce(
+          (sum, slice) =>
+            sum + Math.pow(getArgValue(args, slice.dimension as IntegrationDimension), 1.35),
+          0,
+        );
 
       return {
         id: `${candidateId}:overall`,
@@ -260,7 +275,10 @@ function deriveHierarchy(weights: AnalogWeight[], args: RoutineArgs): HierarchyS
   return [...slices, ...rankOverallSlices(slices, args)];
 }
 
-function leadingDimension(candidateId: string, hierarchy: HierarchySlice[]): HierarchySlice | undefined {
+function leadingDimension(
+  candidateId: string,
+  hierarchy: HierarchySlice[],
+): HierarchySlice | undefined {
   return hierarchy
     .filter((slice) => slice.candidateId === candidateId && slice.dimension !== "overall")
     .sort((left, right) => right.score - left.score)[0];
@@ -271,10 +289,18 @@ function deriveConditions(hierarchy: HierarchySlice[]): ConditionNote[] {
   const candidateIds = [...new Set(hierarchy.map((slice) => slice.candidateId))];
 
   for (const candidateId of candidateIds) {
-    const governance = hierarchy.find((slice) => slice.candidateId === candidateId && slice.dimension === "governance");
-    const usability = hierarchy.find((slice) => slice.candidateId === candidateId && slice.dimension === "usability");
-    const observability = hierarchy.find((slice) => slice.candidateId === candidateId && slice.dimension === "observability");
-    const overall = hierarchy.find((slice) => slice.candidateId === candidateId && slice.dimension === "overall");
+    const governance = hierarchy.find(
+      (slice) => slice.candidateId === candidateId && slice.dimension === "governance",
+    );
+    const usability = hierarchy.find(
+      (slice) => slice.candidateId === candidateId && slice.dimension === "usability",
+    );
+    const observability = hierarchy.find(
+      (slice) => slice.candidateId === candidateId && slice.dimension === "observability",
+    );
+    const overall = hierarchy.find(
+      (slice) => slice.candidateId === candidateId && slice.dimension === "overall",
+    );
 
     if (governance && governance.score < 0.58) {
       notes.push({
@@ -282,7 +308,8 @@ function deriveConditions(hierarchy: HierarchySlice[]): ConditionNote[] {
         candidateId,
         dimension: "governance",
         severity: "priority",
-        message: "Governance weight is below the watch threshold; keep fail-closed handling and provenance visible.",
+        message:
+          "Governance weight is below the watch threshold; keep fail-closed handling and provenance visible.",
         sourceWeightIds: governance.leadingAttributeIds,
       });
     }
@@ -293,7 +320,8 @@ function deriveConditions(hierarchy: HierarchySlice[]): ConditionNote[] {
         candidateId,
         dimension: "usability",
         severity: "watch",
-        message: "Usability weight is trailing; simplify the entry path and reduce friction in exposed surfaces.",
+        message:
+          "Usability weight is trailing; simplify the entry path and reduce friction in exposed surfaces.",
         sourceWeightIds: usability.leadingAttributeIds,
       });
     }
@@ -304,7 +332,8 @@ function deriveConditions(hierarchy: HierarchySlice[]): ConditionNote[] {
         candidateId,
         dimension: "observability",
         severity: "watch",
-        message: "Observability weight is thin; increase credit visibility and formula-ready row output.",
+        message:
+          "Observability weight is thin; increase credit visibility and formula-ready row output.",
         sourceWeightIds: observability.leadingAttributeIds,
       });
     }
@@ -315,7 +344,8 @@ function deriveConditions(hierarchy: HierarchySlice[]): ConditionNote[] {
         candidateId,
         dimension: "overall",
         severity: "info",
-        message: "Overall profile is stable enough to compile into multiple forms without losing hierarchy clarity.",
+        message:
+          "Overall profile is stable enough to compile into multiple forms without losing hierarchy clarity.",
         sourceWeightIds: overall.leadingAttributeIds,
       });
     }
@@ -347,7 +377,9 @@ function deriveObservations(hierarchy: HierarchySlice[]): ObservationNote[] {
 
   for (const candidateId of candidateIds) {
     const dominant = leadingDimension(candidateId, hierarchy);
-    const overall = hierarchy.find((slice) => slice.candidateId === candidateId && slice.dimension === "overall");
+    const overall = hierarchy.find(
+      (slice) => slice.candidateId === candidateId && slice.dimension === "overall",
+    );
 
     if (dominant) {
       notes.push({
@@ -390,7 +422,12 @@ function summarizeResult(candidates: EligibilityCandidate[], hierarchy: Hierarch
   return `${candidate.label} leads the current hierarchy with overall score ${top.score.toFixed(3)}. The dominant vertical dimension is ${dominant?.dimension ?? "unknown"}.`;
 }
 
-function initialState(candidates: EligibilityCandidate[], args: RoutineArgs, seed: string, argvSignature: string): EligibilityState {
+function initialState(
+  candidates: EligibilityCandidate[],
+  args: RoutineArgs,
+  seed: string,
+  argvSignature: string,
+): EligibilityState {
   return {
     args,
     argvSignature,
@@ -523,7 +560,8 @@ function observationPass(): Pass<EligibilityState> {
 function formsPass(): Pass<EligibilityState> {
   return {
     id: "compile-reusable-forms",
-    description: "Compile runtime-backed result into server, rule, agent, skill, and reference forms",
+    description:
+      "Compile runtime-backed result into server, rule, agent, skill, and reference forms",
     execute(input) {
       const forms = compileFormArtifacts({
         args: input.state.args,
@@ -580,7 +618,9 @@ export function normalizeRoutineArgs(args: Partial<RoutineArgs> = {}): RoutineAr
   };
 }
 
-export function validateCandidates(candidates: EligibilityCandidate[]): EligibilityValidationResult {
+export function validateCandidates(
+  candidates: EligibilityCandidate[],
+): EligibilityValidationResult {
   const issues: string[] = [];
 
   if (candidates.length === 0) {
@@ -651,7 +691,9 @@ export function evaluateRoutine(
   const argvSignature = buildArgvSignature(normalizedArgs);
   const seed = buildSeed(candidates, normalizedArgs);
   const pipeline = buildRoutinePipeline();
-  const pipelineResult = pipeline.run(initialState(candidates, normalizedArgs, seed, argvSignature));
+  const pipelineResult = pipeline.run(
+    initialState(candidates, normalizedArgs, seed, argvSignature),
+  );
 
   return {
     pipelineId: pipelineResult.pipelineId,
@@ -712,7 +754,10 @@ export function resolveCandidates(input?: {
   return [];
 }
 
-export function latestDeposit(residue: ResidueStack, passId: string): Record<string, unknown> | undefined {
+export function latestDeposit(
+  residue: ResidueStack,
+  passId: string,
+): Record<string, unknown> | undefined {
   return findResidue(residue, passId)?.data as Record<string, unknown> | undefined;
 }
 

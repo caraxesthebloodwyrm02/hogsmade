@@ -3,7 +3,10 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
-import { runContextPipeline, validateConfigWithRegistry } from "../../Applications/glimpse-engine/core/engine.js";
+import {
+  runContextPipeline,
+  validateConfigWithRegistry,
+} from "../../Applications/glimpse-engine/core/engine.js";
 import { parseMasterConfig } from "../../Applications/glimpse-engine/master-config.js";
 import { rankViews } from "../../Applications/glimpse-engine/view-specs.js";
 
@@ -84,7 +87,9 @@ async function runSamples(config) {
       secondaryLenses: ctx.secondaryLenses.map((lens) => lens.id),
       topViews: rankedViews.slice(0, 3).map((view) => view.id),
       evidenceCount: ctx.evidences.length,
-      firedRules: ctx.ruleTraces.filter((trace) => trace.status === "fired").map((trace) => trace.ruleId),
+      firedRules: ctx.ruleTraces
+        .filter((trace) => trace.status === "fired")
+        .map((trace) => trace.ruleId),
       validation: ctx.validationReport,
     });
   }
@@ -132,7 +137,9 @@ async function main() {
     console.log("Stage 1: config validation complete.");
     console.log(`Stage 2: ${summary.registry.count} safe functions available.`);
     console.log(`Stage 3: ${sampleRuns.length} sample datasets validated.`);
-    console.log(`Stage 4: notebook readiness -> python3=${notebookReadiness.python3}, helper=${notebookReadiness.notebookHelper}.`);
+    console.log(
+      `Stage 4: notebook readiness -> python3=${notebookReadiness.python3}, helper=${notebookReadiness.notebookHelper}.`,
+    );
     console.log("Stage 5: launch instructions ready.");
     console.log(`Report: ${reportPath}`);
   }

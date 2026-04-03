@@ -76,9 +76,14 @@ export function Module({ house, knobs, selectedKnobId, onKnobClick }: ModuleProp
               <div key={server.key}>
                 {/* Server label with left accent */}
                 <div className="flex items-center gap-2 px-1 py-2">
-                  <div className="w-0.5 h-3 rounded-full" style={{ backgroundColor: meta.color, opacity: 0.4 }} />
+                  <div
+                    className="w-0.5 h-3 rounded-full"
+                    style={{ backgroundColor: meta.color, opacity: 0.4 }}
+                  />
                   <Server size={11} className="text-text-muted" />
-                  <span className="text-xs text-text-tertiary uppercase tracking-wider font-medium">{server.name}</span>
+                  <span className="text-xs text-text-tertiary uppercase tracking-wider font-medium">
+                    {server.name}
+                  </span>
                   <span className="text-[10px] text-text-muted ml-auto px-1.5 py-0.5 rounded bg-panel-light/30">
                     {server.runtime}
                   </span>

@@ -81,10 +81,7 @@ function detectTestFailures(data: AggregatedData): DriftItem[] {
 
   for (const event of data.auditEvents) {
     if (event.status === "failure" || event.status === "error") {
-      failuresBySource.set(
-        event.source,
-        (failuresBySource.get(event.source) ?? 0) + 1,
-      );
+      failuresBySource.set(event.source, (failuresBySource.get(event.source) ?? 0) + 1);
     }
   }
 

@@ -12,6 +12,7 @@
 ## The Math
 
 **Industry conversion benchmarks** (source: [Upwork community data](https://community.upwork.com/t5/Freelancers/What-conversion-rate-from-a-proposal-to-an-accepted-contract-do/m-p/1111380), [GigRadar](https://gigradar.io/blog/upwork-connects)):
+
 - Generic proposals (spray-and-pray): ~3-5% hire rate → needs 20-33 proposals
 - Targeted proposals (filtered, customized): ~8-12% hire rate → needs 8-12 proposals
 - Hyper-targeted (all filters, first-hour, portfolio-match): ~15-20% → needs 5-7 proposals
@@ -26,22 +27,24 @@
 
 Score every job 0-20. **Only apply if score ≥ 15.** No exceptions.
 
-| Signal | Points | How to check |
-|--------|--------|-------------|
-| **Client has hired before** (history shows past contracts) | +4 | Client profile → "X jobs posted, Y% hire rate" |
-| **Payment method verified** | +3 | Green checkmark on job listing |
-| **< 10 proposals already submitted** | +4 | Shown on job listing ("Less than 10", "10 to 15", etc.) |
-| **Posted < 24 hours ago** | +3 | Timestamp on listing. Proposals in first 2 hours get 3x response rate. |
-| **Budget $100–$1,000** (fixed-price sweet spot) | +3 | Budget field. Below $100 = not worth connects. Above $1,000 = heavy competition. |
-| **Job description ≥ 200 words with specific deliverables** | +3 | Read the description. Vague = tire-kicker. Specific = ready to hire. |
+| Signal                                                     | Points | How to check                                                                     |
+| ---------------------------------------------------------- | ------ | -------------------------------------------------------------------------------- |
+| **Client has hired before** (history shows past contracts) | +4     | Client profile → "X jobs posted, Y% hire rate"                                   |
+| **Payment method verified**                                | +3     | Green checkmark on job listing                                                   |
+| **< 10 proposals already submitted**                       | +4     | Shown on job listing ("Less than 10", "10 to 15", etc.)                          |
+| **Posted < 24 hours ago**                                  | +3     | Timestamp on listing. Proposals in first 2 hours get 3x response rate.           |
+| **Budget $100–$1,000** (fixed-price sweet spot)            | +3     | Budget field. Below $100 = not worth connects. Above $1,000 = heavy competition. |
+| **Job description ≥ 200 words with specific deliverables** | +3     | Read the description. Vague = tire-kicker. Specific = ready to hire.             |
 
 **Scoring guide:**
+
 - **18-20**: Apply immediately. This is a high-probability job. Write a custom proposal.
 - **15-17**: Apply if you have a direct portfolio match. Customize proposal.
 - **12-14**: Skip. Save connects for better-fit jobs.
 - **< 12**: Hard skip. Do not spend connects.
 
 **Additional disqualifiers (auto-skip regardless of score):**
+
 - ❌ Job asks for "samples" or "test work" before hiring
 - ❌ Client has 0 hire history AND unverified payment (double red flag)
 - ❌ Job has 20+ proposals already
@@ -56,11 +59,13 @@ Score every job 0-20. **Only apply if score ≥ 15.** No exceptions.
 Waves align with the weekly calibration cadence in STRATEGY_COMPLETE.md. Each wave ends with an evaluation that feeds the weekly tweak decision.
 
 ### Wave 1 — Signal Gathering (Week 2, first half)
+
 **Connects budget**: 48 (8 proposals × 6 connects)
 **Purpose**: Test targeting, learn what gets responses, refine proposal voice.
 **Cadence**: 3 proposals → 2-3 proposals → 2 proposals → evaluate
 
 **Wave 1 evaluation (feeds Week 2 evaluation in strategy doc):**
+
 - How many responses out of 8? (Target: ≥ 2)
 - Which job types responded? (Shapes Wave 2 targeting)
 - Which proposal sections got engagement? (Client replied to what?)
@@ -70,17 +75,20 @@ Waves align with the weekly calibration cadence in STRATEGY_COMPLETE.md. Each wa
 **If 0 responses from 8 proposals**: STOP. Before Wave 2, diagnose: (1) job category targeting, (2) proposal specificity, (3) rate competitiveness at $30/proposal. Adjust before spending more connects.
 
 ### Wave 2 — Refined Targeting (Week 2, second half → Week 3, first half)
+
 **Connects budget**: 48 (8 proposals × 6 connects)
 **Purpose**: Apply Wave 1 learnings. Double down on what converted.
 **Cadence**: 3 proposals → 2-3 proposals → 2 proposals → evaluate
 
 **Wave 2 success criteria:**
+
 - ≥ 1 active conversation / interview in progress
 - If yes → shift energy to closing (not more proposals)
 - If no → Wave 3 with adjusted targeting (broaden niche slightly)
 - **Strategy sync**: Does response data justify keeping $30/proposal rate, or does it need to flex to $25?
 
 ### Wave 3 — Close or Pivot (Week 3, second half)
+
 **Connects budget**: 42 (7 proposals × 6 connects)
 **Reserve**: 12 connects (buffer for 8-connect jobs or follow-up proposals)
 **Cadence**: 3-4 proposals → 3 proposals → final evaluation
@@ -91,13 +99,13 @@ Waves align with the weekly calibration cadence in STRATEGY_COMPLETE.md. Each wa
 
 ## Connects Allocation Summary
 
-| Category | Connects | Proposals | Notes |
-|----------|----------|-----------|-------|
-| Wave 1 (calibration) | 48 | 8 | Test + learn |
-| Wave 2 (refined) | 48 | 8 | Double down on patterns |
-| Wave 3 (close) | 42 | 7 | Final push |
-| Reserve | 12 | 1-2 | Buffer for 8-connect jobs |
-| **Total** | **150** | **23-25** | |
+| Category             | Connects | Proposals | Notes                     |
+| -------------------- | -------- | --------- | ------------------------- |
+| Wave 1 (calibration) | 48       | 8         | Test + learn              |
+| Wave 2 (refined)     | 48       | 8         | Double down on patterns   |
+| Wave 3 (close)       | 42       | 7         | Final push                |
+| Reserve              | 12       | 1-2       | Buffer for 8-connect jobs |
+| **Total**            | **150**  | **23-25** |                           |
 
 ---
 
@@ -105,17 +113,18 @@ Waves align with the weekly calibration cadence in STRATEGY_COMPLETE.md. Each wa
 
 Set these filters EVERY time you search for jobs:
 
-| Filter | Value | Why |
-|--------|-------|-----|
-| **Category** | Web, Mobile & Software Dev → Backend Development | Your niche |
-| **Job Type** | Fixed-price (primary), Hourly (secondary) | Fixed-price = speed advantage |
-| **Budget** | $100 – $1,000 | Sweet spot: worth your time, low competition |
-| **Client History** | "Has hired before" or hire rate shown | Eliminates window-shoppers |
-| **Proposals** | "Less than 10" | Low competition = higher conversion |
-| **Posted** | Last 24 hours | Early applicant 3x advantage |
-| **Payment Verified** | Yes | Serious clients only |
+| Filter               | Value                                            | Why                                          |
+| -------------------- | ------------------------------------------------ | -------------------------------------------- |
+| **Category**         | Web, Mobile & Software Dev → Backend Development | Your niche                                   |
+| **Job Type**         | Fixed-price (primary), Hourly (secondary)        | Fixed-price = speed advantage                |
+| **Budget**           | $100 – $1,000                                    | Sweet spot: worth your time, low competition |
+| **Client History**   | "Has hired before" or hire rate shown            | Eliminates window-shoppers                   |
+| **Proposals**        | "Less than 10"                                   | Low competition = higher conversion          |
+| **Posted**           | Last 24 hours                                    | Early applicant 3x advantage                 |
+| **Payment Verified** | Yes                                              | Serious clients only                         |
 
 **Keyword searches (rotate these):**
+
 1. `"API integration" Python`
 2. `"REST API" Python automation`
 3. `Python webhook integration`
@@ -137,11 +146,13 @@ Two different contexts, two different voices. Outbound (you reaching out) vs. in
 **Rate**: Quote $30/hr in proposals (above $25 display). For fixed-price, use tier pricing from Project Catalog.
 
 **Thresholds:**
+
 - Floor: Never quote below $25/hr hourly or $150 fixed-price. Non-negotiable.
 - Negotiation range: $25-35/hr hourly, $150-700 fixed-price (tier-dependent).
 - These thresholds adjust based on wave data. If Wave 1 shows $30 is converting, hold. If not, flex to $25 floor for Wave 2.
 
 **Template:**
+
 ```
 Hi [Client first name],
 
@@ -169,6 +180,7 @@ Timeline: [X] days after requirements are confirmed.
 **Length**: 50-100 words. They already read your profile. Don't repeat it.
 
 **Template:**
+
 ```
 Hi [Client first name],
 
@@ -186,6 +198,7 @@ Happy to jump on a quick call if that's easier. Otherwise I can estimate from he
 **Why two voices:** Outbound needs to prove competence (they don't know you). Inbound needs to be human (they already chose to engage). Over-formalizing an inbound response feels mechanical — the exact thing to avoid.
 
 ### What to NEVER include (either voice):
+
 - ❌ "I have X years of experience" (unverifiable, every proposal says this)
 - ❌ "I'm passionate about..." (filler)
 - ❌ "I'd love to..." (filler)
@@ -199,13 +212,13 @@ Happy to jump on a quick call if that's easier. Otherwise I can estimate from he
 
 This is not a grind. This is a focused, timed daily action.
 
-| Time | Action | Duration |
-|------|--------|----------|
-| **5:00 PM (UTC+6)** | Open Upwork → Search with filters above | 3 min |
-| | Score each result using 20-point filter | 5 min |
-| | Write + submit 1-2 proposals (score ≥ 15 only) | 7-10 min |
-| | Check messages — respond to any client replies within the hour | 2-5 min |
-| **Total** | | 15-20 min |
+| Time                | Action                                                         | Duration  |
+| ------------------- | -------------------------------------------------------------- | --------- |
+| **5:00 PM (UTC+6)** | Open Upwork → Search with filters above                        | 3 min     |
+|                     | Score each result using 20-point filter                        | 5 min     |
+|                     | Write + submit 1-2 proposals (score ≥ 15 only)                 | 7-10 min  |
+|                     | Check messages — respond to any client replies within the hour | 2-5 min   |
+| **Total**           |                                                                | 15-20 min |
 
 **Why 5 PM**: US East Coast is waking up (7 AM EST). Jobs posted overnight by US clients are fresh. You're among the first applicants from their morning.
 
@@ -217,11 +230,12 @@ This is not a grind. This is a focused, timed daily action.
 
 After each proposal, log:
 
-| Date | Job Title | Budget | Connects Spent | Score (0-20) | Response? | Outcome |
-|------|-----------|--------|---------------|-------------|-----------|---------|
-| Mar 20 | | | | | | |
+| Date   | Job Title | Budget | Connects Spent | Score (0-20) | Response? | Outcome |
+| ------ | --------- | ------ | -------------- | ------------ | --------- | ------- |
+| Mar 20 |           |        |                |              |           |         |
 
 This data tells you:
+
 - Which job types respond (adjust search keywords)
 - Which proposal sections get engagement (adjust template)
 - Your actual conversion rate (adjust wave budgets)
@@ -266,12 +280,12 @@ After Wave 3 (23 total proposals):
 
 This document governs **Weeks 2-3 outreach execution** within the 4-week calibration cycle defined in STRATEGY_COMPLETE.md.
 
-| Strategy Doc Section | Governed By |
-|---|---|
-| Week 1 (profile setup) | CHROME_HANDOFF.md + manual actions |
-| Week 2-3 (outreach + targeting) | **This playbook** |
-| Week 4 (delivery + review) | STRATEGY_COMPLETE.md Section 5 |
-| Rate decisions | STRATEGY_COMPLETE.md Section 3 (this playbook respects the $25 floor / $30 proposal split) |
+| Strategy Doc Section            | Governed By                                                                                |
+| ------------------------------- | ------------------------------------------------------------------------------------------ |
+| Week 1 (profile setup)          | CHROME_HANDOFF.md + manual actions                                                         |
+| Week 2-3 (outreach + targeting) | **This playbook**                                                                          |
+| Week 4 (delivery + review)      | STRATEGY_COMPLETE.md Section 5                                                             |
+| Rate decisions                  | STRATEGY_COMPLETE.md Section 3 (this playbook respects the $25 floor / $30 proposal split) |
 
 Wave evaluations feed directly into the weekly calibration questions in the strategy doc.
 

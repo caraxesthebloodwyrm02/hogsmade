@@ -24,7 +24,10 @@ export function DashboardView() {
             <LayoutDashboard className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="font-heading text-2xl font-bold text-ink tracking-tight flex items-center gap-2" style={{ letterSpacing: '-0.02em' }}>
+            <h1
+              className="font-heading text-2xl font-bold text-ink tracking-tight flex items-center gap-2"
+              style={{ letterSpacing: "-0.02em" }}
+            >
               Glimpse Dashboard
             </h1>
             <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-muted mt-1">
@@ -57,22 +60,24 @@ export function DashboardView() {
             </h2>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-5 stagger-children">
-            {health.error
-              ? <DataError message={health.error} onRetry={health.retry} className="col-span-full" />
-              : health.loading
-                ? Array.from({ length: 5 }).map((_, i) => (
-                  <HealthGauge key={i} loading />
-                ))
-                : health.data.map((h) => (
-                  <HealthGauge key={h.repoName} data={h} />
-                ))}
+            {health.error ? (
+              <DataError message={health.error} onRetry={health.retry} className="col-span-full" />
+            ) : health.loading ? (
+              Array.from({ length: 5 }).map((_, i) => <HealthGauge key={i} loading />)
+            ) : (
+              health.data.map((h) => <HealthGauge key={h.repoName} data={h} />)
+            )}
           </div>
         </section>
 
         {/* Two-column layout: Timeline + right column */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Audit timeline */}
-          <section aria-labelledby="audit-heading" className="animate-fade-slide-up" style={{ animationDelay: "200ms" }}>
+          <section
+            aria-labelledby="audit-heading"
+            className="animate-fade-slide-up"
+            style={{ animationDelay: "200ms" }}
+          >
             <div className="flex items-center gap-2 mb-6">
               <div className="p-1.5 rounded-md bg-teal-500/10 text-teal-500 border border-teal-500/20">
                 <History className="w-5 h-5" />
@@ -85,18 +90,21 @@ export function DashboardView() {
               </h2>
             </div>
             <div className="glass-panel p-5 card-glow">
-              {audit.error
-                ? <DataError message={audit.error} onRetry={audit.retry} />
-                : <AuditTimeline
-                  events={audit.events}
-                  loading={audit.loading}
-                />}
+              {audit.error ? (
+                <DataError message={audit.error} onRetry={audit.retry} />
+              ) : (
+                <AuditTimeline events={audit.events} loading={audit.loading} />
+              )}
             </div>
           </section>
 
           <div className="space-y-10">
             {/* Experiments */}
-            <section aria-labelledby="experiments-heading" className="animate-fade-slide-up" style={{ animationDelay: "300ms" }}>
+            <section
+              aria-labelledby="experiments-heading"
+              className="animate-fade-slide-up"
+              style={{ animationDelay: "300ms" }}
+            >
               <div className="flex items-center gap-2 mb-6">
                 <div className="p-1.5 rounded-md bg-amber-400/10 text-amber-400 border border-amber-400/20">
                   <FlaskConical className="w-5 h-5" />
@@ -109,20 +117,22 @@ export function DashboardView() {
                 </h2>
               </div>
               <div className="space-y-4">
-                {experiments.error
-                  ? <DataError message={experiments.error} onRetry={experiments.retry} />
-                  : experiments.loading
-                    ? Array.from({ length: 2 }).map((_, i) => (
-                      <ExperimentCard key={i} loading />
-                    ))
-                    : experiments.experiments.map((exp) => (
-                      <ExperimentCard key={exp.id} data={exp} />
-                    ))}
+                {experiments.error ? (
+                  <DataError message={experiments.error} onRetry={experiments.retry} />
+                ) : experiments.loading ? (
+                  Array.from({ length: 2 }).map((_, i) => <ExperimentCard key={i} loading />)
+                ) : (
+                  experiments.experiments.map((exp) => <ExperimentCard key={exp.id} data={exp} />)
+                )}
               </div>
             </section>
 
             {/* Focus session / workflow */}
-            <section aria-labelledby="focus-heading" className="animate-fade-slide-up" style={{ animationDelay: "400ms" }}>
+            <section
+              aria-labelledby="focus-heading"
+              className="animate-fade-slide-up"
+              style={{ animationDelay: "400ms" }}
+            >
               <div className="flex items-center gap-2 mb-6">
                 <div className="p-1.5 rounded-md bg-rose-500/10 text-rose-500 border border-rose-500/20">
                   <Target className="w-5 h-5" />
@@ -134,22 +144,22 @@ export function DashboardView() {
                   Current Focus
                 </h2>
               </div>
-              {focus.error
-                ? <DataError message={focus.error} onRetry={focus.retry} />
-                : focus.loading
-                  ? <WorkflowStatusCard loading />
-                  : focus.session
-                    ? <WorkflowStatusCard data={focus.session} loading={false} />
-                    : (
-                      <div className="glass-panel p-5">
-                        <div className="font-body text-[11px] font-medium uppercase tracking-[0.08em] text-ink mb-3">
-                          No active focus session
-                        </div>
-                        <p className="font-body text-sm text-ink-muted">
-                          `pulse-server` is idle. Start a new focus session there to populate this panel.
-                        </p>
-                      </div>
-                    )}
+              {focus.error ? (
+                <DataError message={focus.error} onRetry={focus.retry} />
+              ) : focus.loading ? (
+                <WorkflowStatusCard loading />
+              ) : focus.session ? (
+                <WorkflowStatusCard data={focus.session} loading={false} />
+              ) : (
+                <div className="glass-panel p-5">
+                  <div className="font-body text-[11px] font-medium uppercase tracking-[0.08em] text-ink mb-3">
+                    No active focus session
+                  </div>
+                  <p className="font-body text-sm text-ink-muted">
+                    `pulse-server` is idle. Start a new focus session there to populate this panel.
+                  </p>
+                </div>
+              )}
             </section>
           </div>
         </div>

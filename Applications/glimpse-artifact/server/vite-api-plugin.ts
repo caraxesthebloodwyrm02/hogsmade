@@ -22,21 +22,16 @@ import {
   runContextSearchWorkflow,
   type ContextSearchRequest,
 } from "./context-search";
-import {
-  runResolutionWorkbench,
-  type ResolutionWorkbenchRequest,
-} from "./resolution-workbench";
+import { runResolutionWorkbench, type ResolutionWorkbenchRequest } from "./resolution-workbench";
 
 // ── Config ──────────────────────────────────────────────────────────
 
 const HOME = process.env["HOME"] ?? "/home/caraxes";
 
 const AUDIT_NDJSON_PATH =
-  process.env["ECHOES_AUDIT_PATH"] ??
-  path.join(HOME, ".echoes", "audit.ndjson");
+  process.env["ECHOES_AUDIT_PATH"] ?? path.join(HOME, ".echoes", "audit.ndjson");
 
-const CASCADE_ROOT =
-  process.env["CASCADE_WORKSPACE_ROOT"] ?? path.join(HOME, "CascadeProjects");
+const CASCADE_ROOT = process.env["CASCADE_WORKSPACE_ROOT"] ?? path.join(HOME, "CascadeProjects");
 
 const GATE_DIR = process.env["GATE_DIR"] ?? path.join(CASCADE_ROOT, "GATE");
 
@@ -45,14 +40,9 @@ const LOTS_EXPERIMENTS_DIR =
 
 const LOTS_CATALOG_PATH = path.join(LOTS_EXPERIMENTS_DIR, ".catalog.json");
 
-const PULSE_DATA_DIR =
-  process.env["PULSE_DATA_DIR"] ?? path.join(HOME, ".pulse");
+const PULSE_DATA_DIR = process.env["PULSE_DATA_DIR"] ?? path.join(HOME, ".pulse");
 
-const PULSE_ACTIVE_FOCUS_PATH = path.join(
-  PULSE_DATA_DIR,
-  "focus",
-  "active.json",
-);
+const PULSE_ACTIVE_FOCUS_PATH = path.join(PULSE_DATA_DIR, "focus", "active.json");
 
 const KNOWN_REPOS = [
   "GRID-main",
@@ -67,10 +57,7 @@ const KNOWN_REPOS = [
   "shared-types",
 ];
 
-const GITHUB_REPOS = [
-  "caraxesthebloodwyrm02/hogsmade",
-  "GRID-INTELLIGENCE/GRID",
-];
+const GITHUB_REPOS = ["caraxesthebloodwyrm02/hogsmade", "GRID-INTELLIGENCE/GRID"];
 
 // ── Audit endpoint ──────────────────────────────────────────────────
 
@@ -193,15 +180,8 @@ async function scanRepoHealth(repoName: string): Promise<RepoHealthResult> {
 
   score = Math.min(100, Math.max(0, score));
   const label =
-    score >= 85
-      ? "Healthy"
-      : score >= 70
-        ? "Good"
-        : score >= 50
-          ? "Needs attention"
-          : "Critical";
-  const trend: RepoHealthResult["trend"] =
-    score >= 85 ? "up" : score >= 70 ? "stable" : "down";
+    score >= 85 ? "Healthy" : score >= 70 ? "Good" : score >= 50 ? "Needs attention" : "Critical";
+  const trend: RepoHealthResult["trend"] = score >= 85 ? "up" : score >= 70 ? "stable" : "down";
   return { repoName, score, label, trend };
 }
 
@@ -233,9 +213,7 @@ interface DashboardExperiment {
   completedAt?: string;
 }
 
-function toDashboardExperiment(
-  exp: LotsCatalogExperiment,
-): DashboardExperiment | null {
+function toDashboardExperiment(exp: LotsCatalogExperiment): DashboardExperiment | null {
   const statusMap = {
     draft: "queued",
     running: "running",
@@ -256,8 +234,7 @@ function toDashboardExperiment(
     baselineValue: durationMs,
     currentValue: durationMs,
     startedAt: exp.createdAt,
-    completedAt:
-      status === "completed" || status === "failed" ? exp.updatedAt : undefined,
+    completedAt: status === "completed" || status === "failed" ? exp.updatedAt : undefined,
   };
 }
 
@@ -279,12 +256,10 @@ async function readExperimentDashboard(limit: number): Promise<{
     return { count: 0, experiments: [] };
   }
 
-  const experiments = Array.isArray(
-    (parsed as { experiments?: unknown[] }).experiments,
-  )
+  const experiments = Array.isArray((parsed as { experiments?: unknown[] }).experiments)
     ? ((parsed as { experiments: LotsCatalogExperiment[] }).experiments
-      .map(toDashboardExperiment)
-      .filter(Boolean) as DashboardExperiment[])
+        .map(toDashboardExperiment)
+        .filter(Boolean) as DashboardExperiment[])
     : [];
 
   const trimmed = experiments.slice(-limit).reverse();
@@ -326,9 +301,7 @@ function focusSessionToWorkflowRun(
 ): DashboardWorkflowRun {
   return {
     id: session.id,
-    workflowName: session.project
-      ? `${session.project} — ${session.task}`
-      : session.task,
+    workflowName: session.project ? `${session.project} — ${session.task}` : session.task,
     status: "running",
     steps: [
       { name: "Declared focus", status: "done" },
@@ -396,10 +369,7 @@ async function readGateStatus(): Promise<GateStatus> {
   // Read nonce registry
   const nonces: GateStatus["nonces"] = [];
   try {
-    const raw = await readFile(
-      path.join(GATE_DIR, ".nonce_registry.json"),
-      "utf-8",
-    );
+    const raw = await readFile(path.join(GATE_DIR, ".nonce_registry.json"), "utf-8");
     const registry = JSON.parse(raw) as {
       nonces: Record<
         string,
@@ -422,9 +392,7 @@ async function readGateStatus(): Promise<GateStatus> {
         nonce: key.slice(0, 12),
         status: val.burned ? "consumed" : expired ? "expired" : "active",
         createdAt: new Date(val.created_at * 1000).toISOString(),
-        burnedAt: val.burned_at
-          ? new Date(val.burned_at * 1000).toISOString()
-          : null,
+        burnedAt: val.burned_at ? new Date(val.burned_at * 1000).toISOString() : null,
         envelopeId: val.envelope_id ?? "",
         source: val.source ?? "",
       });
@@ -624,8 +592,7 @@ async function fetchCognitionData(): Promise<CognitionResult> {
 // ── Session Entry endpoint ───────────────────────────────────────────
 
 const SEEDS_SNAPSHOTS_DIR =
-  process.env["SEEDS_SNAPSHOTS_DIR"] ??
-  path.join(HOME, ".seeds-server", "snapshots");
+  process.env["SEEDS_SNAPSHOTS_DIR"] ?? path.join(HOME, ".seeds-server", "snapshots");
 
 const PROGRESS_FILE = path.join(HOME, ".claude-progress.md");
 
@@ -674,7 +641,10 @@ interface SeedsSnapshot {
 async function readLatestSnapshot(): Promise<SeedsSnapshot | null> {
   try {
     const files = await readdir(SEEDS_SNAPSHOTS_DIR);
-    const jsonFiles = files.filter((f: string) => f.endsWith(".json")).sort().reverse();
+    const jsonFiles = files
+      .filter((f: string) => f.endsWith(".json"))
+      .sort()
+      .reverse();
     if (jsonFiles.length === 0) return null;
     const raw = await readFile(path.join(SEEDS_SNAPSHOTS_DIR, jsonFiles[0]), "utf-8");
     return JSON.parse(raw) as SeedsSnapshot;
@@ -719,14 +689,13 @@ async function readHistoryWhisper(): Promise<string | null> {
 }
 
 async function buildSessionEntryPayload(): Promise<Record<string, unknown>> {
-  const [snapshot, auditEvents, focusStatus, lastPosition, historyWhisper] =
-    await Promise.all([
-      readLatestSnapshot(),
-      readAuditEvents(50),
-      readFocusStatus(),
-      readLastPosition(),
-      readHistoryWhisper(),
-    ]);
+  const [snapshot, auditEvents, focusStatus, lastPosition, historyWhisper] = await Promise.all([
+    readLatestSnapshot(),
+    readAuditEvents(50),
+    readFocusStatus(),
+    readLastPosition(),
+    readHistoryWhisper(),
+  ]);
 
   // Compute per-cluster health from snapshot
   const repoMap = new Map<string, SeedsRepo>();
@@ -741,27 +710,31 @@ async function buildSessionEntryPayload(): Promise<Record<string, unknown>> {
     const scores = repos
       .map((name) => repoMap.get(name.toLowerCase())?.healthScore)
       .filter((s): s is number => s !== undefined);
-    const health = scores.length > 0
-      ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)
-      : 0;
+    const health =
+      scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0;
     const issues = repos.reduce((sum, name) => {
       const r = repoMap.get(name.toLowerCase());
       return sum + (r?.issues?.length ?? 0);
     }, 0);
 
-    return { id, label: CLUSTER_LABELS[id], clusterHealth: health, issueCount: issues, entities: [] };
+    return {
+      id,
+      label: CLUSTER_LABELS[id],
+      clusterHealth: health,
+      issueCount: issues,
+      entities: [],
+    };
   });
 
   // Ecosystem score
   const allScores = clusters.map((c) => c.clusterHealth).filter((s) => s > 0);
-  const ecosystemScore = allScores.length > 0
-    ? Math.round(allScores.reduce((a, b) => a + b, 0) / allScores.length)
-    : null;
+  const ecosystemScore =
+    allScores.length > 0
+      ? Math.round(allScores.reduce((a, b) => a + b, 0) / allScores.length)
+      : null;
 
   // Audit failures for drift
-  const failures = auditEvents.filter(
-    (e) => e.status === "failure" || e.status === "error",
-  );
+  const failures = auditEvents.filter((e) => e.status === "failure" || e.status === "error");
   const driftCount = failures.length;
   const driftSeverity = driftCount > 5 ? "high" : driftCount > 0 ? "moderate" : "none";
 
@@ -777,7 +750,9 @@ async function buildSessionEntryPayload(): Promise<Record<string, unknown>> {
   });
 
   // Ecosystem self-trust
-  const availableSources = [snapshot !== null, auditEvents.length > 0, focusStatus.active].filter(Boolean).length;
+  const availableSources = [snapshot !== null, auditEvents.length > 0, focusStatus.active].filter(
+    Boolean,
+  ).length;
   relationships.push({
     observer: "ecosystem",
     subject: "self",
@@ -834,11 +809,7 @@ async function buildSessionEntryPayload(): Promise<Record<string, unknown>> {
 
 // ── Plugin ──────────────────────────────────────────────────────────
 
-function jsonResponse(
-  res: import("http").ServerResponse,
-  data: unknown,
-  status = 200,
-) {
+function jsonResponse(res: import("http").ServerResponse, data: unknown, status = 200) {
   res.statusCode = status;
   res.setHeader("Content-Type", "application/json");
   res.end(JSON.stringify(data));
@@ -872,35 +843,23 @@ export function glimpseApiPlugin(): Plugin {
         if (url.pathname === "/api/audit/events") {
           const limit = Math.min(
             200,
-            Math.max(
-              1,
-              parseInt(url.searchParams.get("limit") ?? "50", 10) || 50,
-            ),
+            Math.max(1, parseInt(url.searchParams.get("limit") ?? "50", 10) || 50),
           );
           readAuditEvents(limit)
             .then((events) => jsonResponse(res, events))
-            .catch(() =>
-              jsonResponse(res, { error: "Failed to read audit events" }, 500),
-            );
+            .catch(() => jsonResponse(res, { error: "Failed to read audit events" }, 500));
           return;
         }
 
         if (url.pathname === "/api/experiments") {
           const limit = Math.min(
             100,
-            Math.max(
-              1,
-              parseInt(url.searchParams.get("limit") ?? "20", 10) || 20,
-            ),
+            Math.max(1, parseInt(url.searchParams.get("limit") ?? "20", 10) || 20),
           );
           readExperimentDashboard(limit)
             .then((payload) => jsonResponse(res, payload))
             .catch(() =>
-              jsonResponse(
-                res,
-                { error: "Failed to read experiment dashboard data" },
-                500,
-              ),
+              jsonResponse(res, { error: "Failed to read experiment dashboard data" }, 500),
             );
           return;
         }
@@ -908,77 +867,46 @@ export function glimpseApiPlugin(): Plugin {
         if (url.pathname === "/api/focus/session") {
           readFocusStatus()
             .then((payload) => jsonResponse(res, payload))
-            .catch(() =>
-              jsonResponse(
-                res,
-                { error: "Failed to read focus session data" },
-                500,
-              ),
-            );
+            .catch(() => jsonResponse(res, { error: "Failed to read focus session data" }, 500));
           return;
         }
 
         if (url.pathname === "/api/health/ecosystem") {
           scanEcosystem()
             .then((repos) => jsonResponse(res, repos))
-            .catch(() =>
-              jsonResponse(res, { error: "Failed to scan ecosystem" }, 500),
-            );
+            .catch(() => jsonResponse(res, { error: "Failed to scan ecosystem" }, 500));
           return;
         }
 
         if (url.pathname === "/api/gate/status") {
           readGateStatus()
             .then((status) => jsonResponse(res, status))
-            .catch(() =>
-              jsonResponse(res, { error: "Failed to read GATE status" }, 500),
-            );
+            .catch(() => jsonResponse(res, { error: "Failed to read GATE status" }, 500));
           return;
         }
 
         if (url.pathname === "/api/pipeline/prs") {
           fetchPipelinePRs()
             .then((prs) => jsonResponse(res, prs))
-            .catch(() =>
-              jsonResponse(
-                res,
-                { error: "Failed to fetch pipeline data" },
-                500,
-              ),
-            );
+            .catch(() => jsonResponse(res, { error: "Failed to fetch pipeline data" }, 500));
           return;
         }
 
         if (url.pathname === "/api/cognition/health") {
           fetchCognitionData()
             .then((data) => jsonResponse(res, data))
-            .catch(() =>
-              jsonResponse(
-                res,
-                { error: "Failed to fetch cognition data" },
-                500,
-              ),
-            );
+            .catch(() => jsonResponse(res, { error: "Failed to fetch cognition data" }, 500));
           return;
         }
 
         if (url.pathname === "/api/session-entry") {
           buildSessionEntryPayload()
             .then((payload) => jsonResponse(res, payload))
-            .catch(() =>
-              jsonResponse(
-                res,
-                { error: "Failed to build session entry" },
-                500,
-              ),
-            );
+            .catch(() => jsonResponse(res, { error: "Failed to build session entry" }, 500));
           return;
         }
 
-        if (
-          url.pathname === "/api/context-search/keywords" &&
-          req.method === "POST"
-        ) {
+        if (url.pathname === "/api/context-search/keywords" && req.method === "POST") {
           readJsonBody<ContextSearchRequest>(req)
             .then((body) =>
               runContextSearchWorkflow(
@@ -997,24 +925,16 @@ export function glimpseApiPlugin(): Plugin {
             )
             .catch((error: unknown) => {
               const message =
-                error instanceof Error
-                  ? error.message
-                  : "Failed to synthesize keywords";
+                error instanceof Error ? error.message : "Failed to synthesize keywords";
               jsonResponse(res, { error: message }, 400);
             });
           return;
         }
 
-        if (
-          url.pathname === "/api/context-search/query" &&
-          req.method === "POST"
-        ) {
+        if (url.pathname === "/api/context-search/query" && req.method === "POST") {
           readJsonBody<ContextSearchRequest>(req)
             .then((body) =>
-              runContextSearchWorkflow(
-                { ...body, stage: "query", printJson: false },
-                CASCADE_ROOT,
-              ),
+              runContextSearchWorkflow({ ...body, stage: "query", printJson: false }, CASCADE_ROOT),
             )
             .then((result) =>
               jsonResponse(res, {
@@ -1031,43 +951,31 @@ export function glimpseApiPlugin(): Plugin {
             )
             .catch((error: unknown) => {
               const message =
-                error instanceof Error
-                  ? error.message
-                  : "Failed to query context search";
+                error instanceof Error ? error.message : "Failed to query context search";
               jsonResponse(res, { error: message }, 400);
             });
           return;
         }
 
-        if (
-          url.pathname === "/api/context-search/interview" &&
-          req.method === "POST"
-        ) {
+        if (url.pathname === "/api/context-search/interview" && req.method === "POST") {
           readJsonBody<ContextSearchRequest>(req)
             .then((body) => runContextSearch(body, CASCADE_ROOT))
             .then((result) => jsonResponse(res, result))
             .catch((error: unknown) => {
               const message =
-                error instanceof Error
-                  ? error.message
-                  : "Failed to build interview artifacts";
+                error instanceof Error ? error.message : "Failed to build interview artifacts";
               jsonResponse(res, { error: message }, 400);
             });
           return;
         }
 
-        if (
-          url.pathname === "/api/resolution-workbench/resolve" &&
-          req.method === "POST"
-        ) {
+        if (url.pathname === "/api/resolution-workbench/resolve" && req.method === "POST") {
           readJsonBody<ResolutionWorkbenchRequest>(req)
             .then((body) => runResolutionWorkbench(body, CASCADE_ROOT))
             .then((result) => jsonResponse(res, result))
             .catch((error: unknown) => {
               const message =
-                error instanceof Error
-                  ? error.message
-                  : "Failed to resolve endpoint candidates";
+                error instanceof Error ? error.message : "Failed to resolve endpoint candidates";
               jsonResponse(res, { error: message }, 400);
             });
           return;

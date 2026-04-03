@@ -34,9 +34,21 @@ function layoutNodes(nodes: McpServerNode[]): LayoutNode[] {
 }
 
 const NODE_COLORS: Record<string, { fill: string; stroke: string; glow: string }> = {
-  "shared-types": { fill: "rgba(212, 162, 74, 0.12)", stroke: "var(--amber-400)", glow: "rgba(212, 162, 74, 0.2)" },
-  "grid-rag": { fill: "rgba(106, 140, 180, 0.12)", stroke: "#6a8cb4", glow: "rgba(106, 140, 180, 0.2)" },
-  default: { fill: "rgba(106, 174, 130, 0.10)", stroke: "var(--teal-500)", glow: "rgba(106, 174, 130, 0.2)" },
+  "shared-types": {
+    fill: "rgba(212, 162, 74, 0.12)",
+    stroke: "var(--amber-400)",
+    glow: "rgba(212, 162, 74, 0.2)",
+  },
+  "grid-rag": {
+    fill: "rgba(106, 140, 180, 0.12)",
+    stroke: "#6a8cb4",
+    glow: "rgba(106, 140, 180, 0.2)",
+  },
+  default: {
+    fill: "rgba(106, 174, 130, 0.10)",
+    stroke: "var(--teal-500)",
+    glow: "rgba(106, 174, 130, 0.2)",
+  },
 };
 
 function nodeColor(id: string) {
@@ -45,9 +57,22 @@ function nodeColor(id: string) {
 
 // T4: Known tool registry for detail panel
 const SERVER_TOOLS: Record<string, string[]> = {
-  "afloat-server": ["workflow_list", "workflow_execute", "workflow_create", "workflow_status", "workflow_dryrun"],
+  "afloat-server": [
+    "workflow_list",
+    "workflow_execute",
+    "workflow_create",
+    "workflow_status",
+    "workflow_dryrun",
+  ],
   "echoes-server": ["record_audit", "query_audit", "audit_summary", "audit_export"],
-  "grid-server": ["validate_envelope", "gate_status", "nonce_create", "nonce_burn", "deploy_check", "gate_audit"],
+  "grid-server": [
+    "validate_envelope",
+    "gate_status",
+    "nonce_create",
+    "nonce_burn",
+    "deploy_check",
+    "gate_audit",
+  ],
   "lots-server": ["experiment_list", "experiment_create", "experiment_status"],
   "maintain-server": ["system_check", "deps_audit", "health_scan", "diagnostics_run"],
   "pulse-server": ["morning_briefing", "focus_start", "focus_end", "check_alerts", "daily_summary"],
@@ -110,8 +135,7 @@ export function McpGraph({ nodes, edges, loading }: McpGraphProps) {
           const tgt = nodeMap.get(edge.target);
           if (!src || !tgt) return null;
 
-          const isHighlighted =
-            hoveredNode === edge.source || hoveredNode === edge.target;
+          const isHighlighted = hoveredNode === edge.source || hoveredNode === edge.target;
 
           return (
             <g key={i}>
@@ -166,7 +190,14 @@ export function McpGraph({ nodes, edges, loading }: McpGraphProps) {
                 className="transition-all duration-200"
               />
               {node.enabled && (
-                <circle cx={node.x + r - 4} cy={node.y - r + 4} r={4} fill="var(--teal-500)" stroke="var(--surface)" strokeWidth={1.5} />
+                <circle
+                  cx={node.x + r - 4}
+                  cy={node.y - r + 4}
+                  r={4}
+                  fill="var(--teal-500)"
+                  stroke="var(--surface)"
+                  strokeWidth={1.5}
+                />
               )}
               <text
                 x={node.x}
@@ -196,9 +227,21 @@ export function McpGraph({ nodes, edges, loading }: McpGraphProps) {
         {/* Legend */}
         <g transform="translate(10, 410)">
           <line x1={0} y1={5} x2={20} y2={5} stroke="var(--border-color)" strokeWidth={1} />
-          <text x={24} y={8} className="text-[9px] fill-ink-muted font-body">dependency</text>
-          <line x1={100} y1={5} x2={120} y2={5} stroke="var(--border-color)" strokeWidth={1} strokeDasharray="6 3" />
-          <text x={124} y={8} className="text-[9px] fill-ink-muted font-body">dataflow</text>
+          <text x={24} y={8} className="text-[9px] fill-ink-muted font-body">
+            dependency
+          </text>
+          <line
+            x1={100}
+            y1={5}
+            x2={120}
+            y2={5}
+            stroke="var(--border-color)"
+            strokeWidth={1}
+            strokeDasharray="6 3"
+          />
+          <text x={124} y={8} className="text-[9px] fill-ink-muted font-body">
+            dataflow
+          </text>
         </g>
       </svg>
 
@@ -206,13 +249,21 @@ export function McpGraph({ nodes, edges, loading }: McpGraphProps) {
       {selectedData && (
         <div className="w-56 shrink-0 glass-panel p-4 space-y-3 self-start">
           <div>
-            <h3 className="font-body text-[11px] font-medium uppercase tracking-[0.08em] text-ink">{selectedData.name}</h3>
+            <h3 className="font-body text-[11px] font-medium uppercase tracking-[0.08em] text-ink">
+              {selectedData.name}
+            </h3>
             <p className="text-xs text-ink-muted mt-1">{selectedData.description}</p>
           </div>
           <div className="space-y-1.5 text-xs font-mono">
             <div className="flex justify-between">
               <span className="text-ink-muted font-body">Status</span>
-              <span className={selectedData.enabled ? "text-emerald-500 font-medium" : "text-rose-500 font-medium"}>
+              <span
+                className={
+                  selectedData.enabled
+                    ? "text-emerald-500 font-medium"
+                    : "text-rose-500 font-medium"
+                }
+              >
                 {selectedData.enabled ? "Enabled" : "Disabled"}
               </span>
             </div>
@@ -229,20 +280,31 @@ export function McpGraph({ nodes, edges, loading }: McpGraphProps) {
             <div className="flex justify-between">
               <span className="text-ink-muted font-body">Dependencies</span>
               <span className="text-ink font-medium">
-                {edges.filter((e) => e.target === selectedData.id && e.type === "dependency").length}
+                {
+                  edges.filter((e) => e.target === selectedData.id && e.type === "dependency")
+                    .length
+                }
               </span>
             </div>
             <div className="flex justify-between">
               <span className="text-ink-muted font-body">Data flows</span>
               <span className="text-ink font-medium">
-                {edges.filter((e) => (e.source === selectedData.id || e.target === selectedData.id) && e.type === "dataflow").length}
+                {
+                  edges.filter(
+                    (e) =>
+                      (e.source === selectedData.id || e.target === selectedData.id) &&
+                      e.type === "dataflow",
+                  ).length
+                }
               </span>
             </div>
           </div>
           {/* T4: Tool list */}
           {SERVER_TOOLS[selectedData.id] && (
             <div className="border-t border-border-color/40 pt-3">
-              <span className="text-[10px] text-ink-muted font-body uppercase tracking-wider">Tools</span>
+              <span className="text-[10px] text-ink-muted font-body uppercase tracking-wider">
+                Tools
+              </span>
               <div className="mt-1.5 space-y-1">
                 {SERVER_TOOLS[selectedData.id].map((tool) => (
                   <div key={tool} className="flex items-center gap-1.5">

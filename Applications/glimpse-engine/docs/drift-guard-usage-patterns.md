@@ -23,14 +23,14 @@ DriftGuard (Orchestrator)
 ### Pattern 1: Basic Health Check
 
 ```javascript
-import { createDriftGuard } from './core/engine.js';
+import { createDriftGuard } from "./core/engine.js";
 
 // Create guard with default adaptive policy
 const guard = createDriftGuard();
 
 // Quick health check
 const isHealthy = guard.health();
-console.log(`System health: ${isHealthy ? '✅' : '❌'}`);
+console.log(`System health: ${isHealthy ? "✅" : "❌"}`);
 
 // Or async with full report
 const result = await guard.guard();
@@ -41,20 +41,20 @@ console.log(`Trends: ${result.trends.trend}`);
 ### Pattern 2: CI/CD Integration
 
 ```javascript
-import { DriftGuard, DRIFT_POLICIES } from './core/engine.js';
+import { DriftGuard, DRIFT_POLICIES } from "./core/engine.js";
 
 // Strict mode for releases
 async function releaseCheck() {
   const guard = new DriftGuard({
-    policy: DRIFT_POLICIES.STRICT
+    policy: DRIFT_POLICIES.STRICT,
   });
-  
+
   try {
     await guard.ci(true); // strict mode
-    console.log('✅ Release checks passed');
+    console.log("✅ Release checks passed");
     return true;
   } catch (err) {
-    console.error('❌ Release blocked:', err.result.report);
+    console.error("❌ Release blocked:", err.result.report);
     process.exit(1);
   }
 }
@@ -65,22 +65,22 @@ releaseCheck();
 ### Pattern 3: Policy-Driven Auto-Healing
 
 ```javascript
-import { createDriftGuard, DRIFT_POLICIES } from './core/engine.js';
+import { createDriftGuard, DRIFT_POLICIES } from "./core/engine.js";
 
 // Adaptive policy with auto-healing
 const guard = createDriftGuard({
   policy: DRIFT_POLICIES.ADAPTIVE,
-  yamlPath: './config/master.yaml',
-  jsPath: './config/backup.js'
+  yamlPath: "./config/master.yaml",
+  jsPath: "./config/backup.js",
 });
 
 // Execute with auto-heal enabled
 const result = await guard.guard({ execute: true });
 
 if (result.report.healed) {
-  console.log('✅ Auto-healed drift');
+  console.log("✅ Auto-healed drift");
 } else if (result.report.drift?.detected) {
-  console.log('⚠️ Drift requires manual intervention');
+  console.log("⚠️ Drift requires manual intervention");
 }
 ```
 
@@ -91,21 +91,21 @@ if (result.report.healed) {
 ### Pattern 4: Pipeline Integration (Express Middleware)
 
 ```javascript
-import { withDriftProtection } from './core/engine.js';
+import { withDriftProtection } from "./core/engine.js";
 
 const protectedPipeline = withDriftProtection(runContextPipeline);
 
 // Now runs drift check before each execution
-app.post('/analyze', async (req, res) => {
+app.post("/analyze", async (req, res) => {
   try {
-    const result = await protectedPipeline(req.body.data, 'json', config, {
-      driftPolicy: 'adaptive',
-      autoHealDrift: true
+    const result = await protectedPipeline(req.body.data, "json", config, {
+      driftPolicy: "adaptive",
+      autoHealDrift: true,
     });
     res.json(result);
   } catch (err) {
-    if (err.type === 'DRIFT_GUARD_VIOLATION') {
-      res.status(503).json({ error: 'Service integrity compromised' });
+    if (err.type === "DRIFT_GUARD_VIOLATION") {
+      res.status(503).json({ error: "Service integrity compromised" });
     }
   }
 });
@@ -114,15 +114,15 @@ app.post('/analyze', async (req, res) => {
 ### Pattern 5: Calibration-Aware Confidence Scoring
 
 ```javascript
-import { createGuardedFrame } from './core/engine.js';
+import { createGuardedFrame } from "./core/engine.js";
 
 // Create frame with calibration policy
-const frame = createGuardedFrame('adaptive');
+const frame = createGuardedFrame("adaptive");
 
 // Detect gaps with policy-adjusted thresholds
 frame.detectGaps({
   entities: parsedEntities,
-  evidences: collectedEvidences
+  evidences: collectedEvidences,
 });
 
 if (frame.gaps.length > 0) {
@@ -134,18 +134,18 @@ if (frame.gaps.length > 0) {
 ### Pattern 6: Custom Policy Definition
 
 ```javascript
-import { DriftGuard } from './core/engine.js';
+import { DriftGuard } from "./core/engine.js";
 
 const CUSTOM_POLICY = {
-  id: 'research',
+  id: "research",
   thresholds: { LINE_DIFF: 200, HASH_DIFF: 1, COVERAGE: 0.15 },
   autoHeal: true,
   failClosed: false,
-  escalation: 'LOG'
+  escalation: "LOG",
 };
 
 const guard = new DriftGuard({
-  policy: CUSTOM_POLICY
+  policy: CUSTOM_POLICY,
 });
 ```
 
@@ -164,21 +164,21 @@ compoundSeverity = min(1,
 )
 ```
 
-| Severity Score | Action | Auto-Heal | Notification |
-|---------------|--------|-----------|--------------|
-| ≥ 0.7 | HALT | No | ADMIN_ALERT |
-| ≥ 0.4 | WARN | Yes (if policy) | LOG_EVENT |
-| > 0 | MONITOR | No | METRICS_ONLY |
-| 0 | HEALTHY | No | SILENT |
+| Severity Score | Action  | Auto-Heal       | Notification |
+| -------------- | ------- | --------------- | ------------ |
+| ≥ 0.7          | HALT    | No              | ADMIN_ALERT  |
+| ≥ 0.4          | WARN    | Yes (if policy) | LOG_EVENT    |
+| > 0            | MONITOR | No              | METRICS_ONLY |
+| 0              | HEALTHY | No              | SILENT       |
 
 ### Policy Matrix
 
-| Policy | Coverage Threshold | Line Diff | Auto-Heal | Fail Closed |
-|--------|-------------------|-----------|-----------|-------------|
-| **strict** | 0.50 | 50 | ❌ | ✅ |
-| **adaptive** | 0.30 | 10 | ✅ | ❌ |
-| **permissive** | 0.20 | 100 | ✅ | ❌ |
-| **research** | 0.15 | 200 | ✅ | ❌ |
+| Policy         | Coverage Threshold | Line Diff | Auto-Heal | Fail Closed |
+| -------------- | ------------------ | --------- | --------- | ----------- |
+| **strict**     | 0.50               | 50        | ❌        | ✅          |
+| **adaptive**   | 0.30               | 10        | ✅        | ❌          |
+| **permissive** | 0.20               | 100       | ✅        | ❌          |
+| **research**   | 0.15               | 200       | ✅        | ❌          |
 
 ---
 
@@ -220,10 +220,10 @@ console.log(`Trend direction: ${trends.trend}`); // STABLE | DEGRADING | FLUCTUA
 try {
   await guard.ci(true);
 } catch (err) {
-  if (err.message.includes('DRIFTGUARD_HALT')) {
+  if (err.message.includes("DRIFTGUARD_HALT")) {
     // Critical - operation blocked
-    console.error('Report:', err.result.report);
-    console.error('Decision:', err.result.decision);
+    console.error("Report:", err.result.report);
+    console.error("Decision:", err.result.decision);
   }
 }
 ```
@@ -232,14 +232,14 @@ try {
 
 ```javascript
 const guard = createDriftGuard({
-  policy: { ...DRIFT_POLICIES.ADAPTIVE, failClosed: false }
+  policy: { ...DRIFT_POLICIES.ADAPTIVE, failClosed: false },
 });
 
 const result = await guard.guard();
 
 if (!result.healthy) {
   // Continue with degraded functionality
-  console.warn('Operating in degraded mode');
+  console.warn("Operating in degraded mode");
 }
 ```
 
@@ -259,12 +259,12 @@ if (!result.healthy) {
 
 ## Performance Characteristics
 
-| Operation | Typical Duration | Notes |
-|-----------|-----------------|-------|
-| health() | < 5ms | Synchronous, read-only |
-| guard() | 10-50ms | Includes detection + decision |
-| ci(strict) | 50-100ms | Includes verification loop |
-| trends analysis | 1-5ms | In-memory calculations |
+| Operation       | Typical Duration | Notes                         |
+| --------------- | ---------------- | ----------------------------- |
+| health()        | < 5ms            | Synchronous, read-only        |
+| guard()         | 10-50ms          | Includes detection + decision |
+| ci(strict)      | 50-100ms         | Includes verification loop    |
+| trends analysis | 1-5ms            | In-memory calculations        |
 
 ---
 
@@ -272,17 +272,17 @@ if (!result.healthy) {
 
 ```javascript
 // Old approach (separate validators)
-import { validateSyncHealth } from './validators/sync-validator.js';
+import { validateSyncHealth } from "./validators/sync-validator.js";
 const health = validateSyncHealth();
 
 // New approach (unified DriftGuard)
-import { createDriftGuard } from './core/engine.js';
+import { createDriftGuard } from "./core/engine.js";
 const guard = createDriftGuard();
 const result = await guard.guard();
 
 // Access legacy data through report
-console.log(result.report.yaml.hash);  // Was drift.yamlHash
-console.log(result.report.drift.detected);  // Was drift.driftDetected
+console.log(result.report.yaml.hash); // Was drift.yamlHash
+console.log(result.report.drift.detected); // Was drift.driftDetected
 ```
 
 ---
@@ -301,6 +301,7 @@ console.log(result.report.drift.detected);  // Was drift.driftDetected
 ## Architecture Compliance
 
 DriftGuard is architecturally aligned with:
+
 - **Fail-closed**: Defaults to safe when detection fails
 - **Observable**: Full telemetry and trend analysis
 - **Policy-driven**: Behavior configurable without code changes

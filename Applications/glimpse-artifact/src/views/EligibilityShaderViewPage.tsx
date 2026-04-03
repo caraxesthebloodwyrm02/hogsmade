@@ -1,21 +1,21 @@
-import { EligibilityMemoView } from '@/components/EligibilityMemoView';
-import { EligibilityShaderView } from '@/components/EligibilityShaderView';
-import { useEligibilityPipeline } from '@/hooks/useEligibilityPipeline';
-import { useEvolutionCycle } from '@/hooks/useEvolutionCycle';
-import { cn } from '@/lib/utils';
-import { useState } from 'react';
+import { EligibilityMemoView } from "@/components/EligibilityMemoView";
+import { EligibilityShaderView } from "@/components/EligibilityShaderView";
+import { useEligibilityPipeline } from "@/hooks/useEligibilityPipeline";
+import { useEvolutionCycle } from "@/hooks/useEvolutionCycle";
+import { cn } from "@/lib/utils";
+import { useState } from "react";
 
-type ShaderTab = 'gpu' | 'memo';
+type ShaderTab = "gpu" | "memo";
 
 const BEAT_LABELS: Record<string, string> = {
-  map: 'Map (scatter)',
-  balance: 'Balance (cluster)',
-  tighten: 'Tighten (compress)',
-  verify: 'Verify (grid)',
+  map: "Map (scatter)",
+  balance: "Balance (cluster)",
+  tighten: "Tighten (compress)",
+  verify: "Verify (grid)",
 };
 
 export function EligibilityShaderViewPage() {
-  const [tab, setTab] = useState<ShaderTab>('memo');
+  const [tab, setTab] = useState<ShaderTab>("memo");
   const { snapshot, loading, error } = useEvolutionCycle();
   const promotionGate = snapshot?.caseRecord.latestPromotionDecision ?? null;
   const data = useEligibilityPipeline(snapshot, promotionGate);
@@ -30,9 +30,7 @@ export function EligibilityShaderViewPage() {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center h-full text-red-400 font-body">
-        {error}
-      </div>
+      <div className="flex items-center justify-center h-full text-red-400 font-body">{error}</div>
     );
   }
 
@@ -56,23 +54,23 @@ export function EligibilityShaderViewPage() {
         {/* Tab toggle */}
         <div className="flex items-center rounded-md border border-border-color/50 overflow-hidden shrink-0">
           <button
-            onClick={() => setTab('memo')}
+            onClick={() => setTab("memo")}
             className={cn(
-              'font-mono text-[10px] uppercase tracking-widest px-3 py-1.5 transition-all',
-              tab === 'memo'
-                ? 'bg-teal-500/15 text-teal-500'
-                : 'text-ink-ghost hover:text-ink-muted',
+              "font-mono text-[10px] uppercase tracking-widest px-3 py-1.5 transition-all",
+              tab === "memo"
+                ? "bg-teal-500/15 text-teal-500"
+                : "text-ink-ghost hover:text-ink-muted",
             )}
           >
             Memo
           </button>
           <button
-            onClick={() => setTab('gpu')}
+            onClick={() => setTab("gpu")}
             className={cn(
-              'font-mono text-[10px] uppercase tracking-widest px-3 py-1.5 transition-all',
-              tab === 'gpu'
-                ? 'bg-teal-500/15 text-teal-500'
-                : 'text-ink-ghost hover:text-ink-muted',
+              "font-mono text-[10px] uppercase tracking-widest px-3 py-1.5 transition-all",
+              tab === "gpu"
+                ? "bg-teal-500/15 text-teal-500"
+                : "text-ink-ghost hover:text-ink-muted",
             )}
           >
             GPU
@@ -81,7 +79,10 @@ export function EligibilityShaderViewPage() {
 
         {/* Status readouts */}
         <span className="font-body text-sm text-ink-muted">
-          Beat: <span style={{ color: 'var(--teal-500)' }} className="font-medium">{BEAT_LABELS[beat] ?? beat}</span>
+          Beat:{" "}
+          <span style={{ color: "var(--teal-500)" }} className="font-medium">
+            {BEAT_LABELS[beat] ?? beat}
+          </span>
         </span>
         {data && (
           <span className="font-body text-sm text-ink-muted">
@@ -91,10 +92,26 @@ export function EligibilityShaderViewPage() {
         {momentum && (
           <>
             <span className="font-body text-sm text-ink-muted">
-              Momentum: <span className={cn('font-medium', momentum.momentum > 0.5 ? 'text-emerald-400' : 'text-amber-400')}>{momentum.momentum.toFixed(3)}</span>
+              Momentum:{" "}
+              <span
+                className={cn(
+                  "font-medium",
+                  momentum.momentum > 0.5 ? "text-emerald-400" : "text-amber-400",
+                )}
+              >
+                {momentum.momentum.toFixed(3)}
+              </span>
             </span>
             <span className="font-body text-sm text-ink-muted">
-              Drift: <span className={cn('font-medium', momentum.sidewalkDrift >= 0.35 ? 'text-red-400' : 'text-ink')}>{momentum.sidewalkDrift.toFixed(3)}</span>
+              Drift:{" "}
+              <span
+                className={cn(
+                  "font-medium",
+                  momentum.sidewalkDrift >= 0.35 ? "text-red-400" : "text-ink",
+                )}
+              >
+                {momentum.sidewalkDrift.toFixed(3)}
+              </span>
             </span>
           </>
         )}
@@ -108,17 +125,15 @@ export function EligibilityShaderViewPage() {
 
       {/* Content */}
       <div className="flex-1 min-h-0 overflow-auto relative">
-        {tab === 'gpu' && data && (
+        {tab === "gpu" && data && (
           <EligibilityShaderView data={data} className="absolute inset-0" />
         )}
-        {tab === 'gpu' && !data && (
+        {tab === "gpu" && !data && (
           <div className="flex items-center justify-center h-full text-ink-muted font-body">
             No pipeline data available for GPU rendering.
           </div>
         )}
-        {tab === 'memo' && (
-          <EligibilityMemoView snapshot={snapshot} />
-        )}
+        {tab === "memo" && <EligibilityMemoView snapshot={snapshot} />}
       </div>
     </div>
   );

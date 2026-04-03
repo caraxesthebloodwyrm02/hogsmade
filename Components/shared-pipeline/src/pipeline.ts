@@ -12,13 +12,13 @@ import type {
   PipelineResult,
   ResidueEntry,
   ResidueStack,
-} from './types.js';
+} from "./types.js";
 
 function freezeDeep<T>(obj: T): T {
-  if (obj === null || typeof obj !== 'object') return obj;
+  if (obj === null || typeof obj !== "object") return obj;
   Object.freeze(obj);
   for (const value of Object.values(obj as Record<string, unknown>)) {
-    if (value !== null && typeof value === 'object') {
+    if (value !== null && typeof value === "object") {
       freezeDeep(value);
     }
   }

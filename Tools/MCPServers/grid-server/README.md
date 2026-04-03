@@ -29,6 +29,7 @@ When `GRID_API_URL` is unset or the request fails (e.g. GRID-main down or unreac
 The GRID-main `/api/v1/gate/validate` endpoint is **optional and not yet implemented** in GRID-main. When implemented, it should follow the request/response shape used by grid-server (see `src/server.ts`: request body `source_agent`, `target`, `action`, `payload_hash`, `test_status`; response with `approved`, `flags`, `reasoning`).
 
 Startup probe behavior:
+
 - `grid-server` probes `GET /health` first.
 - If `/health` is unavailable, it falls back to `GET /api/v1/health`.
 - Admission MCP tools (`admission_*`) still require `GET /admission/*` endpoints to be reachable.

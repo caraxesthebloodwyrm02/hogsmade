@@ -1,5 +1,20 @@
-import { buildSemanticHints, compileRuleFromConversation, computeClusters, parseCSV, parseQueryIntent, runContextPipeline, validateConfigWithRegistry } from "./core/engine.js";
-import { createRulePreview, downloadMasterConfig, loadMasterConfig, parseMasterConfig, saveMasterConfigToHandle, serializeMasterConfig } from "./master-config.js";
+import {
+  buildSemanticHints,
+  compileRuleFromConversation,
+  computeClusters,
+  parseCSV,
+  parseQueryIntent,
+  runContextPipeline,
+  validateConfigWithRegistry,
+} from "./core/engine.js";
+import {
+  createRulePreview,
+  downloadMasterConfig,
+  loadMasterConfig,
+  parseMasterConfig,
+  saveMasterConfigToHandle,
+  serializeMasterConfig,
+} from "./master-config.js";
 import { buildPathwayEntry, logPathway } from "./pathway-logger.js";
 import { rankViews, renderView, VIEW_SPECS } from "./view-specs.js";
 
@@ -51,7 +66,12 @@ function debounce(fn, ms) {
 function saveFocus() {
   const el = document.activeElement;
   if (!el || el === document.body) return null;
-  return { id: el.id, selStart: el.selectionStart, selEnd: el.selectionEnd, scrollY: window.scrollY };
+  return {
+    id: el.id,
+    selStart: el.selectionStart,
+    selEnd: el.selectionEnd,
+    scrollY: window.scrollY,
+  };
 }
 
 function restoreFocus(saved) {
@@ -60,7 +80,9 @@ function restoreFocus(saved) {
   if (el) {
     el.focus();
     if (typeof el.selectionStart === "number" && saved.selStart != null) {
-      try { el.setSelectionRange(saved.selStart, saved.selEnd); } catch { }
+      try {
+        el.setSelectionRange(saved.selStart, saved.selEnd);
+      } catch {}
     }
   }
   window.scrollTo(0, saved.scrollY);
@@ -88,12 +110,15 @@ function handleFile(file) {
   const ext = file.name.split(".").pop().toLowerCase();
   if (ext === "json") {
     G.fileType = "json";
-    file.text().then((text) => {
-      G.rawData = JSON.parse(text);
-      G.phase = 1;
-      render();
-      window.setTimeout(runPipeline, 120);
-    }).catch((error) => alert(`Invalid JSON: ${error.message}`));
+    file
+      .text()
+      .then((text) => {
+        G.rawData = JSON.parse(text);
+        G.phase = 1;
+        render();
+        window.setTimeout(runPipeline, 120);
+      })
+      .catch((error) => alert(`Invalid JSON: ${error.message}`));
   } else if (ext === "csv") {
     G.fileType = "csv";
     file.text().then((text) => {
@@ -111,7 +136,9 @@ function runPipeline() {
   if (!G.masterConfig) return;
   G.phase = 2;
   render();
-  const ctx = runContextPipeline(G.rawData, G.fileType, G.masterConfig, { presetId: G.activePreset });
+  const ctx = runContextPipeline(G.rawData, G.fileType, G.masterConfig, {
+    presetId: G.activePreset,
+  });
   if (!ctx) {
     G.phase = 0;
     render();
@@ -127,9 +154,11 @@ function runPipeline() {
 
   // Pathway logging — persistent root/branch trace
   const entry = buildPathwayEntry(ctx, G.fileName || "unknown");
-  logPathway(entry).then(result => {
-    if (result?.logged) console.info("[pathway] Trace logged:", result.file);
-  }).catch(() => { });
+  logPathway(entry)
+    .then((result) => {
+      if (result?.logged) console.info("[pathway] Trace logged:", result.file);
+    })
+    .catch(() => {});
 }
 
 function render() {
@@ -165,11 +194,31 @@ function renderPhaseBar() {
 }
 
 function renderMasterPanel() {
-  const presetOptions = Object.entries(G.masterConfig?.presets || {}).map(([id, preset]) => `<option value="${id}"${G.activePreset === id ? " selected" : ""}>${esc(preset.label || id)}</option>`).join("");
-  const configLabel = G.masterConfigSource === "external-file" ? "Loaded `glimpse.master.yaml`" : G.masterConfigSource === "embedded-default" ? "Fallback config (use load/save for the master YAML)" : "Loading...";
+  const presetOptions = Object.entries(G.masterConfig?.presets || {})
+    .map(
+      ([id, preset]) =>
+        `<option value="${id}"${G.activePreset === id ? " selected" : ""}>${esc(preset.label || id)}</option>`,
+    )
+    .join("");
+  const configLabel =
+    G.masterConfigSource === "external-file"
+      ? "Loaded `glimpse.master.yaml`"
+      : G.masterConfigSource === "embedded-default"
+        ? "Fallback config (use load/save for the master YAML)"
+        : "Loading...";
   const functionCount = Object.keys(G.masterConfig?.function_registry || {}).length;
   const diagnostics = G.masterConfig?.diagnostics || {};
-  return `<div class="context-panel fade-in"><div class="context-header"><h3>Master Config</h3><span class="config-status">${esc(configLabel)}</span></div><div class="context-body"><div class="master-grid"><div class="master-card"><div class="master-kicker">Preset</div><select class="cluster-select" id="presetSelect">${presetOptions}</select><div class="master-help">Presets change lens and view weighting without changing the raw evidence.</div></div><div class="master-card"><div class="master-kicker">Semantic Hints</div><div class="hint-list">${buildSemanticHints(G.masterConfig || { taxonomy: { domains: [] } }).slice(0, 5).map((hint) => `<span class="hint-chip">${esc(hint.label)}: ${esc(hint.sampleTerms.join(", "))}</span>`).join("")}</div></div><div class="master-card"><div class="master-kicker">Logic Surface</div><div class="master-help">${functionCount} safe functions exposed. Trace ${diagnostics.trace_output === false ? "off" : "on"}. Fail-closed ${diagnostics.fail_closed === false ? "off" : "on"}.</div></div><div class="master-card"><div class="master-kicker">Control</div><div class="button-row"><button class="btn btn-ghost btn-sm" data-action="loadMaster" aria-label="Load master YAML configuration">Load master YAML</button><button class="btn btn-ghost btn-sm" data-action="saveMaster" aria-label="Save master YAML configuration">Save master YAML</button></div><div class="master-help">${esc(G.saveStatus || "Rules, function metadata, and semantic packs persist through the master YAML file.")}</div></div></div></div></div>`;
+  return `<div class="context-panel fade-in"><div class="context-header"><h3>Master Config</h3><span class="config-status">${esc(configLabel)}</span></div><div class="context-body"><div class="master-grid"><div class="master-card"><div class="master-kicker">Preset</div><select class="cluster-select" id="presetSelect">${presetOptions}</select><div class="master-help">Presets change lens and view weighting without changing the raw evidence.</div></div><div class="master-card"><div class="master-kicker">Semantic Hints</div><div class="hint-list">${buildSemanticHints(
+    G.masterConfig || { taxonomy: { domains: [] } },
+  )
+    .slice(0, 5)
+    .map(
+      (hint) =>
+        `<span class="hint-chip">${esc(hint.label)}: ${esc(hint.sampleTerms.join(", "))}</span>`,
+    )
+    .join(
+      "",
+    )}</div></div><div class="master-card"><div class="master-kicker">Logic Surface</div><div class="master-help">${functionCount} safe functions exposed. Trace ${diagnostics.trace_output === false ? "off" : "on"}. Fail-closed ${diagnostics.fail_closed === false ? "off" : "on"}.</div></div><div class="master-card"><div class="master-kicker">Control</div><div class="button-row"><button class="btn btn-ghost btn-sm" data-action="loadMaster" aria-label="Load master YAML configuration">Load master YAML</button><button class="btn btn-ghost btn-sm" data-action="saveMaster" aria-label="Save master YAML configuration">Save master YAML</button></div><div class="master-help">${esc(G.saveStatus || "Rules, function metadata, and semantic packs persist through the master YAML file.")}</div></div></div></div></div>`;
 }
 
 function renderUpload() {
@@ -195,23 +244,42 @@ function renderResults() {
 }
 
 function renderLensPills() {
-  if (!G.ctx?.contextLenses?.length) return '<span class="dim-tag">No strong context lenses detected yet.</span>';
-  return G.ctx.contextLenses.map((lens) => `<span class="lens-pill ${lens.role}">${esc(lens.label)} <strong>${Math.round(lens.score * 100)}%</strong></span>`).join("");
+  if (!G.ctx?.contextLenses?.length)
+    return '<span class="dim-tag">No strong context lenses detected yet.</span>';
+  return G.ctx.contextLenses
+    .map(
+      (lens) =>
+        `<span class="lens-pill ${lens.role}">${esc(lens.label)} <strong>${Math.round(lens.score * 100)}%</strong></span>`,
+    )
+    .join("");
 }
 
 function renderContextSummary() {
   const ctx = G.ctx;
   const topView = G.viewRankings[0];
-  const descriptors = ctx.profile.descriptors.filter((descriptor) => descriptor.dimension).map((descriptor) => `<span class="dim-tag"><strong>${esc(descriptor.dimension)}:</strong> ${esc(descriptor.name)}</span>`).join("");
-  const diagnosticsCount = (ctx.validationReport?.invalidArgs?.length || 0) + (ctx.validationReport?.diagnostics?.length || 0);
+  const descriptors = ctx.profile.descriptors
+    .filter((descriptor) => descriptor.dimension)
+    .map(
+      (descriptor) =>
+        `<span class="dim-tag"><strong>${esc(descriptor.dimension)}:</strong> ${esc(descriptor.name)}</span>`,
+    )
+    .join("");
+  const diagnosticsCount =
+    (ctx.validationReport?.invalidArgs?.length || 0) +
+    (ctx.validationReport?.diagnostics?.length || 0);
   return `<div class="context-panel fade-in"><div class="context-header"><h3>Context Lenses</h3><span style="font-size:0.75rem;color:var(--ink-muted)">${ctx.profile.recordCount} records &middot; ${ctx.entities.length} entities &middot; ${ctx.relations.length} relations</span></div><div class="context-body"><div class="lens-row">${renderLensPills()}</div><div class="dim-tags" style="margin-top:0.75rem">${descriptors}</div><div class="summary-grid"><div class="summary-card"><div class="master-kicker">Primary Lens</div><strong>${esc(ctx.primaryLens?.label || "General")}</strong><p>${generateLensReason(ctx.primaryLens)}</p></div><div class="summary-card"><div class="master-kicker">View Recommendation</div><strong>${esc(topView?.label || "Explorer")}</strong><p>${topView ? `Ranked first with a score of ${topView.score.toFixed(2)} based on your data structure and active preset.` : "No preferred view yet."}</p></div><div class="summary-card"><div class="master-kicker">Logic Audit</div><strong>${ctx.ruleTraces?.length || 0} traces</strong><p>${diagnosticsCount ? `${diagnosticsCount} validation or diagnostic notes detected.` : "No validation issues detected in the active rule pass."}</p></div></div></div></div>`;
 }
 
 function generateLensReason(lens) {
   if (!lens) return "The engine fell back to a general lens because the evidence was weak.";
   if (!G.ctx?.evidenceIndex) return "This lens is supported by the current rule system.";
-  const reasons = (lens.evidenceIds || []).slice(0, 2).map((id) => G.ctx.evidenceIndex[id]?.reason).filter(Boolean);
-  return reasons.length ? reasons.join(" ") : "This lens was selected from accumulated rule evidence.";
+  const reasons = (lens.evidenceIds || [])
+    .slice(0, 2)
+    .map((id) => G.ctx.evidenceIndex[id]?.reason)
+    .filter(Boolean);
+  return reasons.length
+    ? reasons.join(" ")
+    : "This lens was selected from accumulated rule evidence.";
 }
 
 function renderQueryBar() {
@@ -230,13 +298,17 @@ function renderStats() {
 }
 
 function renderModeBar() {
-  const ordered = [...new Set([...G.viewRankings.map((view) => view.id), ...VIEW_SPECS.map((spec) => spec.id)])];
-  return `<div class="mode-bar">${ordered.map((viewId) => {
-    const spec = VIEW_SPECS.find((item) => item.id === viewId);
-    const ranking = G.viewRankings.find((item) => item.id === viewId);
-    if (!spec) return "";
-    return `<button class="mode-btn${G.mode === viewId ? " active" : ""}" data-mode="${viewId}">${esc(spec.label)}${ranking ? ` <span class="mode-score">${ranking.score.toFixed(2)}</span>` : ""}</button>`;
-  }).join("")}</div>`;
+  const ordered = [
+    ...new Set([...G.viewRankings.map((view) => view.id), ...VIEW_SPECS.map((spec) => spec.id)]),
+  ];
+  return `<div class="mode-bar">${ordered
+    .map((viewId) => {
+      const spec = VIEW_SPECS.find((item) => item.id === viewId);
+      const ranking = G.viewRankings.find((item) => item.id === viewId);
+      if (!spec) return "";
+      return `<button class="mode-btn${G.mode === viewId ? " active" : ""}" data-mode="${viewId}">${esc(spec.label)}${ranking ? ` <span class="mode-score">${ranking.score.toFixed(2)}</span>` : ""}</button>`;
+    })
+    .join("")}</div>`;
 }
 
 function renderVisualization() {
@@ -244,7 +316,9 @@ function renderVisualization() {
 }
 
 function renderClusterSelect() {
-  const options = ["domain", "space", "time", "type", "catalyst"].map((id) => `<option value="${id}"${G.clusterBy === id ? " selected" : ""}>${id}</option>`).join("");
+  const options = ["domain", "space", "time", "type", "catalyst"]
+    .map((id) => `<option value="${id}"${G.clusterBy === id ? " selected" : ""}>${id}</option>`)
+    .join("");
   return `<select class="cluster-select" id="clusterSelect">${options}</select>`;
 }
 
@@ -262,10 +336,19 @@ function renderEvidenceTrail() {
 }
 
 function renderLogicAudit() {
-  const traces = (G.ctx?.ruleTraces || []).slice().sort((left, right) => {
-    const order = { fired: 0, validation_error: 1, execution_error: 2, guard_blocked: 3, skipped: 4 };
-    return (order[left.status] ?? 9) - (order[right.status] ?? 9);
-  }).slice(0, 12);
+  const traces = (G.ctx?.ruleTraces || [])
+    .slice()
+    .sort((left, right) => {
+      const order = {
+        fired: 0,
+        validation_error: 1,
+        execution_error: 2,
+        guard_blocked: 3,
+        skipped: 4,
+      };
+      return (order[left.status] ?? 9) - (order[right.status] ?? 9);
+    })
+    .slice(0, 12);
   const report = G.ctx?.validationReport || {};
   const inventory = (G.ctx?.functionInventory || []).slice(0, 8);
   return `<div class="output-grid"><div class="output-card fade-in"><div class="output-card-header"><h4>Rule Trace</h4></div><div class="output-card-body"><div class="evidence-list">${traces.map((trace) => `<div class="evidence-item"><div class="evidence-top"><strong>${esc(trace.ruleId)}</strong><span>${esc(trace.status)}</span></div><p>${trace.mode === "function" ? `Function: ${esc(trace.functionName || "n/a")} &middot; Args: ${esc(JSON.stringify(trace.args || {}))}` : "Legacy fact rule."}</p><p>${trace.guardResult && trace.guardResult !== "none" ? `Guards: ${esc(trace.guardResult)}. ` : ""}${trace.validationErrors?.length ? esc(trace.validationErrors.join(" ")) : trace.output?.reason ? esc(trace.output.reason) : "No extra trace text."}</p></div>`).join("") || '<div class="empty-state">No trace output available.</div>'}</div></div></div><div class="output-card fade-in"><div class="output-card-header"><h4>Validation Surface</h4></div><div class="output-card-body"><p><strong>Missing functions:</strong> ${report.missingFunctions?.length || 0}</p><p><strong>Invalid args:</strong> ${report.invalidArgs?.length || 0}</p><p><strong>Skipped rules:</strong> ${report.skippedRules?.length || 0}</p><p><strong>Diagnostics:</strong> ${report.diagnostics?.length || 0}</p><div class="hint-list" style="margin-top:0.75rem">${inventory.map((item) => `<span class="hint-chip">${esc(item.name)} → ${esc(item.returns)}</span>`).join("")}</div></div></div></div>`;
@@ -288,46 +371,85 @@ function renderRuleAuthoring() {
 function generateNarrative() {
   const ctx = G.ctx;
   const query = G.query.trim().toLowerCase();
-  const lead = [`<p>The dataset reads primarily as <strong>${esc(ctx.primaryLens?.label || "General")}</strong>`];
+  const lead = [
+    `<p>The dataset reads primarily as <strong>${esc(ctx.primaryLens?.label || "General")}</strong>`,
+  ];
   if (ctx.secondaryLenses.length) {
-    lead.push(` with supporting lenses in ${ctx.secondaryLenses.map((lens) => `<span class="hl">${esc(lens.label)}</span>`).join(", ")}`);
+    lead.push(
+      ` with supporting lenses in ${ctx.secondaryLenses.map((lens) => `<span class="hl">${esc(lens.label)}</span>`).join(", ")}`,
+    );
   }
-  lead.push(`. This comes from ${ctx.evidences.length} explicit pieces of evidence rather than a single hard-coded domain guess.</p>`);
+  lead.push(
+    `. This comes from ${ctx.evidences.length} explicit pieces of evidence rather than a single hard-coded domain guess.</p>`,
+  );
 
   const parts = [lead.join("")];
   const topView = G.viewRankings[0];
   if (topView) {
-    parts.push(`<p>The engine recommends <strong>${esc(topView.label)}</strong> first because its ranking score reached <span class="hl">${topView.score.toFixed(2)}</span> under the active <strong>${esc(G.masterConfig.presets[G.activePreset]?.label || G.activePreset)}</strong> preset.</p>`);
+    parts.push(
+      `<p>The engine recommends <strong>${esc(topView.label)}</strong> first because its ranking score reached <span class="hl">${topView.score.toFixed(2)}</span> under the active <strong>${esc(G.masterConfig.presets[G.activePreset]?.label || G.activePreset)}</strong> preset.</p>`,
+    );
   }
 
   const topEvidence = [...ctx.evidences].sort((a, b) => b.confidence - a.confidence)[0];
   if (topEvidence) {
-    parts.push(`<p>Top evidence: <strong>${esc(topEvidence.sourceRuleId)}</strong> at ${Math.round(topEvidence.confidence * 100)}% confidence. ${esc(topEvidence.reason)}</p>`);
+    parts.push(
+      `<p>Top evidence: <strong>${esc(topEvidence.sourceRuleId)}</strong> at ${Math.round(topEvidence.confidence * 100)}% confidence. ${esc(topEvidence.reason)}</p>`,
+    );
   }
 
-  const firedFunctionTrace = (ctx.ruleTraces || []).find((trace) => trace.status === "fired" && trace.mode === "function");
+  const firedFunctionTrace = (ctx.ruleTraces || []).find(
+    (trace) => trace.status === "fired" && trace.mode === "function",
+  );
   if (firedFunctionTrace) {
-    parts.push(`<p>Most visible function-backed rule: <strong>${esc(firedFunctionTrace.ruleId)}</strong> used <span class="hl">${esc(firedFunctionTrace.functionName)}</span> with validated arguments.</p>`);
+    parts.push(
+      `<p>Most visible function-backed rule: <strong>${esc(firedFunctionTrace.ruleId)}</strong> used <span class="hl">${esc(firedFunctionTrace.functionName)}</span> with validated arguments.</p>`,
+    );
   }
 
   if (query) {
     const intent = parseQueryIntent(query, G.masterConfig);
     if (intent.kind === "show_best_views") {
-      parts.push(`<p>Best views right now: ${G.viewRankings.slice(0, 3).map((view) => `<span class="hl">${esc(view.label)}</span>`).join(", ")}.</p>`);
+      parts.push(
+        `<p>Best views right now: ${G.viewRankings
+          .slice(0, 3)
+          .map((view) => `<span class="hl">${esc(view.label)}</span>`)
+          .join(", ")}.</p>`,
+      );
     } else if (intent.kind === "compare_contexts") {
-      parts.push(`<p>Context comparison: the primary lens is <strong>${esc(ctx.primaryLens?.label)}</strong>, while secondary lenses keep adjacent meaning visible instead of collapsing it into one bucket.</p>`);
+      parts.push(
+        `<p>Context comparison: the primary lens is <strong>${esc(ctx.primaryLens?.label)}</strong>, while secondary lenses keep adjacent meaning visible instead of collapsing it into one bucket.</p>`,
+      );
     } else if (intent.kind === "explain_relation" && intent.names.length === 2) {
-      const left = ctx.entities.find((entity) => entity.name.toLowerCase().includes(intent.names[0]));
-      const right = ctx.entities.find((entity) => entity.name.toLowerCase().includes(intent.names[1]));
-      const relation = left && right ? ctx.relations.find((item) => (item.source === left.id && item.target === right.id) || (item.source === right.id && item.target === left.id)) : null;
+      const left = ctx.entities.find((entity) =>
+        entity.name.toLowerCase().includes(intent.names[0]),
+      );
+      const right = ctx.entities.find((entity) =>
+        entity.name.toLowerCase().includes(intent.names[1]),
+      );
+      const relation =
+        left && right
+          ? ctx.relations.find(
+              (item) =>
+                (item.source === left.id && item.target === right.id) ||
+                (item.source === right.id && item.target === left.id),
+            )
+          : null;
       if (relation) {
-        const evidence = relation.evidenceIds.map((id) => ctx.evidenceIndex[id]?.reason).filter(Boolean).join(" ");
-        parts.push(`<p>${esc(left.name)} and ${esc(right.name)} are connected through <strong>${esc(relation.type)}</strong>. ${esc(evidence || "The relation is supported by structural evidence.")}</p>`);
+        const evidence = relation.evidenceIds
+          .map((id) => ctx.evidenceIndex[id]?.reason)
+          .filter(Boolean)
+          .join(" ");
+        parts.push(
+          `<p>${esc(left.name)} and ${esc(right.name)} are connected through <strong>${esc(relation.type)}</strong>. ${esc(evidence || "The relation is supported by structural evidence.")}</p>`,
+        );
       }
     } else if (intent.kind === "show_trace") {
       const trace = (ctx.ruleTraces || []).find((item) => item.status === "fired");
       if (trace) {
-        parts.push(`<p>Trace view: <strong>${esc(trace.ruleId)}</strong> fired as a ${esc(trace.mode)} rule on ${esc(trace.targetId)}.</p>`);
+        parts.push(
+          `<p>Trace view: <strong>${esc(trace.ruleId)}</strong> fired as a ${esc(trace.mode)} rule on ${esc(trace.targetId)}.</p>`,
+        );
       }
     }
   }
@@ -349,23 +471,28 @@ function renderChart() {
     type,
     data: {
       labels,
-      datasets: [{
-        label: "Context confidence",
-        data: values,
-        backgroundColor: type === "bar" ? palette[0] + "cc" : palette.slice(0, labels.length),
-        borderColor: type === "bar" ? palette[0] : palette.slice(0, labels.length),
-        borderWidth: type === "bar" ? 0 : 2,
-        borderRadius: type === "bar" ? 5 : 0,
-      }],
+      datasets: [
+        {
+          label: "Context confidence",
+          data: values,
+          backgroundColor: type === "bar" ? palette[0] + "cc" : palette.slice(0, labels.length),
+          borderColor: type === "bar" ? palette[0] : palette.slice(0, labels.length),
+          borderWidth: type === "bar" ? 0 : 2,
+          borderRadius: type === "bar" ? 5 : 0,
+        },
+      ],
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
       plugins: { legend: { display: type !== "bar", position: "bottom" } },
-      scales: type === "bar" ? {
-        x: { grid: { display: false } },
-        y: { grid: { color: "#e5e7eb" }, suggestedMax: 100 },
-      } : undefined,
+      scales:
+        type === "bar"
+          ? {
+              x: { grid: { display: false } },
+              y: { grid: { color: "#e5e7eb" }, suggestedMax: 100 },
+            }
+          : undefined,
     },
   });
 }
@@ -379,7 +506,9 @@ function bindDelegatedEvents() {
   const app = document.getElementById("app");
 
   app.addEventListener("click", (event) => {
-    const target = event.target.closest("[data-action], [data-mode], [data-type], [data-eid], [data-col], #dropZone, #fileInput");
+    const target = event.target.closest(
+      "[data-action], [data-mode], [data-type], [data-eid], [data-col], #dropZone, #fileInput",
+    );
     if (!target) return;
 
     if (target.id === "dropZone" || target.closest("#dropZone")) {
@@ -395,13 +524,34 @@ function bindDelegatedEvents() {
       handleSaveMaster();
       return;
     }
-    if (target.dataset.action === "query") { processQuery(); return; }
-    if (target.dataset.action === "reset") { resetApp(); return; }
-    if (target.dataset.action === "compileRule") { handleCompileRule(); return; }
-    if (target.dataset.action === "saveRule") { handleSaveRule(); return; }
-    if (target.dataset.action === "exportSvg") { exportSVG(); return; }
-    if (target.dataset.action === "exportJson") { exportJSON(); return; }
-    if (target.dataset.action === "exportHtml") { exportHTML(); return; }
+    if (target.dataset.action === "query") {
+      processQuery();
+      return;
+    }
+    if (target.dataset.action === "reset") {
+      resetApp();
+      return;
+    }
+    if (target.dataset.action === "compileRule") {
+      handleCompileRule();
+      return;
+    }
+    if (target.dataset.action === "saveRule") {
+      handleSaveRule();
+      return;
+    }
+    if (target.dataset.action === "exportSvg") {
+      exportSVG();
+      return;
+    }
+    if (target.dataset.action === "exportJson") {
+      exportJSON();
+      return;
+    }
+    if (target.dataset.action === "exportHtml") {
+      exportHTML();
+      return;
+    }
 
     if (target.dataset.mode) {
       G.mode = target.dataset.mode;
@@ -418,7 +568,10 @@ function bindDelegatedEvents() {
     if (target.dataset.col) {
       const column = target.dataset.col;
       if (G.sortCol === column) G.sortDir *= -1;
-      else { G.sortCol = column; G.sortDir = 1; }
+      else {
+        G.sortCol = column;
+        G.sortDir = 1;
+      }
       render();
       return;
     }
@@ -464,8 +617,14 @@ function bindDelegatedEvents() {
 
   app.addEventListener("input", (event) => {
     const target = event.target;
-    if (target.id === "queryInput") { G.query = target.value; return; }
-    if (target.id === "tableSearch") { debouncedTableSearch(target.value); return; }
+    if (target.id === "queryInput") {
+      G.query = target.value;
+      return;
+    }
+    if (target.id === "tableSearch") {
+      debouncedTableSearch(target.value);
+      return;
+    }
   });
 
   app.addEventListener("keydown", (event) => {
@@ -513,7 +672,9 @@ async function handleLoadMaster() {
       else render();
       return;
     }
-    alert("This browser does not support direct file loading. Serve the folder over HTTP or use a Chromium-based browser.");
+    alert(
+      "This browser does not support direct file loading. Serve the folder over HTTP or use a Chromium-based browser.",
+    );
   } catch (error) {
     G.saveStatus = `Failed to load YAML: ${error.message}`;
     render();
@@ -554,10 +715,16 @@ function handleCompileRule() {
 
 async function handleSaveRule() {
   if (!G.ruleDraftResult || G.ruleDraftResult.ambiguous) return;
-  G.masterConfig.rules = [...(G.masterConfig.rules || []).filter((rule) => rule.id !== G.ruleDraftResult.rule.id), G.ruleDraftResult.rule].sort((a, b) => b.priority - a.priority);
+  G.masterConfig.rules = [
+    ...(G.masterConfig.rules || []).filter((rule) => rule.id !== G.ruleDraftResult.rule.id),
+    G.ruleDraftResult.rule,
+  ].sort((a, b) => b.priority - a.priority);
   const packId = G.ruleDraftResult.rule.promotion === "experimental" ? "experimental" : "base";
   G.masterConfig.rule_sets ||= {};
-  G.masterConfig.rule_sets[packId] ||= { label: packId === "experimental" ? "Experimental" : "Base Logic", rules: [] };
+  G.masterConfig.rule_sets[packId] ||= {
+    label: packId === "experimental" ? "Experimental" : "Base Logic",
+    rules: [],
+  };
   if (!G.masterConfig.rule_sets[packId].rules.includes(G.ruleDraftResult.rule.id)) {
     G.masterConfig.rule_sets[packId].rules.push(G.ruleDraftResult.rule.id);
   }
@@ -616,11 +783,17 @@ function exportJSON() {
     validationReport: G.ctx.validationReport,
     functionInventory: G.ctx.functionInventory,
   };
-  downloadBlob(new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" }), "glimpse-context.json");
+  downloadBlob(
+    new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" }),
+    "glimpse-context.json",
+  );
 }
 
 function exportHTML() {
-  downloadBlob(new Blob([document.documentElement.outerHTML], { type: "text/html" }), "glimpse-report.html");
+  downloadBlob(
+    new Blob([document.documentElement.outerHTML], { type: "text/html" }),
+    "glimpse-report.html",
+  );
 }
 
 function downloadBlob(blob, name) {

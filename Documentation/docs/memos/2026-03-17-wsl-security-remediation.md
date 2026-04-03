@@ -1,4 +1,5 @@
 # WSL2 Security Remediation Record
+
 **Date**: 2026-03-17
 **Environment**: WSL2 Ubuntu on Windows
 **Scope**: Home directory — credential hygiene, file permissions, secret rotation
@@ -19,6 +20,7 @@ A full audit of the WSL2 home directory was conducted on 2026-03-17, identifying
 **Issue**: A GitHub PAT was hardcoded as an environment variable export, visible to all child processes.
 
 **Action taken**:
+
 - Removed export line from `.bashrc`
 - Scrubbed token pattern from `.bash_history`
 - Added `HISTIGNORE`, `HISTSIZE=5000`, `HISTCONTROL=ignoreboth:erasedups`
@@ -84,6 +86,7 @@ A full audit of the WSL2 home directory was conducted on 2026-03-17, identifying
 **Issue**: `.bash_history` at 95KB — potentially containing inline secrets from past sessions.
 
 **Action taken**:
+
 - Scrubbed known secret patterns
 - Added `HISTSIZE=5000`, `HISTFILESIZE=5000`, `HISTCONTROL=ignoreboth:erasedups`
 
@@ -111,14 +114,14 @@ A full audit of the WSL2 home directory was conducted on 2026-03-17, identifying
 
 All checks run immediately after remediation:
 
-| Check | Result |
-|-------|--------|
-| No secrets in `.bashrc` | ✅ CLEAN |
-| Directory permissions (700) | ✅ ALL PASS |
-| No secrets in live env | ✅ CLEAN |
-| No secrets in bash history | ✅ 0 matches |
+| Check                             | Result       |
+| --------------------------------- | ------------ |
+| No secrets in `.bashrc`           | ✅ CLEAN     |
+| Directory permissions (700)       | ✅ ALL PASS  |
+| No secrets in live env            | ✅ CLEAN     |
+| No secrets in bash history        | ✅ 0 matches |
 | Cloud credential symlinks removed | ✅ CONFIRMED |
-| Secrets baseline exists | ✅ CREATED |
+| Secrets baseline exists           | ✅ CREATED   |
 
 ---
 
@@ -129,4 +132,4 @@ All checks run immediately after remediation:
 
 ---
 
-*Remediation executed on 2026-03-17. Audit originated from a separate security scan session.*
+_Remediation executed on 2026-03-17. Audit originated from a separate security scan session._

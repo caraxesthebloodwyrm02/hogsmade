@@ -35,8 +35,7 @@ export function crossReferenceEntities(entities, relations, evidences) {
     const uniqueRules = new Set(entityEvidences.map((e) => e.sourceRuleId));
     if (uniqueRules.size >= 3) {
       const avgConfidence =
-        entityEvidences.reduce((s, e) => s + e.confidence, 0) /
-        entityEvidences.length;
+        entityEvidences.reduce((s, e) => s + e.confidence, 0) / entityEvidences.length;
       const entity = entities.find((e) => e.id === entityId);
       newEvidences.push(
         createEvidence({
@@ -49,7 +48,7 @@ export function crossReferenceEntities(entities, relations, evidences) {
           reason: `${entity?.name || entityId} is supported by ${uniqueRules.size} independent rules.`,
           payload: { ruleCount: uniqueRules.size, entityId },
           basis: "cross-reference",
-        })
+        }),
       );
     }
   }
@@ -80,7 +79,7 @@ export function crossReferenceRelations(entities, relations, evidences) {
       const sim = computeDimensionSimilarity(
         source.dimensions.space,
         target.dimensions.space,
-        "space"
+        "space",
       );
       if (sim.score < 0.4) {
         // Weak space claim — downgrade
@@ -95,7 +94,7 @@ export function crossReferenceRelations(entities, relations, evidences) {
             reason: `Shared-space claim between ${source.name} and ${target.name} is weak (${Math.round(sim.score * 100)}% similarity).`,
             payload: { relationType: rel.type, similarity: sim.score },
             basis: "cross-reference-validation",
-          })
+          }),
         );
       }
     }
@@ -104,11 +103,7 @@ export function crossReferenceRelations(entities, relations, evidences) {
     if (rel.type === "influenced") {
       const sourceTime = Number(source.dimensions?.time);
       const targetTime = Number(target.dimensions?.time);
-      if (
-        Number.isFinite(sourceTime) &&
-        Number.isFinite(targetTime) &&
-        sourceTime > targetTime
-      ) {
+      if (Number.isFinite(sourceTime) && Number.isFinite(targetTime) && sourceTime > targetTime) {
         // Source is AFTER target — suspicious influence direction
         newEvidences.push(
           createEvidence({
@@ -126,7 +121,7 @@ export function crossReferenceRelations(entities, relations, evidences) {
               targetTime,
             },
             basis: "cross-reference-validation",
-          })
+          }),
         );
       } else if (
         Number.isFinite(sourceTime) &&
@@ -145,7 +140,7 @@ export function crossReferenceRelations(entities, relations, evidences) {
             reason: `Influence confirmed: ${source.name} (${sourceTime}) precedes ${target.name} (${targetTime}).`,
             payload: { source: rel.source, target: rel.target },
             basis: "cross-reference-confirmation",
-          })
+          }),
         );
       }
     }

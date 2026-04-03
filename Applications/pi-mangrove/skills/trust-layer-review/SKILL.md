@@ -20,40 +20,49 @@ Safety and integrity take priority over feature correctness. A working feature t
 ## Priority 1: Safety & Integrity
 
 ### Perpetrator Voice Check
+
 - Safety messages, error logs, and moderation outputs must avoid 1st/2nd person pronouns assigning agency to harmful actions
 - **Bad:** "You violated the policy"
 - **Good:** "A policy violation was detected"
 
 ### Pronominal Targeting
+
 - Eliminate "who" vectors — language assigning human agency to harmful system actions
 - Use passive voice or abstract nouns for safety communications
 
 ### Nominalization
+
 - Convert harmful actions to abstract nouns: "The system blocked the attack" → "Attack mitigation was applied"
 
 ### Content Provenance
+
 - AI-generated outputs and moderation decisions must include watermarks, metadata, or provenance markers
 - Users must be able to verify origin of AI-generated content
 
 ### Active Refusal
+
 - Refusal mechanisms must halt processing, not just log warnings
 - Verify malicious requests trigger actual blocks, not soft failures
 
 ### Regional Sensitivity
+
 - Bangladesh deployments: verify Digital Safety Act compliance
 - Other regions: respect local legal frameworks for content moderation
 
 ## Priority 2: Technical Security
 
 ### Prompt Injection
+
 - Sanitize or constrain user input passed to LLMs
 - Check for: direct user text in system prompts, user-controlled template variables, unescaped user content in prompt construction
 
 ### PII Handling
+
 - Verify no plaintext logging of emails, phone numbers, IDs, or personal identifiers
 - Check retention policies match declared data lifecycle
 
 ### Authentication Boundaries
+
 - Verify session validation on all protected endpoints
 - Check authorization matches ownership, not just authentication
 
@@ -83,6 +92,7 @@ Trust Layer Verdict: {PASS / CONDITIONAL / FAIL}
 
 User: "Review this content moderation service for production"
 Use trust-layer-review skill to:
+
 1. scan safety message text for perpetrator voice
 2. verify refusal mechanisms actively halt processing
 3. check prompt injection vectors in LLM integration

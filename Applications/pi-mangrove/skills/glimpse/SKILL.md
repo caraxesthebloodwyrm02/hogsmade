@@ -61,6 +61,7 @@ description: "Maintenance and development guide for the Glimpse cognitive engine
 
 User: "Add a new domain and make Glimpse prefer a new view for that context."
 Use the glimpse skill to:
+
 1. locate the correct config and runtime layers
 2. update taxonomy, rules, and optional preset/view bias entries
 3. regenerate and validate the system

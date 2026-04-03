@@ -7,7 +7,7 @@ const dangerousCommandPatterns = [
   /\b(chmod|chown)\b.*\b777\b/i,
   /\bcurl\b.+\|\s*(sh|bash)\b/i,
   /\bwget\b.+\|\s*(sh|bash)\b/i,
-  /\b(?:mkfs|fdisk|parted|dd)\b/i
+  /\b(?:mkfs|fdisk|parted|dd)\b/i,
 ];
 
 const protectedPathFragments = [
@@ -20,7 +20,7 @@ const protectedPathFragments = [
   "/.aws/",
   "/.openclaw/",
   "/.pi/agent/",
-  "/exec-approvals.json"
+  "/exec-approvals.json",
 ];
 
 function normalizeTargetPath(inputPath: string, cwd: string): string {
@@ -42,7 +42,10 @@ export default function (pi: ExtensionAPI) {
           return { block: true, reason: "Dangerous command blocked (no UI for confirmation)" };
         }
 
-        const choice = await ctx.ui.select(`Dangerous command:\n\n${command}\n\nAllow?`, ["Allow", "Block"]);
+        const choice = await ctx.ui.select(`Dangerous command:\n\n${command}\n\nAllow?`, [
+          "Allow",
+          "Block",
+        ]);
 
         if (choice !== "Allow") {
           return { block: true, reason: "Blocked by user" };

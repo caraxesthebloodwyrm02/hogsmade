@@ -2,7 +2,7 @@ name: Cross-Project Smoke Test
 
 on:
   schedule:
-    - cron: "0 10 * * 1"  # Every Monday at 10:00 UTC
+    - cron: "0 10 * * 1" # Every Monday at 10:00 UTC
   workflow_dispatch:
 
 permissions:
@@ -41,7 +41,7 @@ jobs:
 
       - name: Build eligibility-server
         env:
-          NODE_OPTIONS: '--max-old-space-size=8192'
+          NODE_OPTIONS: "--max-old-space-size=8192"
         run: |
           cd Tools/MCPServers/eligibility-server
           npm ci
@@ -106,7 +106,7 @@ jobs:
 
       - name: Build eligibility-server
         env:
-          NODE_OPTIONS: '--max-old-space-size=8192'
+          NODE_OPTIONS: "--max-old-space-size=8192"
         run: |
           cd Tools/MCPServers/eligibility-server
           npm ci

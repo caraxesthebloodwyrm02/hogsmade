@@ -1,13 +1,13 @@
-export * from './types/index.js';
-export * from './circuit-breaker/index.js';
-export * from './retry/index.js';
-export * from './rate-limit/index.js';
-export * from './health-check/index.js';
+export * from "./types/index.js";
+export * from "./circuit-breaker/index.js";
+export * from "./retry/index.js";
+export * from "./rate-limit/index.js";
+export * from "./health-check/index.js";
 
-import type { CircuitBreakerOptions } from './circuit-breaker/index.js';
-import type { RetryOptions } from './retry/index.js';
-import type { RateLimitOptions } from './rate-limit/index.js';
-import type { HealthCheckOptions } from './health-check/index.js';
+import type { CircuitBreakerOptions } from "./circuit-breaker/index.js";
+import type { RetryOptions } from "./retry/index.js";
+import type { RateLimitOptions } from "./rate-limit/index.js";
+import type { HealthCheckOptions } from "./health-check/index.js";
 import type {
   ResilienceConfig,
   ResilienceContext,
@@ -15,11 +15,11 @@ import type {
   CircuitBreakerMetrics,
   HealthStatus,
   RateLimitMetrics,
-} from './types/index.js';
-import { CircuitBreaker, globalCircuitBreakerRegistry } from './circuit-breaker/index.js';
-import { RetryPolicy, globalRetryRegistry } from './retry/index.js';
-import { TokenBucketRateLimiter, globalRateLimitRegistry } from './rate-limit/index.js';
-import { HealthChecker, globalHealthCheckRegistry } from './health-check/index.js';
+} from "./types/index.js";
+import { CircuitBreaker, globalCircuitBreakerRegistry } from "./circuit-breaker/index.js";
+import { RetryPolicy, globalRetryRegistry } from "./retry/index.js";
+import { TokenBucketRateLimiter, globalRateLimitRegistry } from "./rate-limit/index.js";
+import { HealthChecker, globalHealthCheckRegistry } from "./health-check/index.js";
 
 export interface ResiliencePolicyConfig {
   circuitBreaker?: CircuitBreakerOptions;
@@ -36,13 +36,10 @@ export class ResiliencePolicy {
 
   constructor(
     private readonly serviceName: string,
-    config: ResiliencePolicyConfig
+    config: ResiliencePolicyConfig,
   ) {
     if (config.circuitBreaker) {
-      this.circuitBreaker = globalCircuitBreakerRegistry.get(
-        serviceName,
-        config.circuitBreaker
-      );
+      this.circuitBreaker = globalCircuitBreakerRegistry.get(serviceName, config.circuitBreaker);
     }
 
     if (config.retry) {
@@ -54,10 +51,7 @@ export class ResiliencePolicy {
     }
 
     if (config.healthCheck) {
-      this.healthChecker = globalHealthCheckRegistry.register(
-        serviceName,
-        config.healthCheck
-      );
+      this.healthChecker = globalHealthCheckRegistry.register(serviceName, config.healthCheck);
       this.healthChecker.start();
     }
   }
@@ -76,10 +70,7 @@ export class ResiliencePolicy {
 
     const wrappedOperation = async (): Promise<T> => {
       if (this.rateLimiter) {
-        return this.rateLimiter.execute(
-          () => operation(...args),
-          context
-        );
+        return this.rateLimiter.execute(() => operation(...args), context);
       }
       return operation(...args);
     };
@@ -192,7 +183,7 @@ export function withResilience<T>(
 }
 
 export const defaultResilienceConfig: ResilienceConfig = {
-  serviceName: 'default',
+  serviceName: "default",
   timeout: 30000,
   retry: {
     maxAttempts: 3,

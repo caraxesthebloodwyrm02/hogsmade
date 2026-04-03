@@ -39,14 +39,14 @@
 
 The following checks run automatically — no action needed unless they fail:
 
-| Gate | Triggers on | On failure |
-|---|---|---|
-| **pr-contract** | Every PR edit and sync | Blocks merge until required fields are present |
-| **root-ts-ci** | Root TypeScript packages, `glimpse-artifact`, `glimpse-engine` | Blocks merge until build/test/check pass |
-| **Secrets & Credential Gate** | All pushes and PRs | Blocks merge; rotate any real credential immediately |
-| **Boundary Invariant Gate** | Changes to `GRID-main` safety/security/boundaries | Posts detailed review; blocks on CRITICAL/HIGH findings |
-| **GRID-main CI** | Changes to `GRID-main/**` | Blocks merge; fix test failures or lint errors before merging |
-| **codeql** | Scheduled and code-sensitive JS/TS changes | Blocks merge on unresolved CodeQL findings when required |
+| Gate                          | Triggers on                                                    | On failure                                                    |
+| ----------------------------- | -------------------------------------------------------------- | ------------------------------------------------------------- |
+| **pr-contract**               | Every PR edit and sync                                         | Blocks merge until required fields are present                |
+| **root-ts-ci**                | Root TypeScript packages, `glimpse-artifact`, `glimpse-engine` | Blocks merge until build/test/check pass                      |
+| **Secrets & Credential Gate** | All pushes and PRs                                             | Blocks merge; rotate any real credential immediately          |
+| **Boundary Invariant Gate**   | Changes to `GRID-main` safety/security/boundaries              | Posts detailed review; blocks on CRITICAL/HIGH findings       |
+| **GRID-main CI**              | Changes to `GRID-main/**`                                      | Blocks merge; fix test failures or lint errors before merging |
+| **codeql**                    | Scheduled and code-sensitive JS/TS changes                     | Blocks merge on unresolved CodeQL findings when required      |
 
 ## Checklist
 

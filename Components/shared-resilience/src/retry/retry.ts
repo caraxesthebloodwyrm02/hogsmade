@@ -3,8 +3,8 @@ import {
   RetryMetrics,
   RetryExhaustedError,
   ResilienceContext,
-  ResilientFunction
-} from '../types/index.js';
+  ResilientFunction,
+} from "../types/index.js";
 
 export interface RetryOptions extends RetryConfig {
   onRetry?: (attempt: number, error: Error, delayMs: number) => void;
@@ -15,16 +15,13 @@ export interface RetryOptions extends RetryConfig {
 export class RetryPolicy {
   constructor(
     private readonly serviceName: string,
-    private readonly config: RetryOptions
+    private readonly config: RetryOptions,
   ) {}
 
-  async execute<T>(
-    operation: ResilientFunction<T>,
-    context: ResilienceContext
-  ): Promise<T> {
+  async execute<T>(operation: ResilientFunction<T>, context: ResilienceContext): Promise<T> {
     const metrics: RetryMetrics = {
       attempts: 0,
-      totalDelayMs: 0
+      totalDelayMs: 0,
     };
 
     let lastError: Error | undefined;
@@ -55,12 +52,7 @@ export class RetryPolicy {
     }
 
     this.config.onExhausted?.(metrics);
-    throw new RetryExhaustedError(
-      this.serviceName,
-      metrics.attempts,
-      lastError!,
-      context
-    );
+    throw new RetryExhaustedError(this.serviceName, metrics.attempts, lastError!, context);
   }
 
   private shouldRetry(error: Error, attempt: number): boolean {
@@ -91,30 +83,28 @@ export class RetryPolicy {
     }
 
     const defaultRetryableErrors = [
-      'timeout',
-      'connection',
-      'econnrefused',
-      'econnreset',
-      'etimedout',
-      'enotfound',
-      'network',
-      'aborted',
-      '503',
-      '502',
-      '504',
-      '429'
+      "timeout",
+      "connection",
+      "econnrefused",
+      "econnreset",
+      "etimedout",
+      "enotfound",
+      "network",
+      "aborted",
+      "503",
+      "502",
+      "504",
+      "429",
     ];
 
     return defaultRetryableErrors.some(
-      e => errorMessage.includes(e) || errorName.toLowerCase().includes(e)
+      (e) => errorMessage.includes(e) || errorName.toLowerCase().includes(e),
     );
   }
 
   private calculateDelay(attempt: number): number {
-    const exponentialDelay = this.config.initialDelayMs * Math.pow(
-      this.config.backoffMultiplier,
-      attempt - 1
-    );
+    const exponentialDelay =
+      this.config.initialDelayMs * Math.pow(this.config.backoffMultiplier, attempt - 1);
 
     const jitter = Math.random() * 0.1 * exponentialDelay;
     const delay = Math.min(exponentialDelay + jitter, this.config.maxDelayMs);
@@ -123,7 +113,7 @@ export class RetryPolicy {
   }
 
   private sleep(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }
 
@@ -154,10 +144,10 @@ export const defaultRetryConfig: RetryConfig = {
   maxDelayMs: 10000,
   backoffMultiplier: 2,
   retryableErrors: [
-    'TimeoutError',
-    'ConnectionError',
-    'NetworkError',
-    'ServiceUnavailable',
-    'TooManyRequests'
-  ]
+    "TimeoutError",
+    "ConnectionError",
+    "NetworkError",
+    "ServiceUnavailable",
+    "TooManyRequests",
+  ],
 };

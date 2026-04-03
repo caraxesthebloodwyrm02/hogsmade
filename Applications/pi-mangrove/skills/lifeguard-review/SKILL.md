@@ -63,6 +63,7 @@ End with a concise summary count, such as: `9/11 rules pass. 2 issues found.`
 
 User: "Review this API code before I merge it."
 Use the lifeguard-review skill to:
+
 1. identify the API surface and trust boundaries
 2. apply the 11 production review rules
 3. report only failures and near-misses

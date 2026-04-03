@@ -4,8 +4,8 @@ import { homedir } from "os";
 import { dirname, resolve } from "path";
 import type { AuditEvent } from "./audit.js";
 
-const ECHOES_AUDIT_PATH = process.env.ECHOES_AUDIT_PATH
-  || resolve(homedir(), ".echoes", "audit.ndjson");
+const ECHOES_AUDIT_PATH =
+  process.env.ECHOES_AUDIT_PATH || resolve(homedir(), ".echoes", "audit.ndjson");
 
 let dirEnsured = false;
 let writeQueue: Array<{ event: string; resolve: (value: boolean) => void }> = [];
@@ -56,7 +56,7 @@ async function processWriteQueue(): Promise<void> {
       } catch (e: unknown) {
         if ((e as NodeJS.ErrnoException).code === "EEXIST") {
           // Lock held by another process — wait and retry
-          await new Promise(r => setTimeout(r, 50));
+          await new Promise((r) => setTimeout(r, 50));
           retries++;
         } else {
           throw e;
@@ -92,7 +92,7 @@ async function processWriteQueue(): Promise<void> {
     }
 
     process.stderr.write(
-      `[audit-client] write failed: ${err instanceof Error ? err.message : String(err)}\n`
+      `[audit-client] write failed: ${err instanceof Error ? err.message : String(err)}\n`,
     );
     resolve(false);
   } finally {
@@ -110,7 +110,7 @@ export function emitAudit(event: Omit<AuditEvent, "timestamp">): Promise<boolean
         dirEnsured = true;
       } catch (err) {
         process.stderr.write(
-          `[audit-client] mkdir failed: ${err instanceof Error ? err.message : String(err)}\n`
+          `[audit-client] mkdir failed: ${err instanceof Error ? err.message : String(err)}\n`,
         );
         resolve(false);
         return;
@@ -120,7 +120,7 @@ export function emitAudit(event: Omit<AuditEvent, "timestamp">): Promise<boolean
     const record: AuditEvent = {
       ...event,
       metadata: event.metadata
-        ? sanitizeForNdjson(event.metadata) as Record<string, unknown>
+        ? (sanitizeForNdjson(event.metadata) as Record<string, unknown>)
         : undefined,
       timestamp: new Date().toISOString(),
     };

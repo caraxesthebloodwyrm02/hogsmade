@@ -24,10 +24,10 @@
 // ============================================================================
 
 export const POSTURES = {
-  narrowing:   { id: "narrowing",   label: "Narrow & Trim",     vector: "refactor",   weight: 1.5 },
-  broadening:  { id: "broadening",  label: "Expand & Synthesize", vector: "expansion", weight: 1.3 },
-  stabilizing: { id: "stabilizing", label: "Reinforce & Ground", vector: "surgical",   weight: 1.0 },
-  pivoting:    { id: "pivoting",    label: "Redirect & Reframe", vector: "pivot",      weight: 0.8 },
+  narrowing: { id: "narrowing", label: "Narrow & Trim", vector: "refactor", weight: 1.5 },
+  broadening: { id: "broadening", label: "Expand & Synthesize", vector: "expansion", weight: 1.3 },
+  stabilizing: { id: "stabilizing", label: "Reinforce & Ground", vector: "surgical", weight: 1.0 },
+  pivoting: { id: "pivoting", label: "Redirect & Reframe", vector: "pivot", weight: 0.8 },
 };
 
 // ============================================================================
@@ -60,13 +60,18 @@ export function assessCalibrationNeed(pathResult, ctx) {
   // Signal 2: Conflicting PATH activations (multiple high-scoring paths)
   // Only counts as ambiguity when paths give CONTRADICTORY advice
   // (risk-warning vs positive-reinforcement), not when multiple positive paths agree
-  const activated = (pathResult?.all || []).filter(r => r.activated);
+  const activated = (pathResult?.all || []).filter((r) => r.activated);
   const riskPathIds = new Set([
-    "scattered-expansion-no-tests-novel", "heavy-expansion-no-tests", "scattered-low-confidence",
-    "config-blast", "high-churn-concentration", "mixed-vectors", "confidence-dropping",
+    "scattered-expansion-no-tests-novel",
+    "heavy-expansion-no-tests",
+    "scattered-low-confidence",
+    "config-blast",
+    "high-churn-concentration",
+    "mixed-vectors",
+    "confidence-dropping",
   ]);
-  const hasRisk = activated.some(a => riskPathIds.has(a.pathId));
-  const hasPositive = activated.some(a => !riskPathIds.has(a.pathId) && a.score >= 4);
+  const hasRisk = activated.some((a) => riskPathIds.has(a.pathId));
+  const hasPositive = activated.some((a) => !riskPathIds.has(a.pathId) && a.score >= 4);
   if (hasRisk && hasPositive) {
     severity += 2;
     signals.push("conflicting PATH activations — risk and positive signals both firing");
@@ -77,8 +82,10 @@ export function assessCalibrationNeed(pathResult, ctx) {
   }
 
   // Signal 3: Make/break proximity — high churn in critical files
-  const hotFiles = (pathResult?.evidence || []).filter(e => e.fn === "hot_file" && e.matched);
-  const churnAccel = (pathResult?.evidence || []).filter(e => e.fn === "churn_accelerating" && e.matched);
+  const hotFiles = (pathResult?.evidence || []).filter((e) => e.fn === "hot_file" && e.matched);
+  const churnAccel = (pathResult?.evidence || []).filter(
+    (e) => e.fn === "churn_accelerating" && e.matched,
+  );
   if (hotFiles.length > 0 && churnAccel.length > 0) {
     severity += 2;
     signals.push("hot files under accelerating churn — make/break proximity");
@@ -86,7 +93,11 @@ export function assessCalibrationNeed(pathResult, ctx) {
 
   // Signal 4: Mixed vectors without clear dominant
   const vectorCounts = {};
-  (ctx.records || []).forEach(r => (r.vectors || []).forEach(v => { vectorCounts[v] = (vectorCounts[v] || 0) + 1; }));
+  (ctx.records || []).forEach((r) =>
+    (r.vectors || []).forEach((v) => {
+      vectorCounts[v] = (vectorCounts[v] || 0) + 1;
+    }),
+  );
   const total = Object.values(vectorCounts).reduce((s, v) => s + v, 0) || 1;
   const topVector = Math.max(...Object.values(vectorCounts), 0);
   if (topVector / total < 0.4 && Object.keys(vectorCounts).length >= 3) {
@@ -105,7 +116,7 @@ export function assessCalibrationNeed(pathResult, ctx) {
   if (trend.length >= 4) {
     const recentSessions = trend.slice(-4);
     // Check if we can detect test absence across recent sessions
-    const noTestsInWinner = pathResult?.evidence?.some(e => e.fn === "no_tests" && e.matched);
+    const noTestsInWinner = pathResult?.evidence?.some((e) => e.fn === "no_tests" && e.matched);
     if (noTestsInWinner) {
       severity += 1;
       signals.push("sustained work without tests");
@@ -124,7 +135,12 @@ export function assessCalibrationNeed(pathResult, ctx) {
     level = "mild";
     questionCount = 3;
   } else {
-    return { suggested: false, severity: "none", reason: "session is clean — no calibration needed", questionCount: 0 };
+    return {
+      suggested: false,
+      severity: "none",
+      reason: "session is clean — no calibration needed",
+      questionCount: 0,
+    };
   }
 
   return {
@@ -158,10 +174,10 @@ const QUESTION_BANK = [
     mechanic: "scope_resolution",
     text: "What does the theory of general relativity fundamentally deal with?",
     options: [
-      { label: "A", text: "Time",                     posture: "stabilizing" },
-      { label: "B", text: "Space",                     posture: "broadening" },
-      { label: "C", text: "Spacetime (hybrid A & B)",  posture: "broadening" },
-      { label: "D", text: "Perception",                posture: "narrowing" },
+      { label: "A", text: "Time", posture: "stabilizing" },
+      { label: "B", text: "Space", posture: "broadening" },
+      { label: "C", text: "Spacetime (hybrid A & B)", posture: "broadening" },
+      { label: "D", text: "Perception", posture: "narrowing" },
     ],
     contextScoring: (ctx) => {
       // Refactor scope → D (perception = comparison/contrast, dual, narrowing)
@@ -169,9 +185,12 @@ const QUESTION_BANK = [
       // Surgical scope → A (time = precision, single variable)
       // Mixed/pivot → B (space = open, undirected)
       const dominant = detectDominantVector(ctx);
-      if (dominant === "refactor" || dominant === "contraction") return { narrowing: 3, stabilizing: 1, broadening: 0, pivoting: 0 };
-      if (dominant === "expansion" || dominant === "creation")  return { broadening: 3, stabilizing: 1, narrowing: 0, pivoting: 0 };
-      if (dominant === "surgical")                               return { stabilizing: 3, narrowing: 1, broadening: 0, pivoting: 0 };
+      if (dominant === "refactor" || dominant === "contraction")
+        return { narrowing: 3, stabilizing: 1, broadening: 0, pivoting: 0 };
+      if (dominant === "expansion" || dominant === "creation")
+        return { broadening: 3, stabilizing: 1, narrowing: 0, pivoting: 0 };
+      if (dominant === "surgical")
+        return { stabilizing: 3, narrowing: 1, broadening: 0, pivoting: 0 };
       return { pivoting: 2, broadening: 1, narrowing: 1, stabilizing: 0 };
     },
   },
@@ -181,10 +200,10 @@ const QUESTION_BANK = [
     mechanic: "load_distribution",
     text: "In structural engineering, a flying buttress exists primarily to:",
     options: [
-      { label: "A", text: "Add visual complexity",                      posture: "broadening" },
-      { label: "B", text: "Transfer lateral load to the ground",        posture: "narrowing" },
-      { label: "C", text: "Allow thinner walls and larger windows",     posture: "stabilizing" },
-      { label: "D", text: "Signal that the building is important",      posture: "pivoting" },
+      { label: "A", text: "Add visual complexity", posture: "broadening" },
+      { label: "B", text: "Transfer lateral load to the ground", posture: "narrowing" },
+      { label: "C", text: "Allow thinner walls and larger windows", posture: "stabilizing" },
+      { label: "D", text: "Signal that the building is important", posture: "pivoting" },
     ],
     contextScoring: (ctx) => {
       // Refactor → B (redirect/transfer force = refactoring responsibility)
@@ -192,8 +211,10 @@ const QUESTION_BANK = [
       // Surgical → B (precise load path)
       // Mixed → A (adding structure without resolving core)
       const dominant = detectDominantVector(ctx);
-      if (dominant === "refactor" || dominant === "surgical") return { narrowing: 3, stabilizing: 2, broadening: 0, pivoting: 0 };
-      if (dominant === "expansion")                           return { stabilizing: 3, broadening: 1, narrowing: 0, pivoting: 0 };
+      if (dominant === "refactor" || dominant === "surgical")
+        return { narrowing: 3, stabilizing: 2, broadening: 0, pivoting: 0 };
+      if (dominant === "expansion")
+        return { stabilizing: 3, broadening: 1, narrowing: 0, pivoting: 0 };
       return { broadening: 1, pivoting: 2, narrowing: 1, stabilizing: 0 };
     },
   },
@@ -203,10 +224,10 @@ const QUESTION_BANK = [
     mechanic: "tension_resolution",
     text: "In music theory, a dominant seventh chord resolves to the tonic because:",
     options: [
-      { label: "A", text: "It's the rule — tradition dictates it",        posture: "stabilizing" },
-      { label: "B", text: "The tritone interval creates instability",      posture: "narrowing" },
-      { label: "C", text: "The listener expects it",                       posture: "pivoting" },
-      { label: "D", text: "It completes the harmonic cycle",               posture: "broadening" },
+      { label: "A", text: "It's the rule — tradition dictates it", posture: "stabilizing" },
+      { label: "B", text: "The tritone interval creates instability", posture: "narrowing" },
+      { label: "C", text: "The listener expects it", posture: "pivoting" },
+      { label: "D", text: "It completes the harmonic cycle", posture: "broadening" },
     ],
     contextScoring: (ctx) => {
       // Refactor → B (instability drives resolution = tension in code drives refactor)
@@ -214,9 +235,12 @@ const QUESTION_BANK = [
       // Stabilizing → A (convention = following established patterns)
       // Pivot → C (expectation = user/context driven, not code driven)
       const dominant = detectDominantVector(ctx);
-      if (dominant === "refactor") return { narrowing: 3, broadening: 1, stabilizing: 0, pivoting: 0 };
-      if (dominant === "expansion") return { broadening: 3, narrowing: 0, stabilizing: 1, pivoting: 0 };
-      if (dominant === "surgical") return { stabilizing: 3, narrowing: 1, broadening: 0, pivoting: 0 };
+      if (dominant === "refactor")
+        return { narrowing: 3, broadening: 1, stabilizing: 0, pivoting: 0 };
+      if (dominant === "expansion")
+        return { broadening: 3, narrowing: 0, stabilizing: 1, pivoting: 0 };
+      if (dominant === "surgical")
+        return { stabilizing: 3, narrowing: 1, broadening: 0, pivoting: 0 };
       return { pivoting: 2, narrowing: 1, broadening: 1, stabilizing: 0 };
     },
   },
@@ -226,10 +250,10 @@ const QUESTION_BANK = [
     mechanic: "concentration",
     text: "A chef reduces a sauce by simmering. What is actually happening?",
     options: [
-      { label: "A", text: "Removing water to intensify flavor",          posture: "narrowing" },
-      { label: "B", text: "Cooking the ingredients longer",               posture: "stabilizing" },
-      { label: "C", text: "Blending flavors through heat exposure",       posture: "broadening" },
-      { label: "D", text: "Changing the sauce into something new",        posture: "pivoting" },
+      { label: "A", text: "Removing water to intensify flavor", posture: "narrowing" },
+      { label: "B", text: "Cooking the ingredients longer", posture: "stabilizing" },
+      { label: "C", text: "Blending flavors through heat exposure", posture: "broadening" },
+      { label: "D", text: "Changing the sauce into something new", posture: "pivoting" },
     ],
     contextScoring: (ctx) => {
       // Refactor → A (reduction = removing to concentrate = trimming code)
@@ -237,9 +261,12 @@ const QUESTION_BANK = [
       // Surgical → A (precision removal)
       // Pivot → D (transformation)
       const dominant = detectDominantVector(ctx);
-      if (dominant === "refactor" || dominant === "contraction" || dominant === "removal") return { narrowing: 3, stabilizing: 0, broadening: 0, pivoting: 1 };
-      if (dominant === "expansion") return { broadening: 3, narrowing: 0, stabilizing: 1, pivoting: 0 };
-      if (dominant === "surgical") return { narrowing: 2, stabilizing: 2, broadening: 0, pivoting: 0 };
+      if (dominant === "refactor" || dominant === "contraction" || dominant === "removal")
+        return { narrowing: 3, stabilizing: 0, broadening: 0, pivoting: 1 };
+      if (dominant === "expansion")
+        return { broadening: 3, narrowing: 0, stabilizing: 1, pivoting: 0 };
+      if (dominant === "surgical")
+        return { narrowing: 2, stabilizing: 2, broadening: 0, pivoting: 0 };
       return { pivoting: 3, narrowing: 1, broadening: 0, stabilizing: 0 };
     },
   },
@@ -249,10 +276,10 @@ const QUESTION_BANK = [
     mechanic: "strategic_trade",
     text: "A chess sacrifice (giving up material) is justified when:",
     options: [
-      { label: "A", text: "It opens lines for an attack",                posture: "broadening" },
-      { label: "B", text: "The opponent's position becomes worse",        posture: "narrowing" },
+      { label: "A", text: "It opens lines for an attack", posture: "broadening" },
+      { label: "B", text: "The opponent's position becomes worse", posture: "narrowing" },
       { label: "C", text: "It simplifies the position into a won endgame", posture: "stabilizing" },
-      { label: "D", text: "It creates chaos the opponent can't handle",   posture: "pivoting" },
+      { label: "D", text: "It creates chaos the opponent can't handle", posture: "pivoting" },
     ],
     contextScoring: (ctx) => {
       // Refactor → B (degrading opponent = making codebase simpler by strategic removal)
@@ -260,9 +287,12 @@ const QUESTION_BANK = [
       // Surgical → C (simplify to winning position = precise targeted change)
       // Pivot → D (chaos = break current pattern for new one)
       const dominant = detectDominantVector(ctx);
-      if (dominant === "refactor") return { narrowing: 3, stabilizing: 1, broadening: 0, pivoting: 0 };
-      if (dominant === "expansion") return { broadening: 3, pivoting: 1, narrowing: 0, stabilizing: 0 };
-      if (dominant === "surgical") return { stabilizing: 3, narrowing: 1, broadening: 0, pivoting: 0 };
+      if (dominant === "refactor")
+        return { narrowing: 3, stabilizing: 1, broadening: 0, pivoting: 0 };
+      if (dominant === "expansion")
+        return { broadening: 3, pivoting: 1, narrowing: 0, stabilizing: 0 };
+      if (dominant === "surgical")
+        return { stabilizing: 3, narrowing: 1, broadening: 0, pivoting: 0 };
       return { pivoting: 3, broadening: 1, narrowing: 0, stabilizing: 0 };
     },
   },
@@ -272,10 +302,10 @@ const QUESTION_BANK = [
     mechanic: "dependency_impact",
     text: "A keystone species is removed from an ecosystem. What matters most?",
     options: [
-      { label: "A", text: "How many other species depended on it",        posture: "broadening" },
-      { label: "B", text: "Whether a substitute can fill the same role",  posture: "stabilizing" },
-      { label: "C", text: "The cascade effect on the food web",           posture: "narrowing" },
-      { label: "D", text: "Whether the ecosystem was already stressed",   posture: "pivoting" },
+      { label: "A", text: "How many other species depended on it", posture: "broadening" },
+      { label: "B", text: "Whether a substitute can fill the same role", posture: "stabilizing" },
+      { label: "C", text: "The cascade effect on the food web", posture: "narrowing" },
+      { label: "D", text: "Whether the ecosystem was already stressed", posture: "pivoting" },
     ],
     contextScoring: (ctx) => {
       // Removal → C (cascade = understanding downstream dependencies)
@@ -283,9 +313,12 @@ const QUESTION_BANK = [
       // Expansion → A (breadth of impact = how much new code touches)
       // Pivot → D (existing stress = when to abandon vs fix)
       const dominant = detectDominantVector(ctx);
-      if (dominant === "removal" || dominant === "refactor" || dominant === "contraction") return { narrowing: 3, pivoting: 1, broadening: 0, stabilizing: 0 };
-      if (dominant === "expansion") return { broadening: 3, stabilizing: 1, narrowing: 0, pivoting: 0 };
-      if (dominant === "surgical") return { stabilizing: 3, narrowing: 1, broadening: 0, pivoting: 0 };
+      if (dominant === "removal" || dominant === "refactor" || dominant === "contraction")
+        return { narrowing: 3, pivoting: 1, broadening: 0, stabilizing: 0 };
+      if (dominant === "expansion")
+        return { broadening: 3, stabilizing: 1, narrowing: 0, pivoting: 0 };
+      if (dominant === "surgical")
+        return { stabilizing: 3, narrowing: 1, broadening: 0, pivoting: 0 };
       return { pivoting: 3, narrowing: 1, broadening: 0, stabilizing: 0 };
     },
   },
@@ -295,10 +328,10 @@ const QUESTION_BANK = [
     mechanic: "uncertainty_handling",
     text: "You're sailing in dense fog with a compass and a chart. The compass shows a bearing that contradicts your expected position. You should:",
     options: [
-      { label: "A", text: "Trust the compass — instruments don't lie",     posture: "stabilizing" },
+      { label: "A", text: "Trust the compass — instruments don't lie", posture: "stabilizing" },
       { label: "B", text: "Stop and take multiple readings to triangulate", posture: "narrowing" },
-      { label: "C", text: "Adjust the chart — the map might be wrong",     posture: "pivoting" },
-      { label: "D", text: "Continue cautiously, looking for landmarks",     posture: "broadening" },
+      { label: "C", text: "Adjust the chart — the map might be wrong", posture: "pivoting" },
+      { label: "D", text: "Continue cautiously, looking for landmarks", posture: "broadening" },
     ],
     contextScoring: (ctx) => {
       // Low confidence → B (stop and measure = add tests, verify)
@@ -308,8 +341,10 @@ const QUESTION_BANK = [
       const conf = ctx.result?.confidenceReport?.overallScore || 0;
       const dominant = detectDominantVector(ctx);
       if (conf < 0.7) return { narrowing: 3, stabilizing: 1, broadening: 0, pivoting: 0 };
-      if (dominant === "expansion") return { broadening: 3, narrowing: 1, stabilizing: 0, pivoting: 0 };
-      if (dominant === "refactor") return { narrowing: 2, pivoting: 2, stabilizing: 0, broadening: 0 };
+      if (dominant === "expansion")
+        return { broadening: 3, narrowing: 1, stabilizing: 0, pivoting: 0 };
+      if (dominant === "refactor")
+        return { narrowing: 2, pivoting: 2, stabilizing: 0, broadening: 0 };
       return { stabilizing: 2, broadening: 2, narrowing: 0, pivoting: 0 };
     },
   },
@@ -319,10 +354,10 @@ const QUESTION_BANK = [
     mechanic: "trade_off_balance",
     text: "The exposure triangle (aperture, shutter speed, ISO) forces trade-offs. When you open the aperture wider, you gain:",
     options: [
-      { label: "A", text: "More light but less depth of field",           posture: "narrowing" },
-      { label: "B", text: "Faster capture speed",                         posture: "stabilizing" },
-      { label: "C", text: "More creative control over bokeh",             posture: "broadening" },
-      { label: "D", text: "The ability to shoot in worse conditions",     posture: "pivoting" },
+      { label: "A", text: "More light but less depth of field", posture: "narrowing" },
+      { label: "B", text: "Faster capture speed", posture: "stabilizing" },
+      { label: "C", text: "More creative control over bokeh", posture: "broadening" },
+      { label: "D", text: "The ability to shoot in worse conditions", posture: "pivoting" },
     ],
     contextScoring: (ctx) => {
       // Refactor → A (trade-off awareness = gaining focus at cost of breadth)
@@ -330,9 +365,12 @@ const QUESTION_BANK = [
       // Surgical → B (speed/efficiency = quick precise work)
       // Mixed → D (adaptability = handling adverse conditions)
       const dominant = detectDominantVector(ctx);
-      if (dominant === "refactor" || dominant === "contraction") return { narrowing: 3, stabilizing: 1, broadening: 0, pivoting: 0 };
-      if (dominant === "expansion") return { broadening: 3, narrowing: 0, stabilizing: 1, pivoting: 0 };
-      if (dominant === "surgical") return { stabilizing: 3, narrowing: 1, broadening: 0, pivoting: 0 };
+      if (dominant === "refactor" || dominant === "contraction")
+        return { narrowing: 3, stabilizing: 1, broadening: 0, pivoting: 0 };
+      if (dominant === "expansion")
+        return { broadening: 3, narrowing: 0, stabilizing: 1, pivoting: 0 };
+      if (dominant === "surgical")
+        return { stabilizing: 3, narrowing: 1, broadening: 0, pivoting: 0 };
       return { pivoting: 3, broadening: 1, narrowing: 0, stabilizing: 0 };
     },
   },
@@ -342,10 +380,10 @@ const QUESTION_BANK = [
     mechanic: "strategic_removal",
     text: "Pruning a tree in winter serves what primary purpose?",
     options: [
-      { label: "A", text: "Removing dead wood to prevent disease",        posture: "narrowing" },
-      { label: "B", text: "Shaping future growth direction",              posture: "stabilizing" },
-      { label: "C", text: "Allowing more light to reach inner branches",  posture: "broadening" },
-      { label: "D", text: "Reducing the tree's energy expenditure",       posture: "pivoting" },
+      { label: "A", text: "Removing dead wood to prevent disease", posture: "narrowing" },
+      { label: "B", text: "Shaping future growth direction", posture: "stabilizing" },
+      { label: "C", text: "Allowing more light to reach inner branches", posture: "broadening" },
+      { label: "D", text: "Reducing the tree's energy expenditure", posture: "pivoting" },
     ],
     contextScoring: (ctx) => {
       // Removal → A (remove dead = trim dead code)
@@ -353,9 +391,12 @@ const QUESTION_BANK = [
       // Expansion → C (more light = open paths for new code)
       // Contraction → D (reduce energy = simplify)
       const dominant = detectDominantVector(ctx);
-      if (dominant === "removal") return { narrowing: 3, pivoting: 1, broadening: 0, stabilizing: 0 };
-      if (dominant === "refactor") return { stabilizing: 3, narrowing: 1, broadening: 0, pivoting: 0 };
-      if (dominant === "expansion") return { broadening: 3, stabilizing: 1, narrowing: 0, pivoting: 0 };
+      if (dominant === "removal")
+        return { narrowing: 3, pivoting: 1, broadening: 0, stabilizing: 0 };
+      if (dominant === "refactor")
+        return { stabilizing: 3, narrowing: 1, broadening: 0, pivoting: 0 };
+      if (dominant === "expansion")
+        return { broadening: 3, stabilizing: 1, narrowing: 0, pivoting: 0 };
       return { pivoting: 3, narrowing: 1, broadening: 0, stabilizing: 0 };
     },
   },
@@ -365,10 +406,10 @@ const QUESTION_BANK = [
     mechanic: "context_preservation",
     text: "The hardest part of translating poetry between languages is preserving:",
     options: [
-      { label: "A", text: "The literal meaning of each word",             posture: "stabilizing" },
-      { label: "B", text: "The rhythm and sound pattern",                  posture: "narrowing" },
-      { label: "C", text: "The emotional resonance",                       posture: "broadening" },
-      { label: "D", text: "The cultural context that gives it weight",     posture: "pivoting" },
+      { label: "A", text: "The literal meaning of each word", posture: "stabilizing" },
+      { label: "B", text: "The rhythm and sound pattern", posture: "narrowing" },
+      { label: "C", text: "The emotional resonance", posture: "broadening" },
+      { label: "D", text: "The cultural context that gives it weight", posture: "pivoting" },
     ],
     contextScoring: (ctx) => {
       // Refactor → B (structure/rhythm = code structure, not content)
@@ -376,9 +417,12 @@ const QUESTION_BANK = [
       // Surgical → A (literal precision)
       // Pivot → D (context = when the whole frame of reference shifts)
       const dominant = detectDominantVector(ctx);
-      if (dominant === "refactor") return { narrowing: 3, stabilizing: 1, broadening: 0, pivoting: 0 };
-      if (dominant === "expansion") return { broadening: 3, pivoting: 1, narrowing: 0, stabilizing: 0 };
-      if (dominant === "surgical") return { stabilizing: 3, narrowing: 1, broadening: 0, pivoting: 0 };
+      if (dominant === "refactor")
+        return { narrowing: 3, stabilizing: 1, broadening: 0, pivoting: 0 };
+      if (dominant === "expansion")
+        return { broadening: 3, pivoting: 1, narrowing: 0, stabilizing: 0 };
+      if (dominant === "surgical")
+        return { stabilizing: 3, narrowing: 1, broadening: 0, pivoting: 0 };
       return { pivoting: 3, broadening: 1, narrowing: 0, stabilizing: 0 };
     },
   },
@@ -399,16 +443,22 @@ const QUESTION_BANK = [
  */
 export function selectQuestions(count, ctx, opts = {}) {
   const exclude = new Set(opts.exclude || []);
-  const available = QUESTION_BANK.filter(q => !exclude.has(q.id));
+  const available = QUESTION_BANK.filter((q) => !exclude.has(q.id));
 
   // Score each question's relevance to current session
-  const scored = available.map(q => {
+  const scored = available.map((q) => {
     let relevance = 0;
 
     // Mechanic relevance
     const dominant = detectDominantVector(ctx);
     const vectorMechanics = {
-      refactor: ["scope_resolution", "tension_resolution", "concentration", "strategic_removal", "context_preservation"],
+      refactor: [
+        "scope_resolution",
+        "tension_resolution",
+        "concentration",
+        "strategic_removal",
+        "context_preservation",
+      ],
       expansion: ["load_distribution", "strategic_trade", "dependency_impact", "trade_off_balance"],
       surgical: ["scope_resolution", "uncertainty_handling", "trade_off_balance"],
       removal: ["concentration", "strategic_removal", "dependency_impact"],
@@ -429,7 +479,7 @@ export function selectQuestions(count, ctx, opts = {}) {
 
   // Sort by relevance and take top N
   scored.sort((a, b) => b.relevance - a.relevance);
-  return scored.slice(0, count).map(q => ({
+  return scored.slice(0, count).map((q) => ({
     id: q.id,
     domain: q.domain,
     mechanic: q.mechanic,
@@ -456,10 +506,10 @@ export function scoreInterview(answers, questions) {
   let earned = 0;
 
   for (const answer of answers) {
-    const question = questions.find(q => q.id === answer.questionId);
+    const question = questions.find((q) => q.id === answer.questionId);
     if (!question) continue;
 
-    const selected = question.options.find(o => o.label === answer.selectedLabel);
+    const selected = question.options.find((o) => o.label === answer.selectedLabel);
     if (!selected) continue;
 
     const contextWeights = question._contextScoring;
@@ -528,10 +578,10 @@ function buildModulation(posture, confidence, scores) {
 
   // Generate a nudge suffix based on posture
   const suffixes = {
-    narrowing:   "consider trimming scope — sharpen before widening",
-    broadening:  "the direction is right — keep building out",
+    narrowing: "consider trimming scope — sharpen before widening",
+    broadening: "the direction is right — keep building out",
     stabilizing: "solidify what exists before adding more",
-    pivoting:    "this approach may need a different angle",
+    pivoting: "this approach may need a different angle",
   };
 
   // Modulate suffix by confidence
@@ -605,9 +655,7 @@ export function applyInterviewModulation(pathResult, interviewResult) {
 
   return {
     ...pathResult,
-    nudge: originalNudge
-      ? `${originalNudge} — ${mod.nudgeSuffix}`
-      : mod.nudgeSuffix,
+    nudge: originalNudge ? `${originalNudge} — ${mod.nudgeSuffix}` : mod.nudgeSuffix,
     interview: {
       posture: interviewResult.posture,
       postureLabel: interviewResult.postureLabel,
@@ -625,15 +673,19 @@ function detectDominantVector(ctx) {
   // Normalize related vectors into posture-aligned groups
   const aliases = { creation: "expansion", contraction: "refactor", removal: "refactor" };
   const vectorCounts = {};
-  (ctx.records || []).forEach(r =>
-    (r.vectors || []).forEach(v => {
+  (ctx.records || []).forEach((r) =>
+    (r.vectors || []).forEach((v) => {
       const key = aliases[v] || v;
       vectorCounts[key] = (vectorCounts[key] || 0) + 1;
-    })
+    }),
   );
-  let best = null, bestV = 0;
+  let best = null,
+    bestV = 0;
   for (const [k, v] of Object.entries(vectorCounts)) {
-    if (v > bestV) { best = k; bestV = v; }
+    if (v > bestV) {
+      best = k;
+      bestV = v;
+    }
   }
   return best || "mixed";
 }

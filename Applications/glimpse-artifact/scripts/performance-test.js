@@ -47,9 +47,7 @@ function testFilteringPerformance() {
     console.log(`Nodes: ${count}`);
     console.log(`  Without memoization: ${(end1 - start1).toFixed(2)}ms`);
     console.log(`  With memoization: ${(end2 - start2).toFixed(2)}ms`);
-    console.log(
-      `  Improvement: ${((end1 - start1) / (end2 - start2)).toFixed(2)}x faster`,
-    );
+    console.log(`  Improvement: ${((end1 - start1) / (end2 - start2)).toFixed(2)}x faster`);
     console.log("");
   });
 }
@@ -69,8 +67,7 @@ function testMockDataConsistency() {
     id: `test-${i}`,
     durationMs: Math.floor(Math.random() * 500) + 50,
   }));
-  const generateNewWay = () =>
-    mockData[Math.floor(Math.random() * mockData.length)];
+  const generateNewWay = () => mockData[Math.floor(Math.random() * mockData.length)];
 
   // Test consistency
   const oldResults = Array.from({ length: 5 }, generateOldWay);

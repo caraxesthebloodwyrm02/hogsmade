@@ -1,36 +1,21 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import {
-  mkdtempSync,
-  rmSync,
-  mkdirSync,
-  writeFileSync,
-  readFileSync,
-} from "fs";
+import { mkdtempSync, rmSync, mkdirSync, writeFileSync, readFileSync } from "fs";
 import os from "os";
 import path from "path";
 
 // Type assertion for testing - bypass private property access
 interface TestServer {
-  _registeredTools: Record<
-    string,
-    { inputSchema?: unknown; handler: (...args: any[]) => unknown }
-  >;
+  _registeredTools: Record<string, { inputSchema?: unknown; handler: (...args: any[]) => unknown }>;
 }
 
 function getToolNames(server: TestServer): string[] {
   return Object.keys(server._registeredTools);
 }
 
-async function invokeTool(
-  server: TestServer,
-  name: string,
-  args: Record<string, unknown> = {},
-) {
+async function invokeTool(server: TestServer, name: string, args: Record<string, unknown> = {}) {
   const tool = server._registeredTools[name];
   expect(tool).toBeDefined();
-  return tool.inputSchema
-    ? await tool.handler(args, {} as any)
-    : await tool.handler({} as any);
+  return tool.inputSchema ? await tool.handler(args, {} as any) : await tool.handler({} as any);
 }
 
 describe("echoes-server smoke", () => {

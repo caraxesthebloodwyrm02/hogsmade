@@ -3,6 +3,7 @@
 Identify unused code paths, orphaned files, and stale configuration in GRID-main.
 
 ## Priority System
+
 - **P0**: Security-relevant dead code (exposed secrets, unused auth paths)
 - **P1**: Orphaned files, unused imports, unreachable code paths
 - **P2**: Stale comments, TODO cleanup, unused configuration keys
@@ -12,6 +13,7 @@ Identify unused code paths, orphaned files, and stale configuration in GRID-main
 ## P0: Security-Critical Dead Code
 
 **1. Unused Authentication/Authorization Paths**
+
 - [ ] Identify auth endpoints that are defined but never called
   ```bash
   cd GRID-main
@@ -21,6 +23,7 @@ Identify unused code paths, orphaned files, and stale configuration in GRID-main
   ```
 
 **2. Exposed Secrets in Dead Code**
+
 - [ ] Scan commented-out code for hardcoded credentials
   ```bash
   cd GRID-main
@@ -28,6 +31,7 @@ Identify unused code paths, orphaned files, and stale configuration in GRID-main
   ```
 
 **3. Deprecated Security Modules Still Present**
+
 - [ ] Find security-related files not imported anywhere
   ```bash
   cd GRID-main
@@ -44,6 +48,7 @@ Identify unused code paths, orphaned files, and stale configuration in GRID-main
 ## P1: High-Impact Dead Code
 
 **4. Unused Python Modules**
+
 - [ ] Run vulture to detect unused code
   ```bash
   cd GRID-main
@@ -51,6 +56,7 @@ Identify unused code paths, orphaned files, and stale configuration in GRID-main
   ```
 
 **5. Orphaned Test Files**
+
 - [ ] Find test files with no corresponding source module
   ```bash
   cd GRID-main
@@ -63,6 +69,7 @@ Identify unused code paths, orphaned files, and stale configuration in GRID-main
   ```
 
 **6. Unreachable Code Paths**
+
 - [ ] Use coverage to identify never-executed branches
   ```bash
   cd GRID-main
@@ -71,6 +78,7 @@ Identify unused code paths, orphaned files, and stale configuration in GRID-main
   ```
 
 **7. Unused Import Statements**
+
 - [ ] Detect imports that are never referenced
   ```bash
   cd GRID-main
@@ -78,6 +86,7 @@ Identify unused code paths, orphaned files, and stale configuration in GRID-main
   ```
 
 **8. Dead Router Endpoints**
+
 - [ ] Find API endpoints with no test coverage or client usage
   ```bash
   cd GRID-main
@@ -92,6 +101,7 @@ Identify unused code paths, orphaned files, and stale configuration in GRID-main
 ## P2: Code Hygiene
 
 **9. Stale TODO/FIXME Comments**
+
 - [ ] Identify TODOs older than 6 months
   ```bash
   cd GRID-main
@@ -100,6 +110,7 @@ Identify unused code paths, orphaned files, and stale configuration in GRID-main
   ```
 
 **10. Unused Configuration Keys**
+
 - [ ] Find .env variables not referenced in code
   ```bash
   cd GRID-main
@@ -111,6 +122,7 @@ Identify unused code paths, orphaned files, and stale configuration in GRID-main
   ```
 
 **11. Commented-Out Code Blocks**
+
 - [ ] Detect large blocks of commented code (>5 lines)
   ```bash
   cd GRID-main
@@ -119,6 +131,7 @@ Identify unused code paths, orphaned files, and stale configuration in GRID-main
   ```
 
 **12. Unused Database Migrations**
+
 - [ ] Identify migrations that were superseded or rolled back
   ```bash
   cd GRID-main
@@ -130,14 +143,15 @@ Identify unused code paths, orphaned files, and stale configuration in GRID-main
 
 ## Automated Detection Tools
 
-| Tool | Purpose | Command |
-|------|---------|---------|
-| vulture | Dead code detection | `pipx run vulture src/` |
-| ruff | Unused imports (F401) | `uv run ruff check src/ --select F401` |
-| coverage | Unreachable branches | `uv run pytest --cov=src --cov-branch` |
+| Tool      | Purpose                    | Command                                               |
+| --------- | -------------------------- | ----------------------------------------------------- |
+| vulture   | Dead code detection        | `pipx run vulture src/`                               |
+| ruff      | Unused imports (F401)      | `uv run ruff check src/ --select F401`                |
+| coverage  | Unreachable branches       | `uv run pytest --cov=src --cov-branch`                |
 | autoflake | Auto-remove unused imports | `pipx run autoflake --remove-all-unused-imports src/` |
 
 ## Cross-References
+
 - VERIFICATION_CHECKLIST.md: Coverage reports and test gaps
 - REMEDIATION_CHECKLIST.md: Safe removal procedures
 - POST_DEBUG_ROUTINE.md: Cleanup after debugging sessions

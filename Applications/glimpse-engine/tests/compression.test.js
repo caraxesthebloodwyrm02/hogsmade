@@ -61,22 +61,17 @@ describe("scoreInsightDensity", () => {
     const evidences = makeEvidences();
     const lenses = makeLenses();
 
-    const narrow = scoreInsightDensity(
-      "Physics signal detected",
-      ["ev-1"],
-      evidences,
-      lenses
-    );
+    const narrow = scoreInsightDensity("Physics signal detected", ["ev-1"], evidences, lenses);
     const broad = scoreInsightDensity(
       "Cross-domain pattern",
       ["ev-1", "ev-2", "ev-3"],
       evidences,
-      lenses
+      lenses,
     );
 
     assert.ok(
       broad.coverageRatio >= narrow.coverageRatio,
-      `broad coverage ${broad.coverageRatio} should >= narrow ${narrow.coverageRatio}`
+      `broad coverage ${broad.coverageRatio} should >= narrow ${narrow.coverageRatio}`,
     );
   });
 
@@ -85,7 +80,7 @@ describe("scoreInsightDensity", () => {
       "Every action has an equal and opposite reaction",
       [],
       [],
-      []
+      [],
     );
     assert.ok(result.tokenCount > 0);
     assert.equal(result.tokenCount, 8);
@@ -100,12 +95,15 @@ describe("scoreInsightDensity", () => {
 describe("compressInsight", () => {
   it("returns structured compressed insight", () => {
     const evidences = makeEvidences();
-    const entities = [{ id: "e-1", name: "Newton" }, { id: "e-2", name: "Leibniz" }];
-    const result = compressInsight(
-      "Newton embodies physics and philosophy",
-      ["ev-1", "ev-2"],
-      { allEvidences: evidences, lenses: makeLenses(), entities }
-    );
+    const entities = [
+      { id: "e-1", name: "Newton" },
+      { id: "e-2", name: "Leibniz" },
+    ];
+    const result = compressInsight("Newton embodies physics and philosophy", ["ev-1", "ev-2"], {
+      allEvidences: evidences,
+      lenses: makeLenses(),
+      entities,
+    });
 
     assert.ok(result.compressed);
     assert.ok(result.densityScore >= 0);
@@ -123,12 +121,11 @@ describe("compressInsight", () => {
     const result = compressInsight(
       "Physics insight",
       ["ev-1"], // only covers e-1
-      { allEvidences: evidences, lenses: makeLenses(), entities }
+      { allEvidences: evidences, lenses: makeLenses(), entities },
     );
     assert.ok(
-      result.counterexamples.includes("Leibniz") ||
-      result.counterexamples.includes("Euler"),
-      "Should include uncovered entities"
+      result.counterexamples.includes("Leibniz") || result.counterexamples.includes("Euler"),
+      "Should include uncovered entities",
     );
   });
 });
@@ -149,15 +146,23 @@ describe("findInvariantPatterns", () => {
     for (let i = 1; i < patterns.length; i++) {
       assert.ok(
         patterns[i - 1].densityScore >= patterns[i].densityScore ||
-        patterns[i - 1].scope >= patterns[i].scope,
-        "Should be sorted by density then scope"
+          patterns[i - 1].scope >= patterns[i].scope,
+        "Should be sorted by density then scope",
       );
     }
   });
 
   it("skips rules with only 1 firing", () => {
     const evidences = [
-      { id: "ev-1", sourceRuleId: "once-only", confidence: 0.9, scope: "entity", targetId: "e-1", reason: "test", payload: {} },
+      {
+        id: "ev-1",
+        sourceRuleId: "once-only",
+        confidence: 0.9,
+        scope: "entity",
+        targetId: "e-1",
+        reason: "test",
+        payload: {},
+      },
     ];
     const patterns = findInvariantPatterns(evidences, [], [], []);
     assert.equal(patterns.length, 0, "Single-firing rules should not produce patterns");

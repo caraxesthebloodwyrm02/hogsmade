@@ -23,6 +23,7 @@ node scripts/version-bump.mjs major
 ```
 
 This updates:
+
 - `package.json` version
 - `CHANGELOG.md` with new version section
 
@@ -38,6 +39,7 @@ git push && git push --tags
 ### 3. Automated Release
 
 The `release.yml` workflow triggers on tag push:
+
 1. Builds all shared packages
 2. Builds all MCP servers
 3. Validates CHANGELOG

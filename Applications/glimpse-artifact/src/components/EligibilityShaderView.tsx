@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useRef } from 'react';
-import type { ShaderBufferData } from '@/hooks/useEligibilityPipeline';
-import vertexShaderSource from '@/shaders/eligibility.vert?raw';
-import fragmentShaderSource from '@/shaders/eligibility.frag?raw';
+import { useCallback, useEffect, useRef } from "react";
+import type { ShaderBufferData } from "@/hooks/useEligibilityPipeline";
+import vertexShaderSource from "@/shaders/eligibility.vert?raw";
+import fragmentShaderSource from "@/shaders/eligibility.frag?raw";
 
 interface EligibilityShaderViewProps {
   data: ShaderBufferData;
@@ -39,7 +39,7 @@ interface GlResources {
 
 function compileShader(gl: WebGL2RenderingContext, type: number, source: string): WebGLShader {
   const shader = gl.createShader(type);
-  if (!shader) throw new Error('Failed to create shader');
+  if (!shader) throw new Error("Failed to create shader");
   gl.shaderSource(shader, source);
   gl.compileShader(shader);
   if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
@@ -80,26 +80,26 @@ function createProgram(gl: WebGL2RenderingContext): GlResources {
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 
   const locations = {
-    a_position: gl.getAttribLocation(program, 'a_position'),
-    a_weightRaw: gl.getAttribLocation(program, 'a_weightRaw'),
-    a_runtimeInfluence: gl.getAttribLocation(program, 'a_runtimeInfluence'),
-    a_weightBand: gl.getAttribLocation(program, 'a_weightBand'),
-    a_conditionSeverity: gl.getAttribLocation(program, 'a_conditionSeverity'),
-    a_promotionPassed: gl.getAttribLocation(program, 'a_promotionPassed'),
-    a_fnvNoise: gl.getAttribLocation(program, 'a_fnvNoise'),
-    a_dimensionScores: gl.getAttribLocation(program, 'a_dimensionScores'),
-    a_opFitScore: gl.getAttribLocation(program, 'a_opFitScore'),
-    u_time: gl.getUniformLocation(program, 'u_time'),
-    u_beat: gl.getUniformLocation(program, 'u_beat'),
-    u_sidewalkDrift: gl.getUniformLocation(program, 'u_sidewalkDrift'),
-    u_momentum: gl.getUniformLocation(program, 'u_momentum'),
-    u_acceleration: gl.getUniformLocation(program, 'u_acceleration'),
-    u_cbState: gl.getUniformLocation(program, 'u_cbState'),
-    u_resolution: gl.getUniformLocation(program, 'u_resolution'),
-    u_argBiases: gl.getUniformLocation(program, 'u_argBiases'),
-    u_opFitBias: gl.getUniformLocation(program, 'u_opFitBias'),
-    u_residueTex: gl.getUniformLocation(program, 'u_residueTex'),
-    u_promotionThresholds: gl.getUniformLocation(program, 'u_promotionThresholds'),
+    a_position: gl.getAttribLocation(program, "a_position"),
+    a_weightRaw: gl.getAttribLocation(program, "a_weightRaw"),
+    a_runtimeInfluence: gl.getAttribLocation(program, "a_runtimeInfluence"),
+    a_weightBand: gl.getAttribLocation(program, "a_weightBand"),
+    a_conditionSeverity: gl.getAttribLocation(program, "a_conditionSeverity"),
+    a_promotionPassed: gl.getAttribLocation(program, "a_promotionPassed"),
+    a_fnvNoise: gl.getAttribLocation(program, "a_fnvNoise"),
+    a_dimensionScores: gl.getAttribLocation(program, "a_dimensionScores"),
+    a_opFitScore: gl.getAttribLocation(program, "a_opFitScore"),
+    u_time: gl.getUniformLocation(program, "u_time"),
+    u_beat: gl.getUniformLocation(program, "u_beat"),
+    u_sidewalkDrift: gl.getUniformLocation(program, "u_sidewalkDrift"),
+    u_momentum: gl.getUniformLocation(program, "u_momentum"),
+    u_acceleration: gl.getUniformLocation(program, "u_acceleration"),
+    u_cbState: gl.getUniformLocation(program, "u_cbState"),
+    u_resolution: gl.getUniformLocation(program, "u_resolution"),
+    u_argBiases: gl.getUniformLocation(program, "u_argBiases"),
+    u_opFitBias: gl.getUniformLocation(program, "u_opFitBias"),
+    u_residueTex: gl.getUniformLocation(program, "u_residueTex"),
+    u_promotionThresholds: gl.getUniformLocation(program, "u_promotionThresholds"),
   };
 
   return { program, vao, vbo, residueTexture, locations };
@@ -172,9 +172,9 @@ export function EligibilityShaderView({ data, className }: EligibilityShaderView
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const gl = canvas.getContext('webgl2', { antialias: true, alpha: true });
+    const gl = canvas.getContext("webgl2", { antialias: true, alpha: true });
     if (!gl) {
-      console.error('WebGL2 not available');
+      console.error("WebGL2 not available");
       return;
     }
 
@@ -185,7 +185,7 @@ export function EligibilityShaderView({ data, className }: EligibilityShaderView
       setupAttributes(gl, resources);
       resourcesRef.current = resources;
     } catch (err) {
-      console.error('Shader initialization failed:', err);
+      console.error("Shader initialization failed:", err);
     }
   }, []);
 
@@ -203,9 +203,14 @@ export function EligibilityShaderView({ data, className }: EligibilityShaderView
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, res.residueTexture);
     gl.texImage2D(
-      gl.TEXTURE_2D, 0, gl.RGBA,
-      8, 1, 0,
-      gl.RGBA, gl.UNSIGNED_BYTE,
+      gl.TEXTURE_2D,
+      0,
+      gl.RGBA,
+      8,
+      1,
+      0,
+      gl.RGBA,
+      gl.UNSIGNED_BYTE,
       data.residueTexture,
     );
   }, [data]);
@@ -300,7 +305,7 @@ export function EligibilityShaderView({ data, className }: EligibilityShaderView
     <canvas
       ref={canvasRef}
       className={className}
-      style={{ width: '100%', height: '100%', display: 'block' }}
+      style={{ width: "100%", height: "100%", display: "block" }}
     />
   );
 }

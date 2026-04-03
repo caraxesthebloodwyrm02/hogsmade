@@ -51,7 +51,8 @@ describe("routing audit hooks", () => {
 
     expect(auditEvents).toHaveLength(6);
     const targetTypes = auditEvents.map(
-      (e) => ((e as Record<string, unknown>)["metadata"] as Record<string, unknown>)?.["targetType"],
+      (e) =>
+        ((e as Record<string, unknown>)["metadata"] as Record<string, unknown>)?.["targetType"],
     );
     expect(targetTypes).toEqual([
       "evolution_case",
@@ -78,13 +79,15 @@ describe("routing audit hooks", () => {
 
   it("withAudit emits failure audit on error and rethrows", async () => {
     auditEvents.length = 0;
-    const handler = vi.fn(() => { throw new Error("boom"); });
+    const handler = vi.fn(() => {
+      throw new Error("boom");
+    });
     const wrapped = withAudit("error_tool", handler);
 
     await expect(wrapped({})).rejects.toThrow("boom");
     const event = auditEvents[auditEvents.length - 1] as Record<string, unknown>;
     expect(event).toMatchObject({ tool: "error_tool", status: "failure" });
-    expect(((event["metadata"] as Record<string, unknown>)?.["error"])).toBe("boom");
+    expect((event["metadata"] as Record<string, unknown>)?.["error"]).toBe("boom");
   });
 });
 
@@ -109,12 +112,14 @@ describe("read-only handler audit coverage", () => {
     expect(failure.validation.ok).toBe(false);
 
     const successAudit = auditEvents.filter(
-      (e) => (e as Record<string, unknown>)["tool"] === "evaluate_candidate"
-        && (e as Record<string, unknown>)["status"] === "success",
+      (e) =>
+        (e as Record<string, unknown>)["tool"] === "evaluate_candidate" &&
+        (e as Record<string, unknown>)["status"] === "success",
     );
     const failureAudit = auditEvents.filter(
-      (e) => (e as Record<string, unknown>)["tool"] === "evaluate_candidate"
-        && (e as Record<string, unknown>)["status"] === "failure",
+      (e) =>
+        (e as Record<string, unknown>)["tool"] === "evaluate_candidate" &&
+        (e as Record<string, unknown>)["status"] === "failure",
     );
     expect(successAudit.length).toBeGreaterThanOrEqual(1);
     expect(failureAudit.length).toBeGreaterThanOrEqual(1);
@@ -122,7 +127,10 @@ describe("read-only handler audit coverage", () => {
 
   it("compileFormsHandler emits audit", () => {
     auditEvents.length = 0;
-    compileFormsHandler({ fixtureId: "balanced-bridge", args: { formTarget: "all", tableScope: "all" } });
+    compileFormsHandler({
+      fixtureId: "balanced-bridge",
+      args: { formTarget: "all", tableScope: "all" },
+    });
     const audit = auditEvents.filter(
       (e) => (e as Record<string, unknown>)["tool"] === "compile_forms",
     );
@@ -131,7 +139,10 @@ describe("read-only handler audit coverage", () => {
 
   it("collectTableHandler emits audit", () => {
     auditEvents.length = 0;
-    collectTableHandler({ fixtureId: "balanced-bridge", args: { formTarget: "all", tableScope: "all" } });
+    collectTableHandler({
+      fixtureId: "balanced-bridge",
+      args: { formTarget: "all", tableScope: "all" },
+    });
     const audit = auditEvents.filter(
       (e) => (e as Record<string, unknown>)["tool"] === "collect_table",
     );
@@ -140,7 +151,10 @@ describe("read-only handler audit coverage", () => {
 
   it("explainHierarchyHandler emits audit", () => {
     auditEvents.length = 0;
-    explainHierarchyHandler({ fixtureId: "balanced-bridge", args: { formTarget: "all", tableScope: "all" } });
+    explainHierarchyHandler({
+      fixtureId: "balanced-bridge",
+      args: { formTarget: "all", tableScope: "all" },
+    });
     const audit = auditEvents.filter(
       (e) => (e as Record<string, unknown>)["tool"] === "explain_hierarchy",
     );

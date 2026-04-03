@@ -106,6 +106,7 @@ gh run view <run-id> --log-failed | tail -50
 ```
 
 Record failure in this format:
+
 ```
 PIPELINE FAILURE
   Repo: <repo>
@@ -122,6 +123,7 @@ PIPELINE FAILURE
 ### By failure category
 
 **Lint failure:**
+
 ```bash
 # GRID / Echoes
 uv run ruff check --fix .
@@ -132,6 +134,7 @@ npx eslint --fix <file>
 ```
 
 **Type failure:**
+
 ```bash
 # CascadeProjects
 npx tsc -p <project>/tsconfig.json --noEmit 2>&1 | head -20
@@ -141,6 +144,7 @@ uv run mypy src/ --ignore-missing-imports
 ```
 
 **Test failure:**
+
 ```bash
 # Run the specific failing test
 uv run pytest tests/<file>::<test> -xvs    # Python
@@ -148,6 +152,7 @@ npx vitest run tests/<file> -t "<name>"    # TypeScript
 ```
 
 **Secret detected:**
+
 ```bash
 # Find and remove the credential
 grep -rn "sk-ant-\|sk-proj-\|ghp_\|AKIA" --include="*.ts" --include="*.py" --include="*.json" .
@@ -155,6 +160,7 @@ grep -rn "sk-ant-\|sk-proj-\|ghp_\|AKIA" --include="*.ts" --include="*.py" --inc
 ```
 
 **Dependency failure:**
+
 ```bash
 # Python
 uv lock --upgrade-package <pkg>
@@ -187,11 +193,11 @@ gh pr checks <pr-number>   # if working via PR
 
 ### Green criteria
 
-| Repo | All Green When |
-|------|---------------|
+| Repo            | All Green When                                                                                  |
+| --------------- | ----------------------------------------------------------------------------------------------- |
 | CascadeProjects | `root-ts-ci` + `Credential Hygiene Scan` + `Boundary Invariant Review` + `Test & Lint` all pass |
-| GRID | `GRID CI` passes (secrets + lint + security + test + build) |
-| Echoes | `Echoes CI` passes (lint + test) |
+| GRID            | `GRID CI` passes (secrets + lint + security + test + build)                                     |
+| Echoes          | `Echoes CI` passes (lint + test)                                                                |
 
 ## Iteration Contract
 

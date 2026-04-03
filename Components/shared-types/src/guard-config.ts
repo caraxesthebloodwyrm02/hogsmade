@@ -141,20 +141,14 @@ function parseFeatureFlags(flags?: string): Partial<GuardFeatures> {
  * - GUARD_CIRCUIT_THRESHOLD: number of failures before opening (default: 5)
  * - GUARD_CIRCUIT_TIMEOUT_MS: milliseconds before recovery attempt (default: 30000)
  */
-export function loadRuntimeConfig(
-  serverName?: string
-): GuardRuntimeConfig {
+export function loadRuntimeConfig(serverName?: string): GuardRuntimeConfig {
   const enabled = process.env.GUARD_ENABLED !== "false";
 
   const scope = (process.env.GUARD_SCOPE as MitigationScope) || "STANDARD";
-  const validScope: MitigationScope = MITIGATION_SCOPES[scope]
-    ? scope
-    : "STANDARD";
+  const validScope: MitigationScope = MITIGATION_SCOPES[scope] ? scope : "STANDARD";
 
   const printTarget = (process.env.GUARD_PRINT_TARGET as PrintTarget) || "console";
-  const validPrintTarget: PrintTarget = ["console", "json", "file", "silent"].includes(
-    printTarget
-  )
+  const validPrintTarget: PrintTarget = ["console", "json", "file", "silent"].includes(printTarget)
     ? printTarget
     : "console";
 
@@ -167,14 +161,8 @@ export function loadRuntimeConfig(
 
   const featureFlags = parseFeatureFlags(process.env.GUARD_FEATURES);
 
-  const circuitThreshold = parseInt(
-    process.env.GUARD_CIRCUIT_THRESHOLD || "5",
-    10
-  );
-  const circuitTimeout = parseInt(
-    process.env.GUARD_CIRCUIT_TIMEOUT_MS || "30000",
-    10
-  );
+  const circuitThreshold = parseInt(process.env.GUARD_CIRCUIT_THRESHOLD || "5", 10);
+  const circuitTimeout = parseInt(process.env.GUARD_CIRCUIT_TIMEOUT_MS || "30000", 10);
 
   return {
     enabled,
@@ -199,9 +187,11 @@ export function loadRuntimeConfig(
  * Validate runtime configuration
  * Returns validation result with any errors
  */
-export function validateRuntimeConfig(
-  config: GuardRuntimeConfig
-): { valid: boolean; errors: string[]; warnings: string[] } {
+export function validateRuntimeConfig(config: GuardRuntimeConfig): {
+  valid: boolean;
+  errors: string[];
+  warnings: string[];
+} {
   const errors: string[] = [];
   const warnings: string[] = [];
 
@@ -251,7 +241,7 @@ export function validateRuntimeConfig(
  */
 export function createScopedConfig(
   baseConfig: GuardRuntimeConfig,
-  scope: MitigationScope
+  scope: MitigationScope,
 ): GuardRuntimeConfig {
   const scopeConfig = MITIGATION_SCOPES[scope];
   return {
@@ -270,7 +260,7 @@ export function createScopedConfig(
  * Configuration helper for server startup validation
  */
 export async function validateGuardStartup(
-  config: GuardRuntimeConfig
+  config: GuardRuntimeConfig,
 ): Promise<{ valid: boolean; errors: string[]; warnings: string[] }> {
   const validation = validateRuntimeConfig(config);
 

@@ -1,6 +1,14 @@
 import { cn } from "@/lib/utils";
 import type { Experiment } from "./types";
-import { Activity, CheckCircle2, XCircle, Clock, BarChart3, TrendingUp, TrendingDown } from "lucide-react";
+import {
+  Activity,
+  CheckCircle2,
+  XCircle,
+  Clock,
+  BarChart3,
+  TrendingUp,
+  TrendingDown,
+} from "lucide-react";
 
 interface ExperimentCardProps {
   data?: Experiment;
@@ -52,24 +60,14 @@ function formatDate(timestamp: string): string {
   }
 }
 
-export function ExperimentCard({
-  data,
-  loading,
-  error,
-  className,
-}: ExperimentCardProps) {
+export function ExperimentCard({ data, loading, error, className }: ExperimentCardProps) {
   if (error) {
     return (
       <div
-        className={cn(
-          "rounded-lg border border-rose-500 bg-rose-100 p-4",
-          className,
-        )}
+        className={cn("rounded-lg border border-rose-500 bg-rose-100 p-4", className)}
         role="alert"
       >
-        <p className="font-body text-sm text-rose-600 font-medium">
-          Could not load experiment.
-        </p>
+        <p className="font-body text-sm text-rose-600 font-medium">Could not load experiment.</p>
         <p className="font-body text-sm text-ink-muted mt-1">{error}</p>
       </div>
     );
@@ -78,10 +76,7 @@ export function ExperimentCard({
   if (loading || !data) {
     return (
       <div
-        className={cn(
-          "glass-panel p-4",
-          className,
-        )}
+        className={cn("glass-panel p-4", className)}
         aria-busy="true"
         aria-label="Loading experiment"
       >
@@ -102,11 +97,7 @@ export function ExperimentCard({
 
   return (
     <div
-      className={cn(
-        "glass-panel p-5",
-        "transition-all duration-300",
-        className,
-      )}
+      className={cn("glass-panel p-5", "transition-all duration-300", className)}
       role="article"
       aria-label={`Experiment: ${data.name}, status: ${statusCfg.label}`}
     >
@@ -127,12 +118,13 @@ export function ExperimentCard({
         <div className="flex items-center justify-center w-6 h-6 rounded-md bg-canvas-surface border border-border-color/50 shadow-sm">
           <BarChart3 className="w-3.5 h-3.5 text-ink-muted" />
         </div>
-        <p className="font-body text-sm text-ink font-semibold">
-          {data.metric}
-        </p>
+        <p className="font-body text-sm text-ink font-semibold">{data.metric}</p>
       </div>
 
-      <div className="space-y-4 p-4 rounded-lg bg-canvas-bg/50 border border-border-color/30" aria-label="Comparison bars">
+      <div
+        className="space-y-4 p-4 rounded-lg bg-canvas-bg/50 border border-border-color/30"
+        aria-label="Comparison bars"
+      >
         <div>
           <div className="flex justify-between font-body text-xs font-medium text-ink-muted/80 mb-2">
             <span>Baseline</span>
@@ -160,8 +152,13 @@ export function ExperimentCard({
                   backgroundColor: delta >= 0 ? "var(--emerald-100)" : "var(--rose-100)",
                 }}
               >
-                {delta >= 0 ? <TrendingUp className="w-3.5 h-3.5 mr-0.5" /> : <TrendingDown className="w-3.5 h-3.5 mr-0.5" />}
-                {deltaSign}{delta.toFixed(1)}
+                {delta >= 0 ? (
+                  <TrendingUp className="w-3.5 h-3.5 mr-0.5" />
+                ) : (
+                  <TrendingDown className="w-3.5 h-3.5 mr-0.5" />
+                )}
+                {deltaSign}
+                {delta.toFixed(1)}
               </span>
             </span>
           </div>
@@ -170,8 +167,11 @@ export function ExperimentCard({
               className="h-full rounded-full transition-all duration-slow shadow-sm"
               style={{
                 width: `${Math.max(2, currentPct)}%`,
-                backgroundImage: `linear-gradient(90deg, ${delta >= 0 ? "var(--teal-500), var(--emerald-500)" : "var(--rose-600), var(--rose-500)"
-                  })`,
+                backgroundImage: `linear-gradient(90deg, ${
+                  delta >= 0
+                    ? "var(--teal-500), var(--emerald-500)"
+                    : "var(--rose-600), var(--rose-500)"
+                })`,
               }}
             />
           </div>
@@ -179,9 +179,13 @@ export function ExperimentCard({
       </div>
 
       <div className="flex items-center gap-4 mt-5 font-body text-xs text-ink-muted/80 border-t border-border-color/30 pt-3">
-        <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> {formatDate(data.startedAt)}</span>
+        <span className="flex items-center gap-1">
+          <Clock className="w-3.5 h-3.5" /> {formatDate(data.startedAt)}
+        </span>
         {data.completedAt && (
-          <span className="flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5" /> Finished {formatDate(data.completedAt)}</span>
+          <span className="flex items-center gap-1">
+            <CheckCircle2 className="w-3.5 h-3.5" /> Finished {formatDate(data.completedAt)}
+          </span>
         )}
       </div>
     </div>

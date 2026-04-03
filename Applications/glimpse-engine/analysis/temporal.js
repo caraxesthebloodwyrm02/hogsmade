@@ -65,9 +65,7 @@ export function computeTemporalRange(values) {
  * @returns {Array<{center: number, spread: number, members: Array<number>, label: string}>}
  */
 export function detectTemporalClusters(timeValues, options = {}) {
-  const years = (timeValues || [])
-    .map(Number)
-    .filter((v) => Number.isFinite(v));
+  const years = (timeValues || []).map(Number).filter((v) => Number.isFinite(v));
 
   if (years.length < 2) return [];
 
@@ -110,8 +108,7 @@ export function detectTemporalClusters(timeValues, options = {}) {
 function buildCluster(members) {
   const sum = members.reduce((a, b) => a + b, 0);
   const center = sum / members.length;
-  const variance =
-    members.reduce((acc, v) => acc + (v - center) ** 2, 0) / members.length;
+  const variance = members.reduce((acc, v) => acc + (v - center) ** 2, 0) / members.length;
   const spread = Math.sqrt(variance);
   const min = members[0];
   const max = members[members.length - 1];
@@ -140,9 +137,7 @@ function buildCluster(members) {
  * @returns {Array<{year: number, density: number}>}
  */
 export function computeTemporalDensity(timeValues, options = {}) {
-  const years = (timeValues || [])
-    .map(Number)
-    .filter((v) => Number.isFinite(v));
+  const years = (timeValues || []).map(Number).filter((v) => Number.isFinite(v));
 
   if (years.length < 2) return [];
 
@@ -158,14 +153,7 @@ export function computeTemporalDensity(timeValues, options = {}) {
   // Adaptive bandwidth: Silverman's rule of thumb (simplified)
   const bandwidth =
     options.bandwidth ||
-    Math.max(
-      1,
-      Math.round(
-        1.06 *
-          standardDeviation(years) *
-          Math.pow(years.length, -0.2)
-      )
-    );
+    Math.max(1, Math.round(1.06 * standardDeviation(years) * Math.pow(years.length, -0.2)));
 
   const resolution = options.resolution || 1;
   const result = [];
@@ -198,7 +186,6 @@ function standardDeviation(values) {
   const n = values.length;
   if (n < 2) return 0;
   const mean = values.reduce((a, b) => a + b, 0) / n;
-  const variance =
-    values.reduce((acc, v) => acc + (v - mean) ** 2, 0) / (n - 1);
+  const variance = values.reduce((acc, v) => acc + (v - mean) ** 2, 0) / (n - 1);
   return Math.sqrt(variance);
 }

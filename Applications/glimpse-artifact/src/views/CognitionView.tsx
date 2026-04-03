@@ -15,18 +15,22 @@ export function CognitionView() {
     ? []
     : verifications.length > 0
       ? verifications[0].steps.map((step) => ({
-        name: step.name,
-        status: step.status === "done" ? "passed" as const
-          : step.status === "failed" ? "failed" as const
-            : step.status === "running" ? "pending" as const
-              : "skipped" as const,
-        details: GATE_STEPS.find((gs) =>
-          step.name.toLowerCase().includes(gs.replace(/_/g, " ").split(" ")[0]),
-        )
-          ? `Step from ${verifications[0].workflowName}`
-          : undefined,
-        durationMs: step.durationMs,
-      }))
+          name: step.name,
+          status:
+            step.status === "done"
+              ? ("passed" as const)
+              : step.status === "failed"
+                ? ("failed" as const)
+                : step.status === "running"
+                  ? ("pending" as const)
+                  : ("skipped" as const),
+          details: GATE_STEPS.find((gs) =>
+            step.name.toLowerCase().includes(gs.replace(/_/g, " ").split(" ")[0]),
+          )
+            ? `Step from ${verifications[0].workflowName}`
+            : undefined,
+          durationMs: step.durationMs,
+        }))
       : [];
 
   return (
@@ -38,11 +42,15 @@ export function CognitionView() {
             <Brain className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="font-heading text-2xl font-bold text-ink tracking-tight" style={{ letterSpacing: '-0.02em' }}>
+            <h1
+              className="font-heading text-2xl font-bold text-ink tracking-tight"
+              style={{ letterSpacing: "-0.02em" }}
+            >
               Cognition & GATE
             </h1>
             <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-muted mt-1">
-              <span className="text-teal-500">✦</span> GRID cognition pattern activation radar and GATE envelope flow.
+              <span className="text-teal-500">✦</span> GRID cognition pattern activation radar and
+              GATE envelope flow.
             </p>
           </div>
         </div>
@@ -55,7 +63,10 @@ export function CognitionView() {
             <div className="p-1.5 rounded-md bg-amber-400/10 text-amber-400 border border-amber-400/20">
               <Brain className="w-5 h-5" />
             </div>
-            <h2 id="cognition-heading" className="font-body text-xs font-medium uppercase tracking-[0.08em] text-ink">
+            <h2
+              id="cognition-heading"
+              className="font-body text-xs font-medium uppercase tracking-[0.08em] text-ink"
+            >
               Cognition Pattern Radar
             </h2>
             <span className="text-xs text-ink-muted font-body ml-auto">
@@ -63,30 +74,41 @@ export function CognitionView() {
             </span>
           </div>
           <div className="glass-panel p-5 card-glow">
-            {cogError
-              ? <DataError message={cogError} onRetry={cogRetry} />
-              : <CognitionRadar patterns={patterns} loading={cogLoading} />}
+            {cogError ? (
+              <DataError message={cogError} onRetry={cogRetry} />
+            ) : (
+              <CognitionRadar patterns={patterns} loading={cogLoading} />
+            )}
           </div>
         </section>
 
         {/* GATE Envelope Flow */}
-        <section aria-labelledby="gateflow-heading" className="animate-fade-slide-up" style={{ animationDelay: "200ms" }}>
+        <section
+          aria-labelledby="gateflow-heading"
+          className="animate-fade-slide-up"
+          style={{ animationDelay: "200ms" }}
+        >
           <div className="flex items-center gap-2 mb-6">
             <div className="p-1.5 rounded-md bg-teal-500/10 text-teal-500 border border-teal-500/20">
               <Shield className="w-5 h-5" />
             </div>
-            <h2 id="gateflow-heading" className="font-body text-xs font-medium uppercase tracking-[0.08em] text-ink">
+            <h2
+              id="gateflow-heading"
+              className="font-body text-xs font-medium uppercase tracking-[0.08em] text-ink"
+            >
               GATE Envelope Flow
             </h2>
           </div>
           <div className="glass-panel p-5">
-            {gateError
-              ? <DataError message={gateError} onRetry={gateRetry} />
-              : <GateFlowDiagram
+            {gateError ? (
+              <DataError message={gateError} onRetry={gateRetry} />
+            ) : (
+              <GateFlowDiagram
                 stages={gateStages}
                 loading={gateLoading}
                 envelopeId={verifications[0]?.id}
-              />}
+              />
+            )}
           </div>
         </section>
       </main>

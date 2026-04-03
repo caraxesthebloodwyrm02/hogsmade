@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { cn } from '@/lib/utils';
+import React, { useState, useRef } from "react";
+import { cn } from "@/lib/utils";
 
 interface AnnotationNoteProps {
   id: string;
@@ -17,7 +17,7 @@ export function AnnotationNote({
   text,
   x,
   y,
-  color = 'var(--amber-100)',
+  color = "var(--amber-100)",
   onUpdate,
   onDelete,
   className,
@@ -34,11 +34,11 @@ export function AnnotationNote({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSave();
     }
-    if (e.key === 'Escape') {
+    if (e.key === "Escape") {
       setDraft(text);
       setIsEditing(false);
     }
@@ -47,9 +47,9 @@ export function AnnotationNote({
   return (
     <div
       className={cn(
-        'absolute w-48 rounded-md shadow-token-md p-3',
-        'font-body text-sm text-ink',
-        className
+        "absolute w-48 rounded-md shadow-token-md p-3",
+        "font-body text-sm text-ink",
+        className,
       )}
       style={{
         left: x,
@@ -79,10 +79,10 @@ export function AnnotationNote({
           tabIndex={0}
           aria-label="Click to edit note"
           onKeyDown={(e: React.KeyboardEvent<HTMLDivElement>) => {
-            if (e.key === 'Enter' || e.key === ' ') setIsEditing(true);
+            if (e.key === "Enter" || e.key === " ") setIsEditing(true);
           }}
         >
-          {text || 'Click to add a note...'}
+          {text || "Click to add a note..."}
         </div>
       )}
 
@@ -95,7 +95,9 @@ export function AnnotationNote({
                      focus:outline-none focus:ring-2 focus:ring-teal-500"
           aria-label="Delete this note"
         >
-          <span aria-hidden="true" className="text-xs font-bold">&times;</span>
+          <span aria-hidden="true" className="text-xs font-bold">
+            &times;
+          </span>
         </button>
       )}
     </div>

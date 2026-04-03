@@ -11,11 +11,7 @@
 
 import { applyRules } from "../functions/rules.js";
 import { createEvidence } from "../analysis/relations.js";
-import {
-  recordInference,
-  recordGap,
-  GAP_TYPES,
-} from "./confidence.js";
+import { recordInference, recordGap, GAP_TYPES } from "./confidence.js";
 
 /**
  * Run multi-pass inference over the dataset.
@@ -64,9 +60,12 @@ export function runMultiPassInference(config, datasetScope, entities, relations,
       if (ev.payload?.lens && ev.payload?.entityId) {
         state.entityLensScores[ev.payload.entityId] ||= {};
         state.entityLensScores[ev.payload.entityId][ev.payload.lens] =
-          (state.entityLensScores[ev.payload.entityId][ev.payload.lens] || 0) +
-          ev.confidence * 0.3;
-        state.lensBuckets[ev.payload.lens] ||= { score: 0, evidenceIds: [], label: ev.payload.lens };
+          (state.entityLensScores[ev.payload.entityId][ev.payload.lens] || 0) + ev.confidence * 0.3;
+        state.lensBuckets[ev.payload.lens] ||= {
+          score: 0,
+          evidenceIds: [],
+          label: ev.payload.lens,
+        };
         state.lensBuckets[ev.payload.lens].score += ev.confidence * 0.2;
         state.lensBuckets[ev.payload.lens].evidenceIds.push(ev.id);
       }
@@ -109,33 +108,42 @@ function crossReferencePass(state, entities, relations) {
     // Strong agreement: primary lens has 2x+ the score of secondary
     if (primaryScore >= secondaryScore * 2) {
       const entity = entities.find((e) => e.id === entityId);
-      newEvidences.push(createEvidence({
-        sourceRuleId: "system-cross-reference-agreement",
-        confidence: 0.75,
-        confidence_source: "system-generated",
-        scope: "entity",
-        targetId: entityId,
-        affects: ["context_lens"],
-        reason: `Multiple rules converge on ${primaryLens} for ${entity?.name || entityId}.`,
-        payload: { lens: primaryLens, entityId, agreement: "strong" },
-        basis: "cross-reference",
-      }));
+      newEvidences.push(
+        createEvidence({
+          sourceRuleId: "system-cross-reference-agreement",
+          confidence: 0.75,
+          confidence_source: "system-generated",
+          scope: "entity",
+          targetId: entityId,
+          affects: ["context_lens"],
+          reason: `Multiple rules converge on ${primaryLens} for ${entity?.name || entityId}.`,
+          payload: { lens: primaryLens, entityId, agreement: "strong" },
+          basis: "cross-reference",
+        }),
+      );
     }
 
     // Close competition: lenses within 20% — potential ambiguity
     if (secondaryScore > 0 && primaryScore < secondaryScore * 1.2) {
       const entity = entities.find((e) => e.id === entityId);
-      newEvidences.push(createEvidence({
-        sourceRuleId: "system-cross-reference-ambiguity",
-        confidence: 0.45,
-        confidence_source: "system-generated",
-        scope: "entity",
-        targetId: entityId,
-        affects: ["context_lens", "diagnostics"],
-        reason: `${entity?.name || entityId} has competing lens assignments: ${primaryLens} vs ${secondaryLens}.`,
-        payload: { lens: primaryLens, entityId, competing: secondaryLens, agreement: "ambiguous" },
-        basis: "cross-reference",
-      }));
+      newEvidences.push(
+        createEvidence({
+          sourceRuleId: "system-cross-reference-ambiguity",
+          confidence: 0.45,
+          confidence_source: "system-generated",
+          scope: "entity",
+          targetId: entityId,
+          affects: ["context_lens", "diagnostics"],
+          reason: `${entity?.name || entityId} has competing lens assignments: ${primaryLens} vs ${secondaryLens}.`,
+          payload: {
+            lens: primaryLens,
+            entityId,
+            competing: secondaryLens,
+            agreement: "ambiguous",
+          },
+          basis: "cross-reference",
+        }),
+      );
     }
   }
 
@@ -151,17 +159,19 @@ function crossReferencePass(state, entities, relations) {
 
     if (Number.isFinite(sourceTime) && Number.isFinite(targetTime) && sourceTime <= targetTime) {
       // Temporally consistent influence — boost
-      newEvidences.push(createEvidence({
-        sourceRuleId: "system-temporal-consistency",
-        confidence: 0.72,
-        confidence_source: "system-generated",
-        scope: "relation",
-        targetId: rel.id,
-        affects: ["relation"],
-        reason: `${source.name} (${sourceTime}) precedes ${target.name} (${targetTime}), confirming influence direction.`,
-        payload: { source: rel.source, target: rel.target },
-        basis: "temporal-validation",
-      }));
+      newEvidences.push(
+        createEvidence({
+          sourceRuleId: "system-temporal-consistency",
+          confidence: 0.72,
+          confidence_source: "system-generated",
+          scope: "relation",
+          targetId: rel.id,
+          affects: ["relation"],
+          reason: `${source.name} (${sourceTime}) precedes ${target.name} (${targetTime}), confirming influence direction.`,
+          payload: { source: rel.source, target: rel.target },
+          basis: "temporal-validation",
+        }),
+      );
     }
   }
 

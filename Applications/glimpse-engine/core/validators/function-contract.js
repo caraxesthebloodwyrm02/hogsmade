@@ -21,94 +21,94 @@ export function validateFunctionContracts(registry, implementations = {}) {
     summary: {
       totalDeclared: 0,
       totalImplemented: 0,
-      coverage: 0
-    }
+      coverage: 0,
+    },
   };
-  
+
   // Null-safety checks
   const safeRegistry = registry || {};
   const safeImplementations = implementations || {};
-  
+
   const declaredNames = Object.keys(safeRegistry);
   const implementedNames = Object.keys(safeImplementations);
-  
+
   report.summary.totalDeclared = declaredNames.length;
   report.summary.totalImplemented = implementedNames.length;
-  
+
   // Check for missing implementations
   for (const fnName of declaredNames) {
-    report.details[fnName] = { status: 'checking' };
-    
+    report.details[fnName] = { status: "checking" };
+
     if (!implementedNames.includes(fnName)) {
       report.missing.push(fnName);
-      report.details[fnName] = { 
-        status: 'missing',
+      report.details[fnName] = {
+        status: "missing",
         declared: registry[fnName],
-        severity: 'critical'
+        severity: "critical",
       };
       report.valid = false;
       continue;
     }
-    
+
     const declared = safeRegistry[fnName];
     const impl = safeImplementations[fnName];
-    
+
     // Check arity compatibility
     const arity = impl.length;
     const declaredArgCount = Object.keys(declared.args || {}).length;
-    
+
     if (arity < declaredArgCount) {
       report.mismatched.push({
         name: fnName,
-        reason: 'arity_mismatch',
+        reason: "arity_mismatch",
         declaredArgs: declaredArgCount,
         implementedArity: arity,
-        severity: 'high'
+        severity: "high",
       });
       report.details[fnName] = {
-        status: 'mismatched',
-        reason: 'arity_mismatch',
+        status: "mismatched",
+        reason: "arity_mismatch",
         arity,
         declaredArgCount,
-        severity: 'high'
+        severity: "high",
       };
       report.valid = false;
       continue;
     }
-    
+
     // Validate return type hint (if available)
     if (declared.returns) {
-      const validReturns = ['boolean', 'score', 'number', 'string', 'array', 'object', 'undefined'];
+      const validReturns = ["boolean", "score", "number", "string", "array", "object", "undefined"];
       if (!validReturns.includes(declared.returns)) {
         report.mismatched.push({
           name: fnName,
-          reason: 'unknown_return_type',
+          reason: "unknown_return_type",
           declaredReturns: declared.returns,
-          severity: 'warning'
+          severity: "warning",
         });
       }
     }
-    
+
     // Check argument type definitions
     for (const [argName, argType] of Object.entries(declared.args || {})) {
-      if (typeof argType !== 'string') {
+      if (typeof argType !== "string") {
         report.argErrors.push({
           function: fnName,
           argument: argName,
-          error: 'arg_type_not_string',
-          type: typeof argType
+          error: "arg_type_not_string",
+          type: typeof argType,
         });
       }
     }
-    
+
     report.details[fnName] = {
-      status: 'ok',
+      status: "ok",
       arity,
       returns: declared.returns,
-      scope: declared.scope
+      scope: declared.scope,
     };
   }
-  
+
   // Check for orphaned implementations (not in registry)
   for (const fnName of implementedNames) {
     if (!declaredNames.includes(fnName)) {
@@ -116,12 +116,13 @@ export function validateFunctionContracts(registry, implementations = {}) {
       report.valid = false;
     }
   }
-  
+
   // Calculate coverage
-  report.summary.coverage = declaredNames.length > 0 
-    ? (declaredNames.length - report.missing.length) / declaredNames.length
-    : 0;
-  
+  report.summary.coverage =
+    declaredNames.length > 0
+      ? (declaredNames.length - report.missing.length) / declaredNames.length
+      : 0;
+
   return report;
 }
 
@@ -133,36 +134,36 @@ export function validateFunctionContracts(registry, implementations = {}) {
  */
 export function generateFunctionStub(fnName, declaration) {
   const args = Object.keys(declaration.args || {});
-  const argString = args.length > 0 ? `{ ${args.join(', ')} }` : '';
-  const returns = declaration.returns || 'undefined';
-  
+  const argString = args.length > 0 ? `{ ${args.join(", ")} }` : "";
+  const returns = declaration.returns || "undefined";
+
   // Generate return value based on type
   let defaultReturn;
   switch (returns) {
-    case 'boolean':
-      defaultReturn = 'false';
+    case "boolean":
+      defaultReturn = "false";
       break;
-    case 'score':
-    case 'number':
-      defaultReturn = '0';
+    case "score":
+    case "number":
+      defaultReturn = "0";
       break;
-    case 'string':
+    case "string":
       defaultReturn = "''";
       break;
-    case 'array':
-      defaultReturn = '[]';
+    case "array":
+      defaultReturn = "[]";
       break;
-    case 'object':
-      defaultReturn = '{}';
+    case "object":
+      defaultReturn = "{}";
       break;
     default:
-      defaultReturn = 'undefined';
+      defaultReturn = "undefined";
   }
-  
+
   // Generate description from declaration
   const description = declaration.description || `TODO: Implement ${fnName}`;
-  const scope = (declaration.scope || ['dataset']).join(' | ');
-  
+  const scope = (declaration.scope || ["dataset"]).join(" | ");
+
   return `/**
  * ${description}
  * 
@@ -170,10 +171,10 @@ export function generateFunctionStub(fnName, declaration) {
  * Returns: ${returns}
  * 
  * @param {Object} ctx - Evaluation context
- ${args.map(a => ` * @param {*} ${a} - from declaration`).join('\n')}
+ ${args.map((a) => ` * @param {*} ${a} - from declaration`).join("\n")}
  * @returns {${returns}}
  */
-function ${fnName}(ctx${argString ? ', ' + argString : ''}) {
+function ${fnName}(ctx${argString ? ", " + argString : ""}) {
   // AUTOGENERATED STUB - Replace with actual implementation
   console.warn('[STUB] ${fnName} called but not implemented');
   
@@ -197,45 +198,45 @@ export function generateHealingPatch(report) {
   const patch = {
     files: [],
     instructions: [],
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
   };
-  
+
   // Generate stubs for missing functions
   for (const fnName of report.missing) {
     const declaration = report.details[fnName]?.declared;
     if (declaration) {
       const stub = generateFunctionStub(fnName, declaration);
       patch.files.push({
-        action: 'create',
+        action: "create",
         path: `functions/generated/${fnName}.stub.js`,
-        content: stub
+        content: stub,
       });
     }
   }
-  
+
   // Generate missing registry entries for orphaned functions
   for (const fnName of report.orphaned) {
     patch.instructions.push({
-      severity: 'warning',
-      action: 'add_to_registry',
+      severity: "warning",
+      action: "add_to_registry",
       function: fnName,
-      message: `Function ${fnName} implemented but not declared in registry`
+      message: `Function ${fnName} implemented but not declared in registry`,
     });
   }
-  
+
   // Generate fix instructions for mismatched functions
   for (const mismatch of report.mismatched) {
-    if (mismatch.reason === 'arity_mismatch') {
+    if (mismatch.reason === "arity_mismatch") {
       patch.instructions.push({
         severity: mismatch.severity,
-        action: 'fix_arity',
+        action: "fix_arity",
         function: mismatch.name,
         message: `arity mismatch: ${mismatch.name} declares ${mismatch.declaredArgs} args but implements ${mismatch.implementedArity}`,
-        fix: `Add missing parameters or update registry declaration`
+        fix: `Add missing parameters or update registry declaration`,
       });
     }
   }
-  
+
   return patch;
 }
 
@@ -249,19 +250,21 @@ export function wrapWithContract(fn, declaration) {
   return function contractedFunction(...args) {
     // Runtime argument validation could go here
     // For performance, this is typically disabled in production
-    
+
     const result = fn.apply(this, args);
-    
+
     // Runtime return type checking
-    if (process.env.GLIMPSE_STRICT_MODE === 'true') {
+    if (process.env.GLIMPSE_STRICT_MODE === "true") {
       const expectedType = declaration.returns;
-      const actualType = Array.isArray(result) ? 'array' : typeof result;
-      
-      if (expectedType && expectedType !== 'undefined' && expectedType !== actualType) {
-        console.warn(`[CONTRACT] ${declaration.name} returned ${actualType}, expected ${expectedType}`);
+      const actualType = Array.isArray(result) ? "array" : typeof result;
+
+      if (expectedType && expectedType !== "undefined" && expectedType !== actualType) {
+        console.warn(
+          `[CONTRACT] ${declaration.name} returned ${actualType}, expected ${expectedType}`,
+        );
       }
     }
-    
+
     return result;
   };
 }
@@ -273,41 +276,45 @@ export function wrapWithContract(fn, declaration) {
  */
 export function formatReport(report) {
   const lines = [
-    '─'.repeat(50),
-    'FUNCTION CONTRACT VALIDATION REPORT',
-    '─'.repeat(50),
-    `Status:     ${report.valid ? '✅ VALID' : '❌ INVALID'}`,
+    "─".repeat(50),
+    "FUNCTION CONTRACT VALIDATION REPORT",
+    "─".repeat(50),
+    `Status:     ${report.valid ? "✅ VALID" : "❌ INVALID"}`,
     `Coverage:   ${(report.summary.coverage * 100).toFixed(1)}%`,
     `Declared:   ${report.summary.totalDeclared}`,
     `Implemented: ${report.summary.totalImplemented}`,
-    '',
-    'Issues:',
+    "",
+    "Issues:",
   ];
-  
+
   if (report.missing.length) {
     lines.push(`  ❌ Missing (${report.missing.length}):`);
-    report.missing.forEach(fn => lines.push(`     - ${fn}`));
+    report.missing.forEach((fn) => lines.push(`     - ${fn}`));
   }
-  
+
   if (report.orphaned.length) {
     lines.push(`  ⚠️  Orphaned (${report.orphaned.length}):`);
-    report.orphaned.forEach(fn => lines.push(`     - ${fn}`));
+    report.orphaned.forEach((fn) => lines.push(`     - ${fn}`));
   }
-  
+
   if (report.mismatched.length) {
     lines.push(`  ⚠️  Mismatched (${report.mismatched.length}):`);
-    report.mismatched.forEach(m => {
+    report.mismatched.forEach((m) => {
       lines.push(`     - ${m.name}: ${m.reason}`);
     });
   }
-  
-  if (report.missing.length === 0 && report.orphaned.length === 0 && report.mismatched.length === 0) {
-    lines.push('  ✅ None');
+
+  if (
+    report.missing.length === 0 &&
+    report.orphaned.length === 0 &&
+    report.mismatched.length === 0
+  ) {
+    lines.push("  ✅ None");
   }
-  
-  lines.push('─'.repeat(50));
-  
-  return lines.join('\n');
+
+  lines.push("─".repeat(50));
+
+  return lines.join("\n");
 }
 
 /**
@@ -317,9 +324,6 @@ export function formatReport(report) {
  * @returns {boolean} True if valid
  */
 export function quickValidate(config, implementations) {
-  const report = validateFunctionContracts(
-    config?.function_registry,
-    implementations
-  );
+  const report = validateFunctionContracts(config?.function_registry, implementations);
   return report.valid;
 }

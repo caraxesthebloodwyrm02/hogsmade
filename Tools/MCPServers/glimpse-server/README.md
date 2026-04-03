@@ -4,13 +4,13 @@ MCP server that exposes the Glimpse cognitive engine as tools for any MCP client
 
 ## Tools
 
-| Tool | Description |
-|------|-------------|
-| `glimpse_analyze` | Run the full enhanced pipeline on inline data. Returns lenses, complexity, patterns, confidence. |
-| `glimpse_complexity` | Detect data complexity (simple/moderate/complex) without full pipeline. |
-| `glimpse_compress` | Score insight density — domains covered per token. |
-| `glimpse_similarity` | Fuzzy dimension similarity (space aliases, domain overlap, temporal distance). |
-| `glimpse_confidence` | Create confidence frame, detect gaps, return calibrated summary. |
+| Tool                 | Description                                                                                      |
+| -------------------- | ------------------------------------------------------------------------------------------------ |
+| `glimpse_analyze`    | Run the full enhanced pipeline on inline data. Returns lenses, complexity, patterns, confidence. |
+| `glimpse_complexity` | Detect data complexity (simple/moderate/complex) without full pipeline.                          |
+| `glimpse_compress`   | Score insight density — domains covered per token.                                               |
+| `glimpse_similarity` | Fuzzy dimension similarity (space aliases, domain overlap, temporal distance).                   |
+| `glimpse_confidence` | Create confidence frame, detect gaps, return calibrated summary.                                 |
 
 ## Setup
 

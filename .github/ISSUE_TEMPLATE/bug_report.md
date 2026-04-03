@@ -1,12 +1,12 @@
 ---
 name: Bug report
 about: Something isn't working
-title: ''
+title: ""
 labels: bug
-assignees: ''
+assignees: ""
 ---
 
-**Project** (e.g. pulse-server, afloat-server): 
+**Project** (e.g. pulse-server, afloat-server):
 
 **What happened**
 
@@ -14,4 +14,4 @@ assignees: ''
 
 **Steps to reproduce** (if applicable)
 
-**Environment** (OS, Node/Python version, etc.): 
+**Environment** (OS, Node/Python version, etc.):

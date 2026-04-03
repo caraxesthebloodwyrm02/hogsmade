@@ -4,7 +4,8 @@ export const FIXTURE_CANDIDATES: readonly EligibilityCandidate[] = [
   {
     id: "governance-lattice",
     label: "Governance lattice",
-    summary: "A governance-heavy candidate that favors traceability, isolation, and policy discipline.",
+    summary:
+      "A governance-heavy candidate that favors traceability, isolation, and policy discipline.",
     tags: ["governance", "server", "policy"],
     source: "fixture",
     properties: [
@@ -24,7 +25,8 @@ export const FIXTURE_CANDIDATES: readonly EligibilityCandidate[] = [
   {
     id: "usability-orbit",
     label: "Usability orbit",
-    summary: "A user-centric candidate that favors operator clarity, low friction, and broad entry flexibility.",
+    summary:
+      "A user-centric candidate that favors operator clarity, low friction, and broad entry flexibility.",
     tags: ["usability", "entry", "forms"],
     source: "fixture",
     properties: [
@@ -44,7 +46,8 @@ export const FIXTURE_CANDIDATES: readonly EligibilityCandidate[] = [
   {
     id: "balanced-bridge",
     label: "Balanced bridge",
-    summary: "A balanced candidate that keeps governance, usability, and integration in workable tension.",
+    summary:
+      "A balanced candidate that keeps governance, usability, and integration in workable tension.",
     tags: ["balanced", "bridge", "routine"],
     source: "fixture",
     properties: [

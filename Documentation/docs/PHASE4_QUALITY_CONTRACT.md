@@ -16,45 +16,45 @@ Structured contract for the intended quality of Phase 4 (Visual Operating System
 
 ### 4.1 Mycelium Dashboard Integration
 
-| Criterion | Description | Owner (from [VISION_AGENTS_AND_UI_UX_OWNERSHIP.md](VISION_AGENTS_AND_UI_UX_OWNERSHIP.md)) |
-|----------|-------------|-------------------------------------------------------------------------------------------|
-| Health grid | Ecosystem health grid visible from seeds-server data. | Dev + design |
-| Audit stream | Audit event stream visible from echoes-server. | Dev + design |
-| Experiments | Active experiments visible from lots-server. | Dev + design |
-| Focus timer | Focus session timer visible from pulse-server. | Dev + design |
-| Layout and binding | Layout and data binding documented and functional. | Dev + design |
+| Criterion          | Description                                           | Owner (from [VISION_AGENTS_AND_UI_UX_OWNERSHIP.md](VISION_AGENTS_AND_UI_UX_OWNERSHIP.md)) |
+| ------------------ | ----------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| Health grid        | Ecosystem health grid visible from seeds-server data. | Dev + design                                                                              |
+| Audit stream       | Audit event stream visible from echoes-server.        | Dev + design                                                                              |
+| Experiments        | Active experiments visible from lots-server.          | Dev + design                                                                              |
+| Focus timer        | Focus session timer visible from pulse-server.        | Dev + design                                                                              |
+| Layout and binding | Layout and data binding documented and functional.    | Dev + design                                                                              |
 
 **Done when**: All four data sources are connected and displayed in the Mycelium frontend; no regressions to existing GRID Mycelium behavior.
 
 ### 4.2 Glimpse Components for Data Viz
 
-| Criterion | Description | Owner |
-|----------|-------------|--------|
-| Health gauges | Health score gauges per repo available and used. | Component library owner |
-| Audit timeline | Audit event timeline component available and used. | Component library owner |
-| Experiment charts | Experiment comparison charts available and used. | Component library owner |
-| Workflow cards | Workflow execution status cards available and used. | Component library owner |
-| Reuse | Components reusable across dashboard and GATE viz. | Component library owner |
+| Criterion         | Description                                         | Owner                   |
+| ----------------- | --------------------------------------------------- | ----------------------- |
+| Health gauges     | Health score gauges per repo available and used.    | Component library owner |
+| Audit timeline    | Audit event timeline component available and used.  | Component library owner |
+| Experiment charts | Experiment comparison charts available and used.    | Component library owner |
+| Workflow cards    | Workflow execution status cards available and used. | Component library owner |
+| Reuse             | Components reusable across dashboard and GATE viz.  | Component library owner |
 
 **Done when**: All four component types exist in glimpse-artifact and are integrated where specified; design system (palette, typography) is the single source for Phase 4 UI.
 
 ### 4.3 Real-Time Event Stream
 
-| Criterion | Description | Owner |
-|----------|-------------|--------|
+| Criterion  | Description                                                                          | Owner            |
+| ---------- | ------------------------------------------------------------------------------------ | ---------------- |
 | Design doc | Design doc exists covering hosting, auth, event fan-out, coexistence with stdio MCP. | Design doc first |
-| WebSocket | WebSocket support in pulse-server (or designated service) for live updates. | Implementation |
-| UX | Loading and error states defined and implemented. | Dev + design |
+| WebSocket  | WebSocket support in pulse-server (or designated service) for live updates.          | Implementation   |
+| UX         | Loading and error states defined and implemented.                                    | Dev + design     |
 
 **Done when**: Design doc is approved; frontend updates live for audit events, experiment completion, and health score changes as specified.
 
 ### 4.4 GATE Visualization
 
-| Criterion | Description | Owner |
-|----------|-------------|--------|
-| Envelope flow | Envelope submitted → validated → approved/rejected shown visually. | Dev + design |
-| Nonce registry | Nonce registry status visible. | Dev + design |
-| Deployment history | Recent deployment history with risk scores visible. | Dev + design |
+| Criterion          | Description                                                        | Owner        |
+| ------------------ | ------------------------------------------------------------------ | ------------ |
+| Envelope flow      | Envelope submitted → validated → approved/rejected shown visually. | Dev + design |
+| Nonce registry     | Nonce registry status visible.                                     | Dev + design |
+| Deployment history | Recent deployment history with risk scores visible.                | Dev + design |
 
 **Done when**: Read-only visualization of the deployment pipeline is available and accurate.
 

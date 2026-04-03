@@ -88,9 +88,7 @@ export class PrecedentStore {
       existing.consecutiveSuccesses = 0;
       existing.occurrences.push(occurrence);
       if (existing.occurrences.length > MAX_OCCURRENCES_PER_RECORD) {
-        existing.occurrences = existing.occurrences.slice(
-          -MAX_OCCURRENCES_PER_RECORD,
-        );
+        existing.occurrences = existing.occurrences.slice(-MAX_OCCURRENCES_PER_RECORD);
       }
       this.save();
       return existing;
@@ -113,10 +111,7 @@ export class PrecedentStore {
     return record;
   }
 
-  resolve(
-    id: string,
-    resolution: PrecedentResolution,
-  ): PrecedentRecord | undefined {
+  resolve(id: string, resolution: PrecedentResolution): PrecedentRecord | undefined {
     const data = this.ensureLoaded();
     const record = data.precedents.find((r) => r.id === id);
     if (!record) return undefined;
@@ -131,10 +126,7 @@ export class PrecedentStore {
     const data = this.ensureLoaded();
     let changed = false;
     for (const record of data.precedents) {
-      if (
-        record.fingerprint.source === source &&
-        record.fingerprint.tool === tool
-      ) {
+      if (record.fingerprint.source === source && record.fingerprint.tool === tool) {
         record.consecutiveSuccesses += 1;
         changed = true;
       }
@@ -167,9 +159,7 @@ export class PrecedentStore {
       if (!r.resolution) return true;
       const resolvedAge = now - new Date(r.resolution.resolvedAt).getTime();
       const lastSeenAge = now - new Date(r.lastSeen).getTime();
-      return (
-        resolvedAge < ARCHIVE_THRESHOLD_MS || lastSeenAge < ARCHIVE_THRESHOLD_MS
-      );
+      return resolvedAge < ARCHIVE_THRESHOLD_MS || lastSeenAge < ARCHIVE_THRESHOLD_MS;
     });
     const removed = before - data.precedents.length;
     if (removed > 0) this.save();

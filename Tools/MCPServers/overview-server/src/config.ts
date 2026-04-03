@@ -19,7 +19,8 @@ export function getConfig() {
   );
 
   return {
-    workspaceRoot: process.env.CASCADE_WORKSPACE_ROOT?.trim() || path.join(os.homedir(), "CascadeProjects"),
+    workspaceRoot:
+      process.env.CASCADE_WORKSPACE_ROOT?.trim() || path.join(os.homedir(), "CascadeProjects"),
     seedsRoot: process.env.SEEDS_ROOT?.trim() || path.join(os.homedir(), "seed"),
     echoesAuditPath: path.resolve(
       process.env.ECHOES_AUDIT_PATH?.trim() || path.join(echoesDataDir, "audit.ndjson"),

@@ -3,10 +3,7 @@
  * Transforms natural language queries into structured intents.
  */
 
-import {
-  includesWord,
-  slugify,
-} from "../utils/utils.js";
+import { includesWord, slugify } from "../utils/utils.js";
 
 export function buildSemanticHints(config) {
   const taxonomyDomains = config.taxonomy?.domains || [];
@@ -18,7 +15,9 @@ export function buildSemanticHints(config) {
 }
 
 function normalizeQuery(query) {
-  return String(query || "").trim().toLowerCase();
+  return String(query || "")
+    .trim()
+    .toLowerCase();
 }
 
 function queryHasAlias(query, aliases) {
@@ -37,14 +36,20 @@ export function parseQueryIntent(query, config) {
   if (!normalized) return { kind: "none" };
   if (/best view|best views|recommended view/.test(normalized)) return { kind: "show_best_views" };
   if (/explain relation between/.test(normalized)) {
-    const names = normalized.replace("explain relation between", "").split(" and ").map((value) => value.trim()).filter(Boolean);
+    const names = normalized
+      .replace("explain relation between", "")
+      .split(" and ")
+      .map((value) => value.trim())
+      .filter(Boolean);
     return { kind: "explain_relation", names };
   }
   if (/compare context|compare lens/.test(normalized)) return { kind: "compare_contexts" };
   if (/trace rules|show trace|logic trace/.test(normalized)) return { kind: "show_trace" };
   if (/cluster by|group by/.test(normalized)) {
-    if (queryHasAlias(normalized, config.semantic_packs?.query_aliases?.space)) return { kind: "cluster_by", dimension: "space" };
-    if (queryHasAlias(normalized, config.semantic_packs?.query_aliases?.time)) return { kind: "cluster_by", dimension: "time" };
+    if (queryHasAlias(normalized, config.semantic_packs?.query_aliases?.space))
+      return { kind: "cluster_by", dimension: "space" };
+    if (queryHasAlias(normalized, config.semantic_packs?.query_aliases?.time))
+      return { kind: "cluster_by", dimension: "time" };
     if (normalized.includes("type")) return { kind: "cluster_by", dimension: "type" };
     return { kind: "cluster_by", dimension: "domain" };
   }
@@ -59,7 +64,10 @@ export function parseQueryIntent(query, config) {
 function pickDetectedLens(text, config) {
   const lower = text.toLowerCase();
   const matched = (config.taxonomy?.domains || []).find((domain) => {
-    return includesWord(lower, domain.id) || (domain.keywords || []).some((keyword) => includesWord(lower, keyword));
+    return (
+      includesWord(lower, domain.id) ||
+      (domain.keywords || []).some((keyword) => includesWord(lower, keyword))
+    );
   });
   return matched?.id || null;
 }
@@ -72,7 +80,11 @@ function pickDetectedView(text, config) {
 }
 
 function pickTone(text, config) {
-  return Object.keys(config.semantic_packs?.tone_cues || {}).find((tone) => includesWord(text.toLowerCase(), tone)) || null;
+  return (
+    Object.keys(config.semantic_packs?.tone_cues || {}).find((tone) =>
+      includesWord(text.toLowerCase(), tone),
+    ) || null
+  );
 }
 
 export function compileRuleFromConversation(input, config) {
@@ -126,7 +138,10 @@ export function compileRuleFromConversation(input, config) {
   if (/place|region|country|geograph|location|map/.test(lower)) {
     derive.push({ action: "boost_lens", lens: "geography", score: 0.7 });
     derive.push({ action: "prefer_view", view: "map", score: 0.55 });
-    guards.push({ function: "equals_value", args: { path: "dataset.flags.has_space_dimension", value: true } });
+    guards.push({
+      function: "equals_value",
+      args: { path: "dataset.flags.has_space_dimension", value: true },
+    });
     affects.add("context_lens");
     affects.add("view");
   }
@@ -134,7 +149,10 @@ export function compileRuleFromConversation(input, config) {
   if (/time|era|year|history|timeline|century/.test(lower)) {
     derive.push({ action: "boost_lens", lens: "history", score: 0.65 });
     derive.push({ action: "prefer_view", view: "timeline", score: 0.45 });
-    guards.push({ function: "equals_value", args: { path: "dataset.flags.has_time_dimension", value: true } });
+    guards.push({
+      function: "equals_value",
+      args: { path: "dataset.flags.has_time_dimension", value: true },
+    });
     affects.add("context_lens");
     affects.add("view");
   }

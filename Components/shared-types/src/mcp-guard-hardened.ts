@@ -24,9 +24,7 @@ import * as z from "zod";
 import { randomUUID } from "crypto";
 
 // Result type for explicit error handling
-type Result<T, E = Error> =
-  | { ok: true; value: T }
-  | { ok: false; error: E; code: string };
+type Result<T, E = Error> = { ok: true; value: T } | { ok: false; error: E; code: string };
 
 function ok<T>(value: T): Result<T> {
   return { ok: true, value };
@@ -170,7 +168,7 @@ export class HardenedMcpMeritGuard {
     if (typeof sessionId !== "string") {
       return err(
         new TypeError(`session_id must be string, got ${typeof sessionId}`),
-        "INVALID_SESSION_TYPE"
+        "INVALID_SESSION_TYPE",
       );
     }
 
@@ -178,10 +176,7 @@ export class HardenedMcpMeritGuard {
       // Validate session_id format (alphanumeric, hyphens, underscores)
       const validPattern = /^[a-zA-Z0-9_-]{1,64}$/;
       if (!validPattern.test(sessionId)) {
-        return err(
-          new Error("session_id format invalid"),
-          "INVALID_SESSION_FORMAT"
-        );
+        return err(new Error("session_id format invalid"), "INVALID_SESSION_FORMAT");
       }
     }
 
@@ -298,7 +293,7 @@ export class HardenedMcpMeritGuard {
   private async checkPermission(
     entityId: string,
     actionClass: ActionClass,
-    requiredScope?: Scope
+    requiredScope?: Scope,
   ): Promise<Result<PermissionCheckResult>> {
     this.metrics.totalChecks++;
 
@@ -306,7 +301,7 @@ export class HardenedMcpMeritGuard {
     const allowed = this.checkRateLimit(
       entityId,
       this.config.rateLimitMax,
-      this.config.rateLimitWindowMs
+      this.config.rateLimitWindowMs,
     );
     if (!allowed) {
       return err(new Error("Rate limit exceeded"), "RATE_LIMITED");
@@ -369,32 +364,29 @@ export class HardenedMcpMeritGuard {
   private async callGridApi(
     entityId: string,
     actionClass: ActionClass,
-    requiredScope?: Scope
+    requiredScope?: Scope,
   ): Promise<Result<PermissionCheckResult>> {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 5000);
 
     try {
       const requestId = randomUUID();
-      const response = await fetch(
-        `${this.config.gridApiUrl}/admission/check-permission`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Request-ID": requestId,
-            "X-Correlation-ID": requestId,
-            // Admission Gate entity attribution (prevents ip:* fallback)
-            "X-Entity-Id": entityId,
-          },
-          body: JSON.stringify({
-            entity_id: entityId,
-            action_class: actionClass,
-            required_scope: requiredScope,
-          }),
-          signal: controller.signal,
-        }
-      );
+      const response = await fetch(`${this.config.gridApiUrl}/admission/check-permission`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Request-ID": requestId,
+          "X-Correlation-ID": requestId,
+          // Admission Gate entity attribution (prevents ip:* fallback)
+          "X-Entity-Id": entityId,
+        },
+        body: JSON.stringify({
+          entity_id: entityId,
+          action_class: actionClass,
+          required_scope: requiredScope,
+        }),
+        signal: controller.signal,
+      });
 
       clearTimeout(timeout);
 
@@ -404,10 +396,7 @@ export class HardenedMcpMeritGuard {
 
       if (!response.ok) {
         const body = await response.text().catch(() => "unknown");
-        return err(
-          new Error(`GRID error ${response.status}: ${body}`),
-          "GRID_ERROR"
-        );
+        return err(new Error(`GRID error ${response.status}: ${body}`), "GRID_ERROR");
       }
 
       const result = (await response.json()) as PermissionCheckResult;
@@ -426,7 +415,7 @@ export class HardenedMcpMeritGuard {
    * Never fails silently - errors logged to stderr
    */
   private async logMeritDecision(
-    entry: Omit<MeritAuditEntry, "timestamp" | "source">
+    entry: Omit<MeritAuditEntry, "timestamp" | "source">,
   ): Promise<void> {
     const auditEntry: MeritAuditEntry = {
       ...entry,
@@ -455,14 +444,14 @@ export class HardenedMcpMeritGuard {
       if (!result) {
         // Audit failed - this is critical, log to stderr
         console.error(
-          `[CRITICAL] Merit audit failed for ${auditEntry.entity_id} - action: ${auditEntry.action_class}`
+          `[CRITICAL] Merit audit failed for ${auditEntry.entity_id} - action: ${auditEntry.action_class}`,
         );
       }
     } catch (auditError) {
       // Audit threw - critical, log to stderr
       console.error(
         `[CRITICAL] Merit audit threw exception:`,
-        auditError instanceof Error ? auditError.message : String(auditError)
+        auditError instanceof Error ? auditError.message : String(auditError),
       );
     }
   }
@@ -501,7 +490,7 @@ export class HardenedMcpMeritGuard {
     server: McpServerShape,
     name: string,
     options: GuardedToolOptions,
-    handler: (args: Record<string, unknown>, sessionId?: string) => Promise<unknown>
+    handler: (args: Record<string, unknown>, sessionId?: string) => Promise<unknown>,
   ): void {
     server.registerTool(
       name,
@@ -533,11 +522,15 @@ export class HardenedMcpMeritGuard {
             content: [
               {
                 type: "text" as const,
-                text: JSON.stringify({
-                  error: "INVALID_IDENTITY",
-                  message: identityResult.error.message,
-                  code: identityResult.code,
-                }, null, 2),
+                text: JSON.stringify(
+                  {
+                    error: "INVALID_IDENTITY",
+                    message: identityResult.error.message,
+                    code: identityResult.code,
+                  },
+                  null,
+                  2,
+                ),
               },
             ],
             isError: true,
@@ -552,7 +545,7 @@ export class HardenedMcpMeritGuard {
         const permissionResult = await this.checkPermission(
           entityId,
           options.actionClass,
-          options.requiredScope
+          options.requiredScope,
         );
 
         if (!permissionResult.ok) {
@@ -573,11 +566,15 @@ export class HardenedMcpMeritGuard {
             content: [
               {
                 type: "text" as const,
-                text: JSON.stringify({
-                  error: "PERMISSION_CHECK_FAILED",
-                  message: permissionResult.error.message,
-                  code: permissionResult.code,
-                }, null, 2),
+                text: JSON.stringify(
+                  {
+                    error: "PERMISSION_CHECK_FAILED",
+                    message: permissionResult.error.message,
+                    code: permissionResult.code,
+                  },
+                  null,
+                  2,
+                ),
               },
             ],
             isError: true,
@@ -604,15 +601,20 @@ export class HardenedMcpMeritGuard {
             content: [
               {
                 type: "text" as const,
-                text: JSON.stringify({
-                  error: "INSUFFICIENT_MERIT_STANDING",
-                  entity_id: entityId,
-                  required_badge: permission.required_badge,
-                  actual_badge: permission.actual_badge,
-                  required_scope: options.requiredScope,
-                  message: `Insufficient merit standing for ${options.actionClass}. ` +
-                    `Required: ${permission.required_badge}, Current: ${permission.actual_badge}`,
-                }, null, 2),
+                text: JSON.stringify(
+                  {
+                    error: "INSUFFICIENT_MERIT_STANDING",
+                    entity_id: entityId,
+                    required_badge: permission.required_badge,
+                    actual_badge: permission.actual_badge,
+                    required_scope: options.requiredScope,
+                    message:
+                      `Insufficient merit standing for ${options.actionClass}. ` +
+                      `Required: ${permission.required_badge}, Current: ${permission.actual_badge}`,
+                  },
+                  null,
+                  2,
+                ),
               },
             ],
             isError: true,
@@ -629,44 +631,48 @@ export class HardenedMcpMeritGuard {
             content: [
               {
                 type: "text" as const,
-                text: JSON.stringify({
-                  result,
-                  _meta: {
-                    entity_id: entityId,
-                    action_class: options.actionClass,
-                    duration_ms: duration,
+                text: JSON.stringify(
+                  {
+                    result,
+                    _meta: {
+                      entity_id: entityId,
+                      action_class: options.actionClass,
+                      duration_ms: duration,
+                    },
                   },
-                }, null, 2),
+                  null,
+                  2,
+                ),
               },
             ],
           };
         } catch (handlerError) {
-          const errorMsg = handlerError instanceof Error
-            ? handlerError.message
-            : String(handlerError);
+          const errorMsg =
+            handlerError instanceof Error ? handlerError.message : String(handlerError);
 
           // Log handler errors explicitly
-          console.error(
-            `[HANDLER_ERROR] Tool ${name} failed for ${entityId}:`,
-            errorMsg
-          );
+          console.error(`[HANDLER_ERROR] Tool ${name} failed for ${entityId}:`, errorMsg);
 
           return {
             content: [
               {
                 type: "text" as const,
-                text: JSON.stringify({
-                  error: "HANDLER_EXECUTION_FAILED",
-                  message: errorMsg,
-                  tool: name,
-                  entity_id: entityId,
-                }, null, 2),
+                text: JSON.stringify(
+                  {
+                    error: "HANDLER_EXECUTION_FAILED",
+                    message: errorMsg,
+                    tool: name,
+                    entity_id: entityId,
+                  },
+                  null,
+                  2,
+                ),
               },
             ],
             isError: true,
           };
         }
-      }
+      },
     );
   }
 
@@ -699,7 +705,7 @@ export class HardenedMcpMeritGuard {
  */
 export function createHardenedMeritGuard(
   serverName: string,
-  gridApiUrl?: string
+  gridApiUrl?: string,
 ): HardenedMcpMeritGuard {
   return new HardenedMcpMeritGuard({
     serverName,

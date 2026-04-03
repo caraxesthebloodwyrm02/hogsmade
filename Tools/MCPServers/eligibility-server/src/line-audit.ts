@@ -158,7 +158,12 @@ function rewriteLine(filePath: string, lineNumber: number, oldLine: string, newL
 function resolveCanonicalSpecifier(importLine: string, pkg: CanonicalPackage): string {
   const namesMatch = importLine.match(/import\s+(?:type\s+)?{([^}]+)}/);
   const importedNames = namesMatch
-    ? namesMatch[1].split(",").map((n) => n.trim().split(/\s+as\s+/)[0].trim())
+    ? namesMatch[1].split(",").map((n) =>
+        n
+          .trim()
+          .split(/\s+as\s+/)[0]
+          .trim(),
+      )
     : [];
   for (const [subpath, knownNames] of Object.entries(pkg.subpaths)) {
     if (importedNames.some((name) => knownNames.includes(name))) {
@@ -198,7 +203,10 @@ function checkSpecifierConsistency(modules: ModuleInfo[], srcDir: string): Inter
   }
 
   // Cross-module main-vs-subpath split
-  const specsByDep = new Map<string, Map<string, { file: string; line: number; rawLine: string }[]>>();
+  const specsByDep = new Map<
+    string,
+    Map<string, { file: string; line: number; rawLine: string }[]>
+  >();
   for (const mod of modules) {
     for (const imp of mod.imports) {
       if (imp.specifier.startsWith(".") || imp.isType) continue;
@@ -236,7 +244,10 @@ function checkSpecifierConsistency(modules: ModuleInfo[], srcDir: string): Inter
                 const newLine = loc.rawLine
                   .replace(`"${pkgRoot}"`, `"${canonical}"`)
                   .replace(`'${pkgRoot}'`, `'${canonical}'`);
-                writeFileSync(path.join(srcDir, loc.file), srcContent.replace(loc.rawLine, newLine));
+                writeFileSync(
+                  path.join(srcDir, loc.file),
+                  srcContent.replace(loc.rawLine, newLine),
+                );
               }
             : undefined,
         });
@@ -251,7 +262,13 @@ function checkBarrelCompleteness(modules: ModuleInfo[]): InternalFinding[] {
   const findings: InternalFinding[] = [];
   const barrel = modules.find((mod) => mod.relativePath === BARREL);
   if (!barrel) {
-    findings.push({ rule: "barrel-completeness", severity: "error", file: BARREL, message: "Barrel index.ts not found.", fixable: false });
+    findings.push({
+      rule: "barrel-completeness",
+      severity: "error",
+      file: BARREL,
+      message: "Barrel index.ts not found.",
+      fixable: false,
+    });
     return findings;
   }
 
@@ -281,7 +298,10 @@ function checkBarrelCompleteness(modules: ModuleInfo[]): InternalFinding[] {
   return findings;
 }
 
-function checkMockAlignment(srcModules: ModuleInfo[], testModules: ModuleInfo[]): InternalFinding[] {
+function checkMockAlignment(
+  srcModules: ModuleInfo[],
+  testModules: ModuleInfo[],
+): InternalFinding[] {
   const findings: InternalFinding[] = [];
 
   const mocked = new Set<string>();
@@ -292,7 +312,10 @@ function checkMockAlignment(srcModules: ModuleInfo[], testModules: ModuleInfo[])
   }
   if (mocked.size === 0) return findings;
 
-  const srcSpecs = new Map<string, { file: string; line: number; rawLine: string; mod: ModuleInfo }[]>();
+  const srcSpecs = new Map<
+    string,
+    { file: string; line: number; rawLine: string; mod: ModuleInfo }[]
+  >();
   for (const mod of srcModules) {
     for (const imp of mod.imports) {
       if (imp.specifier.startsWith(".") || imp.isType) continue;
@@ -303,12 +326,18 @@ function checkMockAlignment(srcModules: ModuleInfo[], testModules: ModuleInfo[])
   }
 
   for (const [srcSpec, locs] of srcSpecs) {
-    const srcRoot = srcSpec.startsWith("@") ? srcSpec.split("/").slice(0, 2).join("/") : srcSpec.split("/")[0];
+    const srcRoot = srcSpec.startsWith("@")
+      ? srcSpec.split("/").slice(0, 2).join("/")
+      : srcSpec.split("/")[0];
     for (const mockSpec of mocked) {
-      const mockRoot = mockSpec.startsWith("@") ? mockSpec.split("/").slice(0, 2).join("/") : mockSpec.split("/")[0];
+      const mockRoot = mockSpec.startsWith("@")
+        ? mockSpec.split("/").slice(0, 2).join("/")
+        : mockSpec.split("/")[0];
       if (srcRoot === mockRoot && srcSpec !== mockSpec) {
         for (const loc of locs) {
-          const newLine = loc.rawLine.replace(`"${srcSpec}"`, `"${mockSpec}"`).replace(`'${srcSpec}'`, `'${mockSpec}'`);
+          const newLine = loc.rawLine
+            .replace(`"${srcSpec}"`, `"${mockSpec}"`)
+            .replace(`'${srcSpec}'`, `'${mockSpec}'`);
           findings.push({
             rule: "mock-alignment",
             severity: "error",
@@ -336,7 +365,10 @@ function checkAuditSymmetry(modules: ModuleInfo[]): InternalFinding[] {
       if (start < 0) continue;
       let end = mod.lines.length;
       for (let i = start + 1; i < mod.lines.length; i++) {
-        if (mod.lines[i].match(/^export\s+(?:async\s+)?function\s+\w+/)) { end = i; break; }
+        if (mod.lines[i].match(/^export\s+(?:async\s+)?function\s+\w+/)) {
+          end = i;
+          break;
+        }
       }
       if (!AUDIT_CALL_PATTERN.test(mod.lines.slice(start, end).join("\n"))) {
         findings.push({
@@ -360,7 +392,11 @@ function checkCircularImports(modules: ModuleInfo[]): InternalFinding[] {
     const edges: string[] = [];
     for (const imp of mod.imports) {
       if (!imp.specifier.startsWith(".")) continue;
-      edges.push(path.normalize(path.join(path.dirname(mod.relativePath), imp.specifier.replace(/\.js$/, ".ts"))));
+      edges.push(
+        path.normalize(
+          path.join(path.dirname(mod.relativePath), imp.specifier.replace(/\.js$/, ".ts")),
+        ),
+      );
     }
     graph.set(mod.relativePath, edges);
   }
@@ -370,13 +406,21 @@ function checkCircularImports(modules: ModuleInfo[]): InternalFinding[] {
   function dfs(node: string, trail: string[]): void {
     if (inStack.has(node)) {
       const cycle = trail.slice(trail.indexOf(node)).concat(node);
-      findings.push({ rule: "circular-import", severity: "error", file: node, message: `Circular: ${cycle.join(" → ")}`, fixable: false });
+      findings.push({
+        rule: "circular-import",
+        severity: "error",
+        file: node,
+        message: `Circular: ${cycle.join(" → ")}`,
+        fixable: false,
+      });
       return;
     }
     if (visited.has(node)) return;
     visited.add(node);
     inStack.add(node);
-    for (const nb of graph.get(node) ?? []) { if (graph.has(nb)) dfs(nb, [...trail, node]); }
+    for (const nb of graph.get(node) ?? []) {
+      if (graph.has(nb)) dfs(nb, [...trail, node]);
+    }
     inStack.delete(node);
   }
   for (const node of graph.keys()) dfs(node, []);
@@ -392,7 +436,13 @@ function checkOrphanedExports(modules: ModuleInfo[]): InternalFinding[] {
     for (const name of mod.exportedNames) {
       const matches = allContent.match(new RegExp(`\\b${name}\\b`, "g"));
       if (matches && matches.length <= 1) {
-        findings.push({ rule: "orphaned-export", severity: "warn", file: mod.relativePath, message: `"${name}" exported but never referenced.`, fixable: false });
+        findings.push({
+          rule: "orphaned-export",
+          severity: "warn",
+          file: mod.relativePath,
+          message: `"${name}" exported but never referenced.`,
+          fixable: false,
+        });
       }
     }
   }
@@ -430,7 +480,14 @@ function collectFindings(srcDir: string, testDir: string): InternalFinding[] {
 }
 
 function toPublic(f: InternalFinding): LineFinding {
-  return { rule: f.rule, severity: f.severity, file: f.file, line: f.line, message: f.message, fixable: f.fixable };
+  return {
+    rule: f.rule,
+    severity: f.severity,
+    file: f.file,
+    line: f.line,
+    message: f.message,
+    fixable: f.fixable,
+  };
 }
 
 function buildSummary(errors: number, warnings: number, fixable: number, fixed: number): string {

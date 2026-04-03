@@ -4,43 +4,48 @@
  */
 
 export function slugify(value) {
-  return String(value || "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 48) || "item";
+  return (
+    String(value || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 48) || "item"
+  );
 }
 
 export function normalizeName(name) {
-  return String(name || "").toLowerCase().trim().replace(/\s+/g, " ");
+  return String(name || "")
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, " ");
 }
 
 export function findBestEntityMatch(name, entities, byName) {
   const normalized = normalizeName(name);
   if (!normalized) return null;
-  
+
   // Exact match first
   const exact = byName.get(normalized);
   if (exact) return exact;
-  
+
   // Try slug match
   const slug = slugify(name);
   for (const entity of entities) {
     if (slugify(entity.name) === slug) return entity;
   }
-  
+
   // Partial match: input contains entity name
   for (const entity of entities) {
     const entityNorm = normalizeName(entity.name);
     if (normalized.includes(entityNorm)) return entity;
   }
-  
+
   // Partial match: entity name contains input
   for (const entity of entities) {
     const entityNorm = normalizeName(entity.name);
     if (entityNorm.includes(normalized)) return entity;
   }
-  
+
   return null;
 }
 
@@ -57,7 +62,9 @@ export function clone(value) {
 }
 
 export function flattenRecord(record) {
-  return Object.entries(record || {}).map(([key, value]) => `${key}: ${value}`).join(" ");
+  return Object.entries(record || {})
+    .map(([key, value]) => `${key}: ${value}`)
+    .join(" ");
 }
 
 export function guessPrimitiveType(values) {
@@ -67,7 +74,9 @@ export function guessPrimitiveType(values) {
   if (numericCount === nonEmpty.length) return "number";
   const booleanCount = nonEmpty.filter((value) => typeof value === "boolean").length;
   if (booleanCount === nonEmpty.length) return "boolean";
-  const dateLikeCount = nonEmpty.filter((value) => /^\d{4}(-\d{2}(-\d{2})?)?$/.test(String(value))).length;
+  const dateLikeCount = nonEmpty.filter((value) =>
+    /^\d{4}(-\d{2}(-\d{2})?)?$/.test(String(value)),
+  ).length;
   if (dateLikeCount === nonEmpty.length) return "date";
   return "string";
 }
@@ -91,7 +100,9 @@ export function clamp(value, min, max) {
 }
 
 export function resolvePath(scope, path) {
-  const parts = String(path || "").split(".").filter(Boolean);
+  const parts = String(path || "")
+    .split(".")
+    .filter(Boolean);
   let current = scope;
   for (const part of parts) {
     if (current == null) return undefined;
@@ -103,9 +114,12 @@ export function resolvePath(scope, path) {
 export function compareFact(actual, op, expected) {
   if (op === "exists") return actual !== undefined && actual !== null && actual !== "";
   if (op === "is") return actual === expected;
-  if (op === "contains") return Array.isArray(actual)
-    ? actual.includes(expected)
-    : String(actual || "").toLowerCase().includes(String(expected || "").toLowerCase());
+  if (op === "contains")
+    return Array.isArray(actual)
+      ? actual.includes(expected)
+      : String(actual || "")
+          .toLowerCase()
+          .includes(String(expected || "").toLowerCase());
   if (op === ">") return Number(actual || 0) > Number(expected || 0);
   if (op === ">=") return Number(actual || 0) >= Number(expected || 0);
   if (op === "<") return Number(actual || 0) < Number(expected || 0);

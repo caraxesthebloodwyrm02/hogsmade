@@ -45,6 +45,7 @@ Use memory_get for /home/caraxes/.openclaw/workspace/MEMORY.md and return the Lo
 ```
 
 Best fit:
+
 - exact line-level recall after a search hit
 - minimizing context usage when the target note is already known
 
@@ -75,6 +76,7 @@ Use dio_episode_summary with partIndex=2 and summarize what phase two is optimiz
 ```
 
 Best fit:
+
 - quick structure checks
 - planning where work belongs in the DIO cadence
 - understanding the episode phases before implementation
@@ -86,6 +88,7 @@ Use dio:status with detail=full and explain how the cadence should shape this ta
 ```
 
 Best fit:
+
 - confirming cadence
 - verifying rhythm pass count and modular pass index
 - shaping structured work before a larger change
@@ -97,6 +100,7 @@ Run security:audit with path="roots/security" and format="json", then summarize 
 ```
 
 Best fit:
+
 - targeted audit before changing DIO/security-related code
 - scoped review of local underscore-isolation or similar safety checks
 
@@ -201,6 +205,7 @@ The DIO bridge extension:
 - returns structured JSON for episode summaries and status
 
 This is important for future upgrades because the bridge is intentionally thin:
+
 - the Python side owns the domain logic
 - the TypeScript side owns the tool boundary and validation
 
@@ -218,18 +223,18 @@ localized.
 
 ## Structure map for future upgrades
 
-| Component | Path | Role | Where to upgrade |
-|---|---|---|---|
-| OpenClaw gateway config | `/home/caraxes/.openclaw/openclaw.json` | Gateway, tools, plugins, memory, hooks | Memory model/provider, tool policy, plugin slot selection, boot hooks |
-| OpenClaw memory notes | `/home/caraxes/.openclaw/workspace/MEMORY.md` | Durable local memory source of truth | Add new canonical notes, then reindex |
-| OpenClaw memory corpus | `/home/caraxes/.openclaw/workspace/memory/` | Extra Markdown recall sources | Add more searchable docs and notes |
-| OpenClaw service | `/home/caraxes/.config/systemd/user/openclaw-gateway.service` | Boots the gateway on login | Restart behavior, env/path, startup hardening |
-| Pi package manifest | `/home/caraxes/CascadeProjects/pi-mangrove/package.json` | Package root and auto-discovery | Add new extensions, skills, prompts |
-| DIO bridge | `/home/caraxes/CascadeProjects/pi-mangrove/extensions/dio-bridge.ts` | DIO tools | Add DIO-facing tools or improve Python subprocess handling |
-| Local guard | `/home/caraxes/CascadeProjects/pi-mangrove/extensions/local-guard.ts` | Safety gate for risky calls | Add new dangerous patterns or protected paths |
-| Pi workspace settings | `/home/caraxes/CascadeProjects/.pi/settings.json` | Project-local auto-load and package filtering | Expand or narrow local package loading |
-| Pi global settings | `/home/caraxes/.pi/agent/settings.json` | Default model/provider behavior | Change model defaults or allowed models |
-| Tailored examples | `/home/caraxes/CascadeProjects/docs/OPENCLAW_PI_TAILORED_EXAMPLES.md` | Copy-paste scenario examples | Add more workflow examples as features grow |
+| Component               | Path                                                                  | Role                                          | Where to upgrade                                                      |
+| ----------------------- | --------------------------------------------------------------------- | --------------------------------------------- | --------------------------------------------------------------------- |
+| OpenClaw gateway config | `/home/caraxes/.openclaw/openclaw.json`                               | Gateway, tools, plugins, memory, hooks        | Memory model/provider, tool policy, plugin slot selection, boot hooks |
+| OpenClaw memory notes   | `/home/caraxes/.openclaw/workspace/MEMORY.md`                         | Durable local memory source of truth          | Add new canonical notes, then reindex                                 |
+| OpenClaw memory corpus  | `/home/caraxes/.openclaw/workspace/memory/`                           | Extra Markdown recall sources                 | Add more searchable docs and notes                                    |
+| OpenClaw service        | `/home/caraxes/.config/systemd/user/openclaw-gateway.service`         | Boots the gateway on login                    | Restart behavior, env/path, startup hardening                         |
+| Pi package manifest     | `/home/caraxes/CascadeProjects/pi-mangrove/package.json`              | Package root and auto-discovery               | Add new extensions, skills, prompts                                   |
+| DIO bridge              | `/home/caraxes/CascadeProjects/pi-mangrove/extensions/dio-bridge.ts`  | DIO tools                                     | Add DIO-facing tools or improve Python subprocess handling            |
+| Local guard             | `/home/caraxes/CascadeProjects/pi-mangrove/extensions/local-guard.ts` | Safety gate for risky calls                   | Add new dangerous patterns or protected paths                         |
+| Pi workspace settings   | `/home/caraxes/CascadeProjects/.pi/settings.json`                     | Project-local auto-load and package filtering | Expand or narrow local package loading                                |
+| Pi global settings      | `/home/caraxes/.pi/agent/settings.json`                               | Default model/provider behavior               | Change model defaults or allowed models                               |
+| Tailored examples       | `/home/caraxes/CascadeProjects/docs/OPENCLAW_PI_TAILORED_EXAMPLES.md` | Copy-paste scenario examples                  | Add more workflow examples as features grow                           |
 
 ## Future upgrade map
 
@@ -299,4 +304,3 @@ that local fallback to confirm whether the audit logic itself is healthy.
 - `pi-mangrove/EXECUTION_GUIDE.md`
 - `pi-mangrove/prompts/mangrove-dev.md`
 - `pi-mangrove/prompts/safety-gate.md`
-

@@ -56,6 +56,7 @@ app = FastAPI(
 During the lifespan startup phase, the system initializes in strict order:
 
 **1. Database Engine Initialization**
+
 ```python
 # @/home/caraxes/CascadeProjects/GRID-main/src/application/mothership/main.py:348
 get_async_engine()
@@ -63,6 +64,7 @@ logger.info("Database engine initialized")
 ```
 
 **2. Cockpit Service Initialization**
+
 ```python
 # @/home/caraxes/CascadeProjects/GRID-main/src/application/mothership/main.py:358
 cockpit = get_cockpit_service()
@@ -79,6 +81,7 @@ setup_middleware(app, settings)
 ```
 
 The middleware stack includes:
+
 - **CORSMiddleware** — cross-origin resource sharing
 - **GZipMiddleware** — response compression
 - **SecurityHeadersMiddleware** — security headers
@@ -98,6 +101,7 @@ router.include_router(imported_router, **router_kwargs)
 ```
 
 Routers include:
+
 - **auth** — authentication endpoints
 - **payment** — payment processing
 - **agentic** — agentic case management
@@ -139,6 +143,7 @@ HTTP Response
 ### Middleware Execution Order
 
 **1. Request ID Assignment**
+
 ```python
 # @/home/caraxes/CascadeProjects/GRID-main/src/application/mothership/main.py:231
 async def request_id_middleware(request: Request, call_next: Callable) -> Response:
@@ -147,6 +152,7 @@ async def request_id_middleware(request: Request, call_next: Callable) -> Respon
 ```
 
 **2. Timing Start**
+
 ```python
 # @/home/caraxes/CascadeProjects/GRID-main/src/application/mothership/main.py:245
 async def timing_middleware(request: Request, call_next: Callable) -> Response:
@@ -155,6 +161,7 @@ async def timing_middleware(request: Request, call_next: Callable) -> Response:
 ```
 
 **3. Request Logging**
+
 ```python
 # @/home/caraxes/CascadeProjects/GRID-main/src/application/mothership/main.py:261
 logger.info(
@@ -174,6 +181,7 @@ async def _check_database_connectivity(db_url: str, timeout: float = 5.0) -> tup
 ```
 
 **Database Connection Test**
+
 ```python
 # @/home/caraxes/CascadeProjects/GRID-main/src/application/mothership/routers/health.py:87
 engine = create_async_engine(async_url, pool_pre_ping=True)
@@ -236,6 +244,7 @@ safe_raw_input = sanitize_text_for_llm(request.raw_input, "raw_input")
 ```
 
 This prevents:
+
 - SQL injection
 - Prompt injection
 - XSS attacks
@@ -280,6 +289,7 @@ Registered handlers process the event asynchronously:
 ```
 
 **Key Insight**: The event-driven architecture decouples case creation from downstream processing, enabling:
+
 - Asynchronous workflows
 - Multiple handlers per event
 - Failure isolation
@@ -313,7 +323,7 @@ Promotion Gate Evaluation
 
 ```json
 // @/home/caraxes/.echoes/audit.ndjson:18
-{"source":"eligibility-server","tool":"evolution_case_opened","status":"success"}
+{ "source": "eligibility-server", "tool": "evolution_case_opened", "status": "success" }
 ```
 
 A new evolution case starts at the **map** beat with active status.
@@ -321,21 +331,24 @@ A new evolution case starts at the **map** beat with active status.
 ### Beat Progression Sequence
 
 **1. Map → Balance Transition**
+
 ```json
 // @/home/caraxes/.echoes/audit.ndjson:24
-{"source":"eligibility-server","tool":"evolution_beat_advanced","status":"success"}
+{ "source": "eligibility-server", "tool": "evolution_beat_advanced", "status": "success" }
 ```
 
 **2. Balance → Tighten Transition**
+
 ```json
 // @/home/caraxes/.echoes/audit.ndjson:25
-{"source":"eligibility-server","tool":"evolution_beat_advanced","status":"success"}
+{ "source": "eligibility-server", "tool": "evolution_beat_advanced", "status": "success" }
 ```
 
 **3. Tighten → Verify Transition**
+
 ```json
 // @/home/caraxes/.echoes/audit.ndjson:26
-{"source":"eligibility-server","tool":"evolution_beat_advanced","status":"success"}
+{ "source": "eligibility-server", "tool": "evolution_beat_advanced", "status": "success" }
 ```
 
 At this point, the case enters **promotion_pending** status.
@@ -346,7 +359,7 @@ The promotion gate evaluates whether the case is ready for promotion:
 
 ```json
 // @/home/caraxes/.echoes/audit.ndjson:27
-{"source":"eligibility-server","tool":"evolution_promotion_blocked","status":"success"}
+{ "source": "eligibility-server", "tool": "evolution_promotion_blocked", "status": "success" }
 ```
 
 **Decision: hold_for_tighten** — the cycle returns to the tighten beat for additional refinement.
@@ -357,10 +370,11 @@ While the cycle progresses, runtime signals influence the eligibility score:
 
 ```json
 // @/home/caraxes/.echoes/audit.ndjson:21
-{"source":"eligibility-server","tool":"evolution_signal_recorded","status":"success"}
+{ "source": "eligibility-server", "tool": "evolution_signal_recorded", "status": "success" }
 ```
 
 Signal types include:
+
 - `integration_call_succeeded`
 - `integration_call_failed`
 - `test_passed`
@@ -396,39 +410,44 @@ Audit Log Storage (.echoes/audit.ndjson)
 ### Tool Execution Examples
 
 **1. Pulse Server: Morning Briefing**
+
 ```json
 // @/home/caraxes/.echoes/audit.ndjson:9
-{"source":"pulse-server","tool":"morning_briefing","status":"success"}
+{ "source": "pulse-server", "tool": "morning_briefing", "status": "success" }
 ```
 
 **2. Grid Server: Envelope Validation (Success)**
+
 ```json
 // @/home/caraxes/.echoes/audit.ndjson:10
-{"source":"grid-server","tool":"validate_envelope","status":"success"}
+{ "source": "grid-server", "tool": "validate_envelope", "status": "success" }
 ```
 
 All 10 validation checks passed without enhanced consultation.
 
 **3. Grid Server: Envelope Validation (Fail-Closed)**
+
 ```json
 // @/home/caraxes/.echoes/audit.ndjson:11
-{"source":"grid-server","tool":"validate_envelope","status":"failure"}
+{ "source": "grid-server", "tool": "validate_envelope", "status": "failure" }
 ```
 
 Validation failed with enhanced consultation, demonstrating **fail-closed** security posture.
 
 **4. Seeds Server: Ecosystem Health Scan**
+
 ```json
 // @/home/caraxes/.echoes/audit.ndjson:15
-{"source":"seeds-server","tool":"ecosystem_scan","status":"success"}
+{ "source": "seeds-server", "tool": "ecosystem_scan", "status": "success" }
 ```
 
 Scanned 8 repositories with 86 overall health score, no issues detected.
 
 **5. Overview Server: Checkpoint Assessment**
+
 ```json
 // @/home/caraxes/.echoes/audit.ndjson:110
-{"source":"overview-server","tool":"checkpoint","status":"success"}
+{ "source": "overview-server", "tool": "checkpoint", "status": "success" }
 ```
 
 Evaluates trust score (57), drift severity, and trajectory.
@@ -436,6 +455,7 @@ Evaluates trust score (57), drift severity, and trajectory.
 ### Precedent & Enforcement System
 
 The audit system tracks:
+
 - **Recurrence pattern detection** — identifies repeated failures
 - **Escalation level tracking** — observed → flagged → restricted → blocked
 - **Audit trail integrity** — hash chain verification
@@ -525,6 +545,7 @@ logger.info("Safety enforcement middleware enabled (MANDATORY)")
 ```
 
 The **final and mandatory** security layer that enforces:
+
 - Authentication
 - User suspension checks
 - Rate limiting
@@ -573,7 +594,7 @@ Input Validation Layer
 
 ```json
 // @/home/caraxes/CascadeProjects/GRID-main/logs/security/vection_audit.log:1
-{"event_id": "evt_1774062997011089_00000001", "timestamp": "2026-03-21T03:16:..."}
+{ "event_id": "evt_1774062997011089_00000001", "timestamp": "2026-03-21T03:16:..." }
 ```
 
 The audit system starts with **hash chain enabled** for tamper detection.
@@ -581,24 +602,30 @@ The audit system starts with **hash chain enabled** for tamper detection.
 ### Rate Limit Enforcement
 
 **Check 1: Low Utilization**
+
 ```json
 // @/home/caraxes/CascadeProjects/GRID-main/logs/security/vection_audit.log:3
 {"event_id": "evt_1774062997026415_00000003", ...}
 ```
+
 1/100 requests used in 60-second window, 1% utilization.
 
 **Check 2: Approaching Limit**
+
 ```json
 // @/home/caraxes/CascadeProjects/GRID-main/logs/security/vection_audit.log:7
 {"event_id": "evt_1774062997034846_00000007", ...}
 ```
+
 3/3 requests used, 100% utilization before enforcement.
 
 **Check 3: Limit Exceeded**
+
 ```json
 // @/home/caraxes/CascadeProjects/GRID-main/logs/security/vection_audit.log:8
 {"event_id": "evt_1774062997035045_00000008", ...}
 ```
+
 Warning severity: rate limit exceeded, request blocked with audit trail.
 
 ### Input Validation: SQL Injection Detection
@@ -697,18 +724,21 @@ Now let's see how all three systems work together in a complete workflow.
 The GRID architecture consists of **three loosely-coupled systems**:
 
 **1. Mothership FastAPI Backend (Python)**
+
 - Production HTTP API
 - Database persistence
 - Security middleware stack
 - Event-driven agentic processing
 
 **2. Eligibility Evolution System (TypeScript MCP)**
+
 - 4-beat evolution cycle (map→balance→tighten→verify)
 - Promotion gate enforcement
 - Signal-driven scoring
 - Independent from Mothership
 
 **3. MCP Audit Infrastructure (TypeScript)**
+
 - Cross-server tool execution logging
 - Precedent pattern detection
 - Escalation level tracking

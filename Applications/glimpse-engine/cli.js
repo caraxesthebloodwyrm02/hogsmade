@@ -12,13 +12,13 @@
 //   --quiet                         Minimal output (just the signal)
 //   --brief                         Skip patterns and deep engine details
 
-import { readFileSync } from 'fs';
-import { runGlimpse, autoConfig } from './core/runner.js';
-import { getScenario, listScenarios } from './core/scenarios.js';
-import { parseCSV } from './core/engine.js';
-import * as display from './core/display.js';
-import { activityTracker } from './core/activity-tracker.js';
-import { visualFeedback } from './core/visual-feedback.js';
+import { readFileSync } from "fs";
+import { runGlimpse, autoConfig } from "./core/runner.js";
+import { getScenario, listScenarios } from "./core/scenarios.js";
+import { parseCSV } from "./core/engine.js";
+import * as display from "./core/display.js";
+import { activityTracker } from "./core/activity-tracker.js";
+import { visualFeedback } from "./core/visual-feedback.js";
 
 // ============================================================================
 // ARGUMENT PARSING
@@ -26,15 +26,15 @@ import { visualFeedback } from './core/visual-feedback.js';
 
 const args = process.argv.slice(2);
 const flags = {
-  interview: args.includes('--interview'),
-  json: args.includes('--json'),
-  quiet: args.includes('--quiet'),
-  brief: args.includes('--brief'),
-  help: args.includes('--help') || args.includes('-h'),
-  realtime: args.includes('--realtime'),
+  interview: args.includes("--interview"),
+  json: args.includes("--json"),
+  quiet: args.includes("--quiet"),
+  brief: args.includes("--brief"),
+  help: args.includes("--help") || args.includes("-h"),
+  realtime: args.includes("--realtime"),
 };
-const positional = args.filter(a => !a.startsWith('--') && !a.startsWith('-'));
-const command = positional[0] || 'help';
+const positional = args.filter((a) => !a.startsWith("--") && !a.startsWith("-"));
+const command = positional[0] || "help";
 const target = positional[1] || null;
 
 // ============================================================================
@@ -86,9 +86,14 @@ function showHelp() {
 
 function showList() {
   const scenarios = listScenarios();
-  display.openFrame('GLIMPSE — Available Scenarios');
-  scenarios.forEach(s => {
-    display.row(display.icon(s.category === 'personal' ? 'contemplative' : 'focused'), s.id, s.description, { padLabel: 14 });
+  display.openFrame("GLIMPSE — Available Scenarios");
+  scenarios.forEach((s) => {
+    display.row(
+      display.icon(s.category === "personal" ? "contemplative" : "focused"),
+      s.id,
+      s.description,
+      { padLabel: 14 },
+    );
   });
   display.close();
 }
@@ -103,39 +108,39 @@ function showMonitor() {
 
 function showTraffic() {
   if (flags.realtime) {
-    visualFeedback.currentView = 'traffic';
+    visualFeedback.currentView = "traffic";
     visualFeedback.startRealtime();
   } else {
-    visualFeedback.currentView = 'traffic';
+    visualFeedback.currentView = "traffic";
     visualFeedback.renderCurrentView();
   }
 }
 
 function showAnalytics() {
-  visualFeedback.currentView = 'analytics';
+  visualFeedback.currentView = "analytics";
   visualFeedback.renderCurrentView();
 }
 
 // Track activity for all sessions
-function trackSession(sessionData, scenario = 'custom') {
+function trackSession(sessionData, scenario = "custom") {
   const startTime = Date.now();
-  
+
   return {
     ...sessionData,
     onComplete: (result) => {
       const endTime = Date.now();
       const duration = endTime - startTime;
-      
+
       activityTracker.recordSession({
         scenario,
         duration,
         recordCount: sessionData.records?.length || 0,
-        complexity: result.result?.complexity?.level || 'unknown',
+        complexity: result.result?.complexity?.level || "unknown",
         confidence: result.result?.confidenceReport?.overallScore || 0,
-        status: result.error ? 'error' : 'success',
-        error: result.error || null
+        status: result.error ? "error" : "success",
+        error: result.error || null,
       });
-    }
+    },
   };
 }
 
@@ -153,12 +158,12 @@ async function runScenario(id) {
   try {
     session = runGlimpse({
       data: scenario.data,
-      format: 'json',
+      format: "json",
       config: scenario.config,
       meta: scenario.meta,
       opts: {
-        interview: flags.interview
-      }
+        interview: flags.interview,
+      },
     });
   } catch (e) {
     error = e;
@@ -171,10 +176,10 @@ async function runScenario(id) {
     scenario: id,
     duration,
     recordCount: scenario.data?.length || 0,
-    complexity: session.result?.complexity?.level || 'unknown',
+    complexity: session.result?.complexity?.level || "unknown",
     confidence: session.result?.confidenceReport?.overallScore || 0,
-    status: error ? 'error' : 'success',
-    error: error?.message || null
+    status: error ? "error" : "success",
+    error: error?.message || null,
   });
 
   if (flags.json) {
@@ -198,11 +203,11 @@ async function runScenario(id) {
   // Interview display
   if (session.interview?.questions?.length > 0 && !session.interview.result) {
     display.gap();
-    display.section('Calibration Interview');
+    display.section("Calibration Interview");
     session.interview.questions.forEach((q, i) => {
       display.interviewQuestion(q, i + 1);
     });
-    console.log('\n  To score: provide answers as --answers A,B,C,...');
+    console.log("\n  To score: provide answers as --answers A,B,C,...");
   }
 
   if (session.interview?.result) {
@@ -214,31 +219,32 @@ async function runScenario(id) {
 
 async function runFile(filePath) {
   if (!filePath) {
-    console.error('  Usage: glimpse run <file.json|file.csv>');
+    console.error("  Usage: glimpse run <file.json|file.csv>");
     process.exit(1);
   }
 
   let raw;
   try {
-    raw = readFileSync(filePath, 'utf-8');
+    raw = readFileSync(filePath, "utf-8");
   } catch (e) {
     console.error(`  Could not read file: ${filePath}`);
     process.exit(1);
   }
 
   // Detect format
-  const isCSV = filePath.endsWith('.csv') || (!filePath.endsWith('.json') && !raw.trim().startsWith('['));
+  const isCSV =
+    filePath.endsWith(".csv") || (!filePath.endsWith(".json") && !raw.trim().startsWith("["));
   let data;
   let format;
 
   if (isCSV) {
     data = parseCSV(raw);
-    format = 'csv';
+    format = "csv";
   } else {
     try {
       data = JSON.parse(raw);
       if (!Array.isArray(data)) data = [data];
-      format = 'json';
+      format = "json";
     } catch (e) {
       console.error(`  Could not parse file as JSON: ${e.message}`);
       process.exit(1);
@@ -247,16 +253,16 @@ async function runFile(filePath) {
 
   // Auto-detect config
   const config = autoConfig(data);
-  const genericScenario = getScenario('generic');
+  const genericScenario = getScenario("generic");
 
   const session = runGlimpse({
     data,
     format,
     config,
-    meta: { source: filePath, trigger: 'manual' },
+    meta: { source: filePath, trigger: "manual" },
     opts: {
-      interview: flags.interview
-    }
+      interview: flags.interview,
+    },
   });
 
   if (flags.json) {
@@ -274,7 +280,7 @@ async function runFile(filePath) {
 
   if (session.interview?.questions?.length > 0 && !session.interview.result) {
     display.gap();
-    display.section('Calibration Interview');
+    display.section("Calibration Interview");
     session.interview.questions.forEach((q, i) => {
       display.interviewQuestion(q, i + 1);
     });
@@ -288,17 +294,17 @@ async function runFile(filePath) {
 // ============================================================================
 
 async function main() {
-  if (flags.help || command === 'help') {
+  if (flags.help || command === "help") {
     showHelp();
-  } else if (command === 'list') {
+  } else if (command === "list") {
     showList();
-  } else if (command === 'monitor') {
+  } else if (command === "monitor") {
     showMonitor();
-  } else if (command === 'traffic') {
+  } else if (command === "traffic") {
     showTraffic();
-  } else if (command === 'analytics') {
+  } else if (command === "analytics") {
     showAnalytics();
-  } else if (command === 'run') {
+  } else if (command === "run") {
     await runFile(target);
   } else {
     // Treat as scenario name
@@ -306,7 +312,7 @@ async function main() {
   }
 }
 
-main().catch(err => {
+main().catch((err) => {
   console.error(`  Error: ${err.message}`);
   if (process.env.DEBUG) console.error(err.stack);
   process.exit(1);

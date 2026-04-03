@@ -4,22 +4,22 @@ Root-level scripts for the CascadeProjects workspace. Run from repo root or adju
 
 ## Index
 
-| Script | Purpose |
-|--------|--------|
-| [sync-default-master.mjs](sync-default-master.mjs) | Sync `glimpse.master.yaml` → `glimpse-engine/default-master.js` (embedded fallback). |
-| [bootstrap_glimpse_logic.mjs](bootstrap_glimpse_logic.mjs) | Bootstrap and validate Glimpse logic; run context pipeline on sample datasets. |
-| [sync-default-master.mjs](sync-default-master.mjs) | Sync `glimpse.master.yaml` → `glimpse-engine/default-master.js` (embedded fallback). |
-| [bootstrap_glimpse_logic.mjs](bootstrap_glimpse_logic.mjs) | Bootstrap and validate Glimpse logic; run context pipeline on sample datasets. |
-| [sync-default-master.mjs](sync-default-master.mjs) | Sync `glimpse.master.yaml` → `glimpse-engine/default-master.js` (embedded fallback). |
-| [bootstrap_glimpse_logic.mjs](bootstrap_glimpse_logic.mjs) | Bootstrap and validate Glimpse logic; run context pipeline on sample datasets. |
-| [grid-admission-preflight.mjs](grid-admission-preflight.mjs) | Verify that `GRID-main` admission endpoints are reachable before using `grid-server` admission MCP tools. |
-| [grid-admission-gate.mjs](grid-admission-gate.mjs) | Run `grid-admission-preflight.mjs` and only execute the provided command when admission endpoints are reachable. |
-| [grid-admission-runtime.mjs](grid-admission-runtime.mjs) | Admission runtime harness that can cold-start `GRID-main`, wait for readiness, run a guarded command, and emit a session report. |
-| [emit_phase2_audit_events.ts](emit_phase2_audit_events.ts) | Emit Phase 2 audit events (TypeScript). |
-| **gate/** | GATE envelope and verification helpers (Python). |
-| [gate/create_test_envelope.py](gate/create_test_envelope.py) | Create a test envelope and write to `GATE/incoming/`. |
-| [gate/debug_fingerprint.py](gate/debug_fingerprint.py) | Debug fingerprint mismatch for an envelope in `GATE/incoming/`. |
-| [gate/verify_envelope.py](gate/verify_envelope.py) | Run transition gate verification on the next envelope in `GATE/incoming/` (requires GRID-main and TransitionGate secret). |
+| Script                                                       | Purpose                                                                                                                          |
+| ------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------- |
+| [sync-default-master.mjs](sync-default-master.mjs)           | Sync `glimpse.master.yaml` → `glimpse-engine/default-master.js` (embedded fallback).                                             |
+| [bootstrap_glimpse_logic.mjs](bootstrap_glimpse_logic.mjs)   | Bootstrap and validate Glimpse logic; run context pipeline on sample datasets.                                                   |
+| [sync-default-master.mjs](sync-default-master.mjs)           | Sync `glimpse.master.yaml` → `glimpse-engine/default-master.js` (embedded fallback).                                             |
+| [bootstrap_glimpse_logic.mjs](bootstrap_glimpse_logic.mjs)   | Bootstrap and validate Glimpse logic; run context pipeline on sample datasets.                                                   |
+| [sync-default-master.mjs](sync-default-master.mjs)           | Sync `glimpse.master.yaml` → `glimpse-engine/default-master.js` (embedded fallback).                                             |
+| [bootstrap_glimpse_logic.mjs](bootstrap_glimpse_logic.mjs)   | Bootstrap and validate Glimpse logic; run context pipeline on sample datasets.                                                   |
+| [grid-admission-preflight.mjs](grid-admission-preflight.mjs) | Verify that `GRID-main` admission endpoints are reachable before using `grid-server` admission MCP tools.                        |
+| [grid-admission-gate.mjs](grid-admission-gate.mjs)           | Run `grid-admission-preflight.mjs` and only execute the provided command when admission endpoints are reachable.                 |
+| [grid-admission-runtime.mjs](grid-admission-runtime.mjs)     | Admission runtime harness that can cold-start `GRID-main`, wait for readiness, run a guarded command, and emit a session report. |
+| [emit_phase2_audit_events.ts](emit_phase2_audit_events.ts)   | Emit Phase 2 audit events (TypeScript).                                                                                          |
+| **gate/**                                                    | GATE envelope and verification helpers (Python).                                                                                 |
+| [gate/create_test_envelope.py](gate/create_test_envelope.py) | Create a test envelope and write to `GATE/incoming/`.                                                                            |
+| [gate/debug_fingerprint.py](gate/debug_fingerprint.py)       | Debug fingerprint mismatch for an envelope in `GATE/incoming/`.                                                                  |
+| [gate/verify_envelope.py](gate/verify_envelope.py)           | Run transition gate verification on the next envelope in `GATE/incoming/` (requires GRID-main and TransitionGate secret).        |
 
 Gate scripts resolve paths relative to the workspace root (`GATE/`, `GRID-main/`). Run from repo root, e.g.:
 

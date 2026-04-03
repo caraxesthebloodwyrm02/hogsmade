@@ -208,10 +208,14 @@ export interface RecurrenceCheckResult {
  */
 export function levelToAction(level: EscalationLevel, isMutating: boolean): EnforcementAction {
   switch (level) {
-    case "observed": return "log";
-    case "flagged": return "warn";
-    case "restricted": return "restrict";
-    case "blocked": return isMutating ? "block" : "restrict";
+    case "observed":
+      return "log";
+    case "flagged":
+      return "warn";
+    case "restricted":
+      return "restrict";
+    case "blocked":
+      return isMutating ? "block" : "restrict";
   }
 }
 

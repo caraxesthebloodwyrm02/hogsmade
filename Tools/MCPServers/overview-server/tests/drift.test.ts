@@ -128,10 +128,30 @@ describe("drift detection", () => {
     const now = new Date();
     const data = makeData({
       auditEvents: [
-        { timestamp: now.toISOString(), source: "seeds-server", tool: "ecosystem_scan", status: "failure" },
-        { timestamp: now.toISOString(), source: "seeds-server", tool: "repo_detail", status: "failure" },
-        { timestamp: now.toISOString(), source: "seeds-server", tool: "ecosystem_scan", status: "failure" },
-        { timestamp: now.toISOString(), source: "seeds-server", tool: "ecosystem_scan", status: "failure" },
+        {
+          timestamp: now.toISOString(),
+          source: "seeds-server",
+          tool: "ecosystem_scan",
+          status: "failure",
+        },
+        {
+          timestamp: now.toISOString(),
+          source: "seeds-server",
+          tool: "repo_detail",
+          status: "failure",
+        },
+        {
+          timestamp: now.toISOString(),
+          source: "seeds-server",
+          tool: "ecosystem_scan",
+          status: "failure",
+        },
+        {
+          timestamp: now.toISOString(),
+          source: "seeds-server",
+          tool: "ecosystem_scan",
+          status: "failure",
+        },
       ],
     });
 

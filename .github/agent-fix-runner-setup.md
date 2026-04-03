@@ -11,6 +11,7 @@ This repo’s `agent-fix` workflows run on a self-hosted runner labeled `agent-f
    - `agent-fix`
 
 Example `config.sh` (fill in placeholders; keep labels in sync with workflows):
+
 ```sh
 ./config.sh \
   --url "https://github.com/<ORG>" \
@@ -22,6 +23,7 @@ Example `config.sh` (fill in placeholders; keep labels in sync with workflows):
 ## 2. Ensure the toolchain is installed on the runner
 
 Workflows expect these to be available on `PATH`:
+
 - `codex` CLI (used to run the fix prompt)
 - Node.js 22+
 - Python 3.13+
@@ -35,11 +37,12 @@ Use systemd so the runner stays up across reboots.
 
 1. Create a systemd service (runner-supplied instructions usually provide the unit file).
 2. Enable + start it:
+
 ```sh
 sudo systemctl enable --now actions.runner.<YOUR_RUNNER_NAME>.service
 ```
 
 Notes:
+
 - Avoid weakening permissions around the runner.
 - `agent-fix` uses `pull_request_target`, so only trusted users/automation should be allowed to apply the `agent:fix` label.
-

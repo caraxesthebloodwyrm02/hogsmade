@@ -1,6 +1,6 @@
 /**
  * Glimpse Engine - Entry Point
- * 
+ *
  * Agentic capabilities added:
  * - Calibration policies for confidence scoring
  * - Contract validation exports
@@ -12,8 +12,21 @@
 // ═══════════════════════════════════════════════════════════════════
 
 export {
-  bucketYear, clamp, clone, compareFact, createSemanticIndex, escRegExp, findBestEntityMatch, flattenRecord,
-  guessPrimitiveType, includesWord, normalizeName, normalizeScalar, resolvePath, slugify, unique
+  bucketYear,
+  clamp,
+  clone,
+  compareFact,
+  createSemanticIndex,
+  escRegExp,
+  findBestEntityMatch,
+  flattenRecord,
+  guessPrimitiveType,
+  includesWord,
+  normalizeName,
+  normalizeScalar,
+  resolvePath,
+  slugify,
+  unique,
 } from "../utils/utils.js";
 
 export { normalizeRecords, parseCSV } from "../utils/parsing.js";
@@ -22,28 +35,31 @@ export { normalizeRecords, parseCSV } from "../utils/parsing.js";
 // ANALYSIS MODULES
 // ═══════════════════════════════════════════════════════════════════
 
-export {
-  buildDataProfile, detectTones, scoreTaxonomy
-} from "../analysis/profiling.js";
+export { buildDataProfile, detectTones, scoreTaxonomy } from "../analysis/profiling.js";
 
 export { buildEntities } from "../analysis/entities.js";
 
 export {
   buildBaseRelations,
-  buildDatasetScope, createEvidence, createEvidenceIndex
+  buildDatasetScope,
+  createEvidence,
+  createEvidenceIndex,
 } from "../analysis/relations.js";
 
 export {
-  computeStringSimilarity, computeTokenOverlap, computeDimensionSimilarity
+  computeStringSimilarity,
+  computeTokenOverlap,
+  computeDimensionSimilarity,
 } from "../analysis/similarity.js";
 
 export {
-  bucketYearAdaptive, computeTemporalRange, detectTemporalClusters, computeTemporalDensity
+  bucketYearAdaptive,
+  computeTemporalRange,
+  detectTemporalClusters,
+  computeTemporalDensity,
 } from "../analysis/temporal.js";
 
-export {
-  crossReferenceEntities, crossReferenceRelations
-} from "../analysis/cross-reference.js";
+export { crossReferenceEntities, crossReferenceRelations } from "../analysis/cross-reference.js";
 
 // ═══════════════════════════════════════════════════════════════════
 // FUNCTION REGISTRY
@@ -52,25 +68,22 @@ export {
 export {
   FunctionRegistry,
   createSafeFunctionRegistry,
-  getFunctionRegistryInventory
+  getFunctionRegistryInventory,
 } from "../functions/functions.js";
 
-export {
-  applyRules,
-  summarizeLenses,
-  validateConfigWithRegistry
-} from "../functions/rules.js";
+export { applyRules, summarizeLenses, validateConfigWithRegistry } from "../functions/rules.js";
 
 // ═══════════════════════════════════════════════════════════════════
 // PIPELINE & MODES
 // ═══════════════════════════════════════════════════════════════════
 
-export {
-  computeClusters, runContextPipeline
-} from "./pipeline.js";
+export { computeClusters, runContextPipeline } from "./pipeline.js";
 
 export {
-  PIPELINE_MODES, detectDataComplexity, selectPipelineMode, createModeContext
+  PIPELINE_MODES,
+  detectDataComplexity,
+  selectPipelineMode,
+  createModeContext,
 } from "./modes.js";
 
 // ═══════════════════════════════════════════════════════════════════
@@ -78,8 +91,13 @@ export {
 // ═══════════════════════════════════════════════════════════════════
 
 export {
-  createConfidenceFrame, recordInference, recordGap, detectGaps,
-  calibrateConfidence, summarizeConfidence, GAP_TYPES
+  createConfidenceFrame,
+  recordInference,
+  recordGap,
+  detectGaps,
+  calibrateConfidence,
+  summarizeConfidence,
+  GAP_TYPES,
 } from "./confidence.js";
 
 /**
@@ -88,10 +106,9 @@ export {
  * @param {string} policy - Calibration policy name
  * @returns {Object} Calibrated confidence frame
  */
-export function createCalibrationAwareFrame(policy = 'adaptive') {
+export function createCalibrationAwareFrame(policy = "adaptive") {
   // Lazy import to avoid circular dependencies
-  return import('./validators/calibration-engine.js')
-    .then(m => m.createCalibratedFrame(policy));
+  return import("./validators/calibration-engine.js").then((m) => m.createCalibratedFrame(policy));
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -111,7 +128,7 @@ export {
   deepEqual,
   computeDiff,
   createChecksum,
-  memoize
+  memoize,
 } from "./contracts.js";
 
 // ═══════════════════════════════════════════════════════════════════
@@ -129,7 +146,7 @@ export {
   autoSync,
   ciCheck,
   loadSyncRegistry,
-  saveSyncRegistry
+  saveSyncRegistry,
 } from "./validators/sync-validator.js";
 
 /**
@@ -141,7 +158,7 @@ export {
   createCalibratedFrame,
   comparePolicies,
   CALIBRATION_POLICIES,
-  GAP_TYPES as CALIBRATION_GAP_TYPES
+  GAP_TYPES as CALIBRATION_GAP_TYPES,
 } from "./validators/calibration-engine.js";
 
 /**
@@ -154,41 +171,48 @@ export {
   generateHealingPatch,
   wrapWithContract,
   formatReport,
-  quickValidate
+  quickValidate,
 } from "./validators/function-contract.js";
 
 // ═══════════════════════════════════════════════════════════════════
 // MULTI-PASS & CROSS-REF
 // ═══════════════════════════════════════════════════════════════════
 
-export {
-  runMultiPassInference, detectContradictions, mergeEvidenceSets
-} from "./multi-pass.js";
+export { runMultiPassInference, detectContradictions, mergeEvidenceSets } from "./multi-pass.js";
 
 // ═══════════════════════════════════════════════════════════════════
 // COMPRESSION & GROUNDING
 // ═══════════════════════════════════════════════════════════════════
 
 export {
-  scoreInsightDensity, compressInsight, findInvariantPatterns, rankByDensity
+  scoreInsightDensity,
+  compressInsight,
+  findInvariantPatterns,
+  rankByDensity,
 } from "./compression.js";
 
 export {
-  GroundingProvider, LocalGroundingProvider, ContextWindowGroundingProvider,
-  WebGroundingProvider, selectGroundingProvider, applyGrounding
+  GroundingProvider,
+  LocalGroundingProvider,
+  ContextWindowGroundingProvider,
+  WebGroundingProvider,
+  selectGroundingProvider,
+  applyGrounding,
 } from "./grounding.js";
 
 // ═══════════════════════════════════════════════════════════════════
 // QUERY & INTERVIEW
 // ═══════════════════════════════════════════════════════════════════
 
-export {
-  buildSemanticHints, compileRuleFromConversation, parseQueryIntent
-} from "./query.js";
+export { buildSemanticHints, compileRuleFromConversation, parseQueryIntent } from "./query.js";
 
 export {
-  POSTURES, assessCalibrationNeed, selectQuestions,
-  scoreInterview, prepareInterview, applyInterviewModulation
+  POSTURES,
+  assessCalibrationNeed,
+  selectQuestions,
+  scoreInterview,
+  prepareInterview,
+  applyInterviewModulation,
 } from "./interview.js";
 
 // ═══════════════════════════════════════════════════════════════════
@@ -196,16 +220,29 @@ export {
 // ═══════════════════════════════════════════════════════════════════
 
 export {
-  buildTrace, appendTrace,
-  loadHistory, saveHistory, collectTrace,
-  refineRun, suggestImprovements, applyOverrides,
-  learnFromRun, buildSessionRecap, compareToRecent
+  buildTrace,
+  appendTrace,
+  loadHistory,
+  saveHistory,
+  collectTrace,
+  refineRun,
+  suggestImprovements,
+  applyOverrides,
+  learnFromRun,
+  buildSessionRecap,
+  compareToRecent,
 } from "./learning.js";
 
 export {
-  evaluatePath, evaluateAllPaths,
-  getBuiltinPaths, loadPaths, savePaths, mergePaths,
-  buildPathContext, runPaths, getSignalInventory
+  evaluatePath,
+  evaluateAllPaths,
+  getBuiltinPaths,
+  loadPaths,
+  savePaths,
+  mergePaths,
+  buildPathContext,
+  runPaths,
+  getSignalInventory,
 } from "./paths.js";
 
 // ═══════════════════════════════════════════════════════════════════
@@ -221,9 +258,7 @@ export { statusTable } from "./display.js";
 // DEFINITIONS
 // ═══════════════════════════════════════════════════════════════════
 
-export {
-  installCustomDefinition, serializeDefinitions, loadDefinitions
-} from "./definitions.js";
+export { installCustomDefinition, serializeDefinitions, loadDefinitions } from "./definitions.js";
 
 // ═══════════════════════════════════════════════════════════════════
 // DRIFTGUARD — Anti-Drift Architecture
@@ -236,25 +271,22 @@ export {
   DriftResolver,
   DriftTelemetry,
   DRIFT_POLICIES,
-  createDriftGuard
+  createDriftGuard,
 } from "./drift-guard/index.js";
 
-export {
-  withDriftProtection,
-  createGuardedFrame
-} from "./drift-guard/adapter.js";
+export { withDriftProtection, createGuardedFrame } from "./drift-guard/adapter.js";
 
 // ═══════════════════════════════════════════════════════════════════
 // VERSION
 // ═══════════════════════════════════════════════════════════════════
 
-export const VERSION = '2.1.0';
+export const VERSION = "2.1.0";
 export const AGENTIC_CAPABILITIES = [
-  'sync-validation',
-  'drift-detection',
-  'auto-healing',
-  'calibration-policies',
-  'contract-validation',
-  'function-registry-check',
-  'driftguard-orchestration'
+  "sync-validation",
+  "drift-detection",
+  "auto-healing",
+  "calibration-policies",
+  "contract-validation",
+  "function-registry-check",
+  "driftguard-orchestration",
 ];

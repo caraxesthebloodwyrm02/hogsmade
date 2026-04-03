@@ -42,7 +42,8 @@ export function recordInference(frame, entry) {
     claimed: entry.claimed || "",
     basis: entry.basis || "unspecified",
     confidence: entry.confidence ?? 0.5,
-    confidence_source: entry.confidence_source || (entry.confidence != null ? "measured" : "default"),
+    confidence_source:
+      entry.confidence_source || (entry.confidence != null ? "measured" : "default"),
     timestamp: Date.now(),
   });
 }
@@ -78,23 +79,20 @@ export function detectGaps(frame, ctx) {
   // Missing dimension gaps
   const dimensions = ["time", "space", "domain"];
   for (const dim of dimensions) {
-    const coverage = entities.filter(
-      (e) => e.dimensions?.[dim] != null
-    ).length;
+    const coverage = entities.filter((e) => e.dimensions?.[dim] != null).length;
     const ratio = entities.length > 0 ? coverage / entities.length : 0;
 
     if (ratio < 0.3) {
       const severity = ratio === 0 ? 0.8 : 0.6;
-      const description = ratio === 0
-        ? `Complete absence of the ${dim} dimension across all entities.`
-        : `Only ${Math.round(ratio * 100)}% of entities have the ${dim} dimension.`;
+      const description =
+        ratio === 0
+          ? `Complete absence of the ${dim} dimension across all entities.`
+          : `Only ${Math.round(ratio * 100)}% of entities have the ${dim} dimension.`;
       recordGap(frame, {
         type: GAP_TYPES.LOW_COVERAGE,
         description,
         severity,
-        affectedIds: entities
-          .filter((e) => e.dimensions?.[dim] == null)
-          .map((e) => e.id),
+        affectedIds: entities.filter((e) => e.dimensions?.[dim] == null).map((e) => e.id),
       });
     }
   }
@@ -162,21 +160,18 @@ export function summarizeConfidence(frame) {
   const gaps = frame.gaps || [];
 
   const avgConfidence =
-    entries.length > 0
-      ? entries.reduce((sum, e) => sum + e.confidence, 0) / entries.length
-      : 0;
+    entries.length > 0 ? entries.reduce((sum, e) => sum + e.confidence, 0) / entries.length : 0;
 
   // Gap penalty: each gap reduces the overall score
   const gapPenalty = gaps.reduce((sum, g) => sum + g.severity * 0.1, 0);
 
-  const overallScore = Math.max(0, Math.min(1,
-    Math.round((avgConfidence - gapPenalty) * 1000) / 1000
-  ));
+  const overallScore = Math.max(
+    0,
+    Math.min(1, Math.round((avgConfidence - gapPenalty) * 1000) / 1000),
+  );
 
   // Sort gaps by severity descending
-  const topGaps = [...gaps]
-    .sort((a, b) => b.severity - a.severity)
-    .slice(0, 5);
+  const topGaps = [...gaps].sort((a, b) => b.severity - a.severity).slice(0, 5);
 
   const summary = {
     overallScore,
@@ -218,9 +213,6 @@ export function recordOutcome(frame, ruleId, confirmed) {
 export function calibrationScore(frame) {
   const outcomes = frame.outcomes || [];
   if (outcomes.length < 5) return null;
-  const total = outcomes.reduce(
-    (sum, o) => sum + (o.predicted - o.actual) ** 2,
-    0
-  );
+  const total = outcomes.reduce((sum, o) => sum + (o.predicted - o.actual) ** 2, 0);
   return Math.round((total / outcomes.length) * 10000) / 10000;
 }

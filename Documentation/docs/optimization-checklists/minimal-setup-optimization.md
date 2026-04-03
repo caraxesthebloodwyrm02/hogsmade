@@ -3,6 +3,7 @@
 Streamline development environment setup for faster onboarding and reduced resource consumption.
 
 ## Priority System
+
 - **P0**: Blocking setup/install, core dependency conflicts
 - **P1**: Slow install/boot times, excessive disk usage
 - **P2**: Developer experience friction, optional simplifications
@@ -12,6 +13,7 @@ Streamline development environment setup for faster onboarding and reduced resou
 ## P0: Critical Setup Issues
 
 **1. Core Dependency Resolution Failures**
+
 - [ ] Verify clean install with minimal dependencies
   ```bash
   cd GRID-main
@@ -22,6 +24,7 @@ Streamline development environment setup for faster onboarding and reduced resou
   ```
 
 **2. Environment Variable Requirements**
+
 - [ ] Identify strictly required vs. optional environment variables
   ```bash
   cd GRID-main
@@ -30,6 +33,7 @@ Streamline development environment setup for faster onboarding and reduced resou
   ```
 
 **3. Platform Compatibility**
+
 - [ ] Validate setup works on Windows/macOS/Linux without extra steps
   ```bash
   # In clean environments on each platform:
@@ -41,6 +45,7 @@ Streamline development environment setup for faster onboarding and reduced resou
 ## P1: Performance & Resource Optimization
 
 **4. Development Server Boot Time**
+
 - [ ] Measure cold-start time for FastAPI dev server
   ```bash
   cd GRID-main
@@ -48,6 +53,7 @@ Streamline development environment setup for faster onboarding and reduced resou
   ```
 
 **5. Dependency Group Size Reduction**
+
 - [ ] Minimize `dev` group dependencies to essentials only
   ```bash
   cd GRID-main
@@ -55,6 +61,7 @@ Streamline development environment setup for faster onboarding and reduced resou
   ```
 
 **6. CLI Tool Installation**
+
 - [ ] Create single-command installation for GRID CLI tools
   ```bash
   cd GRID-main
@@ -63,6 +70,7 @@ Streamline development environment setup for faster onboarding and reduced resou
   ```
 
 **7. Docker Image Optimization**
+
 - [ ] Reduce image size and build time with multi-stage builds
   ```bash
   cd GRID-main
@@ -75,6 +83,7 @@ Streamline development environment setup for faster onboarding and reduced resou
 ## P2: Developer Experience Enhancements
 
 **8. Setup Documentation**
+
 - [ ] Single-page quickstart guide with minimal steps
   ```bash
   cd GRID-main
@@ -82,6 +91,7 @@ Streamline development environment setup for faster onboarding and reduced resou
   ```
 
 **9. Automated Environment Setup**
+
 - [ ] Script to configure .env with sensible defaults
   ```bash
   cd GRID-main
@@ -89,6 +99,7 @@ Streamline development environment setup for faster onboarding and reduced resou
   ```
 
 **10. Development Mode Toggle**
+
 - [ ] Easy switch between full vs. minimal feature sets
   ```bash
   cd GRID-main
@@ -98,6 +109,7 @@ Streamline development environment setup for faster onboarding and reduced resou
 ---
 
 ## Cross-References
+
 - VERIFICATION_CHECKLIST.md: Testing strategy for minimal setups
 - POST_DEBUG_ROUTINE.md: Post-setup verification steps
 - REMEDIATION_CHECKLIST.md: Resolving dependency conflicts

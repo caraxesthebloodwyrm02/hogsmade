@@ -1,11 +1,13 @@
 # GRID-Main Exploration Guidelines
 
 ## Overview
+
 GRID-main is the central intelligence hub of the CascadeProjects ecosystem - a FastAPI-based application serving as the core reasoning and processing engine.
 
 ## 🗺️ Navigation Map
 
 ### Core Structure
+
 ```
 GRID-main/
 ├── src/
@@ -22,6 +24,7 @@ GRID-main/
 ## 📋 Exploration Checklist
 
 ### Phase 1: Understanding the Architecture
+
 - [ ] **Review Main Entry Point**
   - `src/application/mothership/main.py` - FastAPI application setup
   - Look for router registrations and middleware
@@ -39,6 +42,7 @@ GRID-main/
   - `interfaces/` - External integrations
 
 ### Phase 2: Key Components Deep Dive
+
 - [ ] **RAG Integration**
   - `src/tools/rag/` - Complete RAG implementation
   - `rag_engine.py` - Main orchestration
@@ -56,6 +60,7 @@ GRID-main/
   - Review embedding service connections
 
 ### Phase 3: Data Flow Analysis
+
 - [ ] **Request Processing**
   - Trace a request from entry to response
   - Identify middleware and processing stages
@@ -74,12 +79,14 @@ GRID-main/
 ## 🔍 Specific Exploration Commands
 
 ### 1. Quick Health Check
+
 ```bash
 cd /home/caraxes/CascadeProjects/GRID-main
 uv run python -m application.mothership.main --help
 ```
 
 ### 2. Test API Endpoints
+
 ```bash
 # Start the server
 uv run python -m application.mothership.main
@@ -90,6 +97,7 @@ curl http://localhost:8080/metrics
 ```
 
 ### 3. Run Tests
+
 ```bash
 # Unit tests
 uv run pytest tests/unit/ -v
@@ -102,6 +110,7 @@ uv run pytest tests/test_rag*.py
 ```
 
 ### 4. Explore RAG System
+
 ```bash
 # Index some documentation
 uv run python -m tools.rag.cli index /path/to/docs --rebuild
@@ -113,26 +122,31 @@ uv run python -m tools.rag.cli query "Your question here"
 ## 📊 Key Areas to Investigate
 
 ### 1. Configuration System
+
 - Environment variable handling
 - Configuration validation
 - Default values and overrides
 
 ### 2. Authentication & Authorization
+
 - JWT token implementation
 - Role-based access control
 - API key management
 
 ### 3. Performance Characteristics
+
 - Request latency patterns
 - Memory usage profiles
 - Concurrent request limits
 
 ### 4. Error Handling
+
 - Exception hierarchy
 - Error response formats
 - Logging and monitoring
 
 ### 5. External Dependencies
+
 - Ollama model connections
 - Database connections (if any)
 - MCP server integrations
@@ -140,6 +154,7 @@ uv run python -m tools.rag.cli query "Your question here"
 ## 🛠️ Development Setup
 
 ### Prerequisites
+
 ```bash
 # Ensure you're in GRID-main directory
 cd /home/caraxes/CascadeProjects/GRID-main
@@ -153,6 +168,7 @@ cp .env.example .env
 ```
 
 ### Common Development Tasks
+
 ```bash
 # Add new dependency
 uv add package-name
@@ -168,12 +184,14 @@ uv run ruff check .
 ## 🔗 Integration Points
 
 ### With MCP Servers
+
 - **Echoes-server**: Audit logging
 - **Grid-server**: Direct intelligence processing
 - **Pulse-server**: Health and metrics reporting
 - **Afloat-server**: Workflow triggers
 
 ### External Services
+
 - **Ollama**: LLM and embedding models
 - **ChromaDB**: Vector storage (local file-based)
 - **Monitoring**: Metrics collection endpoints
@@ -181,6 +199,7 @@ uv run ruff check .
 ## 📈 Performance Monitoring
 
 ### Key Metrics to Track
+
 1. **API Response Times**
    - `/intelligence` endpoint latency
    - RAG query processing time
@@ -197,6 +216,7 @@ uv run ruff check .
    - Authentication failures
 
 ### Monitoring Commands
+
 ```bash
 # Check system health
 curl http://localhost:8080/health
@@ -219,6 +239,7 @@ tail -f logs/application.log
 ## 📝 Documentation Tips
 
 While exploring, document:
+
 - API endpoint purposes and parameters
 - Configuration options and their effects
 - Performance bottlenecks and optimizations

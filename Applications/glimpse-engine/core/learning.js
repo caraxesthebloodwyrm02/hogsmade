@@ -22,20 +22,20 @@ import { calibrationScore } from "./confidence.js";
 // ============================================================================
 
 const DEFAULT_HISTORY_PATH = ".glimpse-history.json";
-const DEFAULT_TRACES_PATH  = ".glimpse-traces.jsonl";
+const DEFAULT_TRACES_PATH = ".glimpse-traces.jsonl";
 
 function emptyHistory() {
   return {
     version: 1,
     created: new Date().toISOString(),
     runs: 0,
-    fileIndex: {},       // path -> { totalChurn, appearances, avgAddRatio, vectors: {} }
-    patternIndex: {},    // ruleId -> { firings, avgDensity, lastSeen }
+    fileIndex: {}, // path -> { totalChurn, appearances, avgAddRatio, vectors: {} }
+    patternIndex: {}, // ruleId -> { firings, avgDensity, lastSeen }
     confidenceTrend: [], // [{ ts, overall, avg, gaps }] — last 50 entries
-    lensHistory: {},     // lensId -> { appearances, totalScore }
-    improvements: [],    // [{ ts, field, from, to, reason }] — audit trail
-    outcomes: [],       // [{ ts, ruleId, predicted, actual }] — validated outcome data
-    thresholds: {},      // auto-tuned overrides: { secondary_lens_threshold, evidence_confidence_floor, ... }
+    lensHistory: {}, // lensId -> { appearances, totalScore }
+    improvements: [], // [{ ts, field, from, to, reason }] — audit trail
+    outcomes: [], // [{ ts, ruleId, predicted, actual }] — validated outcome data
+    thresholds: {}, // auto-tuned overrides: { secondary_lens_threshold, evidence_confidence_floor, ... }
   };
 }
 
@@ -66,16 +66,18 @@ export function buildTrace(records, result, meta = {}) {
     lensCount: result.contextLenses?.length || 0,
     primaryLens: result.primaryLens?.id || null,
     patternCount: result.invariantPatterns?.length || 0,
-    topPatterns: (result.invariantPatterns || []).slice(0, 3).map(p => ({
-      rule: p.ruleId, density: p.densityScore, firings: p.firingCount,
+    topPatterns: (result.invariantPatterns || []).slice(0, 3).map((p) => ({
+      rule: p.ruleId,
+      density: p.densityScore,
+      firings: p.firingCount,
     })),
     // Session shape — for cross-session comparison
-    dirCount: [...new Set(records.map(r => r.directory))].length,
-    dirs: [...new Set(records.map(r => r.directory))],
+    dirCount: [...new Set(records.map((r) => r.directory))].length,
+    dirs: [...new Set(records.map((r) => r.directory))],
     vectorMix: buildVectorMix(records),
     adds: records.reduce((s, r) => s + (r.additions || 0), 0),
     dels: records.reduce((s, r) => s + (r.deletions || 0), 0),
-    files: records.map(r => ({ path: r.path, churn: r.churn, vector: r.vector })),
+    files: records.map((r) => ({ path: r.path, churn: r.churn, vector: r.vector })),
   };
 }
 
@@ -110,7 +112,9 @@ export function loadHistory(path) {
     if (existsSync(p)) {
       return JSON.parse(readFileSync(p, "utf-8"));
     }
-  } catch (_) { /* corrupt file — start fresh */ }
+  } catch (_) {
+    /* corrupt file — start fresh */
+  }
   return emptyHistory();
 }
 
@@ -124,7 +128,9 @@ export function saveHistory(history, path) {
   const p = path || DEFAULT_HISTORY_PATH;
   try {
     writeFileSync(p, JSON.stringify(history, null, 2), "utf-8");
-  } catch (_) { /* non-fatal */ }
+  } catch (_) {
+    /* non-fatal */
+  }
 }
 
 /**
@@ -138,8 +144,13 @@ export function collectTrace(history, trace) {
   history.runs++;
 
   // File index
-  for (const f of (trace.files || [])) {
-    const idx = history.fileIndex[f.path] || { totalChurn: 0, appearances: 0, avgAddRatio: 0.5, vectors: {} };
+  for (const f of trace.files || []) {
+    const idx = history.fileIndex[f.path] || {
+      totalChurn: 0,
+      appearances: 0,
+      avgAddRatio: 0.5,
+      vectors: {},
+    };
     idx.totalChurn += f.churn || 0;
     idx.appearances++;
     idx.vectors[f.vector] = (idx.vectors[f.vector] || 0) + 1;
@@ -147,8 +158,13 @@ export function collectTrace(history, trace) {
   }
 
   // Pattern index
-  for (const p of (trace.topPatterns || [])) {
-    const idx = history.patternIndex[p.rule] || { firings: 0, avgDensity: 0, lastSeen: null, densityHistory: [] };
+  for (const p of trace.topPatterns || []) {
+    const idx = history.patternIndex[p.rule] || {
+      firings: 0,
+      avgDensity: 0,
+      lastSeen: null,
+      densityHistory: [],
+    };
     idx.firings += p.firings || 0;
     idx.densityHistory.push(p.density || 0);
     if (idx.densityHistory.length > 50) idx.densityHistory.shift();
@@ -164,7 +180,7 @@ export function collectTrace(history, trace) {
     avg: trace.avgConfidence,
     gaps: trace.gapCount,
     files: trace.fileCount,
-    files_list: (trace.files || []).map(f => f.path),
+    files_list: (trace.files || []).map((f) => f.path),
     dirCount: trace.dirCount || 0,
     dirs: trace.dirs || [],
     vectorMix: trace.vectorMix || {},
@@ -211,17 +227,21 @@ export function refineRun(history, trace) {
   // Confidence delta vs historical average
   const confHistory = history.confidenceTrend;
   if (confHistory.length >= 2) {
-    const prevAvg = confHistory.slice(0, -1).reduce((s, c) => s + c.overall, 0) / (confHistory.length - 1);
+    const prevAvg =
+      confHistory.slice(0, -1).reduce((s, c) => s + c.overall, 0) / (confHistory.length - 1);
     report.confidenceDelta = +(trace.confidence - prevAvg).toFixed(3);
 
-    const prevGapAvg = confHistory.slice(0, -1).reduce((s, c) => s + c.gaps, 0) / (confHistory.length - 1);
+    const prevGapAvg =
+      confHistory.slice(0, -1).reduce((s, c) => s + c.gaps, 0) / (confHistory.length - 1);
     report.gapDelta = +(trace.gapCount - prevGapAvg).toFixed(1);
   }
 
   // Churn trend: is total churn growing, shrinking, or stable?
   if (confHistory.length >= 3) {
     const recentChurn = confHistory.slice(-3).reduce((s, c) => s + (c.files || 0), 0) / 3;
-    const olderChurn  = confHistory.slice(0, -3).reduce((s, c) => s + (c.files || 0), 0) / Math.max(1, confHistory.length - 3);
+    const olderChurn =
+      confHistory.slice(0, -3).reduce((s, c) => s + (c.files || 0), 0) /
+      Math.max(1, confHistory.length - 3);
     if (recentChurn > olderChurn * 1.5) report.churnTrend = "increasing";
     else if (recentChurn < olderChurn * 0.6) report.churnTrend = "decreasing";
   }
@@ -230,18 +250,24 @@ export function refineRun(history, trace) {
   report.hotFiles = Object.entries(history.fileIndex)
     .sort((a, b) => b[1].totalChurn - a[1].totalChurn)
     .slice(0, 5)
-    .map(([path, idx]) => ({ path, totalChurn: idx.totalChurn, appearances: idx.appearances, topVector: topKey(idx.vectors) }));
+    .map(([path, idx]) => ({
+      path,
+      totalChurn: idx.totalChurn,
+      appearances: idx.appearances,
+      topVector: topKey(idx.vectors),
+    }));
 
   // Pattern health: stale (not seen in last 5 runs) vs improving (density rising)
   for (const [rule, idx] of Object.entries(history.patternIndex)) {
     const dh = idx.densityHistory || [];
     if (dh.length >= 3) {
       const recent = avg(dh.slice(-3));
-      const older  = avg(dh.slice(0, -3));
-      if (recent > older * 1.1) report.improvingPatterns.push({ rule, delta: +(recent - older).toFixed(3) });
+      const older = avg(dh.slice(0, -3));
+      if (recent > older * 1.1)
+        report.improvingPatterns.push({ rule, delta: +(recent - older).toFixed(3) });
     }
     // Stale: not in current run's top patterns
-    const inCurrent = (trace.topPatterns || []).some(p => p.rule === rule);
+    const inCurrent = (trace.topPatterns || []).some((p) => p.rule === rule);
     if (!inCurrent && idx.firings > 3) {
       report.stalePatterns.push({ rule, lastSeen: idx.lastSeen, totalFireings: idx.firings });
     }
@@ -249,13 +275,25 @@ export function refineRun(history, trace) {
 
   // Drift warnings
   if (report.confidenceDelta < -0.1) {
-    report.driftWarnings.push({ type: "confidence_drop", message: `Confidence dropped ${(-report.confidenceDelta * 100).toFixed(0)}% vs baseline`, severity: 0.6 });
+    report.driftWarnings.push({
+      type: "confidence_drop",
+      message: `Confidence dropped ${(-report.confidenceDelta * 100).toFixed(0)}% vs baseline`,
+      severity: 0.6,
+    });
   }
   if (report.gapDelta > 1) {
-    report.driftWarnings.push({ type: "gap_increase", message: `${report.gapDelta.toFixed(0)} more gaps than average`, severity: 0.5 });
+    report.driftWarnings.push({
+      type: "gap_increase",
+      message: `${report.gapDelta.toFixed(0)} more gaps than average`,
+      severity: 0.5,
+    });
   }
   if (report.churnTrend === "increasing") {
-    report.driftWarnings.push({ type: "churn_spike", message: "Recent diffs are significantly larger than historical average", severity: 0.4 });
+    report.driftWarnings.push({
+      type: "churn_spike",
+      message: "Recent diffs are significantly larger than historical average",
+      severity: 0.4,
+    });
   }
 
   return report;
@@ -291,19 +329,30 @@ export function suggestImprovements(history, refinement, currentDefaults = {}) {
 
   // 4a. Confidence floor — if consistently high, we can tighten
   if (trend.length >= 5) {
-    const recentAvg = avg(trend.slice(-5).map(t => t.avg));
-    const currentFloor = overrides.evidence_confidence_floor ?? currentDefaults.evidence_confidence_floor ?? 0.35;
+    const recentAvg = avg(trend.slice(-5).map((t) => t.avg));
+    const currentFloor =
+      overrides.evidence_confidence_floor ?? currentDefaults.evidence_confidence_floor ?? 0.35;
 
     if (recentAvg > 0.85 && currentFloor < 0.45 && (calScore === null || calScore <= 0.25)) {
       const newFloor = +(currentFloor + 0.05).toFixed(2);
       overrides.evidence_confidence_floor = newFloor;
-      applied.push({ field: "evidence_confidence_floor", from: currentFloor, to: newFloor, reason: `Avg confidence ${(recentAvg * 100).toFixed(0)}% over last 5 runs — tightening floor` });
+      applied.push({
+        field: "evidence_confidence_floor",
+        from: currentFloor,
+        to: newFloor,
+        reason: `Avg confidence ${(recentAvg * 100).toFixed(0)}% over last 5 runs — tightening floor`,
+      });
     }
     // If confidence is dropping, loosen
     if (recentAvg < 0.5 && currentFloor > 0.25) {
       const newFloor = +(currentFloor - 0.05).toFixed(2);
       overrides.evidence_confidence_floor = newFloor;
-      applied.push({ field: "evidence_confidence_floor", from: currentFloor, to: newFloor, reason: `Avg confidence ${(recentAvg * 100).toFixed(0)}% — loosening floor to capture more` });
+      applied.push({
+        field: "evidence_confidence_floor",
+        from: currentFloor,
+        to: newFloor,
+        reason: `Avg confidence ${(recentAvg * 100).toFixed(0)}% — loosening floor to capture more`,
+      });
     }
   }
 
@@ -312,25 +361,41 @@ export function suggestImprovements(history, refinement, currentDefaults = {}) {
   const lensCount = Object.keys(history.lensHistory).length;
   if (lensCount >= 3 && history.runs >= 5) {
     const avgAppearance = lensAppearances / lensCount;
-    const currentThreshold = overrides.secondary_lens_threshold ?? currentDefaults.secondary_lens_threshold ?? 0.35;
+    const currentThreshold =
+      overrides.secondary_lens_threshold ?? currentDefaults.secondary_lens_threshold ?? 0.35;
 
     if (avgAppearance > history.runs * 0.6 && currentThreshold > 0.25) {
       const newThreshold = +(currentThreshold - 0.03).toFixed(2);
       overrides.secondary_lens_threshold = newThreshold;
-      applied.push({ field: "secondary_lens_threshold", from: currentThreshold, to: newThreshold, reason: `${lensCount} lenses each appearing ${avgAppearance.toFixed(0)}/${history.runs} runs — widening lens capture` });
+      applied.push({
+        field: "secondary_lens_threshold",
+        from: currentThreshold,
+        to: newThreshold,
+        reason: `${lensCount} lenses each appearing ${avgAppearance.toFixed(0)}/${history.runs} runs — widening lens capture`,
+      });
     }
   }
 
   // 4c. Gap-aware pass count suggestion
   if (trend.length >= 5) {
-    const recentGaps = avg(trend.slice(-5).map(t => t.gaps));
+    const recentGaps = avg(trend.slice(-5).map((t) => t.gaps));
     if (recentGaps > 3 && !overrides.suggested_min_passes) {
       overrides.suggested_min_passes = 2;
-      applied.push({ field: "suggested_min_passes", from: 1, to: 2, reason: `Avg ${recentGaps.toFixed(1)} gaps/run — recommending 2+ inference passes` });
+      applied.push({
+        field: "suggested_min_passes",
+        from: 1,
+        to: 2,
+        reason: `Avg ${recentGaps.toFixed(1)} gaps/run — recommending 2+ inference passes`,
+      });
     }
     if (recentGaps < 1 && overrides.suggested_min_passes === 2) {
       delete overrides.suggested_min_passes;
-      applied.push({ field: "suggested_min_passes", from: 2, to: "auto", reason: "Gaps resolved — removing pass count override" });
+      applied.push({
+        field: "suggested_min_passes",
+        from: 2,
+        to: "auto",
+        reason: "Gaps resolved — removing pass count override",
+      });
     }
   }
 
@@ -384,7 +449,7 @@ export function applyOverrides(config, overrides) {
  */
 export function learnFromRun(records, result, config, meta, opts = {}) {
   const historyPath = opts.historyPath || DEFAULT_HISTORY_PATH;
-  const tracesPath  = opts.tracesPath  || DEFAULT_TRACES_PATH;
+  const tracesPath = opts.tracesPath || DEFAULT_TRACES_PATH;
 
   // 1. Log
   const trace = buildTrace(records, result, meta);
@@ -439,7 +504,14 @@ export function learnFromRun(records, result, config, meta, opts = {}) {
  * @param {object} [pathResult]  - From runPaths (PATH system evaluation)
  * @returns {string[]} Lines of the recap (ready to console.log)
  */
-export function buildSessionRecap(records, result, refinement, meta = {}, comparison = null, pathResult = null) {
+export function buildSessionRecap(
+  records,
+  result,
+  refinement,
+  meta = {},
+  comparison = null,
+  pathResult = null,
+) {
   const lines = [];
 
   // Line 1: Session fingerprint — one-line characterization
@@ -451,17 +523,21 @@ export function buildSessionRecap(records, result, refinement, meta = {}, compar
   const totalChurn = records.reduce((s, r) => s + (r.churn || 0), 0);
   const adds = records.reduce((s, r) => s + (r.additions || 0), 0);
   const dels = records.reduce((s, r) => s + (r.deletions || 0), 0);
-  lines.push(`  ${records.length} files  +${adds} -${dels}  (${meta.elapsed || "?"}ms, ${result.modeSettings?.passCount || 1}-pass)`);
+  lines.push(
+    `  ${records.length} files  +${adds} -${dels}  (${meta.elapsed || "?"}ms, ${result.modeSettings?.passCount || 1}-pass)`,
+  );
 
   // Line 3: Domains touched — which conceptual areas
-  const lenses = (result.contextLenses || []).filter(l => l.score > 0.3);
+  const lenses = (result.contextLenses || []).filter((l) => l.score > 0.3);
   if (lenses.length > 0) {
-    const domainStr = lenses.map(l => `${l.label.toLowerCase()}${l.role === "primary" ? "*" : ""}`).join(", ");
+    const domainStr = lenses
+      .map((l) => `${l.label.toLowerCase()}${l.role === "primary" ? "*" : ""}`)
+      .join(", ");
     lines.push(`  domains: ${domainStr}`);
   }
 
   // Line 4: Directory spread — where the changes landed
-  const dirs = [...new Set(records.map(r => r.directory))];
+  const dirs = [...new Set(records.map((r) => r.directory))];
   if (dirs.length <= 4) {
     lines.push(`  touched: ${dirs.join(", ")}`);
   } else {
@@ -470,10 +546,17 @@ export function buildSessionRecap(records, result, refinement, meta = {}, compar
 
   // Line 5: Dominant vector — what kind of work this was
   const vectorCounts = {};
-  records.forEach(r => (r.vectors || []).forEach(v => { vectorCounts[v] = (vectorCounts[v] || 0) + 1; }));
+  records.forEach((r) =>
+    (r.vectors || []).forEach((v) => {
+      vectorCounts[v] = (vectorCounts[v] || 0) + 1;
+    }),
+  );
   const sorted = Object.entries(vectorCounts).sort((a, b) => b[1] - a[1]);
   if (sorted.length > 0) {
-    const top = sorted.slice(0, 3).map(([v, c]) => `${v}(${c})`).join(" ");
+    const top = sorted
+      .slice(0, 3)
+      .map(([v, c]) => `${v}(${c})`)
+      .join(" ");
     lines.push(`  vectors: ${top}`);
   }
 
@@ -481,7 +564,8 @@ export function buildSessionRecap(records, result, refinement, meta = {}, compar
   const conf = result.confidenceReport;
   if (conf) {
     const confPct = Math.round((conf.overallScore || 0) * 100);
-    const gapNote = conf.gapCount > 0 ? `, ${conf.gapCount} gap${conf.gapCount !== 1 ? "s" : ""}` : "";
+    const gapNote =
+      conf.gapCount > 0 ? `, ${conf.gapCount} gap${conf.gapCount !== 1 ? "s" : ""}` : "";
     lines.push(`  confidence: ${confPct}%${gapNote}`);
   }
 
@@ -492,7 +576,7 @@ export function buildSessionRecap(records, result, refinement, meta = {}, compar
 
   // Line 8: Drift warnings (only if present, keep short)
   if (refinement.driftWarnings?.length > 0) {
-    lines.push(`  ! ${refinement.driftWarnings.map(w => w.type.replace(/_/g, " ")).join(", ")}`);
+    lines.push(`  ! ${refinement.driftWarnings.map((w) => w.type.replace(/_/g, " ")).join(", ")}`);
   }
 
   // Line 9: Nudge — from PATH system (weighted accumulation) or fallback
@@ -511,10 +595,14 @@ export function buildSessionRecap(records, result, refinement, meta = {}, compar
  */
 function buildFingerprint(records, result) {
   const vectorCounts = {};
-  records.forEach(r => (r.vectors || []).forEach(v => { vectorCounts[v] = (vectorCounts[v] || 0) + 1; }));
+  records.forEach((r) =>
+    (r.vectors || []).forEach((v) => {
+      vectorCounts[v] = (vectorCounts[v] || 0) + 1;
+    }),
+  );
   const topVector = topKey(vectorCounts) || "mixed";
 
-  const dirs = [...new Set(records.map(r => r.directory))];
+  const dirs = [...new Set(records.map((r) => r.directory))];
   const primaryLens = result.primaryLens?.label?.toLowerCase() || null;
 
   // Determine shape
@@ -548,20 +636,24 @@ function buildFingerprint(records, result) {
  * Each rule tests a session condition and returns actionable advice.
  */
 function buildNudge(records, result, refinement, comparison) {
-  const dirs = [...new Set(records.map(r => r.directory))];
+  const dirs = [...new Set(records.map((r) => r.directory))];
   const totalChurn = records.reduce((s, r) => s + (r.churn || 0), 0);
   const adds = records.reduce((s, r) => s + (r.additions || 0), 0);
   const dels = records.reduce((s, r) => s + (r.deletions || 0), 0);
   const conf = result.confidenceReport?.overallScore || 0;
   const gaps = result.confidenceReport?.gapCount || 0;
-  const lenses = (result.contextLenses || []).filter(l => l.score > 0.3);
+  const lenses = (result.contextLenses || []).filter((l) => l.score > 0.3);
   const primaryDomain = result.primaryLens?.label?.toLowerCase() || null;
 
   const vectorCounts = {};
-  records.forEach(r => (r.vectors || []).forEach(v => { vectorCounts[v] = (vectorCounts[v] || 0) + 1; }));
+  records.forEach((r) =>
+    (r.vectors || []).forEach((v) => {
+      vectorCounts[v] = (vectorCounts[v] || 0) + 1;
+    }),
+  );
   const topVector = topKey(vectorCounts);
-  const hasTests = records.some(r => /test|spec/i.test(r.path));
-  const hasConfig = records.some(r => /config|env|json|yaml|toml/i.test(r.extension || ""));
+  const hasTests = records.some((r) => /test|spec/i.test(r.path));
+  const hasConfig = records.some((r) => /config|env|json|yaml|toml/i.test(r.extension || ""));
   const novelAreas = comparison?.details?.novelDirs?.length || 0;
   const isScattered = dirs.length >= 5;
   const isDeep = dirs.length <= 2 && records.length >= 3;
@@ -604,9 +696,9 @@ function buildNudge(records, result, refinement, comparison) {
   }
 
   // High churn single file (specific > generic)
-  const maxChurnFile = records.reduce((best, r) => r.churn > (best?.churn || 0) ? r : best, null);
+  const maxChurnFile = records.reduce((best, r) => (r.churn > (best?.churn || 0) ? r : best), null);
   if (maxChurnFile && maxChurnFile.churn > totalChurn * 0.6 && records.length > 3) {
-    return `${maxChurnFile.name} holds ${Math.round(maxChurnFile.churn / totalChurn * 100)}% of the churn — might be doing too much in one file`;
+    return `${maxChurnFile.name} holds ${Math.round((maxChurnFile.churn / totalChurn) * 100)}% of the churn — might be doing too much in one file`;
   }
 
   // Scattered with many vectors
@@ -671,21 +763,31 @@ export function compareToRecent(history, trace, n = 5) {
   const parts = [];
 
   // Size comparison: file count
-  const avgFiles = avg(recent.map(r => r.files || 0));
+  const avgFiles = avg(recent.map((r) => r.files || 0));
   const ratio = avgFiles > 0 ? trace.fileCount / avgFiles : 1;
-  if (ratio > 1.5) { details.size = "bigger"; parts.push(`${ratio.toFixed(1)}x bigger`); }
-  else if (ratio < 0.6) { details.size = "smaller"; parts.push(`${(1 / ratio).toFixed(1)}x smaller`); }
+  if (ratio > 1.5) {
+    details.size = "bigger";
+    parts.push(`${ratio.toFixed(1)}x bigger`);
+  } else if (ratio < 0.6) {
+    details.size = "smaller";
+    parts.push(`${(1 / ratio).toFixed(1)}x smaller`);
+  }
 
   // Spread comparison: dir count
-  const avgDirs = avg(recent.map(r => r.dirCount || 1));
+  const avgDirs = avg(recent.map((r) => r.dirCount || 1));
   const dirRatio = avgDirs > 0 ? trace.dirCount / avgDirs : 1;
-  if (dirRatio > 1.5) { details.spread = "wider"; parts.push("wider spread"); }
-  else if (dirRatio < 0.6) { details.spread = "narrower"; parts.push("more focused"); }
+  if (dirRatio > 1.5) {
+    details.spread = "wider";
+    parts.push("wider spread");
+  } else if (dirRatio < 0.6) {
+    details.spread = "narrower";
+    parts.push("more focused");
+  }
 
   // Area novelty: are these the same dirs as recent sessions?
   const recentDirs = new Set();
-  recent.forEach(r => (r.dirs || []).forEach(d => recentDirs.add(d)));
-  const novelDirs = (trace.dirs || []).filter(d => !recentDirs.has(d));
+  recent.forEach((r) => (r.dirs || []).forEach((d) => recentDirs.add(d)));
+  const novelDirs = (trace.dirs || []).filter((d) => !recentDirs.has(d));
   if (novelDirs.length > 0) {
     details.areas = "new";
     details.novelDirs = novelDirs;
@@ -695,7 +797,7 @@ export function compareToRecent(history, trace, n = 5) {
 
   // Vector shift: is the dominant vector different from recent norm?
   const recentVectors = {};
-  recent.forEach(r => {
+  recent.forEach((r) => {
     for (const [v, c] of Object.entries(r.vectorMix || {})) {
       recentVectors[v] = (recentVectors[v] || 0) + c;
     }
@@ -707,16 +809,17 @@ export function compareToRecent(history, trace, n = 5) {
   }
 
   // Confidence delta
-  const avgConf = avg(recent.map(r => r.overall || 0));
+  const avgConf = avg(recent.map((r) => r.overall || 0));
   const confDelta = trace.confidence - avgConf;
   if (Math.abs(confDelta) > 0.05) {
     const arrow = confDelta > 0 ? "+" : "";
     parts.push(`${arrow}${(confDelta * 100).toFixed(0)}% confidence`);
   }
 
-  const summary = parts.length > 0
-    ? `vs last ${recent.length}: ${parts.join(", ")}`
-    : `vs last ${recent.length}: similar session`;
+  const summary =
+    parts.length > 0
+      ? `vs last ${recent.length}: ${parts.join(", ")}`
+      : `vs last ${recent.length}: similar session`;
 
   return { summary, details };
 }
@@ -727,7 +830,11 @@ export function compareToRecent(history, trace, n = 5) {
 
 function buildVectorMix(records) {
   const mix = {};
-  records.forEach(r => (r.vectors || []).forEach(v => { mix[v] = (mix[v] || 0) + 1; }));
+  records.forEach((r) =>
+    (r.vectors || []).forEach((v) => {
+      mix[v] = (mix[v] || 0) + 1;
+    }),
+  );
   return mix;
 }
 
@@ -736,9 +843,13 @@ function avg(arr) {
 }
 
 function topKey(obj) {
-  let best = null, bestV = -1;
+  let best = null,
+    bestV = -1;
   for (const [k, v] of Object.entries(obj || {})) {
-    if (v > bestV) { best = k; bestV = v; }
+    if (v > bestV) {
+      best = k;
+      bestV = v;
+    }
   }
   return best;
 }

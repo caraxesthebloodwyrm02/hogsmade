@@ -11,21 +11,21 @@
 
 ### 1.1 afloat-server
 
-| Candidate | Type | Action | Notes |
-|-----------|------|--------|--------|
-| **Main server vs shared-types** | Dependency surface | **Document only** | `src/server.ts` does **not** import `@cascade/shared-types`. Only `scripts/run_scheduled_diagnostics.ts` uses `emitAudit` from audit-client. No code to remove; keep dependency for the script. |
-| **Duplicate "echoes" in mcp_config** | Config | **Optional cleanup** | `mcp_config.json` has both `"echoes"` (pointing at `mcp-tool-experiment/src/server.ts`) and `"echoes-server"` (CascadeProjects). If only one is used, remove or rename the other to avoid confusion. |
-| **Scheduled script dependency on maintain-server** | Build/runtime | **Document** | `run_scheduled_diagnostics.ts` imports `maintain-server` via relative path `../../maintain-server/src/server.ts`. Ensures workspace layout stays `afloat-server` and `maintain-server` as siblings. No removal; document for onboarding. |
+| Candidate                                          | Type               | Action               | Notes                                                                                                                                                                                                                                    |
+| -------------------------------------------------- | ------------------ | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Main server vs shared-types**                    | Dependency surface | **Document only**    | `src/server.ts` does **not** import `@cascade/shared-types`. Only `scripts/run_scheduled_diagnostics.ts` uses `emitAudit` from audit-client. No code to remove; keep dependency for the script.                                          |
+| **Duplicate "echoes" in mcp_config**               | Config             | **Optional cleanup** | `mcp_config.json` has both `"echoes"` (pointing at `mcp-tool-experiment/src/server.ts`) and `"echoes-server"` (CascadeProjects). If only one is used, remove or rename the other to avoid confusion.                                     |
+| **Scheduled script dependency on maintain-server** | Build/runtime      | **Document**         | `run_scheduled_diagnostics.ts` imports `maintain-server` via relative path `../../maintain-server/src/server.ts`. Ensures workspace layout stays `afloat-server` and `maintain-server` as siblings. No removal; document for onboarding. |
 
 **Verdict**: afloat-server is already lean. No safe removal of code; only config/doc clarifications.
 
 ### 1.2 shared-types
 
-| Candidate | Type | Action | Notes |
-|-----------|------|--------|--------|
-| **Health / Telemetry exports** | Surface | **Keep** | README marks them as "deferred" (not yet adopted by 3+ servers). They are small and part of the public API; removing would break anyone importing them. Keep for future adoption. |
-| **security-policy** | Surface | **Keep** | Used by docs and potentially by servers that adopt policy engine; large but single module. No current consumer in afloat/maintain/lots; keep for GATE/compliance roadmap. |
-| **Unused re-exports** | Barrel | **Optional** | `index.ts` re-exports audit, health, telemetry, audit-client, security-policy. All are documented; no dead export. |
+| Candidate                      | Type    | Action       | Notes                                                                                                                                                                             |
+| ------------------------------ | ------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Health / Telemetry exports** | Surface | **Keep**     | README marks them as "deferred" (not yet adopted by 3+ servers). They are small and part of the public API; removing would break anyone importing them. Keep for future adoption. |
+| **security-policy**            | Surface | **Keep**     | Used by docs and potentially by servers that adopt policy engine; large but single module. No current consumer in afloat/maintain/lots; keep for GATE/compliance roadmap.         |
+| **Unused re-exports**          | Barrel  | **Optional** | `index.ts` re-exports audit, health, telemetry, audit-client, security-policy. All are documented; no dead export.                                                                |
 
 **Verdict**: shared-types has no removable surface without breaking the documented API. Only optional: trim security-policy from default barrel if a "light" build were ever added (out of scope here).
 
@@ -40,41 +40,41 @@
 
 ### 2.1 Canonical source
 
-- **File**: `mcp_config.json` (workspace root)  
-- **Purpose**: Single source of truth for all editors (Windsurf, Cursor, VSCode, Claude Code, Zed).  
+- **File**: `mcp_config.json` (workspace root)
+- **Purpose**: Single source of truth for all editors (Windsurf, Cursor, VSCode, Claude Code, Zed).
 - **Last updated**: 2026-03-07 (per `_updated` in file).
 
 ### 2.2 Cursor project override
 
-- **File**: `.cursor/mcp.json`  
+- **File**: `.cursor/mcp.json`
 - **Content**: Updated to include all seven first-party Cascade MCP servers (echoes-server, grid-server, afloat-server, lots-server, seeds-server, pulse-server, maintain-server) with env from `mcp_config.json`. E:\grid Python servers omitted; add from `mcp_config.json` if needed.
 
 ### 2.3 Servers in mcp_config.json (inventory)
 
-| Server | Command | Env | Notes |
-|--------|---------|-----|--------|
-| echoes | npx tsx …/mcp-tool-experiment/src/server.ts | — | Possible duplicate of echoes-server |
-| echoes-server | npx tsx …/echoes-server/src/server.ts | ECHOES_AUDIT_PATH | Audit/telemetry |
-| grid-server | npx tsx …/grid-server/src/server.ts | CASCADE_WORKSPACE_ROOT, GATE_DIR, GRID_API_URL | GATE |
-| afloat-server | npx tsx …/afloat-server/src/server.ts | — | Workflows |
-| lots-server | npx tsx …/lots-server/src/server.ts | LOTS_EXPERIMENTS_DIR, ECHOES_AUDIT_PATH | Experiments |
-| seeds-server | npx tsx …/seeds-server/src/server.ts | SEEDS_ROOT | Ecosystem |
-| pulse-server | npx tsx …/pulse-server/src/server.ts | — | Briefings, journal |
-| grid-rag | python …/grid_rag_mcp_server.py | PYTHONPATH, RAG_*, OLLAMA_* | E:\grid |
-| grid-rag-enhanced | python -m grid.mcp.enhanced_rag_server | (same) | E:\grid |
-| grid-enhanced-tools | python …/enhanced_tools_mcp_server.py | PYTHONPATH | E:\grid |
-| portfolio-safety-lens | python …/portfolio_safety_mcp_server.py | PYTHONPATH (+ Coinbase) | E:\grid |
-| code-analysis | python …/code_analysis_mcp_server.py | PYTHONPATH | E:\grid |
-| test-runner | python …/test_runner_mcp_server.py | PYTHONPATH | E:\grid |
-| maintain-server | npx tsx …/maintain-server/src/server.ts | CASCADE_WORKSPACE_ROOT, SEEDS_ROOT, ECHOES_AUDIT_PATH | Diagnostics |
+| Server                | Command                                     | Env                                                   | Notes                               |
+| --------------------- | ------------------------------------------- | ----------------------------------------------------- | ----------------------------------- |
+| echoes                | npx tsx …/mcp-tool-experiment/src/server.ts | —                                                     | Possible duplicate of echoes-server |
+| echoes-server         | npx tsx …/echoes-server/src/server.ts       | ECHOES_AUDIT_PATH                                     | Audit/telemetry                     |
+| grid-server           | npx tsx …/grid-server/src/server.ts         | CASCADE_WORKSPACE_ROOT, GATE_DIR, GRID_API_URL        | GATE                                |
+| afloat-server         | npx tsx …/afloat-server/src/server.ts       | —                                                     | Workflows                           |
+| lots-server           | npx tsx …/lots-server/src/server.ts         | LOTS_EXPERIMENTS_DIR, ECHOES_AUDIT_PATH               | Experiments                         |
+| seeds-server          | npx tsx …/seeds-server/src/server.ts        | SEEDS_ROOT                                            | Ecosystem                           |
+| pulse-server          | npx tsx …/pulse-server/src/server.ts        | —                                                     | Briefings, journal                  |
+| grid-rag              | python …/grid_rag_mcp_server.py             | PYTHONPATH, RAG*\*, OLLAMA*\*                         | E:\grid                             |
+| grid-rag-enhanced     | python -m grid.mcp.enhanced_rag_server      | (same)                                                | E:\grid                             |
+| grid-enhanced-tools   | python …/enhanced_tools_mcp_server.py       | PYTHONPATH                                            | E:\grid                             |
+| portfolio-safety-lens | python …/portfolio_safety_mcp_server.py     | PYTHONPATH (+ Coinbase)                               | E:\grid                             |
+| code-analysis         | python …/code_analysis_mcp_server.py        | PYTHONPATH                                            | E:\grid                             |
+| test-runner           | python …/test_runner_mcp_server.py          | PYTHONPATH                                            | E:\grid                             |
+| maintain-server       | npx tsx …/maintain-server/src/server.ts     | CASCADE_WORKSPACE_ROOT, SEEDS_ROOT, ECHOES_AUDIT_PATH | Diagnostics                         |
 
 ---
 
 ## 3. Similar subtrahends for debug & scope
 
 - **Debug**: Use one health-check tool per server (e.g. `afloat-server` health_check, `echoes-server` health_check) to confirm which MCPs are up before debugging. Reduces noise from "server not running" vs "tool error."
-- **Scope**:  
-  - **First-party only**: For Cascade-only workflows, enable only echoes-server, grid-server, afloat-server, lots-server, seeds-server, pulse-server, maintain-server (and optionally one echoes entry). Disable grid-rag*, portfolio-safety-lens, code-analysis, test-runner when not needed.  
+- **Scope**:
+  - **First-party only**: For Cascade-only workflows, enable only echoes-server, grid-server, afloat-server, lots-server, seeds-server, pulse-server, maintain-server (and optionally one echoes entry). Disable grid-rag\*, portfolio-safety-lens, code-analysis, test-runner when not needed.
   - **Naming**: Resolve "echoes" vs "echoes-server" (one canonical name, one config entry) to avoid duplicate tools.
 - **Optimize inventory**: See next section.
 
@@ -111,31 +111,31 @@ The subtractive-analyst subagent scanned the full CascadeProjects workspace and 
 
 ### 5.1 GRID-main: remove legacy event_bus shim (definite)
 
-| Term | Description |
-|------|-------------|
-| **Minuend** | `GRID-main/src/infrastructure/event_bus/` (event_system + legacy_shim). |
-| **Subtrahend** | `legacy_shim.py` (and its single export `subscribe_legacy`). |
-| **Remainder** | Event bus package with only `event_system`; no references to `subscribe_legacy` or `legacy_shim` elsewhere. |
+| Term           | Description                                                                                                 |
+| -------------- | ----------------------------------------------------------------------------------------------------------- |
+| **Minuend**    | `GRID-main/src/infrastructure/event_bus/` (event_system + legacy_shim).                                     |
+| **Subtrahend** | `legacy_shim.py` (and its single export `subscribe_legacy`).                                                |
+| **Remainder**  | Event bus package with only `event_system`; no references to `subscribe_legacy` or `legacy_shim` elsewhere. |
 
 **Validation**: No imports of `subscribe_legacy` or `legacy_shim` in the repo; `event_bus/__init__.py` does not export the legacy shim; Mothership uses `get_eventbus` from `event_system`. **Safe to remove** (dead code).
 
 ### 5.2 GRID-main: trim or relocate research/experiments (confirm first)
 
-| Term | Description |
-|------|-------------|
-| **Minuend** | GRID-main repo including `research/experiments/hogwarts-visualizer`. |
+| Term           | Description                                                                                |
+| -------------- | ------------------------------------------------------------------------------------------ |
+| **Minuend**    | GRID-main repo including `research/experiments/hogwarts-visualizer`.                       |
 | **Subtrahend** | The `research/experiments/hogwarts-visualizer` tree (standalone Vite/React app, 59 files). |
-| **Remainder** | Core GRID-main without this experiment; clearer production boundary. |
+| **Remainder**  | Core GRID-main without this experiment; clearer production boundary.                       |
 
 **Caveat**: Only do this if the experiment is no longer needed in-repo; otherwise treat as optional scope. **Confirm with product/owner** before moving or archiving.
 
 ### 5.3 MCP servers: optional consolidation of bootstrap/config
 
-| Term | Description |
-|------|-------------|
-| **Minuend** | All MCP servers (afloat, echoes, grid, lots, maintain, pulse, seeds) + shared-types. |
+| Term           | Description                                                                                                                                                                   |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Minuend**    | All MCP servers (afloat, echoes, grid, lots, maintain, pulse, seeds) + shared-types.                                                                                          |
 | **Subtrahend** | Not deletion—**consolidation**: duplicate server bootstrap and config patterns (`getConfig()`, `ensureDataDir()`, McpServer + StdioServerTransport setup, health tool shape). |
-| **Remainder** | Same behavior with less duplicated setup (e.g. shared-types or a small package providing a `createServer(name, config, tools)`-style helper). |
+| **Remainder**  | Same behavior with less duplicated setup (e.g. shared-types or a small package providing a `createServer(name, config, tools)`-style helper).                                 |
 
 **Observation**: Only afloat, lots, and maintain use `@cascade/shared-types`; echoes, grid, pulse, seeds do not. Each server reimplements similar patterns. **Next step**: Run subtractive analysis with scope “all MCP servers” to get a concrete consolidation plan and pilot (e.g. afloat as first adopter).
 
@@ -148,13 +148,13 @@ The subtractive-analyst subagent scanned the full CascadeProjects workspace and 
 
 ## 6. Summary
 
-| Area | Removable (subtrahend) | Action |
-|------|-------------------------|--------|
-| afloat-server | None (already minimal) | Document that only the scheduled script uses shared-types. |
-| shared-types | None without API break | Keep all exports; health/telemetry deferred but kept. |
-| MCP config | Duplicate "echoes" entry | Optional: one canonical Echoes server entry. |
-| Cursor vs canonical | .cursor/mcp.json | Done: merged first-party list from mcp_config.json. |
-| Debug/scope | N/A | Use health_check tools; limit enabled servers to first-party when debugging. |
-| **GRID-main** (subagent) | `legacy_shim.py` in event_bus | **Definite**: Remove dead code (no references). |
-| **GRID-main** (subagent) | `research/experiments/hogwarts-visualizer` | **Confirm first**: Move/archive only if experiment is done or maintained elsewhere. |
-| **MCP servers** (subagent) | Duplicate bootstrap/config | **Refinement**: Consolidate via shared helper; scope “all MCP servers” for concrete plan + pilot. |
+| Area                       | Removable (subtrahend)                     | Action                                                                                            |
+| -------------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------- |
+| afloat-server              | None (already minimal)                     | Document that only the scheduled script uses shared-types.                                        |
+| shared-types               | None without API break                     | Keep all exports; health/telemetry deferred but kept.                                             |
+| MCP config                 | Duplicate "echoes" entry                   | Optional: one canonical Echoes server entry.                                                      |
+| Cursor vs canonical        | .cursor/mcp.json                           | Done: merged first-party list from mcp_config.json.                                               |
+| Debug/scope                | N/A                                        | Use health_check tools; limit enabled servers to first-party when debugging.                      |
+| **GRID-main** (subagent)   | `legacy_shim.py` in event_bus              | **Definite**: Remove dead code (no references).                                                   |
+| **GRID-main** (subagent)   | `research/experiments/hogwarts-visualizer` | **Confirm first**: Move/archive only if experiment is done or maintained elsewhere.               |
+| **MCP servers** (subagent) | Duplicate bootstrap/config                 | **Refinement**: Consolidate via shared helper; scope “all MCP servers” for concrete plan + pilot. |

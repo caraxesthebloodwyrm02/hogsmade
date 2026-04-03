@@ -68,7 +68,10 @@ export interface BoardSnapshot {
   hash: string;
 }
 
-export const HOUSE_META: Record<House, { label: string; motto: string; color: string; bgClass: string }> = {
+export const HOUSE_META: Record<
+  House,
+  { label: string; motto: string; color: string; bgClass: string }
+> = {
   observation: {
     label: "Observation",
     motto: "See clearly",

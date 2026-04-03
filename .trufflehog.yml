@@ -10,15 +10,15 @@
 exclude_paths:
   # ── Dependency trees — third-party code, not workspace code ─────────────
   - '\.venv/'
-  - 'node_modules/'
+  - "node_modules/"
   - '\.npm/'
 
   # ── Build and type-checking caches ──────────────────────────────────────
   - '\.mypy_cache/'
-  - '__pycache__/'
+  - "__pycache__/"
   - '\.cache/'
-  - 'dist/'
-  - 'build/'
+  - "dist/"
+  - "build/"
   - '\.next/'
 
   # ── AI-generated draft worktrees (not production branches) ──────────────
@@ -35,8 +35,8 @@ exclude_paths:
   - 'GATE/.*\.ndjson$'
 
   # ── Test fixtures with deliberately placeholder values ───────────────────
-  - 'tests/fixtures/'
-  - 'tests/unit/'
+  - "tests/fixtures/"
+  - "tests/unit/"
   - '\.claude/worktrees/.*/tests/'
 
   # ── Documentation and reports ────────────────────────────────────────────
@@ -44,8 +44,8 @@ exclude_paths:
   # purposes (e.g. HMAC-SHA256 algorithm descriptions, API reference examples).
   - '.*\.md$'
   - '.*\.txt$'
-  - 'docs/'
-  - 'archival/'
+  - "docs/"
+  - "archival/"
 
   # ── Lock files ───────────────────────────────────────────────────────────
   - 'pnpm-lock\.yaml$'

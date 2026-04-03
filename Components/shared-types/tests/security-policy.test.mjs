@@ -44,11 +44,7 @@ test("checkSensitivePR — no sensitive paths → allow", () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 test("checkSoleOwnership — author is sole owner → escalate with OWN-002", () => {
-  const result = OwnershipGovernance.checkSoleOwnership(
-    [SENSITIVE_FILE],
-    "alice",
-    OWNERSHIP_MAP,
-  );
+  const result = OwnershipGovernance.checkSoleOwnership([SENSITIVE_FILE], "alice", OWNERSHIP_MAP);
   assert.equal(result.verdict, "escalate");
   assert.equal(result.policyId, "P-GOV-002");
   assert.equal(result.threatBasis, "OWN-002");

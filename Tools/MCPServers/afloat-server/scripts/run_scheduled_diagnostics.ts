@@ -2,10 +2,7 @@ import { emitAudit } from "@cascade/shared-types/audit-client";
 import { buildServer as buildMaintainServer } from "../../maintain-server/src/server.ts";
 
 type InternalServer = {
-  _registeredTools: Record<
-    string,
-    { inputSchema?: unknown; handler: (...args: any[]) => unknown }
-  >;
+  _registeredTools: Record<string, { inputSchema?: unknown; handler: (...args: any[]) => unknown }>;
 };
 
 const HEALTH_THRESHOLD = Math.max(
@@ -24,9 +21,7 @@ async function invokeTool(
 ): Promise<unknown> {
   const tool = server._registeredTools[name];
   if (!tool) throw new Error(`maintain-server ${name} tool is not registered`);
-  return tool.inputSchema
-    ? await tool.handler(args, {} as any)
-    : await tool.handler({} as any);
+  return tool.inputSchema ? await tool.handler(args, {} as any) : await tool.handler({} as any);
 }
 
 async function main(): Promise<void> {
@@ -39,9 +34,7 @@ async function main(): Promise<void> {
     });
     const diagPayload = getTextPayload(diagResult);
     const overallScore =
-      typeof diagPayload.overallScore === "number"
-        ? diagPayload.overallScore
-        : null;
+      typeof diagPayload.overallScore === "number" ? diagPayload.overallScore : null;
 
     // Phase 3.1: threshold check — invoke scan_workspaces when health is below threshold
     let followUp: Record<string, unknown> | undefined;
@@ -49,9 +42,7 @@ async function main(): Promise<void> {
       try {
         const scanResult = await invokeTool(server, "scan_workspaces", {});
         const scanPayload = getTextPayload(scanResult);
-        const tail = scanPayload._tailFunction as
-          | Record<string, unknown>
-          | undefined;
+        const tail = scanPayload._tailFunction as Record<string, unknown> | undefined;
         followUp = {
           triggered: true,
           reason: `overallScore ${overallScore} < threshold ${HEALTH_THRESHOLD}`,
@@ -63,8 +54,7 @@ async function main(): Promise<void> {
         followUp = {
           triggered: true,
           reason: `overallScore ${overallScore} < threshold ${HEALTH_THRESHOLD}`,
-          error:
-            scanError instanceof Error ? scanError.message : String(scanError),
+          error: scanError instanceof Error ? scanError.message : String(scanError),
         };
       }
     }

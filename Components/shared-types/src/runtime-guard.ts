@@ -1,6 +1,6 @@
 /**
  * Runtime Void Pattern Protection
- * 
+ *
  * Wraps critical functions with monitoring to detect silent failures.
  * Adds to the hardened merit guard for comprehensive runtime safety.
  */
@@ -83,55 +83,53 @@ export class RuntimeErrorBoundary {
    */
   wrap<TArgs extends Record<string, unknown>, TResult>(
     name: string,
-    handler: (args: TArgs) => Promise<TResult>
+    handler: (args: TArgs) => Promise<TResult>,
   ): (args: TArgs) => Promise<TResult> {
     return async (args: TArgs): Promise<TResult> => {
       this.metrics.totalCalls++;
       const startTime = Date.now();
-      
+
       try {
         const result = await handler(args);
-        
+
         // Analyze return value
         this._analyzeReturn(name, result);
-        
+
         this.metrics.successCount++;
-        
+
         // Log successful call for audit
         await this._logSuccess(name, args, startTime);
-        
+
         return result;
       } catch (error) {
         this.metrics.exceptionCount++;
-        
+
         const errorMsg = error instanceof Error ? error.message : String(error);
         const errorStack = error instanceof Error ? error.stack : undefined;
-        
+
         // Log to stderr for immediate visibility
         console.error(
-          `[RUNTIME_ERROR] ${this.config.serverName}.${name}: ${errorMsg}\n${errorStack || ""}`
+          `[RUNTIME_ERROR] ${this.config.serverName}.${name}: ${errorMsg}\n${errorStack || ""}`,
         );
-        
+
         // Track error rate
         this._trackError();
-        
+
         // Custom error handler
         if (this.config.onError) {
           try {
             await this.config.onError(
               error instanceof Error ? error : new Error(String(error)),
-              `${this.config.serverName}.${name}`
+              `${this.config.serverName}.${name}`,
             );
           } catch (handlerError) {
-            console.error(
-              `[CRITICAL] Error handler failed: ${handlerError}`
-            );
+            console.error(`[CRITICAL] Error handler failed: ${handlerError}`);
           }
         }
-        
+
         // Audit log the error
         await this._logError(name, args, error, startTime);
-        
+
         // Re-throw to maintain original behavior
         throw error;
       }
@@ -145,23 +143,17 @@ export class RuntimeErrorBoundary {
     if (result === undefined) {
       this.metrics.voidReturns++;
       if (this.config.alertOnVoid) {
-        console.warn(
-          `[VOID_PATTERN] ${this.config.serverName}.${name} returned undefined`
-        );
+        console.warn(`[VOID_PATTERN] ${this.config.serverName}.${name} returned undefined`);
       }
     } else if (result === null) {
       this.metrics.nullReturns++;
       if (this.config.alertOnNull) {
-        console.warn(
-          `[VOID_PATTERN] ${this.config.serverName}.${name} returned null`
-        );
+        console.warn(`[VOID_PATTERN] ${this.config.serverName}.${name} returned null`);
       }
     } else if (Array.isArray(result) && result.length === 0) {
       this.metrics.emptyArrayReturns++;
       if (this.config.alertOnEmptyArray) {
-        console.warn(
-          `[VOID_PATTERN] ${this.config.serverName}.${name} returned empty array`
-        );
+        console.warn(`[VOID_PATTERN] ${this.config.serverName}.${name} returned empty array`);
       }
     }
   }
@@ -172,15 +164,15 @@ export class RuntimeErrorBoundary {
   private _trackError(): void {
     const now = Date.now();
     this.errorWindow.push(now);
-    
+
     // Clean old entries (older than 1 minute)
-    this.errorWindow = this.errorWindow.filter(t => now - t < 60000);
-    
+    this.errorWindow = this.errorWindow.filter((t) => now - t < 60000);
+
     // Check threshold
     if (this.errorWindow.length > this.config.errorThreshold) {
       console.error(
         `[ALERT] ${this.config.serverName}: Error rate exceeded threshold ` +
-        `(${this.errorWindow.length} errors/min > ${this.config.errorThreshold})`
+          `(${this.errorWindow.length} errors/min > ${this.config.errorThreshold})`,
       );
     }
   }
@@ -191,7 +183,7 @@ export class RuntimeErrorBoundary {
   private async _logSuccess(
     name: string,
     args: Record<string, unknown>,
-    startTime: number
+    startTime: number,
   ): Promise<void> {
     const duration = Date.now() - startTime;
     try {
@@ -217,7 +209,7 @@ export class RuntimeErrorBoundary {
     name: string,
     args: Record<string, unknown>,
     error: unknown,
-    startTime: number
+    startTime: number,
   ): Promise<void> {
     const duration = Date.now() - startTime;
     const errorMsg = error instanceof Error ? error.message : String(error);
@@ -250,7 +242,7 @@ export class RuntimeErrorBoundary {
    */
   getErrorRate(): number {
     const now = Date.now();
-    this.errorWindow = this.errorWindow.filter(t => now - t < 60000);
+    this.errorWindow = this.errorWindow.filter((t) => now - t < 60000);
     return this.errorWindow.length;
   }
 
@@ -278,7 +270,7 @@ export class RuntimeErrorBoundary {
  */
 export function createRuntimeBoundary(
   serverName: string,
-  options?: Omit<RuntimeGuardConfig, "serverName">
+  options?: Omit<RuntimeGuardConfig, "serverName">,
 ): RuntimeErrorBoundary {
   return new RuntimeErrorBoundary({
     serverName,

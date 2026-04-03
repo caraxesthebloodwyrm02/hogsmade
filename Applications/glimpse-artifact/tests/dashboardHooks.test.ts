@@ -47,9 +47,6 @@ test("parses active focus status payloads", () => {
     },
   });
 
-  assert.equal(
-    session?.workflowName,
-    "glimpse-artifact — Implement dashboard sync",
-  );
+  assert.equal(session?.workflowName, "glimpse-artifact — Implement dashboard sync");
   assert.equal(session?.steps.length, 3);
 });

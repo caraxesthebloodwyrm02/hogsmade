@@ -1,4 +1,3 @@
-
 interface BranchForkProps {
   fromX: number;
   fromY: number;
@@ -18,13 +17,7 @@ export function BranchFork({ fromX, fromY, toX, toY, label }: BranchForkProps) {
       className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-visible"
       aria-hidden="true"
     >
-      <path
-        d={path}
-        fill="none"
-        stroke="var(--teal-200)"
-        strokeWidth={2}
-        strokeDasharray="6 4"
-      />
+      <path d={path} fill="none" stroke="var(--teal-200)" strokeWidth={2} strokeDasharray="6 4" />
       <circle cx={fromX} cy={fromY} r={4} fill="var(--teal-500)" />
       <circle cx={toX} cy={toY} r={4} fill="var(--teal-500)" />
 

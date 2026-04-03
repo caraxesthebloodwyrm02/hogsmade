@@ -64,9 +64,7 @@ function computeCoverage(evidenceIds, allEvidences, availableDomains) {
   return {
     covered: [...coveredDomains],
     count: coveredDomains.size,
-    ratio: availableDomains.length > 0
-      ? coveredDomains.size / availableDomains.length
-      : 0,
+    ratio: availableDomains.length > 0 ? coveredDomains.size / availableDomains.length : 0,
   };
 }
 
@@ -80,9 +78,7 @@ function computeCoverage(evidenceIds, allEvidences, availableDomains) {
  */
 function scoreInvariance(evidenceIds, allEvidences) {
   const evidenceMap = new Map(allEvidences.map((e) => [e.id, e]));
-  const matched = evidenceIds
-    .map((id) => evidenceMap.get(id))
-    .filter(Boolean);
+  const matched = evidenceIds.map((id) => evidenceMap.get(id)).filter(Boolean);
 
   if (matched.length === 0) return 0;
 
@@ -95,12 +91,9 @@ function scoreInvariance(evidenceIds, allEvidences) {
   const scopeSpread = Math.min(1, scopes.size / 3); // 3 scopes = max
 
   // Average confidence
-  const avgConf =
-    matched.reduce((s, e) => s + e.confidence, 0) / matched.length;
+  const avgConf = matched.reduce((s, e) => s + e.confidence, 0) / matched.length;
 
-  return Math.round(
-    (ruleSpread * 0.4 + scopeSpread * 0.3 + avgConf * 0.3) * 1000
-  ) / 1000;
+  return Math.round((ruleSpread * 0.4 + scopeSpread * 0.3 + avgConf * 0.3) * 1000) / 1000;
 }
 
 /**
@@ -122,14 +115,13 @@ export function scoreInsightDensity(insightText, evidenceIds, allEvidences, lens
   const invarianceScore = scoreInvariance(evidenceIds || [], allEvidences);
 
   // Density: coverage per token (higher = better compression)
-  const rawDensity = tokenCount > 0
-    ? coverage.count / tokenCount
-    : 0;
+  const rawDensity = tokenCount > 0 ? coverage.count / tokenCount : 0;
 
   // Normalize: combine coverage ratio, invariance, and token economy
-  const densityScore = Math.round(
-    (coverage.ratio * 0.4 + invarianceScore * 0.35 + Math.min(1, rawDensity * 5) * 0.25) * 1000
-  ) / 1000;
+  const densityScore =
+    Math.round(
+      (coverage.ratio * 0.4 + invarianceScore * 0.35 + Math.min(1, rawDensity * 5) * 0.25) * 1000,
+    ) / 1000;
 
   return {
     tokenCount,
@@ -160,7 +152,7 @@ export function compressInsight(rawInsight, evidenceIds, context) {
   // Identify counterexamples: entities not covered by this insight's evidence
   const evidenceMap = new Map(allEvidences.map((e) => [e.id, e]));
   const coveredEntityIds = new Set();
-  for (const id of (evidenceIds || [])) {
+  for (const id of evidenceIds || []) {
     const ev = evidenceMap.get(id);
     if (ev?.targetId && ev.scope === "entity") {
       coveredEntityIds.add(ev.targetId);
@@ -222,8 +214,7 @@ export function findInvariantPatterns(evidences, entities, relations, lenses) {
       const key = ev.reason || "";
       reasonCounts.set(key, (reasonCounts.get(key) || 0) + 1);
     }
-    const topReason = [...reasonCounts.entries()]
-      .sort((a, b) => b[1] - a[1])[0]?.[0] || ruleId;
+    const topReason = [...reasonCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] || ruleId;
 
     // Check domain coverage
     const evIds = ruleEvidences.map((e) => e.id);
@@ -231,9 +222,8 @@ export function findInvariantPatterns(evidences, entities, relations, lenses) {
     const tokenCount = countTokens(topReason);
 
     // Density: domains per token
-    const densityScore = tokenCount > 0
-      ? Math.round((coverage.count / tokenCount) * 1000) / 1000
-      : 0;
+    const densityScore =
+      tokenCount > 0 ? Math.round((coverage.count / tokenCount) * 1000) / 1000 : 0;
 
     patterns.push({
       pattern: topReason,

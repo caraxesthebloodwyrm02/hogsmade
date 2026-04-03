@@ -22,15 +22,15 @@ Comprehensive technical documentation of ghost process vectors and memory leak p
 
 ## Executive Summary
 
-| Metric | Value |
-|--------|-------|
-| Files Audited | 7 source files |
-| Total Lines Analyzed | 3,642 LOC |
-| Ghost Process Vectors | 8 |
-| Memory Leak Vectors | 1 |
-| CRITICAL Issues | 3 |
-| HIGH Issues | 5 |
-| MEDIUM Issues | 1 |
+| Metric                | Value          |
+| --------------------- | -------------- |
+| Files Audited         | 7 source files |
+| Total Lines Analyzed  | 3,642 LOC      |
+| Ghost Process Vectors | 8              |
+| Memory Leak Vectors   | 1              |
+| CRITICAL Issues       | 3              |
+| HIGH Issues           | 5              |
+| MEDIUM Issues         | 1              |
 
 **Risk Assessment**: The `maintain-server` MCP server has **3 CRITICAL** ghost process vectors where PowerShell commands can hang indefinitely with no timeout. Additionally, **5 HIGH** severity vectors exist where processes may become zombies after timeout.
 
@@ -50,15 +50,15 @@ Pattern 5: process\.env
 
 ### Files Analyzed
 
-| File | Path | Lines | Purpose |
-|------|------|-------|---------|
-| `server.ts` | `maintain-server/src/` | 1,782 | MCP server implementation |
-| `security-policy.ts` | `shared-types/src/` | 888 | Security policy engine |
-| `audit-client.ts` | `shared-types/src/` | 23 | Audit event emitter |
-| `audit.ts` | `shared-types/src/` | 26 | Audit schemas |
-| `health.ts` | `shared-types/src/` | 11 | Health check schemas |
-| `telemetry.ts` | `shared-types/src/` | 12 | Telemetry schemas |
-| `index.ts` | `shared-types/src/` | 24 | Export hub |
+| File                 | Path                   | Lines | Purpose                   |
+| -------------------- | ---------------------- | ----- | ------------------------- |
+| `server.ts`          | `maintain-server/src/` | 1,782 | MCP server implementation |
+| `security-policy.ts` | `shared-types/src/`    | 888   | Security policy engine    |
+| `audit-client.ts`    | `shared-types/src/`    | 23    | Audit event emitter       |
+| `audit.ts`           | `shared-types/src/`    | 26    | Audit schemas             |
+| `health.ts`          | `shared-types/src/`    | 11    | Health check schemas      |
+| `telemetry.ts`       | `shared-types/src/`    | 12    | Telemetry schemas         |
+| `index.ts`           | `shared-types/src/`    | 24    | Export hub                |
 
 ### Analysis Approach
 
@@ -93,6 +93,7 @@ try {
 ```
 
 **Issue**: No `timeout` option passed to `execFileAsync`. PowerShell WMI queries can hang indefinitely on:
+
 - Corrupted WMI repository
 - Remote volume access timeouts
 - Disk I/O issues
@@ -160,10 +161,7 @@ try {
 **Location**: `maintain-server/src/server.ts:510-521`
 
 ```typescript
-async function runGitCommand(
-  repoPath: string,
-  args: string[],
-): Promise<string | null> {
+async function runGitCommand(repoPath: string, args: string[]): Promise<string | null> {
   try {
     const { stdout } = await execFileAsync("git", args, {
       cwd: repoPath,
@@ -177,11 +175,13 @@ async function runGitCommand(
 ```
 
 **Issue**: Timeout is set to 15 seconds, but:
+
 1. `execFileAsync` timeout only aborts the **wait**, not the process
 2. Git operations (fetch, count-objects) can continue running as zombies
 3. No PID captured for cleanup
 
 **Zombie Scenario**:
+
 1. `git fetch` on slow remote takes 20s
 2. Node.js timeout fires at 15s
 3. Promise rejects with `ERR_CHILD_PROCESS_TIMEOUT`
@@ -217,6 +217,7 @@ async function cleanupNpmCache(dryRun: boolean): Promise<CleanupResult> {
 **Issue**: 60-second timeout may be insufficient for large npm caches (5+ GB). No process kill on timeout.
 
 **Zombie Scenario**:
+
 1. npm cache clean starts on 10GB cache
 2. Operation takes 90s
 3. Timeout fires at 60s
@@ -279,6 +280,7 @@ async function gitGc(repoPath: string, dryRun: boolean): Promise<CleanupResult> 
 **Issue**: `git gc --aggressive` on large repositories can take 10-30 minutes. 120-second timeout is insufficient.
 
 **Real-World Example**:
+
 - GRID-main: 159,899 LOC, 805 .py files, 2953+ tests
 - Estimated `git gc --aggressive` time: 5-15 minutes
 - Timeout: 2 minutes
@@ -313,28 +315,34 @@ export class ReadScopePolicy {
     if (!entry || now - entry.windowStart > this.windowMs) {
       this.callCounts.set(key, { count: 1, windowStart: now });
       // ↑ Entry added, but NEVER deleted
-      return { /* allow */ };
+      return {
+        /* allow */
+      };
     }
 
     entry.count++;
     // ↑ Count incremented, but old entries never pruned
 
     if (entry.count > this.maxCallsPerWindow) {
-      return { /* warn */ };
+      return {
+        /* warn */
+      };
     }
 
-    return { /* allow */ };
+    return {
+      /* allow */
+    };
   }
 }
 ```
 
 **Issue Analysis**:
 
-| Problem | Code | Impact |
-|---------|------|--------|
-| No entry deletion | No `this.callCounts.delete()` calls | Map grows unbounded |
-| No pruning on window expiry | Old entries kept even after `windowMs` | Stale data accumulates |
-| No size limit | No max size check | Memory exhaustion possible |
+| Problem                     | Code                                   | Impact                     |
+| --------------------------- | -------------------------------------- | -------------------------- |
+| No entry deletion           | No `this.callCounts.delete()` calls    | Map grows unbounded        |
+| No pruning on window expiry | Old entries kept even after `windowMs` | Stale data accumulates     |
+| No size limit               | No max size check                      | Memory exhaustion possible |
 
 **Memory Growth Calculation**:
 
@@ -400,6 +408,7 @@ Time 0:45  Zombie sits in process table
 ```
 
 Over time, repeated calls accumulate zombies:
+
 ```
 Day 1: 10 zombies
 Day 7: 70 zombies
@@ -418,25 +427,25 @@ Day 30: 300 zombies
 
 ```typescript
 // Line 654
-const { stdout } = await execFileAsync("powershell", [
-  "-NoProfile",
-  "-Command",
-  "Get-Volume | ...",
-], { timeout: 30000 });  // ← ADD THIS
+const { stdout } = await execFileAsync(
+  "powershell",
+  ["-NoProfile", "-Command", "Get-Volume | ..."],
+  { timeout: 30000 },
+); // ← ADD THIS
 
 // Line 686
-const { stdout } = await execFileAsync("powershell", [
-  "-NoProfile",
-  "-Command",
-  `Get-Process | ...`,
-], { timeout: 30000 });  // ← ADD THIS
+const { stdout } = await execFileAsync(
+  "powershell",
+  ["-NoProfile", "-Command", `Get-Process | ...`],
+  { timeout: 30000 },
+); // ← ADD THIS
 
 // Line 708
-const { stdout } = await execFileAsync("powershell", [
-  "-NoProfile",
-  "-Command",
-  "Get-CimInstance Win32_PageFileUsage | ...",
-], { timeout: 30000 });  // ← ADD THIS
+const { stdout } = await execFileAsync(
+  "powershell",
+  ["-NoProfile", "-Command", "Get-CimInstance Win32_PageFileUsage | ..."],
+  { timeout: 30000 },
+); // ← ADD THIS
 ```
 
 ---
@@ -464,7 +473,7 @@ export async function spawnWithKill(
     cwd?: string;
     timeout?: number;
     maxBuffer?: number;
-  } = {}
+  } = {},
 ): Promise<ProcessResult> {
   return new Promise((resolve, reject) => {
     const child: ChildProcess = spawn(command, args, {
@@ -569,6 +578,7 @@ winmgmt /verifyrepository
 ```
 
 **Trigger**:
+
 ```bash
 # Call scan_system via MCP
 curl -X POST http://localhost:8080/mcp/scan_system
@@ -589,6 +599,7 @@ git gc --aggressive
 ```
 
 **Trigger**:
+
 ```bash
 # Call cleanup_execute with git_gc action
 # With 120s timeout
@@ -597,6 +608,7 @@ git gc --aggressive
 **Expected**: After 120s, tool returns error, but `git gc` continues in background.
 
 **Verify Zombie**:
+
 ```powershell
 # PowerShell
 Get-Process git -ErrorAction SilentlyContinue
@@ -658,12 +670,16 @@ Add periodic check:
 
 ```typescript
 // Every 5 minutes
-setInterval(() => {
-  const mem = process.memoryUsage();
-  if (mem.heapUsed > 500 * 1024 * 1024) { // 500MB
-    console.warn(`[MEMORY] High heap usage: ${Math.round(mem.heapUsed / 1024 / 1024)}MB`);
-  }
-}, 5 * 60 * 1000);
+setInterval(
+  () => {
+    const mem = process.memoryUsage();
+    if (mem.heapUsed > 500 * 1024 * 1024) {
+      // 500MB
+      console.warn(`[MEMORY] High heap usage: ${Math.round(mem.heapUsed / 1024 / 1024)}MB`);
+    }
+  },
+  5 * 60 * 1000,
+);
 ```
 
 ### Zombie Detection
@@ -683,14 +699,14 @@ const { stdout } = await execFileAsync("powershell", [
 
 ## Appendix: Audit Reports
 
-| Report | Path |
-|--------|------|
-| shared-types audit | `.windsurf/plans/shared-types-ghost-process-audit-d71fb5.md` |
+| Report                | Path                                                            |
+| --------------------- | --------------------------------------------------------------- |
+| shared-types audit    | `.windsurf/plans/shared-types-ghost-process-audit-d71fb5.md`    |
 | maintain-server audit | `.windsurf/plans/maintain-server-ghost-process-audit-d71fb5.md` |
-| Comprehensive summary | `.windsurf/plans/workspace-bug-audit-d71fb5.md` |
+| Comprehensive summary | `.windsurf/plans/workspace-bug-audit-d71fb5.md`                 |
 
 ---
 
-*Generated: 2026-03-17 07:57 UTC+06:00*
-*Auditor: Cascade AI*
-*Scope: shared-types, maintain-server*
+_Generated: 2026-03-17 07:57 UTC+06:00_
+_Auditor: Cascade AI_
+_Scope: shared-types, maintain-server_

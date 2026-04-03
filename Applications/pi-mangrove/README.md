@@ -24,29 +24,29 @@ Project-local auto-load is supported through `.pi/settings.json`:
 
 ### Tools
 
-| Tool | Description |
-|------|-------------|
-| `dio_episode_summary` | Read DIO episode structure through the Python bridge |
-| `dio:status` | Query DIO constants such as `CADENCE` and `RHYTHM_PASS_COUNT` |
-| `security:audit` | Run the underscore isolation security audit in scan-only mode |
+| Tool                  | Description                                                   |
+| --------------------- | ------------------------------------------------------------- |
+| `dio_episode_summary` | Read DIO episode structure through the Python bridge          |
+| `dio:status`          | Query DIO constants such as `CADENCE` and `RHYTHM_PASS_COUNT` |
+| `security:audit`      | Run the underscore isolation security audit in scan-only mode |
 
 ### Skills
 
-| Skill | Use When |
-|-------|----------|
-| `iterate` | Planning and delivering project work through understand → plan → implement → verify |
-| `glimpse` | Working on the Glimpse cognitive engine, config graph, rules, views, or validation flow |
-| `lifeguard-review` | Reviewing backend or API code against production safety and integration rules |
-| `trust-layer-review` | Running a trust-layer and safety-first review on production-facing changes |
+| Skill                | Use When                                                                                |
+| -------------------- | --------------------------------------------------------------------------------------- |
+| `iterate`            | Planning and delivering project work through understand → plan → implement → verify     |
+| `glimpse`            | Working on the Glimpse cognitive engine, config graph, rules, views, or validation flow |
+| `lifeguard-review`   | Reviewing backend or API code against production safety and integration rules           |
+| `trust-layer-review` | Running a trust-layer and safety-first review on production-facing changes              |
 
 ### Prompts
 
-| Prompt | Purpose |
-|--------|---------|
-| `/mangrove-dev` | Development guide for extending the pi-mangrove package |
-| `/tuv-review` | TUV-001 contract audit against fidelity, integrity, and accountability clauses |
-| `/safety-gate` | Focused go/no-go safety review before merge, deployment, or risky actions |
-| `/push-green` | Push, monitor CI, log failures, fix, and iterate until all status checks pass |
+| Prompt          | Purpose                                                                        |
+| --------------- | ------------------------------------------------------------------------------ |
+| `/mangrove-dev` | Development guide for extending the pi-mangrove package                        |
+| `/tuv-review`   | TUV-001 contract audit against fidelity, integrity, and accountability clauses |
+| `/safety-gate`  | Focused go/no-go safety review before merge, deployment, or risky actions      |
+| `/push-green`   | Push, monitor CI, log failures, fix, and iterate until all status checks pass  |
 
 ## Development
 

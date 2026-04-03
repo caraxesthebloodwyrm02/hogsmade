@@ -10,11 +10,36 @@ interface CiKanbanProps {
 type Lane = "pending" | "scanning" | "building" | "merged" | "fix-queue";
 
 const LANES: { id: Lane; label: string; color: string; bgClass: string }[] = [
-  { id: "pending", label: "Pending", color: "text-gray-400", bgClass: "bg-gray-500/10 border-gray-500/20" },
-  { id: "scanning", label: "Scanning", color: "text-amber-400", bgClass: "bg-amber-400/10 border-amber-400/20" },
-  { id: "building", label: "Building", color: "text-blue-400", bgClass: "bg-blue-400/10 border-blue-400/20" },
-  { id: "merged", label: "Merged", color: "text-emerald-400", bgClass: "bg-emerald-500/10 border-emerald-500/20" },
-  { id: "fix-queue", label: "Fix Queue", color: "text-rose-400", bgClass: "bg-rose-500/10 border-rose-500/20" },
+  {
+    id: "pending",
+    label: "Pending",
+    color: "text-gray-400",
+    bgClass: "bg-gray-500/10 border-gray-500/20",
+  },
+  {
+    id: "scanning",
+    label: "Scanning",
+    color: "text-amber-400",
+    bgClass: "bg-amber-400/10 border-amber-400/20",
+  },
+  {
+    id: "building",
+    label: "Building",
+    color: "text-blue-400",
+    bgClass: "bg-blue-400/10 border-blue-400/20",
+  },
+  {
+    id: "merged",
+    label: "Merged",
+    color: "text-emerald-400",
+    bgClass: "bg-emerald-500/10 border-emerald-500/20",
+  },
+  {
+    id: "fix-queue",
+    label: "Fix Queue",
+    color: "text-rose-400",
+    bgClass: "bg-rose-500/10 border-rose-500/20",
+  },
 ];
 
 function timeAgo(ts: string): string {
@@ -38,9 +63,7 @@ function PrCard({ pr }: { pr: PipelinePR }) {
     >
       <div className="flex items-start gap-2">
         <GitPullRequest className="w-3.5 h-3.5 text-ink-muted shrink-0 mt-0.5" />
-        <span className="text-xs font-medium text-ink leading-tight line-clamp-2">
-          {pr.title}
-        </span>
+        <span className="text-xs font-medium text-ink leading-tight line-clamp-2">{pr.title}</span>
       </div>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1.5">
@@ -77,11 +100,7 @@ function PrCard({ pr }: { pr: PipelinePR }) {
           </span>
         )}
       </div>
-      {pr.repo && (
-        <div className="text-[10px] text-ink-muted font-mono truncate">
-          {pr.repo}
-        </div>
-      )}
+      {pr.repo && <div className="text-[10px] text-ink-muted font-mono truncate">{pr.repo}</div>}
     </Wrapper>
   );
 }
@@ -117,16 +136,20 @@ export function CiKanban({ prs, loading }: CiKanbanProps) {
           const items = byLane(lane.id);
           return (
             <div key={lane.id} className="min-w-0">
-              <div className={cn(
-                "flex items-center justify-between px-2.5 py-1.5 rounded-t-lg border-b-2 mb-2",
-                lane.bgClass,
-              )}>
-                <span className={cn("text-xs font-bold", lane.color)}>{lane.label}</span>
-                <span className={cn(
-                  "text-[10px] font-mono px-1.5 py-0.5 rounded-full",
+              <div
+                className={cn(
+                  "flex items-center justify-between px-2.5 py-1.5 rounded-t-lg border-b-2 mb-2",
                   lane.bgClass,
-                  lane.color,
-                )}>
+                )}
+              >
+                <span className={cn("text-xs font-bold", lane.color)}>{lane.label}</span>
+                <span
+                  className={cn(
+                    "text-[10px] font-mono px-1.5 py-0.5 rounded-full",
+                    lane.bgClass,
+                    lane.color,
+                  )}
+                >
                   {items.length}
                 </span>
               </div>

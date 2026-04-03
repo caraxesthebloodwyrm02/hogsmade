@@ -443,7 +443,8 @@ export class AuditIntegrityGuard {
         policyId: "P-INT-003",
         description: "Flag anomalous snapshot score deltas",
         threatBasis: "TM-004",
-        condition: (ctx) => Math.abs((ctx["scoreDelta"] as number) ?? 0) > AuditIntegrityGuard.MAX_SCORE_DELTA,
+        condition: (ctx) =>
+          Math.abs((ctx["scoreDelta"] as number) ?? 0) > AuditIntegrityGuard.MAX_SCORE_DELTA,
         verdictOnMatch: "escalate",
         reasonTemplate: "Snapshot score delta exceeds threshold",
       },
@@ -468,7 +469,10 @@ export class GateSecurityPolicy {
   /**
    * P-INT-004: Nonce must be registered and not burned.
    */
-  static validateNonce(nonce: string | undefined, registry: Record<string, { burned?: boolean }>): PolicyResult {
+  static validateNonce(
+    nonce: string | undefined,
+    registry: Record<string, { burned?: boolean }>,
+  ): PolicyResult {
     if (!nonce) {
       return {
         policyId: "P-INT-004",
@@ -600,7 +604,10 @@ export class GateSecurityPolicy {
     const expected = crypto.createHmac("sha256", secret).update(message).digest("hex");
 
     try {
-      return crypto.timingSafeEqual(Buffer.from(expected, "hex"), Buffer.from(declaredFingerprint, "hex"));
+      return crypto.timingSafeEqual(
+        Buffer.from(expected, "hex"),
+        Buffer.from(declaredFingerprint, "hex"),
+      );
     } catch {
       return false;
     }
@@ -739,7 +746,11 @@ export class OwnershipGovernance {
   /**
    * P-GOV-001: Require additional review for sensitive path changes.
    */
-  static checkSensitivePR(changedPaths: string[], reviewerCount: number, requiredReviewers = 2): PolicyResult {
+  static checkSensitivePR(
+    changedPaths: string[],
+    reviewerCount: number,
+    requiredReviewers = 2,
+  ): PolicyResult {
     const sensitiveChanges = changedPaths.filter((p) =>
       OwnershipGovernance.SENSITIVE_PATHS.some((sp) => p.includes(sp)),
     );
@@ -810,7 +821,9 @@ export class OwnershipGovernance {
    * P-GOV-003: Require test coverage for security changes.
    */
   static checkTestCoverage(changedPaths: string[]): PolicyResult {
-    const securityChanges = changedPaths.filter((p) => p.includes("security/") || p.includes("auth/"));
+    const securityChanges = changedPaths.filter(
+      (p) => p.includes("security/") || p.includes("auth/"),
+    );
     const testChanges = changedPaths.filter((p) => p.includes("test") || p.includes("spec"));
 
     if (securityChanges.length > 0 && testChanges.length === 0) {
@@ -827,7 +840,10 @@ export class OwnershipGovernance {
     return {
       policyId: "P-GOV-003",
       verdict: "allow",
-      reason: securityChanges.length > 0 ? "Security changes include test coverage" : "No security paths modified",
+      reason:
+        securityChanges.length > 0
+          ? "Security changes include test coverage"
+          : "No security paths modified",
       threatBasis: "OWN-001",
       timestamp: new Date().toISOString(),
     };
@@ -842,7 +858,9 @@ export class OwnershipGovernance {
         condition: (ctx) => {
           const changed = ctx["changedPaths"] as string[] | undefined;
           if (!changed) return false;
-          const hasSensitive = changed.some((p) => OwnershipGovernance.SENSITIVE_PATHS.some((sp) => p.includes(sp)));
+          const hasSensitive = changed.some((p) =>
+            OwnershipGovernance.SENSITIVE_PATHS.some((sp) => p.includes(sp)),
+          );
           return hasSensitive && ((ctx["reviewerCount"] as number) ?? 0) < 2;
         },
         verdictOnMatch: "deny",
@@ -876,7 +894,9 @@ export class OwnershipGovernance {
         condition: (ctx) => {
           const changed = ctx["changedPaths"] as string[] | undefined;
           if (!changed) return false;
-          const hasSecurityChanges = changed.some((p) => p.includes("security/") || p.includes("auth/"));
+          const hasSecurityChanges = changed.some(
+            (p) => p.includes("security/") || p.includes("auth/"),
+          );
           const hasTestChanges = changed.some((p) => p.includes("test") || p.includes("spec"));
           return hasSecurityChanges && !hasTestChanges;
         },

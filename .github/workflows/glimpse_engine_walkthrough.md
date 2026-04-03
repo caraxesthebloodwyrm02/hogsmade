@@ -163,7 +163,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: "22"
           cache: npm
           cache-dependency-path: shared-types/package-lock.json
 
@@ -188,7 +188,7 @@ The **servers job** uses a matrix strategy to test all servers in parallel, with
 
 - name: Build server
   env:
-    NODE_OPTIONS: '--max-old-space-size=8192'
+    NODE_OPTIONS: "--max-old-space-size=8192"
   run: npm ci -w ${{ matrix.project }} && npm run build -w ${{ matrix.project }}
 
 - name: Test server
@@ -220,15 +220,15 @@ The CLI is the **user-facing entry point** that orchestrates the entire Glimpse 
 // @/home/caraxes/CascadeProjects/glimpse-engine/cli.js:27-38
 const args = process.argv.slice(2);
 const flags = {
-  interview: args.includes('--interview'),
-  json: args.includes('--json'),
-  quiet: args.includes('--quiet'),
-  brief: args.includes('--brief'),
-  help: args.includes('--help') || args.includes('-h'),
-  realtime: args.includes('--realtime'),
+  interview: args.includes("--interview"),
+  json: args.includes("--json"),
+  quiet: args.includes("--quiet"),
+  brief: args.includes("--brief"),
+  help: args.includes("--help") || args.includes("-h"),
+  realtime: args.includes("--realtime"),
 };
-const positional = args.filter(a => !a.startsWith('--') && !a.startsWith('-'));
-const command = positional[0] || 'help';
+const positional = args.filter((a) => !a.startsWith("--") && !a.startsWith("-"));
+const command = positional[0] || "help";
 const target = positional[1] || null;
 ```
 
@@ -347,3 +347,4 @@ master-config.js (parser) → parseMasterConfig()
     ├─→ bootstrap_glimpse_logic.mjs (validation)
     ├─→ glimpse-engine.test.mjs (testing)
     └─→ runner.js → engine.js (runtime)
+```

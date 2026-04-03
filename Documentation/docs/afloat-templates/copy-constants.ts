@@ -36,16 +36,11 @@ export function tierLabel(raw: string | undefined): string {
 
 export const ERRORS = {
   generic: "Something went wrong. Please try again.",
-  sessionStart:
-    "We couldn't start your session. Check your connection and try again.",
-  settingsLoad:
-    "We couldn't load your settings. Try refreshing the page.",
-  settingsSave:
-    "Your changes weren't saved. Please try again.",
-  settingsDelete:
-    "We couldn't process your deletion request. Please try again or contact support.",
-  subscriptionLoad:
-    "We couldn't load your subscription details. Please try again.",
+  sessionStart: "We couldn't start your session. Check your connection and try again.",
+  settingsLoad: "We couldn't load your settings. Try refreshing the page.",
+  settingsSave: "Your changes weren't saved. Please try again.",
+  settingsDelete: "We couldn't process your deletion request. Please try again or contact support.",
+  subscriptionLoad: "We couldn't load your subscription details. Please try again.",
   notFound: "We couldn't find that page.",
 } as const;
 

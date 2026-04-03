@@ -258,7 +258,7 @@
       {
         "id": "KPI-01",
         "name": "gate_verification_success_rate",
-        "threshold": 0.90,
+        "threshold": 0.9,
         "unit": "ratio",
         "measurement": "passed_envelopes / total_envelopes_received",
         "window": "rolling_30_day",

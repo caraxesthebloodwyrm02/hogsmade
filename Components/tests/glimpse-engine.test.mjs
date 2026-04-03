@@ -7,7 +7,12 @@ import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
 import { parseMasterConfig } from "../../Applications/glimpse-engine/master-config.js";
 import { DEFAULT_MASTER_YAML } from "../../Applications/glimpse-engine/default-master.js";
-import { runContextPipeline, compileRuleFromConversation, parseQueryIntent, validateConfigWithRegistry } from "../../Applications/glimpse-engine/core/engine.js";
+import {
+  runContextPipeline,
+  compileRuleFromConversation,
+  parseQueryIntent,
+  validateConfigWithRegistry,
+} from "../../Applications/glimpse-engine/core/engine.js";
 import { rankViews } from "../../Applications/glimpse-engine/view-specs.js";
 
 const config = parseMasterConfig(DEFAULT_MASTER_YAML);
@@ -50,20 +55,29 @@ test("mixed ambiguous data remains stable across repeated runs", () => {
   const first = runContextPipeline(data, "json", config, { presetId: "analyst" });
   const second = runContextPipeline(data, "json", config, { presetId: "analyst" });
 
-  assert.deepEqual(first.contextLenses.map((lens) => lens.id), second.contextLenses.map((lens) => lens.id));
+  assert.deepEqual(
+    first.contextLenses.map((lens) => lens.id),
+    second.contextLenses.map((lens) => lens.id),
+  );
   assert.deepEqual(rankViews(first, config, "analyst"), rankViews(second, config, "analyst"));
 });
 
 test("conversational rule creation compiles into a valid map-support rule", () => {
   const result = compileRuleFromConversation(
     "When records share the same country, favor the map view and treat geography as a supporting context.",
-    config
+    config,
   );
 
   assert.ok(result);
   assert.equal(result.ambiguous, false);
-  assert.ok(result.rule.derive.some((action) => action.action === "boost_lens" && action.lens === "geography"));
-  assert.ok(result.rule.derive.some((action) => action.action === "prefer_view" && action.view === "map"));
+  assert.ok(
+    result.rule.derive.some(
+      (action) => action.action === "boost_lens" && action.lens === "geography",
+    ),
+  );
+  assert.ok(
+    result.rule.derive.some((action) => action.action === "prefer_view" && action.view === "map"),
+  );
 });
 
 test("semantic query aliases map region-style language to spatial clustering", () => {
@@ -76,21 +90,28 @@ test("disabling a rule removes its effect without breaking the rest of the pipel
   const data = await loadJson("sample-scenario.json");
   const withoutGeoRule = parseMasterConfig(DEFAULT_MASTER_YAML);
   withoutGeoRule.rules = withoutGeoRule.rules.map((rule) =>
-    ["geography-support", "geography-semantic-support"].includes(rule.id) ? { ...rule, enabled: false } : rule
+    ["geography-support", "geography-semantic-support"].includes(rule.id)
+      ? { ...rule, enabled: false }
+      : rule,
   );
 
   const ctx = runContextPipeline(data, "json", withoutGeoRule, { presetId: "storyteller" });
 
   assert.ok(ctx);
   assert.equal(ctx.primaryLens.id, "social");
-  assert.equal(ctx.contextLenses.some((lens) => lens.id === "geography"), false);
+  assert.equal(
+    ctx.contextLenses.some((lens) => lens.id === "geography"),
+    false,
+  );
 });
 
 test("function-backed rules fire and leave trace output", async () => {
   const data = await loadJson("sample-innovations.json");
   const ctx = runContextPipeline(data, "json", config, { presetId: "researcher" });
 
-  const trace = ctx.ruleTraces.find((item) => item.ruleId === "innovation-keyword-support" && item.status === "fired");
+  const trace = ctx.ruleTraces.find(
+    (item) => item.ruleId === "innovation-keyword-support" && item.status === "fired",
+  );
   assert.ok(trace);
   assert.equal(trace.mode, "function");
   assert.equal(trace.functionName, "taxonomy_score");
@@ -127,15 +148,25 @@ test("invalid argument shapes fail closed and do not mutate scoring", () => {
   broken.rules = broken.rules.map((rule) =>
     rule.id === "innovation-keyword-support"
       ? { ...rule, args: { ...rule.args, min_score: "bad-value" } }
-      : rule
+      : rule,
   );
 
   const report = validateConfigWithRegistry(broken);
   assert.ok(report.invalidArgs.some((entry) => entry.includes("innovation-keyword-support")));
 
-  const ctx = runContextPipeline([{ name: "Signal", description: "telegraph network" }], "json", broken, { presetId: "analyst" });
-  assert.ok(ctx.validationReport.invalidArgs.some((entry) => entry.includes("taxonomy_score.min_score")));
-  assert.equal(ctx.contextLenses.some((lens) => lens.id === "innovation"), false);
+  const ctx = runContextPipeline(
+    [{ name: "Signal", description: "telegraph network" }],
+    "json",
+    broken,
+    { presetId: "analyst" },
+  );
+  assert.ok(
+    ctx.validationReport.invalidArgs.some((entry) => entry.includes("taxonomy_score.min_score")),
+  );
+  assert.equal(
+    ctx.contextLenses.some((lens) => lens.id === "innovation"),
+    false,
+  );
 });
 
 test("no-match datasets fall back safely to a general lens and explorer-friendly views", () => {
@@ -154,7 +185,7 @@ test("signal_signature detects acoustic field names after d.name fix", () => {
     { frequency: 880, amplitude: 0.6, phase: 180, delay: 24, label: "tone B" },
   ];
   const ctx = runContextPipeline(data, "json", config, { presetId: "signature" });
-  const trace = ctx.ruleTraces.find(t => t.ruleId === "signal-signature-detection");
+  const trace = ctx.ruleTraces.find((t) => t.ruleId === "signal-signature-detection");
   assert.ok(trace, "signal-signature-detection should have a trace");
   assert.equal(trace.status, "fired", "should fire when acoustic fields present");
   assert.ok(trace.output.value >= 2, "should match at least 2 signal fields");
@@ -166,7 +197,7 @@ test("growth_pattern detects branching field names after d.name fix", () => {
     { parent: "root", child: "leaf-2", depth: 1, label: "node B" },
   ];
   const ctx = runContextPipeline(data, "json", config, { presetId: "signature" });
-  const trace = ctx.ruleTraces.find(t => t.ruleId === "growth-pattern-detection");
+  const trace = ctx.ruleTraces.find((t) => t.ruleId === "growth-pattern-detection");
   assert.ok(trace, "growth-pattern-detection should have a trace");
   assert.equal(trace.status, "fired", "should fire when branch fields present");
   assert.ok(trace.output.value >= 2, "should match at least 2 branching signals");
@@ -174,12 +205,16 @@ test("growth_pattern detects branching field names after d.name fix", () => {
 
 test("bootstrap validation report catches missing registry entries before runtime use", async () => {
   const reportPath = path.join(repoRoot, "tmp", "jupyter-notebook", "test-validation-report.json");
-  await execFileAsync("node", [
-    path.join(repoRoot, "Components/scripts/bootstrap_glimpse_logic.mjs"),
-    "--report-json",
-    reportPath,
-    "--quiet",
-  ], { cwd: repoRoot });
+  await execFileAsync(
+    "node",
+    [
+      path.join(repoRoot, "Components/scripts/bootstrap_glimpse_logic.mjs"),
+      "--report-json",
+      reportPath,
+      "--quiet",
+    ],
+    { cwd: repoRoot },
+  );
 
   const report = JSON.parse(await readFile(reportPath, "utf8"));
   assert.ok(report.registry.count >= 10);

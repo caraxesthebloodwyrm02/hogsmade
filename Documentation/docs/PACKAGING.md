@@ -6,6 +6,7 @@ How to add new packages to hogsmade monorepo.
 
 1. Create directory: `mkdir my-server`
 2. Add `package.json`:
+
 ```json
 {
   "name": "my-server",
@@ -20,6 +21,7 @@ How to add new packages to hogsmade monorepo.
   }
 }
 ```
+
 3. Add to root `package.json` workspaces
 4. Update cross-project smoke test
 

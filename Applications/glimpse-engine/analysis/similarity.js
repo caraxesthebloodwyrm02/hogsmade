@@ -10,8 +10,12 @@
  * Returns 1.0 for identical strings, 0.0 for completely different.
  */
 export function computeStringSimilarity(a, b) {
-  const sa = String(a || "").toLowerCase().trim();
-  const sb = String(b || "").toLowerCase().trim();
+  const sa = String(a || "")
+    .toLowerCase()
+    .trim();
+  const sb = String(b || "")
+    .toLowerCase()
+    .trim();
   if (sa === sb) return 1;
   if (!sa.length || !sb.length) return 0;
 
@@ -29,9 +33,9 @@ export function computeStringSimilarity(a, b) {
     for (let j = 1; j <= lenB; j++) {
       const cost = sa[i - 1] === sb[j - 1] ? 0 : 1;
       curr[j] = Math.min(
-        prev[j] + 1,       // deletion
-        curr[j - 1] + 1,   // insertion
-        prev[j - 1] + cost  // substitution
+        prev[j] + 1, // deletion
+        curr[j - 1] + 1, // insertion
+        prev[j - 1] + cost, // substitution
       );
     }
     [prev, curr] = [curr, prev];
@@ -81,8 +85,12 @@ const SPACE_ALIASES = {
  * Check if two strings are aliases of each other.
  */
 function areAliases(a, b, aliasTable) {
-  const la = String(a || "").toLowerCase().trim();
-  const lb = String(b || "").toLowerCase().trim();
+  const la = String(a || "")
+    .toLowerCase()
+    .trim();
+  const lb = String(b || "")
+    .toLowerCase()
+    .trim();
   if (la === lb) return true;
 
   for (const [key, aliases] of Object.entries(aliasTable)) {

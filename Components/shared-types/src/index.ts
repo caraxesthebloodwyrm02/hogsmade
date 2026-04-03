@@ -1,8 +1,4 @@
-export {
-    AuditEventSchema,
-    AuditQuerySchema,
-    AuditStatusSchema
-} from "./audit.js";
+export { AuditEventSchema, AuditQuerySchema, AuditStatusSchema } from "./audit.js";
 export type { AuditEvent, AuditQuery, AuditStatus } from "./audit.js";
 
 export { HealthCheckResponseSchema } from "./health.js";
@@ -19,27 +15,17 @@ export {
   generateMcpIdentity,
   parseMcpIdentity,
 } from "./merit-policy.js";
-export type {
-  MeritStandingDTO,
-  PermissionCheckResult,
-  MeritAuditEntry,
-} from "./merit-policy.js";
+export type { MeritStandingDTO, PermissionCheckResult, MeritAuditEntry } from "./merit-policy.js";
 
 // Hardened MCP guard (recommended)
-export {
-  HardenedMcpMeritGuard,
-  createHardenedMeritGuard,
-} from "./mcp-guard-hardened.js";
+export { HardenedMcpMeritGuard, createHardenedMeritGuard } from "./mcp-guard-hardened.js";
 export type {
   HardenedMeritGuardConfig,
   GuardedToolOptions as HardenedGuardedToolOptions,
 } from "./mcp-guard-hardened.js";
 
 // Legacy/Standard MCP guard
-export {
-  createMeritGuard,
-  McpMeritGuard,
-} from "./mcp-guard.js";
+export { createMeritGuard, McpMeritGuard } from "./mcp-guard.js";
 export type { MeritGuardConfig, GuardedToolOptions } from "./mcp-guard.js";
 
 export { TelemetrySnapshotSchema } from "./telemetry.js";
@@ -52,43 +38,49 @@ export { generateId } from "./id.js";
 export { McpLogger } from "./mcp-logger.js";
 
 export {
-    ARCHIVE_THRESHOLD_MS,
-    DECAY_THRESHOLD_MS,
-    DEFAULT_COOLDOWN_MS,
-    MAX_OCCURRENCES_PER_RECORD,
-    PRECEDENT_TRIGGER_STATUSES,
-    SUCCESS_DEESCALATION_THRESHOLD,
-    computeEscalationLevel,
-    computeFingerprint,
-    escalationSeverity,
-    fingerprintKey,
-    levelToAction,
+  ARCHIVE_THRESHOLD_MS,
+  DECAY_THRESHOLD_MS,
+  DEFAULT_COOLDOWN_MS,
+  MAX_OCCURRENCES_PER_RECORD,
+  PRECEDENT_TRIGGER_STATUSES,
+  SUCCESS_DEESCALATION_THRESHOLD,
+  computeEscalationLevel,
+  computeFingerprint,
+  escalationSeverity,
+  fingerprintKey,
+  levelToAction,
 } from "./precedent.js";
 export type {
-    EnforcementAction,
-    EscalationLevel,
-    FingerprintInput,
-    PrecedentCategory,
-    PrecedentFingerprint,
-    PrecedentOccurrence,
-    PrecedentRecord,
-    PrecedentResolution,
-    RecurrenceCheckResult,
+  EnforcementAction,
+  EscalationLevel,
+  FingerprintInput,
+  PrecedentCategory,
+  PrecedentFingerprint,
+  PrecedentOccurrence,
+  PrecedentRecord,
+  PrecedentResolution,
+  RecurrenceCheckResult,
 } from "./precedent.js";
 
 export {
-    AuditIntegrityGuard, ExecutionPolicyEngine, GateSecurityPolicy, MCPPolicyEngine, OwnershipGovernance, ReadScopePolicy, SECURITY_TRIGGERS, buildMCPPolicyEngine
+  AuditIntegrityGuard,
+  ExecutionPolicyEngine,
+  GateSecurityPolicy,
+  MCPPolicyEngine,
+  OwnershipGovernance,
+  ReadScopePolicy,
+  SECURITY_TRIGGERS,
+  buildMCPPolicyEngine,
 } from "./security-policy.js";
 export type {
-    PolicyResult,
-    PolicyRule, PolicyVerdict, SecurityTrigger
+  PolicyResult,
+  PolicyRule,
+  PolicyVerdict,
+  SecurityTrigger,
 } from "./security-policy.js";
 
 // Runtime protection
-export {
-  RuntimeErrorBoundary,
-  createRuntimeBoundary,
-} from "./runtime-guard.js";
+export { RuntimeErrorBoundary, createRuntimeBoundary } from "./runtime-guard.js";
 
 // Monitoring
 export {
@@ -109,10 +101,7 @@ export {
   resetAllCircuitBreakers,
   getAllCircuitBreakerStats,
 } from "./circuit-breaker.js";
-export type {
-  CircuitBreakerConfig,
-  CircuitBreakerStats,
-} from "./circuit-breaker.js";
+export type { CircuitBreakerConfig, CircuitBreakerStats } from "./circuit-breaker.js";
 
 // Guard Runtime Configuration
 export {
@@ -141,10 +130,7 @@ export {
   shouldPrint,
   createCorrelationId,
 } from "./guard-logger.js";
-export type {
-  GuardPrintEvent,
-  GuardLogger,
-} from "./guard-logger.js";
+export type { GuardPrintEvent, GuardLogger } from "./guard-logger.js";
 
 // Void Pattern Mitigation Guards (from mcp-guard.ts)
 export {
@@ -154,8 +140,4 @@ export {
   guardedFileWrite,
   guardedServerStartup,
 } from "./mcp-guard.js";
-export type {
-  GuardConfig,
-  OperationResult,
-} from "./mcp-guard.js";
-
+export type { GuardConfig, OperationResult } from "./mcp-guard.js";

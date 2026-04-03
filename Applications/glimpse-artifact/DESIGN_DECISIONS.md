@@ -9,6 +9,7 @@
 ### Problem
 
 Dark mode implementation spans multiple subsystems (design tokens, component variants, canvas rendering, chart colors). A single-release approach risks:
+
 - Inconsistent contrast ratios across views
 - Broken canvas visualization in dark contexts
 - Accessibility regressions
@@ -17,11 +18,11 @@ Dark mode implementation spans multiple subsystems (design tokens, component var
 
 Dark mode will be delivered in **3 long phases** over multiple release cycles, not a single feature drop.
 
-| Phase | Scope | Definition of Done | Timeline |
-|-------|-------|-------------------|----------|
-| **Phase 1: Foundation** | Design tokens, CSS variables, theme provider | All tokens have `--dark` variants; provider switches without FOUC | Release N |
-| **Phase 2: Components** | UI components (cards, buttons, inputs, navigation) | All components respect theme; Dashboard + GATE views render correctly | Release N+1 |
-| **Phase 3: Canvas** | Scenario canvas, SVG connectors, timeline ribbon, annotations | Canvas colors invert correctly; branch lines remain distinguishable; export works in both modes | Release N+2 |
+| Phase                   | Scope                                                         | Definition of Done                                                                              | Timeline    |
+| ----------------------- | ------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ----------- |
+| **Phase 1: Foundation** | Design tokens, CSS variables, theme provider                  | All tokens have `--dark` variants; provider switches without FOUC                               | Release N   |
+| **Phase 2: Components** | UI components (cards, buttons, inputs, navigation)            | All components respect theme; Dashboard + GATE views render correctly                           | Release N+1 |
+| **Phase 3: Canvas**     | Scenario canvas, SVG connectors, timeline ribbon, annotations | Canvas colors invert correctly; branch lines remain distinguishable; export works in both modes | Release N+2 |
 
 ### Rationale
 
@@ -32,10 +33,10 @@ Dark mode will be delivered in **3 long phases** over multiple release cycles, n
 
 ### Trade-offs
 
-| Benefit | Cost |
-|---------|------|
-| Stable intermediate states | Users wait 2 releases for full dark mode |
-| Time to address contrast issues | Maintaining two color systems temporarily |
+| Benefit                             | Cost                                        |
+| ----------------------------------- | ------------------------------------------- |
+| Stable intermediate states          | Users wait 2 releases for full dark mode    |
+| Time to address contrast issues     | Maintaining two color systems temporarily   |
 | Canvas-specific challenges isolated | Engineering context switches between phases |
 
 ### Migration Path
@@ -53,4 +54,4 @@ Dark mode will be delivered in **3 long phases** over multiple release cycles, n
 
 ---
 
-*Decisions follow ADR format: Context → Decision → Rationale → Trade-offs → Migration*
+_Decisions follow ADR format: Context → Decision → Rationale → Trade-offs → Migration_

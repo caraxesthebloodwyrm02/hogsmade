@@ -126,41 +126,49 @@ function transformGateResponse(api: GateApiResponse): GateSnapshot {
 const MOCK_GATE_DATA: GateSnapshot = (() => {
   const debugContext = createDebugLogContext("gate-flow");
   return {
-    verifications: [{
-      id: "envelope_GRID-main_fec6aa7f",
-      workflowName: "GRID-main v2.6.1 — feature/search-service-guardrail",
-      status: "completed" as const,
-      startedAt: "2026-03-07T23:09:04.591Z",
-      completedAt: "2026-03-07T23:09:09.191Z",
-      elapsedMs: 5,
-      steps: GATE_STEPS.map((s) => ({
-        name: stepLabel(s),
-        status: "done" as const,
-        durationMs: 0.511,
-      })),
-    }],
-    auditEvents: [{
-      id: "ga-real-1",
-      timestamp: "2026-03-07T23:09:04.591Z",
-      tool: "validate_envelope",
-      source: "grid-server",
-      status: "success" as const,
-      durationMs: 5,
-      summary: "Envelope passed all 9 checks in 4.6ms",
-    }],
-    nonces: [{
-      nonce: "c8409de9",
-      usedAt: "2026-03-07T23:09:04.591Z",
-      envelopeId: "edb45829-9ae6",
-      status: "consumed" as const,
-    }],
-    deployments: [{
-      id: "dep-real-1",
-      envelopeName: "GRID-main v2.6.1 (4ff0d47)",
-      deployedAt: "2026-03-07T23:09:04.591Z",
-      riskScore: 5,
-      result: "success" as const,
-    }],
+    verifications: [
+      {
+        id: "envelope_GRID-main_fec6aa7f",
+        workflowName: "GRID-main v2.6.1 — feature/search-service-guardrail",
+        status: "completed" as const,
+        startedAt: "2026-03-07T23:09:04.591Z",
+        completedAt: "2026-03-07T23:09:09.191Z",
+        elapsedMs: 5,
+        steps: GATE_STEPS.map((s) => ({
+          name: stepLabel(s),
+          status: "done" as const,
+          durationMs: 0.511,
+        })),
+      },
+    ],
+    auditEvents: [
+      {
+        id: "ga-real-1",
+        timestamp: "2026-03-07T23:09:04.591Z",
+        tool: "validate_envelope",
+        source: "grid-server",
+        status: "success" as const,
+        durationMs: 5,
+        summary: "Envelope passed all 9 checks in 4.6ms",
+      },
+    ],
+    nonces: [
+      {
+        nonce: "c8409de9",
+        usedAt: "2026-03-07T23:09:04.591Z",
+        envelopeId: "edb45829-9ae6",
+        status: "consumed" as const,
+      },
+    ],
+    deployments: [
+      {
+        id: "dep-real-1",
+        envelopeName: "GRID-main v2.6.1 (4ff0d47)",
+        deployedAt: "2026-03-07T23:09:04.591Z",
+        riskScore: 5,
+        result: "success" as const,
+      },
+    ],
     debugContext,
   };
 })();

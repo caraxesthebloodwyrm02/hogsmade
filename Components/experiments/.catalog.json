@@ -7,9 +7,7 @@
       "status": "draft",
       "script": "/home/caraxes/CascadeProjects/experiments/exp-1774725628978-50087f9b.py",
       "language": "python",
-      "tags": [
-        "baseline"
-      ],
+      "tags": ["baseline"],
       "createdAt": "2026-03-28T19:20:28.978Z",
       "updatedAt": "2026-03-28T19:20:28.978Z"
     },
@@ -20,9 +18,7 @@
       "status": "draft",
       "script": "/home/caraxes/CascadeProjects/experiments/exp-1774725639719-a9011b6f.py",
       "language": "python",
-      "tags": [
-        "baseline"
-      ],
+      "tags": ["baseline"],
       "createdAt": "2026-03-28T19:20:39.719Z",
       "updatedAt": "2026-03-28T19:20:39.719Z"
     },
@@ -33,10 +29,7 @@
       "status": "draft",
       "script": "/home/caraxes/CascadeProjects/experiments/exp-1774726123364-2b94939e.py",
       "language": "python",
-      "tags": [
-        "baseline",
-        "performance"
-      ],
+      "tags": ["baseline", "performance"],
       "createdAt": "2026-03-28T19:28:43.364Z",
       "updatedAt": "2026-03-28T19:28:43.364Z"
     },
@@ -47,11 +40,7 @@
       "status": "draft",
       "script": "/home/caraxes/CascadeProjects/experiments/exp-1774726132577-41a99dc5.py",
       "language": "python",
-      "tags": [
-        "baseline",
-        "performance",
-        "query"
-      ],
+      "tags": ["baseline", "performance", "query"],
       "createdAt": "2026-03-28T19:28:52.577Z",
       "updatedAt": "2026-03-28T19:28:52.577Z"
     },
@@ -62,11 +51,7 @@
       "status": "draft",
       "script": "/home/caraxes/CascadeProjects/experiments/exp-1774726149104-2136b1ba.sh",
       "language": "bash",
-      "tags": [
-        "baseline",
-        "echoes",
-        "throughput"
-      ],
+      "tags": ["baseline", "echoes", "throughput"],
       "createdAt": "2026-03-28T19:29:09.104Z",
       "updatedAt": "2026-03-28T19:29:09.104Z"
     },
@@ -77,11 +62,7 @@
       "status": "draft",
       "script": "/home/caraxes/CascadeProjects/experiments/exp-1774726158722-c4105aee.sh",
       "language": "bash",
-      "tags": [
-        "baseline",
-        "echoes",
-        "latency"
-      ],
+      "tags": ["baseline", "echoes", "latency"],
       "createdAt": "2026-03-28T19:29:18.722Z",
       "updatedAt": "2026-03-28T19:29:18.722Z"
     }

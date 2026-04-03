@@ -1,5 +1,12 @@
 import { create } from "zustand";
-import type { BoardKnob, BoardPreset, BoardSnapshot, House, KnobState, HealthIndicator } from "../types/board";
+import type {
+  BoardKnob,
+  BoardPreset,
+  BoardSnapshot,
+  House,
+  KnobState,
+  HealthIndicator,
+} from "../types/board";
 import { TOOL_REGISTRY } from "../data/tool-registry";
 
 interface BoardStore {
@@ -38,7 +45,7 @@ function computeHash(obj: unknown): string {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
     const char = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
+    hash = (hash << 5) - hash + char;
     hash |= 0;
   }
   return Math.abs(hash).toString(16).padStart(8, "0");
@@ -122,23 +129,26 @@ export const useBoardStore = create<BoardStore>((set, get) => ({
 
   selectKnob: (id) => set({ selectedKnobId: id, screenFocus: id }),
 
-  toggleHouse: (house) => set((state) => {
-    const visible = state.visibleHouses.includes(house)
-      ? state.visibleHouses.filter((h) => h !== house)
-      : [...state.visibleHouses, house];
-    return { visibleHouses: visible.length > 0 ? visible : [house] };
-  }),
+  toggleHouse: (house) =>
+    set((state) => {
+      const visible = state.visibleHouses.includes(house)
+        ? state.visibleHouses.filter((h) => h !== house)
+        : [...state.visibleHouses, house];
+      return { visibleHouses: visible.length > 0 ? visible : [house] };
+    }),
 
   setScreenFocus: (id) => set({ screenFocus: id }),
   setSearchQuery: (query) => set({ searchQuery: query }),
 
-  updateKnobFlags: (knobId, flags) => set((state) => ({
-    knobs: state.knobs.map((k) => k.id === knobId ? { ...k, flags } : k),
-  })),
+  updateKnobFlags: (knobId, flags) =>
+    set((state) => ({
+      knobs: state.knobs.map((k) => (k.id === knobId ? { ...k, flags } : k)),
+    })),
 
-  updateKnobHealth: (knobId, health) => set((state) => ({
-    knobs: state.knobs.map((k) => k.id === knobId ? { ...k, healthIndicator: health } : k),
-  })),
+  updateKnobHealth: (knobId, health) =>
+    set((state) => ({
+      knobs: state.knobs.map((k) => (k.id === knobId ? { ...k, healthIndicator: health } : k)),
+    })),
 
   savePreset: (name, description) => {
     const state = get();
@@ -165,10 +175,11 @@ export const useBoardStore = create<BoardStore>((set, get) => ({
     });
   },
 
-  deletePreset: (presetId) => set((state) => ({
-    presets: state.presets.filter((p) => p.id !== presetId),
-    activePresetId: state.activePresetId === presetId ? null : state.activePresetId,
-  })),
+  deletePreset: (presetId) =>
+    set((state) => ({
+      presets: state.presets.filter((p) => p.id !== presetId),
+      activePresetId: state.activePresetId === presetId ? null : state.activePresetId,
+    })),
 
   takeSnapshot: (label) => {
     const state = get();
@@ -209,11 +220,12 @@ export const useBoardStore = create<BoardStore>((set, get) => ({
     let knobs = state.knobs.filter((k) => state.visibleHouses.includes(k.house));
     if (state.searchQuery) {
       const q = state.searchQuery.toLowerCase();
-      knobs = knobs.filter((k) =>
-        k.id.toLowerCase().includes(q) ||
-        k.label.toLowerCase().includes(q) ||
-        k.description.toLowerCase().includes(q) ||
-        k.server.toLowerCase().includes(q)
+      knobs = knobs.filter(
+        (k) =>
+          k.id.toLowerCase().includes(q) ||
+          k.label.toLowerCase().includes(q) ||
+          k.description.toLowerCase().includes(q) ||
+          k.server.toLowerCase().includes(q),
       );
     }
     return knobs;

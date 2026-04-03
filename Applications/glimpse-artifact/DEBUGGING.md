@@ -13,15 +13,18 @@ npm run lint     # Run linter
 ## Common Issues & Fixes
 
 ### Issue 1: Data/Loading Mismatches in GateView
+
 **Symptoms**: Components show loading state but also try to render undefined data, causing UI inconsistencies.
 
 **Root Cause**: `data={loading ? undefined : run}` pattern caused logical conflicts when loading is true.
 
 **Fix**: Separate loading and data rendering paths:
+
 ```tsx
-{loading
-  ? Array.from({ length: 3 }).map((_, i) => <WorkflowStatusCard key={`loading-${i}`} loading />)
-  : verifications.map((run) => <WorkflowStatusCard key={run.id} data={run} loading={false} />)
+{
+  loading
+    ? Array.from({ length: 3 }).map((_, i) => <WorkflowStatusCard key={`loading-${i}`} loading />)
+    : verifications.map((run) => <WorkflowStatusCard key={run.id} data={run} loading={false} />);
 }
 ```
 
@@ -30,11 +33,13 @@ npm run lint     # Run linter
 ---
 
 ### Issue 2: Random durationMs Inconsistency
+
 **Symptoms**: Mock data shows different duration values on each render, causing flickering or inconsistent UI.
 
 **Root Cause**: `Math.random()` called during array initialization, executed on every render.
 
 **Fix**: Pre-generate mock data in a function and store in constant:
+
 ```tsx
 const generateMockVerifications = (): WorkflowRun[] => [...];
 const MOCK_VERIFICATIONS = generateMockVerifications();
@@ -45,11 +50,13 @@ const MOCK_VERIFICATIONS = generateMockVerifications();
 ---
 
 ### Issue 3: Module-level ID Counter Collisions
+
 **Symptoms**: ID collisions when component unmounts/remounts, leading to duplicate keys and React warnings.
 
 **Root Cause**: Module-level `let _idCounter = 100` persists across component lifecycles.
 
 **Fix**: Use `useRef` for component-scoped counter:
+
 ```tsx
 const idCounter = useRef(100);
 const id = `seed-${++idCounter.current}`;
@@ -60,6 +67,7 @@ const id = `seed-${++idCounter.current}`;
 ---
 
 ### Issue 4: Performance Lag from Multiple State Updates
+
 **Symptoms**: UI freezes or lags when adding new nodes to the canvas.
 
 **Root Cause**: Multiple `setState` calls in sequence trigger multiple re-renders.
@@ -71,14 +79,16 @@ const id = `seed-${++idCounter.current}`;
 ---
 
 ### Issue 5: Expensive Operations on Every Render
+
 **Symptoms**: Canvas becomes slow with many nodes, filtering operations run repeatedly.
 
 **Root Cause**: Filtering and mapping operations run on every render without memoization.
 
 **Fix**: Use `useMemo` for expensive computations:
+
 ```tsx
-const seedNodes = useMemo(() => nodes.filter((n) => n.type === 'seed'), [nodes]);
-const glimpseNodes = useMemo(() => nodes.filter((n) => n.type === 'glimpse'), [nodes]);
+const seedNodes = useMemo(() => nodes.filter((n) => n.type === "seed"), [nodes]);
+const glimpseNodes = useMemo(() => nodes.filter((n) => n.type === "glimpse"), [nodes]);
 ```
 
 **File**: `src/views/ScenarioCanvasView.tsx`
@@ -86,13 +96,18 @@ const glimpseNodes = useMemo(() => nodes.filter((n) => n.type === 'glimpse'), [n
 ---
 
 ### Issue 6: Artificial Lag in Mock Data Hooks
+
 **Symptoms**: UI feels sluggish, 500-800ms delays on initial load.
 
 **Root Cause**: `setTimeout` delays in all mock data hooks (useHealthData, useAuditStream, etc.).
 
 **Fix**: Reduce delays from 500-800ms to 200ms for better UX while maintaining loading state visualization:
+
 ```tsx
-setTimeout(() => { setData(MOCK_DATA); setLoading(false); }, 200);
+setTimeout(() => {
+  setData(MOCK_DATA);
+  setLoading(false);
+}, 200);
 ```
 
 **Files**: All hooks in `src/hooks/`
@@ -102,12 +117,14 @@ setTimeout(() => { setData(MOCK_DATA); setLoading(false); }, 200);
 ## Debugging Workflow
 
 ### 1. Reproduce the Issue
+
 - Start dev server: `npm run dev`
 - Open browser console (F12)
 - Reproduce the failing behavior
 - Record exact steps, console errors, and network requests
 
 ### 2. Identify the Root Cause
+
 - Check React DevTools for component re-renders
 - Use console.log or debugger to trace execution
 - Look for:
@@ -117,17 +134,20 @@ setTimeout(() => { setData(MOCK_DATA); setLoading(false); }, 200);
   - Unnecessary re-renders
 
 ### 3. Implement Minimal Fix
+
 - Make the smallest change that fixes the issue
 - Add a test if applicable
 - Verify the fix works
 
 ### 4. Refactor for Clarity
+
 - Extract helper functions for repeated logic
 - Add memoization for expensive operations
 - Improve variable naming
 - Remove dead code
 
 ### 5. Verify
+
 - Run `npm run build` to ensure no TypeScript errors
 - Run `npm run lint` to ensure code quality
 - Test the fix in the browser
@@ -138,12 +158,14 @@ setTimeout(() => { setData(MOCK_DATA); setLoading(false); }, 200);
 ## Afterhours Debug Sprint Checklist
 
 ### Before Starting
+
 - [ ] Create feature branch: `git checkout -b fix/red-<short-desc>`
 - [ ] Note current time (must be within 21:00–03:00 Asia/Dhaka)
 - [ ] Set 90-minute timer
 - [ ] Identify who to page if stuck
 
 ### During Sprint
+
 - [ ] Reproduce the issue locally
 - [ ] Capture logs and stack traces
 - [ ] Implement minimal fix
@@ -153,6 +175,7 @@ setTimeout(() => { setData(MOCK_DATA); setLoading(false); }, 200);
 - [ ] Test in browser
 
 ### Before Merging
+
 - [ ] PR size ≤ 200 LOC
 - [ ] CI checks pass
 - [ ] Coverage not decreased
@@ -162,6 +185,7 @@ setTimeout(() => { setData(MOCK_DATA); setLoading(false); }, 200);
 - [ ] One reviewer sign-off
 
 ### Escalation Path
+
 1. If stuck after 30 minutes: Create follow-up ticket with repro and logs
 2. If production issue: Page on-call engineer
 3. If unsure about safety: Ask for code review before proceeding
@@ -201,18 +225,21 @@ git checkout HEAD~1 -- path/to/file.ts
 When adding telemetry for debug workflows:
 
 1. **Timestamps**: Store in UTC, display in local timezone (Asia/Dhaka: UTC+06:00)
+
    ```typescript
    const timestamp = new Date().toISOString(); // UTC
-   const localTime = new Date().toLocaleString('en-US', { timeZone: 'Asia/Dhaka' });
+   const localTime = new Date().toLocaleString("en-US", { timeZone: "Asia/Dhaka" });
    ```
 
 2. **Request IDs**: Include unique request ID in all logs
+
    ```typescript
    const requestId = crypto.randomUUID();
    console.log(`[${requestId}] Starting operation...`);
    ```
 
 3. **Structured Logs**: Use consistent format
+
    ```typescript
    console.log(JSON.stringify({
      timestamp: new Date().toISOString(),
@@ -228,13 +255,15 @@ When adding telemetry for debug workflows:
    try {
      // operation
    } catch (error) {
-     console.error(JSON.stringify({
-       timestamp: new Date().toISOString(),
-       requestId,
-       level: 'error',
-       event: 'operation_name',
-       error: error.message,
-       stack: error.stack
-     }));
+     console.error(
+       JSON.stringify({
+         timestamp: new Date().toISOString(),
+         requestId,
+         level: "error",
+         event: "operation_name",
+         error: error.message,
+         stack: error.stack,
+       }),
+     );
    }
    ```

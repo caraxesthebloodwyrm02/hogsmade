@@ -1,23 +1,19 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
-import React from 'react';
-import { renderToStaticMarkup } from 'react-dom/server';
+import test from "node:test";
+import assert from "node:assert/strict";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import type {
   BeatRailEntry,
   MomentumFrame,
   PromotionGateResult,
-} from '../src/components/phase4/types';
-import {
-  BeatRailPanel,
-  MomentumPanel,
-  PromotionGatePanel,
-} from '../src/views/EvolutionCycleView';
+} from "../src/components/phase4/types";
+import { BeatRailPanel, MomentumPanel, PromotionGatePanel } from "../src/views/EvolutionCycleView";
 
 const beatRail: BeatRailEntry[] = [
-  { beat: 'map', state: 'complete' },
-  { beat: 'balance', state: 'complete' },
-  { beat: 'tighten', state: 'current' },
-  { beat: 'verify', state: 'pending' },
+  { beat: "map", state: "complete" },
+  { beat: "balance", state: "complete" },
+  { beat: "tighten", state: "current" },
+  { beat: "verify", state: "pending" },
 ];
 
 const momentum: MomentumFrame = {
@@ -30,17 +26,20 @@ const momentum: MomentumFrame = {
   reversalRate: 0.11,
   staleWindowRatio: 0.08,
   openPriorityConditionCount: 1,
-  updatedAt: '2026-01-01T00:00:00.000Z',
+  updatedAt: "2026-01-01T00:00:00.000Z",
 };
 
-function createGate(decision: PromotionGateResult['decision'], passed: boolean): PromotionGateResult {
+function createGate(
+  decision: PromotionGateResult["decision"],
+  passed: boolean,
+): PromotionGateResult {
   return {
-    caseId: 'cycle-1',
+    caseId: "cycle-1",
     decision,
     passed,
-    beat: 'verify',
-    evaluatedAt: '2026-01-01T00:00:00.000Z',
-    reasons: passed ? [] : ['Promotion threshold failed.'],
+    beat: "verify",
+    evaluatedAt: "2026-01-01T00:00:00.000Z",
+    reasons: passed ? [] : ["Promotion threshold failed."],
     thresholds: {
       overallScore: 0.68,
       governanceScore: 0.62,
@@ -59,7 +58,7 @@ function createGate(decision: PromotionGateResult['decision'], passed: boolean):
   };
 }
 
-test('BeatRailPanel renders the current beat and pending verify state', () => {
+test("BeatRailPanel renders the current beat and pending verify state", () => {
   const html = renderToStaticMarkup(React.createElement(BeatRailPanel, { beatRail }));
   assert.match(html, /tighten/);
   assert.match(html, /current/);
@@ -67,7 +66,7 @@ test('BeatRailPanel renders the current beat and pending verify state', () => {
   assert.match(html, /pending/);
 });
 
-test('MomentumPanel renders transport metrics and drift labels', () => {
+test("MomentumPanel renders transport metrics and drift labels", () => {
   const html = renderToStaticMarkup(React.createElement(MomentumPanel, { momentum }));
   assert.match(html, /Acceleration/);
   assert.match(html, /Sidewalk drift/);
@@ -75,12 +74,12 @@ test('MomentumPanel renders transport metrics and drift labels', () => {
   assert.match(html, /Priority conditions/);
 });
 
-test('PromotionGatePanel renders blocked and promoted states', () => {
+test("PromotionGatePanel renders blocked and promoted states", () => {
   const blocked = renderToStaticMarkup(
-    React.createElement(PromotionGatePanel, { gate: createGate('hold_for_tighten', false) }),
+    React.createElement(PromotionGatePanel, { gate: createGate("hold_for_tighten", false) }),
   );
   const promoted = renderToStaticMarkup(
-    React.createElement(PromotionGatePanel, { gate: createGate('allow_promotion', true) }),
+    React.createElement(PromotionGatePanel, { gate: createGate("allow_promotion", true) }),
   );
 
   assert.match(blocked, /hold_for_tighten/);

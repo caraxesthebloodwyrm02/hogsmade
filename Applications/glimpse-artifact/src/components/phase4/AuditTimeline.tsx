@@ -16,10 +16,28 @@ const STATUS_CONFIG: Record<
   { color: string; bg: string; icon: React.ElementType; label: string; alert?: boolean }
 > = {
   success: { color: "var(--emerald-600)", bg: "var(--emerald-100)", icon: Check, label: "Success" },
-  failure: { color: "var(--rose-600)", bg: "var(--rose-100)", icon: X, label: "Failed", alert: true },
-  blocked: { color: "var(--amber-600)", bg: "var(--amber-100)", icon: MinusCircle, label: "Blocked", alert: true },
+  failure: {
+    color: "var(--rose-600)",
+    bg: "var(--rose-100)",
+    icon: X,
+    label: "Failed",
+    alert: true,
+  },
+  blocked: {
+    color: "var(--amber-600)",
+    bg: "var(--amber-100)",
+    icon: MinusCircle,
+    label: "Blocked",
+    alert: true,
+  },
   dry_run: { color: "var(--teal-600)", bg: "var(--teal-100)", icon: Play, label: "Dry run" },
-  error: { color: "var(--rose-600)", bg: "var(--rose-100)", icon: AlertCircle, label: "Error", alert: true },
+  error: {
+    color: "var(--rose-600)",
+    bg: "var(--rose-100)",
+    icon: AlertCircle,
+    label: "Error",
+    alert: true,
+  },
 };
 
 function formatTime(timestamp: string): string {
@@ -46,15 +64,10 @@ export function AuditTimeline({
   if (error) {
     return (
       <div
-        className={cn(
-          "p-4 rounded-md border border-rose-500 bg-rose-100",
-          className,
-        )}
+        className={cn("p-4 rounded-md border border-rose-500 bg-rose-100", className)}
         role="alert"
       >
-        <p className="font-body text-sm text-rose-600 font-medium">
-          Could not load the timeline.
-        </p>
+        <p className="font-body text-sm text-rose-600 font-medium">Could not load the timeline.</p>
         <p className="font-body text-sm text-ink-muted mt-1">{error}</p>
       </div>
     );
@@ -116,14 +129,16 @@ export function AuditTimeline({
               key={event.id}
               className={cn(
                 "flex items-start gap-4 pl-0 py-2 relative group",
-                cfg.alert ? "opacity-100" : "opacity-90 hover:opacity-100 transition-opacity"
+                cfg.alert ? "opacity-100" : "opacity-90 hover:opacity-100 transition-opacity",
               )}
               role="listitem"
             >
               <div
                 className={cn(
                   "w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-xs font-bold text-white z-10 shadow-sm border-[2px] border-canvas-bg",
-                  cfg.alert ? "ring-4 ring-rose-50/50" : "group-hover:scale-110 transition-transform"
+                  cfg.alert
+                    ? "ring-4 ring-rose-50/50"
+                    : "group-hover:scale-110 transition-transform",
                 )}
                 style={{ backgroundColor: cfg.color }}
                 aria-hidden="true"
@@ -132,10 +147,12 @@ export function AuditTimeline({
               </div>
               <div className="flex-1 min-w-0 pt-0.5">
                 <div className="flex items-baseline gap-2 flex-wrap mb-1.5">
-                  <span className={cn(
-                    "font-heading text-sm font-bold truncate leading-tight",
-                    cfg.alert ? "text-rose-900" : "text-ink"
-                  )}>
+                  <span
+                    className={cn(
+                      "font-heading text-sm font-bold truncate leading-tight",
+                      cfg.alert ? "text-rose-900" : "text-ink",
+                    )}
+                  >
                     {event.tool}
                   </span>
                   <span className="font-body text-xs font-medium text-ink-muted leading-tight bg-canvas-bg/60 px-1.5 py-0.5 rounded border border-border-color/30">
@@ -145,7 +162,9 @@ export function AuditTimeline({
                 <div
                   className={cn(
                     "flex items-center gap-2 border rounded-md py-1 px-2.5 w-fit shadow-sm cursor-pointer hover:-translate-y-0.5 transition-transform",
-                    cfg.alert ? "border-rose-200/60 bg-rose-50/50" : "border-border-color/30 bg-surface-raised"
+                    cfg.alert
+                      ? "border-rose-200/60 bg-rose-50/50"
+                      : "border-border-color/30 bg-surface-raised",
                   )}
                   title={cfg.alert ? "Click to view error log" : "View details"}
                 >
@@ -169,10 +188,14 @@ export function AuditTimeline({
                   )}
                 </div>
                 {event.summary && (
-                  <p className={cn(
-                    "font-body text-sm mt-3 tracking-wide leading-relaxed p-3 rounded-lg border",
-                    cfg.alert ? "text-rose-800 bg-rose-50/30 border-rose-100" : "text-ink-muted bg-canvas-bg/50 border-border-color/50"
-                  )}>
+                  <p
+                    className={cn(
+                      "font-body text-sm mt-3 tracking-wide leading-relaxed p-3 rounded-lg border",
+                      cfg.alert
+                        ? "text-rose-800 bg-rose-50/30 border-rose-100"
+                        : "text-ink-muted bg-canvas-bg/50 border-border-color/50",
+                    )}
+                  >
                     {event.summary}
                   </p>
                 )}

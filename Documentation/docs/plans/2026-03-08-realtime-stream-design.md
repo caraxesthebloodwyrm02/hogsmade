@@ -18,6 +18,7 @@ The goal is live updates without turning the calm canvas into a noisy real-time 
 ## 2. Scope
 
 **In scope:**
+
 - Audit events arriving in the dashboard AuditTimeline
 - Health score changes reflected in HealthGauge components
 - Experiment status transitions (queued → running → completed)
@@ -25,6 +26,7 @@ The goal is live updates without turning the calm canvas into a noisy real-time 
 - GATE verification events in GateView audit trail
 
 **Out of scope (for now):**
+
 - Canvas view (fully local state, no server data)
 - Push notifications or alerts outside the UI
 - Multi-user sync or collaboration
@@ -34,15 +36,16 @@ The goal is live updates without turning the calm canvas into a noisy real-time 
 ## 3. Hosting model
 
 ### Current state
+
 All 7 MCP servers are stdio-only processes. They start when a client (Claude, Cursor) invokes them and exit when the session ends. There is no long-lived service to push events.
 
 ### Options
 
-| Option | Description | Pros | Cons |
-|--------|-------------|------|------|
-| **A. Polling** | Hooks poll file system or API on an interval | No hosting change, works with stdio model | Not truly real-time, file I/O overhead |
-| **B. File watcher + SSE** | A lightweight sidecar watches NDJSON/JSON files and serves Server-Sent Events | Low complexity, one-directional, HTTP-native | New process to manage |
-| **C. WebSocket in pulse-server** | Upgrade pulse-server to a long-lived HTTP+WS service | True bidirectional, single server | Breaks stdio MCP model, deployment change |
+| Option                           | Description                                                                   | Pros                                         | Cons                                      |
+| -------------------------------- | ----------------------------------------------------------------------------- | -------------------------------------------- | ----------------------------------------- |
+| **A. Polling**                   | Hooks poll file system or API on an interval                                  | No hosting change, works with stdio model    | Not truly real-time, file I/O overhead    |
+| **B. File watcher + SSE**        | A lightweight sidecar watches NDJSON/JSON files and serves Server-Sent Events | Low complexity, one-directional, HTTP-native | New process to manage                     |
+| **C. WebSocket in pulse-server** | Upgrade pulse-server to a long-lived HTTP+WS service                          | True bidirectional, single server            | Breaks stdio MCP model, deployment change |
 
 ### Recommendation: Option A (polling) first, Option B when needed
 
@@ -62,25 +65,25 @@ Each hook gains an optional `pollInterval` parameter (milliseconds). Default: `n
 
 ```typescript
 // Before
-export function useHealthData(): { data: HealthScore[]; loading: boolean; error: string | null }
+export function useHealthData(): { data: HealthScore[]; loading: boolean; error: string | null };
 
 // After
 export function useHealthData(options?: {
-  pollInterval?: number | null;  // ms, null = no polling
-}): { data: HealthScore[]; loading: boolean; error: string | null }
+  pollInterval?: number | null; // ms, null = no polling
+}): { data: HealthScore[]; loading: boolean; error: string | null };
 ```
 
 Implementation: `useEffect` with `setInterval` that re-fetches and merges. The `loading` flag is only `true` on the initial fetch, not on subsequent polls (avoids skeleton flicker).
 
 ### 4.2 Data sources
 
-| Hook | Source file | Read method |
-|------|------------|-------------|
-| `useHealthData` | `~/.seeds-server/snapshots/snapshot-*.json` (latest by filename sort) | Read JSON, extract `repos[].healthScore` |
-| `useAuditStream` | `~/.echoes/audit.ndjson` (last N lines) | Read file, split lines, parse JSON, take last 20 |
-| `useExperiments` | `~/.lots-server/.catalog.json` | Read JSON, extract experiment entries |
-| `useFocusSession` | `~/.pulse/focus.json` or pulse-server state | Read JSON |
-| `useGateData` | `{GATE_DIR}/audit.ndjson`, `{GATE_DIR}/.nonce_registry.json` | Read both files |
+| Hook              | Source file                                                           | Read method                                      |
+| ----------------- | --------------------------------------------------------------------- | ------------------------------------------------ |
+| `useHealthData`   | `~/.seeds-server/snapshots/snapshot-*.json` (latest by filename sort) | Read JSON, extract `repos[].healthScore`         |
+| `useAuditStream`  | `~/.echoes/audit.ndjson` (last N lines)                               | Read file, split lines, parse JSON, take last 20 |
+| `useExperiments`  | `~/.lots-server/.catalog.json`                                        | Read JSON, extract experiment entries            |
+| `useFocusSession` | `~/.pulse/focus.json` or pulse-server state                           | Read JSON                                        |
+| `useGateData`     | `{GATE_DIR}/audit.ndjson`, `{GATE_DIR}/.nonce_registry.json`          | Read both files                                  |
 
 ### 4.3 File access from browser
 
@@ -97,17 +100,21 @@ Recommendation: Use approach B. The same API that serves 4.1 Mycelium Dashboard 
 ## 5. Auth assumptions
 
 ### Current state
+
 All MCP servers run locally, accessed via stdio. There is no network auth. GATE envelopes use cryptographic verification (SHA-256, HMAC, nonce) for deployment authorization, but this is server-to-server trust, not user auth.
 
 ### For polling (Option A)
+
 - No auth needed. The API runs on `localhost`, same machine, same user.
 - If the API is exposed beyond localhost in the future, add a simple bearer token from an env var.
 
 ### For SSE sidecar (Option B, future)
+
 - Same localhost assumption.
 - The SSE endpoint should bind to `127.0.0.1` only, not `0.0.0.0`.
 
 ### For WebSocket (Option C, deferred)
+
 - Requires token-based auth if exposed beyond localhost.
 - Deferred — not needed until multi-user or remote access.
 
@@ -117,19 +124,22 @@ All MCP servers run locally, accessed via stdio. There is no network auth. GATE 
 
 ### What events update what
 
-| Event source | Triggers update to | Component affected |
-|-------------|-------------------|-------------------|
-| Seeds snapshot written | Health scores | HealthGauge (Dashboard) |
-| Echoes audit line appended | Audit timeline | AuditTimeline (Dashboard, GATE) |
-| Lots catalog updated | Experiment status | ExperimentCard (Dashboard) |
-| Pulse focus state changed | Focus session | WorkflowStatusCard (Dashboard) |
-| GATE envelope verified | Envelope flow, nonce, audit | GateView |
+| Event source               | Triggers update to          | Component affected              |
+| -------------------------- | --------------------------- | ------------------------------- |
+| Seeds snapshot written     | Health scores               | HealthGauge (Dashboard)         |
+| Echoes audit line appended | Audit timeline              | AuditTimeline (Dashboard, GATE) |
+| Lots catalog updated       | Experiment status           | ExperimentCard (Dashboard)      |
+| Pulse focus state changed  | Focus session               | WorkflowStatusCard (Dashboard)  |
+| GATE envelope verified     | Envelope flow, nonce, audit | GateView                        |
 
 ### Fan-out model (polling)
+
 Each hook independently polls its source on its own interval. No centralized event bus. This is intentional — keeps hooks independent and avoids coupling.
 
 ### Fan-out model (SSE, future)
+
 A single SSE endpoint emits typed events:
+
 ```
 event: health
 data: {"repoName":"GRID-main","score":92,"trend":"up"}
@@ -148,9 +158,11 @@ Clients subscribe to the event types they need. The sidecar watches all source f
 ## 7. Coexistence with stdio MCP
 
 ### Constraint
+
 MCP servers communicate via stdin/stdout JSON-RPC. Adding HTTP/WS to a server would require it to run as a daemon, not a stdio tool. This breaks the current deployment model where Claude/Cursor start and stop servers on demand.
 
 ### Resolution
+
 - **Polling hooks** do not touch MCP servers at all. They read files that MCP servers write. No coexistence issue.
 - **SSE sidecar** is a separate process from MCP servers. It reads files, not server state. No interference.
 - **WebSocket upgrade** (Option C) would require pulse-server to become a dual-transport service (stdio for MCP, HTTP+WS for UI). This is a significant change and is why it is deferred.
@@ -162,12 +174,14 @@ The key principle: **read files, don't talk to servers**. The data contracts (Ec
 ## 8. UX considerations
 
 ### Attention-safe updates
+
 - No flashing, no toast notifications, no sound.
 - New audit events prepend to the timeline with a subtle fade-in animation (CSS `@keyframes`, respects `prefers-reduced-motion`).
 - Health gauge changes animate smoothly (SVG arc transition, 0.5s ease).
 - Stale data indicator: if a poll fails 3 consecutive times, show a muted "Last updated X minutes ago" label. No error banner.
 
 ### Cognitive load
+
 - Dashboard polls at 10s. Canvas does not poll (local state). GATE polls at 15s (less frequent, read-only audit view).
 - No auto-scroll. New events appear at the top; the user controls scroll position.
 - Comparison tray (canvas) is unaffected — it is local state, not server data.
@@ -176,16 +190,17 @@ The key principle: **read files, don't talk to servers**. The data contracts (Ec
 
 ## 9. Implementation plan
 
-| Step | Work | Depends on |
-|------|------|-----------|
-| 1 | API endpoint for dashboard data (part of 4.1) | GRID-main API routes |
-| 2 | Add `pollInterval` option to all 4 hooks + new `useGateData` | Step 1 |
-| 3 | Connect hooks to real API endpoints (replace mock data) | Step 1 |
-| 4 | Add subtle update animations (fade-in, arc transition) | Step 2 |
-| 5 | Test with real file writes (create audit event, verify it appears) | Steps 1–4 |
-| 6 | (Future) SSE sidecar if polling latency is insufficient | User feedback |
+| Step | Work                                                               | Depends on           |
+| ---- | ------------------------------------------------------------------ | -------------------- |
+| 1    | API endpoint for dashboard data (part of 4.1)                      | GRID-main API routes |
+| 2    | Add `pollInterval` option to all 4 hooks + new `useGateData`       | Step 1               |
+| 3    | Connect hooks to real API endpoints (replace mock data)            | Step 1               |
+| 4    | Add subtle update animations (fade-in, arc transition)             | Step 2               |
+| 5    | Test with real file writes (create audit event, verify it appears) | Steps 1–4            |
+| 6    | (Future) SSE sidecar if polling latency is insufficient            | User feedback        |
 
 ### Acceptance criteria (from quality contract)
+
 - [ ] This design doc exists and is approved
 - [ ] WebSocket or polling support in hooks for live updates
 - [ ] Loading and error states defined and implemented
@@ -194,9 +209,9 @@ The key principle: **read files, don't talk to servers**. The data contracts (Ec
 
 ## 10. Decision log
 
-| Decision | Rationale | Date |
-|----------|-----------|------|
-| Polling first, not WebSocket | Simplicity; no hosting change; target audience values stability over real-time speed | 2026-03-08 |
-| Read files, not servers | Preserves stdio MCP model; uses existing data contracts as the interface | 2026-03-08 |
-| No auth for localhost | Single-user local system; add bearer token only if exposed beyond localhost | 2026-03-08 |
-| 10s poll interval | Balances freshness vs. file I/O; fast enough for "close to live" without being wasteful | 2026-03-08 |
+| Decision                     | Rationale                                                                               | Date       |
+| ---------------------------- | --------------------------------------------------------------------------------------- | ---------- |
+| Polling first, not WebSocket | Simplicity; no hosting change; target audience values stability over real-time speed    | 2026-03-08 |
+| Read files, not servers      | Preserves stdio MCP model; uses existing data contracts as the interface                | 2026-03-08 |
+| No auth for localhost        | Single-user local system; add bearer token only if exposed beyond localhost             | 2026-03-08 |
+| 10s poll interval            | Balances freshness vs. file I/O; fast enough for "close to live" without being wasteful | 2026-03-08 |

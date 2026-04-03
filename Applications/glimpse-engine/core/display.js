@@ -15,12 +15,12 @@ export function openFrame(title, opts = {}) {
   if (opts.quiet) return;
   const padded = ` ${title} `;
   const width = Math.max(padded.length + 4, 38);
-  const border = '─'.repeat(width - 2);
-  console.log('');
+  const border = "─".repeat(width - 2);
+  console.log("");
   console.log(`  ┌${border}┐`);
   console.log(`  │${padded.padEnd(width - 2)}│`);
   console.log(`  └${border}┘`);
-  console.log('');
+  console.log("");
 }
 
 /**
@@ -29,7 +29,7 @@ export function openFrame(title, opts = {}) {
 export function section(label, opts = {}) {
   if (opts.quiet) return;
   console.log(`  ${label}`);
-  console.log(`  ${'─'.repeat(label.length)}`);
+  console.log(`  ${"─".repeat(label.length)}`);
 }
 
 /**
@@ -37,7 +37,7 @@ export function section(label, opts = {}) {
  */
 export function gap(opts = {}) {
   if (opts.quiet) return;
-  console.log('');
+  console.log("");
 }
 
 // ============================================================================
@@ -53,7 +53,7 @@ export function gap(opts = {}) {
 export function bar(value, width = 10) {
   const clamped = Math.max(0, Math.min(1, value));
   const filled = Math.round(clamped * width);
-  return '█'.repeat(filled) + '░'.repeat(width - filled);
+  return "█".repeat(filled) + "░".repeat(width - filled);
 }
 
 /**
@@ -83,17 +83,17 @@ export function kv(key, value, opts = {}) {
 export function factor(f, opts = {}) {
   if (opts.quiet) return;
   const pct = `${(f.score * 100).toFixed(0)}%`;
-  const detail = f.detail ? ` — ${f.detail}` : '';
-  const weightTag = f.weight ? ` [${f.weight}]` : '';
+  const detail = f.detail ? ` — ${f.detail}` : "";
+  const weightTag = f.weight ? ` [${f.weight}]` : "";
   console.log(`  ${bar(f.score)} ${pct.padStart(4)}  ${f.label}${detail}${weightTag}`);
 }
 
 /**
  * Render a list of items with a prefix.
  */
-export function list(items, prefix = '·', opts = {}) {
+export function list(items, prefix = "·", opts = {}) {
   if (opts.quiet) return;
-  items.forEach(item => console.log(`  ${prefix} ${item}`));
+  items.forEach((item) => console.log(`  ${prefix} ${item}`));
 }
 
 /**
@@ -118,16 +118,31 @@ export function signal(message, opts = {}) {
 
 const MOOD_ICONS = {
   // Energy/wellness
-  peaceful: '◎', focused: '◉', drained: '▽', recovering: '○',
-  creative: '◆', scattered: '◇', contemplative: '◎', energized: '▲',
-  thinking: '○', frustrated: '▽', cautious: '◇',
+  peaceful: "◎",
+  focused: "◉",
+  drained: "▽",
+  recovering: "○",
+  creative: "◆",
+  scattered: "◇",
+  contemplative: "◎",
+  energized: "▲",
+  thinking: "○",
+  frustrated: "▽",
+  cautious: "◇",
   // Health
-  excellent: '●', strong: '◉', stable: '○', growing: '▲',
-  'at-risk': '▽', complete: '✓',
+  excellent: "●",
+  strong: "◉",
+  stable: "○",
+  growing: "▲",
+  "at-risk": "▽",
+  complete: "✓",
   // Priority
-  critical: '◉', high: '▲', medium: '○', low: '◇',
+  critical: "◉",
+  high: "▲",
+  medium: "○",
+  low: "◇",
   // Default
-  default: '·'
+  default: "·",
 };
 
 /**
@@ -149,17 +164,17 @@ export function icon(mood) {
 export function engineSummary(result, opts = {}) {
   if (opts.quiet) return;
   gap();
-  section('Engine', opts);
-  kv('Complexity', result.complexity?.level || 'n/a', opts);
-  kv('Confidence', `${(result.confidenceReport?.overallScore * 100 || 0).toFixed(0)}%`, opts);
-  kv('Entities', result.entities?.length || 0, opts);
-  kv('Relations', result.relations?.length || 0, opts);
+  section("Engine", opts);
+  kv("Complexity", result.complexity?.level || "n/a", opts);
+  kv("Confidence", `${(result.confidenceReport?.overallScore * 100 || 0).toFixed(0)}%`, opts);
+  kv("Entities", result.entities?.length || 0, opts);
+  kv("Relations", result.relations?.length || 0, opts);
 
   if (result.invariantPatterns?.length > 0 && !opts.brief) {
     gap();
-    section('Patterns', opts);
+    section("Patterns", opts);
     result.invariantPatterns.slice(0, 3).forEach((p, i) => {
-      console.log(`  ${i + 1}. ${p.text} (density: ${p.densityScore?.toFixed(3) || 'n/a'})`);
+      console.log(`  ${i + 1}. ${p.text} (density: ${p.densityScore?.toFixed(3) || "n/a"})`);
     });
   }
 }
@@ -172,8 +187,8 @@ export function engineSummary(result, opts = {}) {
 export function sessionRecap(recap, opts = {}) {
   if (opts.quiet) return;
   gap();
-  section('Session', opts);
-  recap.forEach(line => console.log(`  ${line}`));
+  section("Session", opts);
+  recap.forEach((line) => console.log(`  ${line}`));
 }
 
 /**
@@ -203,7 +218,7 @@ export function calibrationNotice(calibration, opts = {}) {
 export function interviewQuestion(question, index) {
   gap();
   console.log(`  Q${index}. [${question.domain}] ${question.text}`);
-  question.options.forEach(opt => {
+  question.options.forEach((opt) => {
     console.log(`      ${opt.label}) ${opt.text}`);
   });
 }
@@ -214,9 +229,9 @@ export function interviewQuestion(question, index) {
  */
 export function interviewResult(result) {
   gap();
-  section('Interview Result');
-  kv('Posture', `${result.postureLabel} (${result.posture})`);
-  kv('Alignment', `${(result.confidence * 100).toFixed(0)}%`);
+  section("Interview Result");
+  kv("Posture", `${result.postureLabel} (${result.posture})`);
+  kv("Alignment", `${(result.confidence * 100).toFixed(0)}%`);
   gap();
   signal(result.modulation.nudgeSuffix);
 }
@@ -240,10 +255,10 @@ export function decisionView({ title, factors, overallScore, recommendation }, o
     section(title, opts);
   }
 
-  factors.forEach(f => factor(f, opts));
+  factors.forEach((f) => factor(f, opts));
 
   gap(opts);
-  kv('Overall signal', `${(overallScore * 100).toFixed(0)}%`, opts);
+  kv("Overall signal", `${(overallScore * 100).toFixed(0)}%`, opts);
   signal(recommendation, opts);
 }
 
@@ -254,9 +269,9 @@ export function decisionView({ title, factors, overallScore, recommendation }, o
  */
 export function timelineView(entries, opts = {}) {
   const maxVal = opts.maxValue || 10;
-  entries.forEach(entry => {
+  entries.forEach((entry) => {
     const barStr = bar(entry.value / maxVal);
-    const mood = entry.mood ? ` ${icon(entry.mood)}` : '';
+    const mood = entry.mood ? ` ${icon(entry.mood)}` : "";
     console.log(`  ${entry.time} ${barStr} ${entry.value}/${maxVal}${mood}  ${entry.label}`);
   });
 }
@@ -267,11 +282,13 @@ export function timelineView(entries, opts = {}) {
  * @param {object} [opts]
  */
 export function statusTable(items, opts = {}) {
-  const maxName = Math.max(...items.map(i => (i.name || '').length), 10);
-  items.forEach(item => {
+  const maxName = Math.max(...items.map((i) => (i.name || "").length), 10);
+  items.forEach((item) => {
     const ico = item.icon || icon(item.status || item.health || item.mood);
-    const detail = item.detail ? ` ${item.detail}` : '';
-    console.log(`  ${ico} ${(item.name || '').padEnd(maxName + 2)} ${(item.status || '').padEnd(14)} ${item.health || ''}${detail}`);
+    const detail = item.detail ? ` ${item.detail}` : "";
+    console.log(
+      `  ${ico} ${(item.name || "").padEnd(maxName + 2)} ${(item.status || "").padEnd(14)} ${item.health || ""}${detail}`,
+    );
   });
 }
 
@@ -283,5 +300,5 @@ export function statusTable(items, opts = {}) {
  * Close the output with a trailing blank line.
  */
 export function close() {
-  console.log('');
+  console.log("");
 }

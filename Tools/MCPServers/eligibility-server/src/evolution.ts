@@ -2,11 +2,7 @@ import { emitAudit } from "@cascade/shared-types/audit-client";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import path from "node:path";
-import {
-  onCycleSignalRecorded,
-  onEvolutionCaseOpened,
-  onPromotionGateEvaluated
-} from "./hooks.js";
+import { onCycleSignalRecorded, onEvolutionCaseOpened, onPromotionGateEvaluated } from "./hooks.js";
 import {
   buildDeterministicTimestamp,
   evaluateRoutine,
@@ -123,7 +119,10 @@ function hashString(input: string): string {
 }
 
 function buildCaseId(candidates: EligibilityCandidate[], label: string, args: RoutineArgs): string {
-  const base = `${label}:${candidates.map((candidate) => candidate.id).sort().join(",")}:${args.seed ?? "seedless"}`;
+  const base = `${label}:${candidates
+    .map((candidate) => candidate.id)
+    .sort()
+    .join(",")}:${args.seed ?? "seedless"}`;
   return `cycle-${hashString(base)}`;
 }
 
@@ -142,14 +141,24 @@ function severityScore(severity: ConditionNote["severity"]): number {
 }
 
 function topOverallCandidate(result: RoutineResult): string | null {
-  return result.hierarchy
-    .filter((slice) => slice.dimension === "overall")
-    .sort((left, right) => left.rank - right.rank)[0]?.candidateId ?? null;
+  return (
+    result.hierarchy
+      .filter((slice) => slice.dimension === "overall")
+      .sort((left, right) => left.rank - right.rank)[0]?.candidateId ?? null
+  );
 }
 
-function sliceScore(result: RoutineResult, candidateId: string | null, dimension: "overall" | "governance" | "integration"): number {
+function sliceScore(
+  result: RoutineResult,
+  candidateId: string | null,
+  dimension: "overall" | "governance" | "integration",
+): number {
   if (!candidateId) return 0;
-  return result.hierarchy.find((slice) => slice.candidateId === candidateId && slice.dimension === dimension)?.score ?? 0;
+  return (
+    result.hierarchy.find(
+      (slice) => slice.candidateId === candidateId && slice.dimension === dimension,
+    )?.score ?? 0
+  );
 }
 
 function buildBeatRail(currentBeat: CycleBeat): BeatRailEntry[] {
@@ -163,7 +172,10 @@ function buildBeatRail(currentBeat: CycleBeat): BeatRailEntry[] {
 function summarizeCase(caseRecord: EvolutionCase): string {
   const result = caseRecord.latestEligibilityResult;
   const leaderId = result ? topOverallCandidate(result) : null;
-  const leaderLabel = caseRecord.candidates.find((candidate) => candidate.id === leaderId)?.label ?? leaderId ?? caseRecord.label;
+  const leaderLabel =
+    caseRecord.candidates.find((candidate) => candidate.id === leaderId)?.label ??
+    leaderId ??
+    caseRecord.label;
   const overallScore = result ? sliceScore(result, leaderId, "overall").toFixed(3) : "0.000";
   return `${leaderLabel} is in ${caseRecord.currentBeat} with momentum ${caseRecord.momentum.momentum.toFixed(3)}, drift ${caseRecord.momentum.sidewalkDrift.toFixed(3)}, and overall score ${overallScore}.`;
 }
@@ -173,7 +185,18 @@ function endpointReadinessScore(spec: EndpointSpec): number {
   if (spec.owner?.trim()) score += 0.25;
   if (spec.contract?.trim()) score += 0.25;
   if (spec.status === "ready" || spec.status === "verified") score += 0.25;
-  const readiness = clamp(spec.readiness ?? (spec.status === "verified" ? 1 : spec.status === "ready" ? 0.8 : spec.status === "blocked" ? 0.2 : 0.45), 0, 1);
+  const readiness = clamp(
+    spec.readiness ??
+      (spec.status === "verified"
+        ? 1
+        : spec.status === "ready"
+          ? 0.8
+          : spec.status === "blocked"
+            ? 0.2
+            : 0.45),
+    0,
+    1,
+  );
   score += readiness * 0.25;
   return round(score);
 }
@@ -184,12 +207,16 @@ function computeEndpointStats(endpointSpecs: EndpointSpec[]) {
   }
 
   const required = endpointSpecs.filter((spec) => spec.required);
-  const completeCount = required.filter((spec) =>
-    Boolean(spec.owner?.trim()) && Boolean(spec.contract?.trim()) && (spec.status === "ready" || spec.status === "verified"),
+  const completeCount = required.filter(
+    (spec) =>
+      Boolean(spec.owner?.trim()) &&
+      Boolean(spec.contract?.trim()) &&
+      (spec.status === "ready" || spec.status === "verified"),
   ).length;
 
   const endpointReadiness = round(
-    endpointSpecs.reduce((sum, spec) => sum + endpointReadinessScore(spec), 0) / endpointSpecs.length,
+    endpointSpecs.reduce((sum, spec) => sum + endpointReadinessScore(spec), 0) /
+      endpointSpecs.length,
   );
 
   return {
@@ -206,10 +233,12 @@ function computeHandoffCompletion(handoffs: HandoffRecord[]): number {
 }
 
 function computeIntegrationSuccessRate(signals: CycleSignal[]): number {
-  const successSignals = signals.filter((signal) =>
-    signal.type === "integration_call_succeeded" || signal.type === "test_passed");
-  const failureSignals = signals.filter((signal) =>
-    signal.type === "integration_call_failed" || signal.type === "test_failed");
+  const successSignals = signals.filter(
+    (signal) => signal.type === "integration_call_succeeded" || signal.type === "test_passed",
+  );
+  const failureSignals = signals.filter(
+    (signal) => signal.type === "integration_call_failed" || signal.type === "test_failed",
+  );
   const total = successSignals.length + failureSignals.length;
   if (total === 0) return 0;
   return round(successSignals.length / total);
@@ -217,7 +246,9 @@ function computeIntegrationSuccessRate(signals: CycleSignal[]): number {
 
 function computeReversalRate(caseRecord: EvolutionCase): number {
   const returnCount = caseRecord.returnHistory.length;
-  const advanceCount = caseRecord.timeline.filter((entry) => entry.event === "beat_advanced").length;
+  const advanceCount = caseRecord.timeline.filter(
+    (entry) => entry.event === "beat_advanced",
+  ).length;
   if (advanceCount === 0) return 0;
   return round(clamp(returnCount / advanceCount, 0, 1));
 }
@@ -228,7 +259,10 @@ function computeStaleWindowRatio(signals: CycleSignal[]): number {
   return round(clamp(staleCount / signals.length, 0, 1));
 }
 
-function nextTimestamp(caseRecord: Pick<EvolutionCase, "caseId" | "args" | "timeline" | "snapshotHistory">, label: string): string {
+function nextTimestamp(
+  caseRecord: Pick<EvolutionCase, "caseId" | "args" | "timeline" | "snapshotHistory">,
+  label: string,
+): string {
   const seed = caseRecord.args.seed ?? caseRecord.caseId;
   const index = caseRecord.timeline.length + caseRecord.snapshotHistory.length + 1;
   return buildDeterministicTimestamp(seed, `${caseRecord.caseId}:${index}:${label}`);
@@ -263,7 +297,9 @@ function pushTimeline(
   refIds: string[],
   metadata?: Record<string, unknown>,
 ) {
-  caseRecord.timeline.push(buildTimelineEntry(caseRecord, event, timestamp, summary, refIds, metadata));
+  caseRecord.timeline.push(
+    buildTimelineEntry(caseRecord, event, timestamp, summary, refIds, metadata),
+  );
   caseRecord.updatedAt = timestamp;
 }
 
@@ -298,7 +334,9 @@ function baseConditions(
     }
   }
 
-  const latestRejectedHandoff = [...caseRecord.handoffs].reverse().find((handoff) => handoff.status === "rejected");
+  const latestRejectedHandoff = [...caseRecord.handoffs]
+    .reverse()
+    .find((handoff) => handoff.status === "rejected");
   if (latestRejectedHandoff) {
     conditions.push({
       id: `${caseRecord.caseId}:handoff:${latestRejectedHandoff.id}:watch`,
@@ -356,7 +394,8 @@ function buildObservations(
     candidateId: caseRecord.candidateIds[0] ?? caseRecord.caseId,
     dimension: "overall",
     message: `The control room is currently centered on the ${caseRecord.currentBeat} beat.`,
-    surfaceHint: "Use the beat rail as the top-level status surface before reading tables or artifacts.",
+    surfaceHint:
+      "Use the beat rail as the top-level status surface before reading tables or artifacts.",
     sourceSliceIds: [caseRecord.currentBeat],
   });
 
@@ -365,7 +404,8 @@ function buildObservations(
     candidateId: caseRecord.candidateIds[0] ?? caseRecord.caseId,
     dimension: "overall",
     message: `Momentum ${momentum.momentum.toFixed(3)} and drift ${momentum.sidewalkDrift.toFixed(3)} define the current transport tension.`,
-    surfaceHint: "Read momentum and drift together before deciding whether the next handoff is safe.",
+    surfaceHint:
+      "Read momentum and drift together before deciding whether the next handoff is safe.",
     sourceSliceIds: ["momentum", "sidewalk-drift"],
   });
 
@@ -383,26 +423,23 @@ function buildMomentum(
   const previousSnapshot = caseRecord.snapshotHistory[caseRecord.snapshotHistory.length - 1];
   const acceleration = previousSnapshot
     ? clamp(
-      (endpointReadiness - previousSnapshot.endpointReadiness)
-      + (integrationSuccessRate - previousSnapshot.integrationSuccessRate),
-      0,
-      1,
-    )
+        endpointReadiness -
+          previousSnapshot.endpointReadiness +
+          (integrationSuccessRate - previousSnapshot.integrationSuccessRate),
+        0,
+        1,
+      )
     : 0;
   const reversalRate = computeReversalRate(caseRecord);
   const staleWindowRatio = computeStaleWindowRatio(caseRecord.signals);
   const momentum = clamp(
-    endpointReadiness * 0.45
-    + handoffCompletion * 0.3
-    + integrationSuccessRate * 0.25,
+    endpointReadiness * 0.45 + handoffCompletion * 0.3 + integrationSuccessRate * 0.25,
     0,
     1,
   );
   const normalizedPriorityCount = clamp(openPriorityConditionCount / 3, 0, 1);
   const sidewalkDrift = clamp(
-    reversalRate * 0.4
-    + normalizedPriorityCount * 0.35
-    + staleWindowRatio * 0.25,
+    reversalRate * 0.4 + normalizedPriorityCount * 0.35 + staleWindowRatio * 0.25,
     0,
     1,
   );
@@ -421,8 +458,14 @@ function buildMomentum(
   };
 }
 
-function appendDriftCondition(caseRecord: EvolutionCase, conditions: ConditionNote[], timestamp: string, sidewalkDrift: number): ConditionNote[] {
-  const severity: ConditionNote["severity"] | null = sidewalkDrift >= 0.55 ? "priority" : sidewalkDrift >= 0.35 ? "watch" : null;
+function appendDriftCondition(
+  caseRecord: EvolutionCase,
+  conditions: ConditionNote[],
+  timestamp: string,
+  sidewalkDrift: number,
+): ConditionNote[] {
+  const severity: ConditionNote["severity"] | null =
+    sidewalkDrift >= 0.55 ? "priority" : sidewalkDrift >= 0.35 ? "watch" : null;
   if (!severity) return conditions;
 
   return [
@@ -431,21 +474,32 @@ function appendDriftCondition(caseRecord: EvolutionCase, conditions: ConditionNo
       candidateId: caseRecord.candidateIds[0] ?? caseRecord.caseId,
       dimension: "overall",
       severity,
-      message: severity === "priority"
-        ? "Sidewalk drift is high; promotion should not proceed until reversals and stale pressure are reduced."
-        : "Sidewalk drift is rising; monitor returns and stale windows before promotion.",
+      message:
+        severity === "priority"
+          ? "Sidewalk drift is high; promotion should not proceed until reversals and stale pressure are reduced."
+          : "Sidewalk drift is rising; monitor returns and stale windows before promotion.",
       sourceWeightIds: ["sidewalk-drift"],
     },
     ...conditions,
   ];
 }
 
-function refreshCaseRecord(caseRecord: EvolutionCase, timestamp: string, appendSnapshot = true): EvolutionCase {
+function refreshCaseRecord(
+  caseRecord: EvolutionCase,
+  timestamp: string,
+  appendSnapshot = true,
+): EvolutionCase {
   const evaluation = evaluateRoutine(caseRecord.candidates, caseRecord.args);
   const endpointStats = computeEndpointStats(caseRecord.endpointSpecs);
   const handoffCompletion = computeHandoffCompletion(caseRecord.handoffs);
   const integrationSuccessRate = computeIntegrationSuccessRate(caseRecord.signals);
-  const initialConditions = baseConditions(caseRecord, evaluation, timestamp, endpointStats, integrationSuccessRate);
+  const initialConditions = baseConditions(
+    caseRecord,
+    evaluation,
+    timestamp,
+    endpointStats,
+    integrationSuccessRate,
+  );
   const provisionalMomentum = buildMomentum(
     caseRecord,
     timestamp,
@@ -454,8 +508,12 @@ function refreshCaseRecord(caseRecord: EvolutionCase, timestamp: string, appendS
     integrationSuccessRate,
     initialConditions.filter((condition) => condition.severity === "priority").length,
   );
-  const conditions = appendDriftCondition(caseRecord, initialConditions, timestamp, provisionalMomentum.sidewalkDrift)
-    .sort((left, right) => severityScore(right.severity) - severityScore(left.severity));
+  const conditions = appendDriftCondition(
+    caseRecord,
+    initialConditions,
+    timestamp,
+    provisionalMomentum.sidewalkDrift,
+  ).sort((left, right) => severityScore(right.severity) - severityScore(left.severity));
   const momentum = buildMomentum(
     caseRecord,
     timestamp,
@@ -504,7 +562,12 @@ function summaryStatus(event: CycleTimelineEntry["event"]): "success" | "blocked
   return event === "promotion_blocked" ? "blocked" : "success";
 }
 
-function emitCycleAudit(caseRecord: EvolutionCase, event: CycleTimelineEntry["event"], _summary: string, metadata?: Record<string, unknown>) {
+function emitCycleAudit(
+  caseRecord: EvolutionCase,
+  event: CycleTimelineEntry["event"],
+  _summary: string,
+  metadata?: Record<string, unknown>,
+) {
   void emitAudit({
     source: "eligibility-server",
     tool: `evolution_${event}`,
@@ -521,7 +584,7 @@ function emitCycleAudit(caseRecord: EvolutionCase, event: CycleTimelineEntry["ev
 export class EvolutionCycleStore {
   private cache: EvolutionStoreData | null = null;
 
-  constructor(private readonly filePath = defaultStorePath()) { }
+  constructor(private readonly filePath = defaultStorePath()) {}
 
   private ensureLoaded(): EvolutionStoreData {
     if (this.cache) return this.cache;
@@ -537,7 +600,7 @@ export class EvolutionCycleStore {
 
     const raw = readFileSync(this.filePath, "utf8");
     this.cache = raw.trim()
-      ? JSON.parse(raw) as EvolutionStoreData
+      ? (JSON.parse(raw) as EvolutionStoreData)
       : { schemaVersion: "1.0.0", cases: [] };
     this.cache.cases ||= [];
     return this.cache;
@@ -553,8 +616,8 @@ export class EvolutionCycleStore {
   }
 
   listActiveSummaries(): EvolutionCaseSummary[] {
-    return this.ensureLoaded().cases
-      .filter((caseRecord) => caseRecord.status !== "archived")
+    return this.ensureLoaded()
+      .cases.filter((caseRecord) => caseRecord.status !== "archived")
       .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))
       .map((caseRecord) => {
         const latestSnapshot = caseRecord.snapshotHistory[caseRecord.snapshotHistory.length - 1];
@@ -601,23 +664,23 @@ function validateCaseLookup(caseRecord: EvolutionCase | undefined, caseId: strin
   return caseRecord;
 }
 
-function promotionDecision(
-  caseRecord: EvolutionCase,
-  timestamp: string,
-): PromotionGateResult {
+function promotionDecision(caseRecord: EvolutionCase, timestamp: string): PromotionGateResult {
   const result = caseRecord.latestEligibilityResult;
   const leaderId = result ? topOverallCandidate(result) : null;
   const overallScore = result ? sliceScore(result, leaderId, "overall") : 0;
   const governanceScore = result ? sliceScore(result, leaderId, "governance") : 0;
   const integrationScore = result ? sliceScore(result, leaderId, "integration") : 0;
   const requiredEndpointCount = caseRecord.endpointSpecs.filter((spec) => spec.required).length;
-  const completeEndpointCount = caseRecord.endpointSpecs.filter((spec) =>
-    spec.required
-    && Boolean(spec.owner?.trim())
-    && Boolean(spec.contract?.trim())
-    && (spec.status === "ready" || spec.status === "verified"),
+  const completeEndpointCount = caseRecord.endpointSpecs.filter(
+    (spec) =>
+      spec.required &&
+      Boolean(spec.owner?.trim()) &&
+      Boolean(spec.contract?.trim()) &&
+      (spec.status === "ready" || spec.status === "verified"),
   ).length;
-  const openPriorityConditionCount = caseRecord.conditionNotes.filter((condition) => condition.severity === "priority").length;
+  const openPriorityConditionCount = caseRecord.conditionNotes.filter(
+    (condition) => condition.severity === "priority",
+  ).length;
   const reasons: string[] = [];
   let decision: PromotionGateDecision = "allow_promotion";
 
@@ -627,16 +690,24 @@ function promotionDecision(
   }
 
   if (overallScore < 0.68) reasons.push(`Overall score ${overallScore.toFixed(3)} is below 0.680.`);
-  if (governanceScore < 0.62) reasons.push(`Governance score ${governanceScore.toFixed(3)} is below 0.620.`);
-  if (integrationScore < 0.64) reasons.push(`Integration score ${integrationScore.toFixed(3)} is below 0.640.`);
-  if (requiredEndpointCount > completeEndpointCount) reasons.push("Not all required endpoint specs are complete.");
+  if (governanceScore < 0.62)
+    reasons.push(`Governance score ${governanceScore.toFixed(3)} is below 0.620.`);
+  if (integrationScore < 0.64)
+    reasons.push(`Integration score ${integrationScore.toFixed(3)} is below 0.640.`);
+  if (requiredEndpointCount > completeEndpointCount)
+    reasons.push("Not all required endpoint specs are complete.");
   if (openPriorityConditionCount > 0) reasons.push("Priority conditions remain open.");
-  if (caseRecord.momentum.sidewalkDrift >= 0.35) reasons.push(`Sidewalk drift ${caseRecord.momentum.sidewalkDrift.toFixed(3)} is above 0.350.`);
+  if (caseRecord.momentum.sidewalkDrift >= 0.35)
+    reasons.push(`Sidewalk drift ${caseRecord.momentum.sidewalkDrift.toFixed(3)} is above 0.350.`);
 
   if (decision !== "deny_promotion") {
     if (reasons.length === 0) {
       decision = "allow_promotion";
-    } else if (caseRecord.momentum.sidewalkDrift >= 0.5 || integrationScore < 0.55 || governanceScore < 0.5) {
+    } else if (
+      caseRecord.momentum.sidewalkDrift >= 0.5 ||
+      integrationScore < 0.55 ||
+      governanceScore < 0.5
+    ) {
       decision = "return_to_balance";
     } else {
       decision = "hold_for_tighten";
@@ -682,7 +753,8 @@ export function openEvolutionCase(
     };
   }
 
-  const label = input.label?.trim() || `${input.candidates[0]?.label ?? "Eligibility"} evolution case`;
+  const label =
+    input.label?.trim() || `${input.candidates[0]?.label ?? "Eligibility"} evolution case`;
   const caseId = input.caseId?.trim() || buildCaseId(input.candidates, label, args);
   const existing = store.getCase(caseId);
   if (existing) {
@@ -730,7 +802,13 @@ export function openEvolutionCase(
     updatedAt: timestamp,
   };
 
-  pushTimeline(caseRecord, "case_opened", timestamp, `Opened evolution case ${label}.`, caseRecord.candidateIds);
+  pushTimeline(
+    caseRecord,
+    "case_opened",
+    timestamp,
+    `Opened evolution case ${label}.`,
+    caseRecord.candidateIds,
+  );
   refreshCaseRecord(caseRecord, timestamp);
   const stored = store.upsertCase(caseRecord);
   emitCycleAudit(stored, "case_opened", `Opened evolution case ${stored.label}.`, {
@@ -753,7 +831,10 @@ export function listActiveCycles(store: EvolutionCycleStore = getEvolutionCycleS
   };
 }
 
-export function getCycleSnapshot(caseId: string, store: EvolutionCycleStore = getEvolutionCycleStore()) {
+export function getCycleSnapshot(
+  caseId: string,
+  store: EvolutionCycleStore = getEvolutionCycleStore(),
+) {
   const caseRecord = validateCaseLookup(store.getCase(caseId), caseId);
   return buildSnapshot(caseRecord);
 }
@@ -777,10 +858,17 @@ export function recordCycleSignal(
   };
 
   caseRecord.signals.push(signal);
-  pushTimeline(caseRecord, "signal_recorded", timestamp, `Recorded ${input.type} signal.`, [signal.id], {
-    source: signal.source,
-    weight: signal.weight,
-  });
+  pushTimeline(
+    caseRecord,
+    "signal_recorded",
+    timestamp,
+    `Recorded ${input.type} signal.`,
+    [signal.id],
+    {
+      source: signal.source,
+      weight: signal.weight,
+    },
+  );
   refreshCaseRecord(caseRecord, timestamp);
   const stored = store.upsertCase(caseRecord);
   emitCycleAudit(stored, "signal_recorded", `Recorded ${input.type} signal.`, {
@@ -815,7 +903,13 @@ export function recordHandoff(
   };
 
   caseRecord.handoffs.push(handoff);
-  pushTimeline(caseRecord, "handoff_recorded", timestamp, `Recorded ${input.status} handoff from ${input.from} to ${input.to}.`, [handoff.id]);
+  pushTimeline(
+    caseRecord,
+    "handoff_recorded",
+    timestamp,
+    `Recorded ${input.status} handoff from ${input.from} to ${input.to}.`,
+    [handoff.id],
+  );
   refreshCaseRecord(caseRecord, timestamp);
   const stored = store.upsertCase(caseRecord);
   emitCycleAudit(stored, "handoff_recorded", `Recorded ${input.status} handoff.`, {
@@ -852,10 +946,17 @@ export function upsertEndpointSpec(
   if (existingIndex >= 0) caseRecord.endpointSpecs[existingIndex] = spec;
   else caseRecord.endpointSpecs.push(spec);
 
-  pushTimeline(caseRecord, "endpoint_upserted", timestamp, `Upserted endpoint spec ${spec.label}.`, [spec.id], {
-    endpointStatus: spec.status,
-    required: spec.required,
-  });
+  pushTimeline(
+    caseRecord,
+    "endpoint_upserted",
+    timestamp,
+    `Upserted endpoint spec ${spec.label}.`,
+    [spec.id],
+    {
+      endpointStatus: spec.status,
+      required: spec.required,
+    },
+  );
   refreshCaseRecord(caseRecord, timestamp);
   const stored = store.upsertCase(caseRecord);
   emitCycleAudit(stored, "endpoint_upserted", `Upserted endpoint ${spec.label}.`, {
@@ -904,14 +1005,18 @@ export function advanceCycle(
   }
 
   if (caseRecord.currentBeat === "verify") {
-    throw new Error("Verify is the terminal beat; use evaluate_promotion_gate instead of advancing.");
+    throw new Error(
+      "Verify is the terminal beat; use evaluate_promotion_gate instead of advancing.",
+    );
   }
 
   const nextBeat = BEAT_SEQUENCE[currentIndex + 1];
   const timestamp = nextTimestamp(caseRecord, `advance:${nextBeat}`);
   caseRecord.currentBeat = nextBeat;
   caseRecord.status = nextBeat === "verify" ? "promotion_pending" : "active";
-  pushTimeline(caseRecord, "beat_advanced", timestamp, `Advanced cycle to ${nextBeat}.`, [nextBeat]);
+  pushTimeline(caseRecord, "beat_advanced", timestamp, `Advanced cycle to ${nextBeat}.`, [
+    nextBeat,
+  ]);
   refreshCaseRecord(caseRecord, timestamp);
   const stored = store.upsertCase(caseRecord);
   emitCycleAudit(stored, "beat_advanced", `Advanced cycle to ${nextBeat}.`, {
@@ -933,10 +1038,19 @@ export function evaluatePromotionGate(
 
   if (gate.decision === "allow_promotion") {
     caseRecord.status = "promoted";
-    pushTimeline(caseRecord, "promotion_allowed", timestamp, "Promotion gate passed.", ["promotion-gate"], {
+    pushTimeline(
+      caseRecord,
+      "promotion_allowed",
+      timestamp,
+      "Promotion gate passed.",
+      ["promotion-gate"],
+      {
+        decision: gate.decision,
+      },
+    );
+    emitCycleAudit(caseRecord, "promotion_allowed", "Promotion gate passed.", {
       decision: gate.decision,
     });
-    emitCycleAudit(caseRecord, "promotion_allowed", "Promotion gate passed.", { decision: gate.decision });
   } else {
     if (gate.decision === "hold_for_tighten") {
       caseRecord.returnHistory.push({
@@ -958,10 +1072,17 @@ export function evaluatePromotionGate(
       caseRecord.status = "returned";
     }
 
-    pushTimeline(caseRecord, "promotion_blocked", timestamp, `Promotion blocked: ${gate.decision}.`, ["promotion-gate"], {
-      decision: gate.decision,
-      reasons: gate.reasons,
-    });
+    pushTimeline(
+      caseRecord,
+      "promotion_blocked",
+      timestamp,
+      `Promotion blocked: ${gate.decision}.`,
+      ["promotion-gate"],
+      {
+        decision: gate.decision,
+        reasons: gate.reasons,
+      },
+    );
     emitCycleAudit(caseRecord, "promotion_blocked", `Promotion blocked: ${gate.decision}.`, {
       decision: gate.decision,
       reasons: gate.reasons,
@@ -980,6 +1101,8 @@ export function evaluatePromotionGate(
   };
 }
 
-export function hydrateExistingCases(store: EvolutionCycleStore = getEvolutionCycleStore()): EvolutionCase[] {
+export function hydrateExistingCases(
+  store: EvolutionCycleStore = getEvolutionCycleStore(),
+): EvolutionCase[] {
   return store.listCases();
 }

@@ -18,48 +18,55 @@ tests/
 ## How to Run Tests
 
 ### Run all tests
+
 ```bash
 cd /home/caraxes/CascadeProjects/DIO/program/python-basics
 pytest
 ```
 
 ### Run only unit tests
+
 ```bash
 pytest tests/unit/
 ```
 
 ### Run only integration tests
+
 ```bash
 pytest tests/integration/
 ```
 
 ### Run with verbose output
+
 ```bash
 pytest -v
 ```
 
 ### Run a specific test file
+
 ```bash
 pytest tests/unit/test_add.py
 ```
 
 ### Run a specific test class
+
 ```bash
 pytest tests/unit/test_add.py::TestAddFunction
 ```
 
 ### Run a specific test method
+
 ```bash
 pytest tests/unit/test_add.py::TestAddFunction::test_add_positive_numbers
 ```
 
 ## Test Categories
 
-| Category | Location | Purpose |
-|----------|----------|---------|
-| **Unit** | `tests/unit/` | Fast tests for individual functions |
-| **Integration** | `tests/integration/` | Tests for complete use case scenarios |
-| **Pytest Config** | `conftest.py` | Minimal package-level pytest configuration |
+| Category          | Location             | Purpose                                    |
+| ----------------- | -------------------- | ------------------------------------------ |
+| **Unit**          | `tests/unit/`        | Fast tests for individual functions        |
+| **Integration**   | `tests/integration/` | Tests for complete use case scenarios      |
+| **Pytest Config** | `conftest.py`        | Minimal package-level pytest configuration |
 
 ## Key Concepts Demonstrated
 

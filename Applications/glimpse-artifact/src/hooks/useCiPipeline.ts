@@ -22,7 +22,12 @@ const MOCK_PRS: PipelinePR[] = [
 ];
 
 export function useCiPipeline(): UseCiPipelineResult {
-  const { data: prs, loading, error, retry } = useDataSource<PipelinePR[]>({
+  const {
+    data: prs,
+    loading,
+    error,
+    retry,
+  } = useDataSource<PipelinePR[]>({
     fetcher: async (signal) => {
       const res = await fetch("/api/pipeline/prs", { signal });
       if (!res.ok) throw new Error(`Pipeline API error: ${res.status}`);

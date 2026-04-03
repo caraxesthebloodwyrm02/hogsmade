@@ -52,7 +52,7 @@ describe("AuditIntegrityGuard", () => {
   it("should reject unknown source", () => {
     const result = AuditIntegrityGuard.validateEntry(
       "unknown-evil-server",
-      new Date().toISOString()
+      new Date().toISOString(),
     );
     assert.equal(result.verdict, "deny");
     assert.ok(result.reason.includes("unknown source"));
@@ -60,9 +60,17 @@ describe("AuditIntegrityGuard", () => {
 
   it("should accept all known sources including eligibility-server and glimpse-server", () => {
     const knownSources = [
-      "grid-server", "lots-server", "maintain-server", "echoes-server",
-      "pulse-server", "seeds-server", "afloat-server", "overview-server",
-      "grid-main", "eligibility-server", "glimpse-server",
+      "grid-server",
+      "lots-server",
+      "maintain-server",
+      "echoes-server",
+      "pulse-server",
+      "seeds-server",
+      "afloat-server",
+      "overview-server",
+      "grid-main",
+      "eligibility-server",
+      "glimpse-server",
     ];
     for (const source of knownSources) {
       const result = AuditIntegrityGuard.validateEntry(source, new Date().toISOString());

@@ -20,16 +20,16 @@ python -m unittest discover -s control_room -p 'test_*.py' -v
 ## Smoke Tests (Quick Confidence)
 
 - `test_smoke_runtime_packet_pipeline` in `test_smoke.py`:
-Checks that airflow runtime text and airflow->light packet generation both work in one pass.
+  Checks that airflow runtime text and airflow->light packet generation both work in one pass.
 - `test_smoke_visual_and_gcal_artifacts` in `test_smoke.py`:
-Checks that visual transport output and GCal ICS output are generated with expected markers.
+  Checks that visual transport output and GCal ICS output are generated with expected markers.
 
 ## Main Unit Tests By Purpose
 
 - `test_airflow.py`:
-Validates fallback rules, thresholds, cadence/rhythm mapping, and visual reference structure.
+  Validates fallback rules, thresholds, cadence/rhythm mapping, and visual reference structure.
 - `test_light_control.py`:
-Validates airflow->light mapping, reverse hints, calendar phase tracking, ICS export fields, cadence order, deterministic output, and integration consistency.
+  Validates airflow->light mapping, reverse hints, calendar phase tracking, ICS export fields, cadence order, deterministic output, and integration consistency.
 
 ## Fast Revision Prompts
 

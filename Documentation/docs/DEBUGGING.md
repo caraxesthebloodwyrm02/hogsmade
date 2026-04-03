@@ -17,14 +17,14 @@ Short reference for afterhours debug sprints (platform: Cursor, mode: DEBUG). Ti
 
 ## Key logs and locations
 
-| Project        | Log / artifact              | Location / command                    |
-|----------------|-----------------------------|---------------------------------------|
-| GRID-main      | Ruff output                 | `uv run ruff check .`                 |
-| GRID-main      | Transition Gate audit log   | Path set on `TransitionGate(audit_path=...)`; NDJSON lines, UTC + `timestamp_local_+06` |
-| glimpse-artifact | GATE view debug strip     | trace id, span id, UTC, local (Asia/Dhaka); console `gate.debug.snapshot_loaded` |
-| GATE           | Envelopes, audit, nonce reg | Workspace root `GATE/` — `incoming/`, `results/`, `audit.ndjson`, `.nonce_registry.json`; see [GATE/README.md](../GATE/README.md) |
-| afloat-server  | Vitest output               | `npm test`                            |
-| Cursor debug   | Session log file            | See Cursor debug panel / workspace `.cursor` or session-provided path |
+| Project          | Log / artifact              | Location / command                                                                                                                |
+| ---------------- | --------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| GRID-main        | Ruff output                 | `uv run ruff check .`                                                                                                             |
+| GRID-main        | Transition Gate audit log   | Path set on `TransitionGate(audit_path=...)`; NDJSON lines, UTC + `timestamp_local_+06`                                           |
+| glimpse-artifact | GATE view debug strip       | trace id, span id, UTC, local (Asia/Dhaka); console `gate.debug.snapshot_loaded`                                                  |
+| GATE             | Envelopes, audit, nonce reg | Workspace root `GATE/` — `incoming/`, `results/`, `audit.ndjson`, `.nonce_registry.json`; see [GATE/README.md](../GATE/README.md) |
+| afloat-server    | Vitest output               | `npm test`                                                                                                                        |
+| Cursor debug     | Session log file            | See Cursor debug panel / workspace `.cursor` or session-provided path                                                             |
 
 ## Cursor session shortcut
 

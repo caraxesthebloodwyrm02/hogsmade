@@ -40,9 +40,9 @@ export interface HealthCheckConfig {
 }
 
 export enum CircuitState {
-  CLOSED = 'CLOSED',
-  OPEN = 'OPEN',
-  HALF_OPEN = 'HALF_OPEN'
+  CLOSED = "CLOSED",
+  OPEN = "OPEN",
+  HALF_OPEN = "HALF_OPEN",
 }
 
 export interface CircuitBreakerMetrics {
@@ -69,7 +69,7 @@ export interface RateLimitMetrics {
 }
 
 export interface HealthStatus {
-  status: 'healthy' | 'degraded' | 'unhealthy';
+  status: "healthy" | "degraded" | "unhealthy";
   lastCheck: number;
   consecutiveFailures: number;
   consecutiveSuccesses: number;
@@ -90,32 +90,24 @@ export class ResilienceError extends Error {
     message: string,
     public readonly code: string,
     public readonly context?: ResilienceContext,
-    public readonly cause?: Error
+    public readonly cause?: Error,
   ) {
     super(message);
-    this.name = 'ResilienceError';
+    this.name = "ResilienceError";
   }
 }
 
 export class CircuitBreakerOpenError extends ResilienceError {
   constructor(serviceName: string, context?: ResilienceContext) {
-    super(
-      `Circuit breaker is OPEN for service: ${serviceName}`,
-      'CIRCUIT_BREAKER_OPEN',
-      context
-    );
-    this.name = 'CircuitBreakerOpenError';
+    super(`Circuit breaker is OPEN for service: ${serviceName}`, "CIRCUIT_BREAKER_OPEN", context);
+    this.name = "CircuitBreakerOpenError";
   }
 }
 
 export class RateLimitExceededError extends ResilienceError {
   constructor(serviceName: string, context?: ResilienceContext) {
-    super(
-      `Rate limit exceeded for service: ${serviceName}`,
-      'RATE_LIMIT_EXCEEDED',
-      context
-    );
-    this.name = 'RateLimitExceededError';
+    super(`Rate limit exceeded for service: ${serviceName}`, "RATE_LIMIT_EXCEEDED", context);
+    this.name = "RateLimitExceededError";
   }
 }
 
@@ -124,14 +116,14 @@ export class RetryExhaustedError extends ResilienceError {
     serviceName: string,
     attempts: number,
     lastError: Error,
-    context?: ResilienceContext
+    context?: ResilienceContext,
   ) {
     super(
       `Retry exhausted after ${attempts} attempts for service: ${serviceName}`,
-      'RETRY_EXHAUSTED',
+      "RETRY_EXHAUSTED",
       context,
-      lastError
+      lastError,
     );
-    this.name = 'RetryExhaustedError';
+    this.name = "RetryExhaustedError";
   }
 }

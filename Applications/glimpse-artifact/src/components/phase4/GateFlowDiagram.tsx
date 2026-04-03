@@ -12,10 +12,30 @@ const STATUS_CONFIG: Record<
   EnvelopeStage["status"],
   { icon: typeof CheckCircle; color: string; bg: string; label: string }
 > = {
-  passed: { icon: CheckCircle, color: "text-emerald-500", bg: "bg-emerald-500/10 border-emerald-500/20", label: "Passed" },
-  failed: { icon: XCircle, color: "text-rose-500", bg: "bg-rose-500/10 border-rose-500/20", label: "Failed" },
-  pending: { icon: Clock, color: "text-ink-muted", bg: "bg-surface-raised border-border-color", label: "Pending" },
-  skipped: { icon: SkipForward, color: "text-amber-400", bg: "bg-amber-400/10 border-amber-400/20", label: "Skipped" },
+  passed: {
+    icon: CheckCircle,
+    color: "text-emerald-500",
+    bg: "bg-emerald-500/10 border-emerald-500/20",
+    label: "Passed",
+  },
+  failed: {
+    icon: XCircle,
+    color: "text-rose-500",
+    bg: "bg-rose-500/10 border-rose-500/20",
+    label: "Failed",
+  },
+  pending: {
+    icon: Clock,
+    color: "text-ink-muted",
+    bg: "bg-surface-raised border-border-color",
+    label: "Pending",
+  },
+  skipped: {
+    icon: SkipForward,
+    color: "text-amber-400",
+    bg: "bg-amber-400/10 border-amber-400/20",
+    label: "Skipped",
+  },
 };
 
 export function GateFlowDiagram({ stages, loading, envelopeId }: GateFlowDiagramProps) {
@@ -72,7 +92,9 @@ export function GateFlowDiagram({ stages, loading, envelopeId }: GateFlowDiagram
                     <span className="text-sm font-medium text-ink">{stage.name}</span>
                     {stage.durationMs !== undefined && (
                       <span className="text-xs text-ink-muted font-mono shrink-0">
-                        {stage.durationMs < 1 ? `${(stage.durationMs * 1000).toFixed(0)}μs` : `${stage.durationMs.toFixed(1)}ms`}
+                        {stage.durationMs < 1
+                          ? `${(stage.durationMs * 1000).toFixed(0)}μs`
+                          : `${stage.durationMs.toFixed(1)}ms`}
                       </span>
                     )}
                   </div>

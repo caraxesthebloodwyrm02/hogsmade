@@ -13,6 +13,7 @@
 ## Scope boundaries
 
 **In scope**
+
 - Geography: Bangladesh; emphasis on operations from **Dhaka**.
 - Time: **Last 6 months** (Jul–Dec 2025 / FY2025-26 H1), unless a different window is specified.
 - Revenue streams where the user can be the **direct beneficiary**: remittance, export (e.g. RMG), e-commerce/digital (card, MFS), FDI, domestic business (retail, services, real estate).
@@ -20,6 +21,7 @@
 - **Defining moments (“gestures”):** when we say “revenue happened” (e.g. FX credited, LC/proceeds received, invoice paid, transaction settled, deed/advance paid, FDI booked).
 
 **Out of scope**
+
 - **NBR / government tax** as a “revenue source that applies to me” — user is not the sole beneficiary of the state; treat as excluded from direct-beneficiary analysis.
 - Revenue that cannot be attributed to a direct beneficiary (e.g. aggregate government revenue only, with no “your” angle).
 
@@ -43,4 +45,4 @@
 
 ---
 
-*Paste the “Centric goal” + “Scope boundaries” + “Key questions” blocks into a prompt or brief when asking an agent for overview or tailored research on this topic.*
+_Paste the “Centric goal” + “Scope boundaries” + “Key questions” blocks into a prompt or brief when asking an agent for overview or tailored research on this topic._

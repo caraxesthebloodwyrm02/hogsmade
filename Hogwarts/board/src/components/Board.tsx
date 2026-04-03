@@ -41,7 +41,11 @@ export function Board() {
         <div className="max-w-[1920px] mx-auto px-4 lg:px-6 py-3 flex items-center gap-4">
           {/* Title */}
           <div className="flex items-center gap-2.5 flex-shrink-0">
-            <Zap size={18} className="text-led-green" style={{ filter: "drop-shadow(0 0 4px rgba(52, 211, 153, 0.4))" }} />
+            <Zap
+              size={18}
+              className="text-led-green"
+              style={{ filter: "drop-shadow(0 0 4px rgba(52, 211, 153, 0.4))" }}
+            />
             <h1 className="text-sm font-bold tracking-tight text-text-primary hidden sm:block">
               Hogwarts Synthesizer Board
             </h1>
@@ -60,10 +64,11 @@ export function Board() {
                   onClick={() => toggleHouse(house)}
                   aria-pressed={active}
                   aria-label={`${active ? "Hide" : "Show"} ${meta.label} (${count} tools)`}
-                  className={`press-scale flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-all duration-150 cursor-pointer border ${active
+                  className={`press-scale flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-all duration-150 cursor-pointer border ${
+                    active
                       ? "border-white/10 bg-panel-light text-text-secondary shadow-sm"
                       : "border-transparent text-text-muted hover:text-text-tertiary hover:bg-panel-light/40"
-                    }`}
+                  }`}
                 >
                   <div
                     className="w-2.5 h-2.5 rounded-full transition-all duration-200"
@@ -82,7 +87,10 @@ export function Board() {
 
           {/* Search */}
           <div className="flex-1 max-w-xs ml-auto relative">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" />
+            <Search
+              size={14}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none"
+            />
             <input
               type="search"
               placeholder="Search tools, servers..."
@@ -152,12 +160,7 @@ export function Board() {
         {/* Right sidebar — Screen + Detail */}
         <aside className="w-[340px] flex-shrink-0 space-y-4 hidden xl:block sticky top-[60px] self-start max-h-[calc(100dvh-76px)] overflow-y-auto">
           <Screen focusedKnob={focusedKnob} />
-          {selectedKnob && (
-            <KnobDetail
-              knob={selectedKnob}
-              onClose={() => selectKnob(null)}
-            />
-          )}
+          {selectedKnob && <KnobDetail knob={selectedKnob} onClose={() => selectKnob(null)} />}
         </aside>
       </div>
     </div>

@@ -13,8 +13,8 @@ import {
   guardedServerStartup,
   createGuardConfig,
   MITIGATION_SCOPES,
-  type MitigationScope,
 } from "../src/mcp-guard.js";
+import type { MitigationScope } from "../src/guard-config.js";
 import { createLogger } from "../src/audit-client.js";
 
 // ═══════════════════════════════════════════════════════════════════
@@ -22,18 +22,14 @@ import { createLogger } from "../src/audit-client.js";
 // Critical: GATE audits, nonce registry - fail closed
 // ═══════════════════════════════════════════════════════════════════
 
-export async function gridServerHardenedStartup(
-  startFn: () => Promise<void>
-): Promise<void> {
+export async function gridServerHardenedStartup(startFn: () => Promise<void>): Promise<void> {
   const logger = createLogger("grid-server");
 
   // SECURITY scope: max retries, fail closed on audit, verify writes
   await guardedServerStartup(startFn, "grid-server", logger);
 }
 
-export async function gridServerGATEAudit(
-  writeAuditFn: () => Promise<void>
-): Promise<void> {
+export async function gridServerGATEAudit(writeAuditFn: () => Promise<void>): Promise<void> {
   const logger = createLogger("grid-server");
   const config = createGuardConfig("grid-server", logger, "SECURITY");
 
@@ -48,7 +44,7 @@ export async function gridServerGATEAudit(
 
 export async function gridServerNonceBurn(
   writeNonceFn: () => Promise<void>,
-  verifyReadFn: () => Promise<unknown>
+  verifyReadFn: () => Promise<unknown>,
 ): Promise<void> {
   const logger = createLogger("grid-server");
   const config = createGuardConfig("grid-server", logger, "SECURITY");
@@ -57,7 +53,9 @@ export async function gridServerNonceBurn(
   const result = await guardedFileWrite(writeNonceFn, verifyReadFn, config, "nonce-registry");
 
   if (!result.success) {
-    logger.error("Nonce burn failed - potential replay attack risk", { error: result.error?.message });
+    logger.error("Nonce burn failed - potential replay attack risk", {
+      error: result.error?.message,
+    });
     // Continue but log critical - nonce already validated
   }
 }
@@ -70,7 +68,7 @@ export async function gridServerNonceBurn(
 export async function echoesServerAuditEmit(
   tool: string,
   status: "success" | "failure" | "blocked",
-  metadata?: Record<string, unknown>
+  metadata?: Record<string, unknown>,
 ): Promise<void> {
   const logger = createLogger("echoes-server");
 
@@ -80,7 +78,7 @@ export async function echoesServerAuditEmit(
     tool,
     status,
     { failClosed: false, logger },
-    metadata
+    metadata,
   );
 
   if (!success) {
@@ -96,7 +94,7 @@ export async function echoesServerAuditEmit(
 
 export async function pulseServerSaveJournal(
   writeFn: () => Promise<void>,
-  readBackFn: () => Promise<unknown>
+  readBackFn: () => Promise<unknown>,
 ): Promise<void> {
   const logger = createLogger("pulse-server");
   const config = createGuardConfig("pulse-server", logger, "PERSISTENCE");
@@ -115,7 +113,7 @@ export async function pulseServerSaveJournal(
 // ═══════════════════════════════════════════════════════════════════
 
 export async function maintainServerPlatformDetect(
-  detectFn: () => Promise<unknown>
+  detectFn: () => Promise<unknown>,
 ): Promise<unknown | null> {
   const logger = createLogger("maintain-server");
   const config = createGuardConfig("maintain-server", logger, "STANDARD");
@@ -139,7 +137,7 @@ export async function maintainServerPlatformDetect(
 export async function afloatServerWorkflowSave(
   workflowId: string,
   writeWorkflowFn: () => Promise<void>,
-  readWorkflowFn: () => Promise<unknown>
+  readWorkflowFn: () => Promise<unknown>,
 ): Promise<void> {
   const logger = createLogger("afloat-server");
 
@@ -149,7 +147,7 @@ export async function afloatServerWorkflowSave(
     writeWorkflowFn,
     readWorkflowFn,
     config,
-    `workflow-${workflowId}.json`
+    `workflow-${workflowId}.json`,
   );
 
   if (!result.success) {
@@ -162,7 +160,7 @@ export async function afloatServerWorkflowSave(
     "workflow_save",
     "success",
     { failClosed: false, logger },
-    { workflowId }
+    { workflowId },
   );
 }
 

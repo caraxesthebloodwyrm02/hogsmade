@@ -4,19 +4,19 @@ Cross-repo version compatibility for Mangrove ecosystem.
 
 ## Current Versions
 
-| Component | Version | Source | Updated |
-|-----------|---------|--------|---------|
-| **GRID (Python)** | 2.8.0 | PyPI, Git tag | 2026-03-28 |
-| **hogsmade (Root)** | 1.0.0 | package.json | 2026-03-30 |
-| **MCP Servers** | 1.0.0 | Individual package.json | 2026-03-21 |
-| **shared-types** | 1.0.0 | package.json | 2026-03-21 |
-| **shared-resilience** | 1.0.0 | package.json | 2026-03-21 |
-| **shared-pipeline** | 1.0.0 | package.json | 2026-03-21 |
+| Component             | Version | Source                  | Updated    |
+| --------------------- | ------- | ----------------------- | ---------- |
+| **GRID (Python)**     | 2.8.0   | PyPI, Git tag           | 2026-03-28 |
+| **hogsmade (Root)**   | 1.0.0   | package.json            | 2026-03-30 |
+| **MCP Servers**       | 1.0.0   | Individual package.json | 2026-03-21 |
+| **shared-types**      | 1.0.0   | package.json            | 2026-03-21 |
+| **shared-resilience** | 1.0.0   | package.json            | 2026-03-21 |
+| **shared-pipeline**   | 1.0.0   | package.json            | 2026-03-21 |
 
 ## Submodule Pointer
 
-| Submodule | Target | Commit | Status |
-|-----------|--------|--------|--------|
+| Submodule    | Target      | Commit    | Status     |
+| ------------ | ----------- | --------- | ---------- |
 | `GRID-main/` | GRID v2.8.0 | `a7fe455` | ✅ Current |
 
 ## Dependency Chain
@@ -41,10 +41,9 @@ MCP servers (depend on shared packages)
 
 ## Update Triggers
 
-| When | Action |
-|------|--------|
-| GRID release | Update `GRID-main` to release tag |
+| When                         | Action                             |
+| ---------------------------- | ---------------------------------- |
+| GRID release                 | Update `GRID-main` to release tag  |
 | Breaking shared-types change | Bump all MCP server minor versions |
-| New MCP server | Add to workspaces, version 1.0.0 |
-| Root release | Update CHANGELOG, tag vX.X.X |
-
+| New MCP server               | Add to workspaces, version 1.0.0   |
+| Root release                 | Update CHANGELOG, tag vX.X.X       |

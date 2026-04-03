@@ -12,8 +12,8 @@ export {
   autoSync,
   ciCheck,
   loadSyncRegistry,
-  saveSyncRegistry
-} from './sync-validator.js';
+  saveSyncRegistry,
+} from "./sync-validator.js";
 
 // Calibration engine
 export {
@@ -21,8 +21,8 @@ export {
   createCalibratedFrame,
   comparePolicies,
   CALIBRATION_POLICIES,
-  GAP_TYPES
-} from './calibration-engine.js';
+  GAP_TYPES,
+} from "./calibration-engine.js";
 
 // Function contracts
 export {
@@ -31,8 +31,8 @@ export {
   generateHealingPatch,
   wrapWithContract,
   formatReport,
-  quickValidate
-} from './function-contract.js';
+  quickValidate,
+} from "./function-contract.js";
 
 /**
  * Runs complete agentic validation suite
@@ -40,31 +40,31 @@ export {
  * @returns {Promise<Object>} Complete validation report
  */
 export async function runAgenticValidation(options = {}) {
-  const { validateSyncHealth } = await import('./sync-validator.js');
-  const { validateFunctionContracts } = await import('./function-contract.js');
-  
+  const { validateSyncHealth } = await import("./sync-validator.js");
+  const { validateFunctionContracts } = await import("./function-contract.js");
+
   const startTime = Date.now();
-  
+
   const report = {
     timestamp: new Date().toISOString(),
     durationMs: 0,
     healthy: true,
-    checks: {}
+    checks: {},
   };
-  
+
   // 1. Sync validation
   const syncHealth = validateSyncHealth();
   report.checks.sync = {
     healthy: syncHealth.healthy,
-    details: syncHealth
+    details: syncHealth,
   };
   report.healthy = report.healthy && syncHealth.healthy;
-  
+
   // 2. Future: Add other checks
   // report.checks.contracts = ...
   // report.checks.calibration = ...
-  
+
   report.durationMs = Date.now() - startTime;
-  
+
   return report;
 }

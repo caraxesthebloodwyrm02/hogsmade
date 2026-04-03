@@ -202,14 +202,7 @@ const INCLUDED_EXTENSIONS = new Set([
   ".html",
 ]);
 
-const SKIPPED_DIRS = new Set([
-  ".git",
-  "node_modules",
-  "dist",
-  "coverage",
-  "tmp",
-  ".vite",
-]);
+const SKIPPED_DIRS = new Set([".git", "node_modules", "dist", "coverage", "tmp", ".vite"]);
 
 const STOPWORDS = new Set([
   "the",
@@ -308,11 +301,7 @@ const TERM_EXPANSIONS: Record<string, string[]> = {
   accuracy: ["confidence", "trace", "evidence"],
 };
 
-const PROVIDERS = new Set<ContextSearchProvider>([
-  "deterministic",
-  "openai",
-  "ollama",
-]);
+const PROVIDERS = new Set<ContextSearchProvider>(["deterministic", "openai", "ollama"]);
 
 const TOKEN_DENSE_FLOW = [
   "scenario",
@@ -327,7 +316,7 @@ const TOKEN_DENSE_FLOW = [
   "exportable synthesis",
 ] as const;
 
-type WorkflowStageLabel = typeof TOKEN_DENSE_FLOW[number];
+type WorkflowStageLabel = (typeof TOKEN_DENSE_FLOW)[number];
 
 let cachedIndex:
   | {
@@ -483,7 +472,11 @@ function classifyKind(relativePath: string): string {
   if (relativePath.includes("/components/")) return "component";
   if (relativePath.includes("/tests/") || relativePath.includes(".test.")) return "test";
   if (relativePath.startsWith("docs/") || relativePath.endsWith(".md")) return "doc";
-  if (relativePath.endsWith(".json") || relativePath.endsWith(".yaml") || relativePath.endsWith(".yml")) {
+  if (
+    relativePath.endsWith(".json") ||
+    relativePath.endsWith(".yaml") ||
+    relativePath.endsWith(".yml")
+  ) {
     return "config";
   }
   return "code";
@@ -503,7 +496,9 @@ function extractTitle(relativePath: string, content: string): string {
 
 function extractSymbolTokens(content: string): string[] {
   const matches = [
-    ...content.matchAll(/\b(?:export\s+)?(?:function|const|class|interface|type)\s+([A-Za-z0-9_]+)/g),
+    ...content.matchAll(
+      /\b(?:export\s+)?(?:function|const|class|interface|type)\s+([A-Za-z0-9_]+)/g,
+    ),
   ].map((match) => match[1] ?? "");
 
   return matches.flatMap((value) => splitIdentifierParts(value));
@@ -535,7 +530,7 @@ async function walkTextFiles(targetPath: string): Promise<string[]> {
     const nextPath = path.join(targetPath, entry.name);
 
     if (entry.isDirectory()) {
-      files.push(...await walkTextFiles(nextPath));
+      files.push(...(await walkTextFiles(nextPath)));
       continue;
     }
 
@@ -547,13 +542,15 @@ async function walkTextFiles(targetPath: string): Promise<string[]> {
   return files;
 }
 
-async function buildIndex(repoRoot: string): Promise<{ docs: IndexedDocument[]; vocabulary: Set<string> }> {
+async function buildIndex(
+  repoRoot: string,
+): Promise<{ docs: IndexedDocument[]; vocabulary: Set<string> }> {
   const files: string[] = [];
 
   for (const root of INCLUDED_ROOTS) {
     const absoluteRoot = path.join(repoRoot, root);
     try {
-      files.push(...await walkTextFiles(absoluteRoot));
+      files.push(...(await walkTextFiles(absoluteRoot)));
     } catch {
       // Optional root
     }
@@ -599,7 +596,9 @@ async function buildIndex(repoRoot: string): Promise<{ docs: IndexedDocument[]; 
   return { docs, vocabulary };
 }
 
-async function getIndexedRepo(repoRoot: string): Promise<{ docs: IndexedDocument[]; vocabulary: Set<string> }> {
+async function getIndexedRepo(
+  repoRoot: string,
+): Promise<{ docs: IndexedDocument[]; vocabulary: Set<string> }> {
   const now = Date.now();
   if (cachedIndex && cachedIndex.root === repoRoot && now - cachedIndex.builtAt < 15_000) {
     return { docs: cachedIndex.docs, vocabulary: cachedIndex.vocabulary };
@@ -653,9 +652,7 @@ export function getWorkflowDefinition(): ContextSearchWorkflowDefinition {
       "repo-native glob and pattern search",
       "node transfer, cluster visibility, heatmap, summary, interview, and artifact packaging",
     ],
-    adjacentInfluence: [
-      "canvas-style layout and seam language from the scenario surface",
-    ],
+    adjacentInfluence: ["canvas-style layout and seam language from the scenario surface"],
     tokenDenseForm: TOKEN_DENSE_FLOW.join(" -> "),
     stageOrder: [...TOKEN_DENSE_FLOW],
   };
@@ -711,7 +708,10 @@ function normalizeRuntimeArgs(
 }
 
 export function buildKeywordBundle(
-  request: Pick<ContextSearchRuntimeArgs, "scenarioText" | "optionalContext" | "optionalProblemFrame" | "maxKeywords" | "provider">,
+  request: Pick<
+    ContextSearchRuntimeArgs,
+    "scenarioText" | "optionalContext" | "optionalProblemFrame" | "maxKeywords" | "provider"
+  >,
   vocabulary: Set<string>,
 ): KeywordBundle {
   const provider = getProvider(request.provider);
@@ -756,14 +756,18 @@ export function buildKeywordBundle(
       continue;
     }
 
-    const expansions = [mapped, ...(TERM_EXPANSIONS[mapped] ?? []), ...(TERM_EXPANSIONS[term] ?? [])]
+    const expansions = [
+      mapped,
+      ...(TERM_EXPANSIONS[mapped] ?? []),
+      ...(TERM_EXPANSIONS[term] ?? []),
+    ]
       .map((value) => value.toLowerCase())
       .filter((value, index, values) => value.length >= 3 && values.indexOf(value) === index);
 
     accepted.push({
       term,
       canonicalTerm: mapped,
-      weight: Number((Math.min(1, 0.35 + frequency * 0.18 + (directMatch ? 0.22 : 0.08))).toFixed(2)),
+      weight: Number(Math.min(1, 0.35 + frequency * 0.18 + (directMatch ? 0.22 : 0.08)).toFixed(2)),
       expansions,
       source: provider,
     });
@@ -788,11 +792,15 @@ export function validateVocabulary(keywords: KeywordBundle): VocabularyValidatio
   const warnings: string[] = [];
 
   if (keywords.accepted.length === 0) {
-    warnings.push("No grounded keywords were accepted; later stages will have weak or empty evidence.");
+    warnings.push(
+      "No grounded keywords were accepted; later stages will have weak or empty evidence.",
+    );
   }
 
   if (keywords.unknownTerms.length > 0) {
-    warnings.push("Unknown terms stayed visible and were not allowed to influence deterministic ranking.");
+    warnings.push(
+      "Unknown terms stayed visible and were not allowed to influence deterministic ranking.",
+    );
   }
 
   if (keywords.rejectedTerms.length > 0) {
@@ -800,7 +808,9 @@ export function validateVocabulary(keywords: KeywordBundle): VocabularyValidatio
   }
 
   if (keywords.provider !== "deterministic") {
-    warnings.push("Provider selection affects keyword posture only; scoring remains deterministic.");
+    warnings.push(
+      "Provider selection affects keyword posture only; scoring remains deterministic.",
+    );
   }
 
   return { warnings };
@@ -808,12 +818,15 @@ export function validateVocabulary(keywords: KeywordBundle): VocabularyValidatio
 
 function buildExcerpt(lines: string[], matchedTerms: string[]): string {
   const lowered = matchedTerms.map((term) => term.toLowerCase());
-  const found = lines.find((line) =>
-    lowered.some((term) => line.toLowerCase().includes(term)),
-  );
+  const found = lines.find((line) => lowered.some((term) => line.toLowerCase().includes(term)));
 
   if (found) return found.trim().slice(0, 220);
-  return lines.find((line) => line.trim().length > 0)?.trim().slice(0, 220) ?? "No excerpt available.";
+  return (
+    lines
+      .find((line) => line.trim().length > 0)
+      ?.trim()
+      .slice(0, 220) ?? "No excerpt available."
+  );
 }
 
 export function runDeterministicSearch(
@@ -934,10 +947,11 @@ export function buildNodeTransfers(
 
     for (const ref of doc.references) {
       const normalized = ref.replace(/^\.\/+/, "").replace(/^\.\.\/+/, "");
-      const targetHit = hits.find((candidate) =>
-        candidate.path.endsWith(normalized)
-        || candidate.path.includes(normalized)
-        || ref.includes(path.basename(candidate.path, path.extname(candidate.path))),
+      const targetHit = hits.find(
+        (candidate) =>
+          candidate.path.endsWith(normalized) ||
+          candidate.path.includes(normalized) ||
+          ref.includes(path.basename(candidate.path, path.extname(candidate.path))),
       );
       if (!targetHit) continue;
 
@@ -956,9 +970,10 @@ export function buildNodeTransfers(
     for (let nextIndex = index + 1; nextIndex < clusters.length; nextIndex += 1) {
       const leftHits = hits.filter((hit) => hit.cluster === clusters[index]);
       const rightHits = hits.filter((hit) => hit.cluster === clusters[nextIndex]);
-      const sharedKeywords = keywords.accepted.filter((keyword) =>
-        leftHits.some((hit) => hit.matchedTerms.includes(keyword.canonicalTerm))
-        && rightHits.some((hit) => hit.matchedTerms.includes(keyword.canonicalTerm)),
+      const sharedKeywords = keywords.accepted.filter(
+        (keyword) =>
+          leftHits.some((hit) => hit.matchedTerms.includes(keyword.canonicalTerm)) &&
+          rightHits.some((hit) => hit.matchedTerms.includes(keyword.canonicalTerm)),
       );
 
       if (sharedKeywords.length === 0) continue;
@@ -968,7 +983,10 @@ export function buildNodeTransfers(
         target: `cluster:${clusters[nextIndex]}`,
         type: "transfer",
         weight: Number((0.45 + sharedKeywords.length * 0.18).toFixed(2)),
-        label: sharedKeywords.map((keyword) => keyword.canonicalTerm).slice(0, 2).join(", "),
+        label: sharedKeywords
+          .map((keyword) => keyword.canonicalTerm)
+          .slice(0, 2)
+          .join(", "),
       });
     }
   }
@@ -1005,7 +1023,9 @@ export function buildClusterVisibility(
         matchedTerms: [...matchedTerms].slice(0, 6),
         topHitIds: clusterHits.slice(0, 3).map((hit) => hit.id),
         transferReasons: keywords.accepted
-          .filter((keyword) => clusterHits.some((hit) => hit.matchedTerms.includes(keyword.canonicalTerm)))
+          .filter((keyword) =>
+            clusterHits.some((hit) => hit.matchedTerms.includes(keyword.canonicalTerm)),
+          )
           .map((keyword) => `matched ${keyword.canonicalTerm}`)
           .slice(0, 4),
       };
@@ -1022,7 +1042,9 @@ function buildHeatmap(
   return keywords.accepted.flatMap((keyword) =>
     clusters.map((cluster) => {
       const score = hits
-        .filter((hit) => hit.cluster === cluster.id && hit.matchedTerms.includes(keyword.canonicalTerm))
+        .filter(
+          (hit) => hit.cluster === cluster.id && hit.matchedTerms.includes(keyword.canonicalTerm),
+        )
         .reduce((sum, hit) => sum + hit.score, 0);
 
       return {
@@ -1041,7 +1063,10 @@ function buildSummary(
 ): string {
   const topCluster = clusters[0];
   const topHit = hits[0];
-  const terms = keywords.accepted.map((keyword) => keyword.canonicalTerm).slice(0, 4).join(", ");
+  const terms = keywords.accepted
+    .map((keyword) => keyword.canonicalTerm)
+    .slice(0, 4)
+    .join(", ");
 
   if (!topCluster || !topHit) {
     return "The workflow completed its grounded stages, but the deterministic search did not find enough reproducible repo evidence to claim a strong map.";
@@ -1086,7 +1111,8 @@ export function buildEvidenceArtifacts(
       id: "artifact-heatmap",
       type: "heatmap",
       title: "Keyword-to-cluster heatmap",
-      content: "Heatmap reflects how accepted keywords distribute across the strongest subsystem families.",
+      content:
+        "Heatmap reflects how accepted keywords distribute across the strongest subsystem families.",
       evidenceRefs: hits.slice(0, 4).map((hit) => hit.id),
     },
     {
@@ -1112,11 +1138,27 @@ export function buildInterviewSession(
   artifacts: ArtifactCard[],
 ): ContextSearchResult["interview"] {
   const speakers: InterviewSpeaker[] = [
-    { id: "interviewer", label: "Interviewer", role: "Frames the ask and keeps the discussion scoped." },
-    { id: "retriever", label: "Retriever", role: "Surfaces exact repo evidence and strongest hits." },
+    {
+      id: "interviewer",
+      label: "Interviewer",
+      role: "Frames the ask and keeps the discussion scoped.",
+    },
+    {
+      id: "retriever",
+      label: "Retriever",
+      role: "Surfaces exact repo evidence and strongest hits.",
+    },
     { id: "mapper", label: "Mapper", role: "Explains node, path, and cluster transfer." },
-    { id: "skeptic", label: "Skeptic", role: "Calls out unknowns, weak matches, and confidence limits." },
-    { id: "synthesizer", label: "Synthesizer", role: "Turns grounded evidence into portable reference material." },
+    {
+      id: "skeptic",
+      label: "Skeptic",
+      role: "Calls out unknowns, weak matches, and confidence limits.",
+    },
+    {
+      id: "synthesizer",
+      label: "Synthesizer",
+      role: "Turns grounded evidence into portable reference material.",
+    },
   ];
 
   const topHit = hits[0];
@@ -1155,9 +1197,10 @@ export function buildInterviewSession(
     {
       id: "turn-4",
       speakerId: "skeptic",
-      text: keywords.unknownTerms.length > 0
-        ? `Unknown terms remain visible: ${keywords.unknownTerms.slice(0, 4).join(", ")}. These were not allowed to distort ranking.`
-        : `Unknown-term pressure is low; the main risk is over-reading the top ${Math.min(2, hits.length)} hits.`,
+      text:
+        keywords.unknownTerms.length > 0
+          ? `Unknown terms remain visible: ${keywords.unknownTerms.slice(0, 4).join(", ")}. These were not allowed to distort ranking.`
+          : `Unknown-term pressure is low; the main risk is over-reading the top ${Math.min(2, hits.length)} hits.`,
       evidenceRefs: secondHit ? [secondHit.id] : [],
       artifactRefs: ["artifact-checklist"],
       confidence: 0.78,
@@ -1201,15 +1244,17 @@ export function buildObservation(
 ): ContextSearchObservation {
   const topHit = hits[0];
   const topCluster = clusters[0];
-  const groundingRatio = keywords.accepted.length === 0
-    ? 0
-    : Math.min(1, hits.length / Math.max(1, keywords.accepted.length));
+  const groundingRatio =
+    keywords.accepted.length === 0
+      ? 0
+      : Math.min(1, hits.length / Math.max(1, keywords.accepted.length));
 
-  const confidenceSummary = groundingRatio >= 1
-    ? "High grounding: accepted keywords resolved into stable evidence hits."
-    : groundingRatio >= 0.5
-      ? "Moderate grounding: evidence exists, but coverage is partial."
-      : "Low grounding: the workflow remained deterministic, but evidence coverage is thin.";
+  const confidenceSummary =
+    groundingRatio >= 1
+      ? "High grounding: accepted keywords resolved into stable evidence hits."
+      : groundingRatio >= 0.5
+        ? "Moderate grounding: evidence exists, but coverage is partial."
+        : "Low grounding: the workflow remained deterministic, but evidence coverage is thin.";
 
   return {
     acceptedKeywordCount: keywords.accepted.length,
@@ -1220,10 +1265,7 @@ export function buildObservation(
     topCluster: topCluster?.label ?? null,
     topHit: topHit?.path ?? null,
     confidenceSummary,
-    warnings: [
-      ...validation.warnings,
-      ...(summary ? [] : ["No final summary was produced."]),
-    ],
+    warnings: [...validation.warnings, ...(summary ? [] : ["No final summary was produced."])],
     finalOutput: `stage=${args.stage}; provider=${args.provider}; summary=${summary ? "present" : "absent"}`,
   };
 }
@@ -1266,115 +1308,157 @@ export async function runContextSearchWorkflow(
     throw new Error("scenarioText is required");
   }
 
-  result.prints.push(createStageResult(
-    "scenario",
-    "completed",
-    "Scenario text accepted and anchored to the implemented runtime contract.",
-    { characters: trimmedScenario.length },
-  ));
+  result.prints.push(
+    createStageResult(
+      "scenario",
+      "completed",
+      "Scenario text accepted and anchored to the implemented runtime contract.",
+      { characters: trimmedScenario.length },
+    ),
+  );
 
   const { docs, vocabulary } = await getIndexedRepo(repoRoot);
 
   const keywords = buildKeywordBundle(args, vocabulary);
   result.keywords = keywords;
-  result.prints.push(createStageResult(
-    "keyword bundle",
-    "completed",
-    "Built a compact keyword bundle from scenario text and optional context.",
-    { accepted: keywords.accepted.length, rejected: keywords.rejectedTerms.length, unknown: keywords.unknownTerms.length },
-  ));
+  result.prints.push(
+    createStageResult(
+      "keyword bundle",
+      "completed",
+      "Built a compact keyword bundle from scenario text and optional context.",
+      {
+        accepted: keywords.accepted.length,
+        rejected: keywords.rejectedTerms.length,
+        unknown: keywords.unknownTerms.length,
+      },
+    ),
+  );
 
   const validation = validateVocabulary(keywords);
-  result.prints.push(createStageResult(
-    "vocab validation",
-    "completed",
-    "Validated the keyword bundle against repo-native vocabulary and preserved non-grounded terms visibly.",
-    { warnings: validation.warnings.length },
-  ));
+  result.prints.push(
+    createStageResult(
+      "vocab validation",
+      "completed",
+      "Validated the keyword bundle against repo-native vocabulary and preserved non-grounded terms visibly.",
+      { warnings: validation.warnings.length },
+    ),
+  );
 
   if (args.stage === "keywords") {
-    appendSkippedStages(result.prints, TOKEN_DENSE_FLOW.slice(3), "Skipped because stage=keywords.");
-    result.summary = "Keyword bundle ready. Deterministic search was intentionally stopped at the vocabulary boundary.";
+    appendSkippedStages(
+      result.prints,
+      TOKEN_DENSE_FLOW.slice(3),
+      "Skipped because stage=keywords.",
+    );
+    result.summary =
+      "Keyword bundle ready. Deterministic search was intentionally stopped at the vocabulary boundary.";
     result.observation = buildObservation(args, keywords, [], [], result.summary, validation);
     return result;
   }
 
   const hits = runDeterministicSearch(keywords, docs);
   result.hits = hits;
-  result.prints.push(createStageResult(
-    "deterministic pattern/glob search",
-    "completed",
-    "Scored repo-native files using path, symbol, token, and content matches without a vector store.",
-    { hits: hits.length },
-  ));
+  result.prints.push(
+    createStageResult(
+      "deterministic pattern/glob search",
+      "completed",
+      "Scored repo-native files using path, symbol, token, and content matches without a vector store.",
+      { hits: hits.length },
+    ),
+  );
 
   const graph = buildNodeTransfers(hits, docs, keywords);
   result.graph = graph;
-  result.prints.push(createStageResult(
-    "node transfer",
-    "completed",
-    "Propagated relevance from evidence hits into file-to-file and file-to-cluster transfer edges.",
-    { nodes: graph.nodes.length, edges: graph.edges.length },
-  ));
+  result.prints.push(
+    createStageResult(
+      "node transfer",
+      "completed",
+      "Propagated relevance from evidence hits into file-to-file and file-to-cluster transfer edges.",
+      { nodes: graph.nodes.length, edges: graph.edges.length },
+    ),
+  );
 
   const clusters = buildClusterVisibility(hits, keywords);
   result.clusters = clusters;
-  result.prints.push(createStageResult(
-    "cluster visibility",
-    "completed",
-    "Aggregated transferred relevance into cluster-level visibility and transfer reasons.",
-    { clusters: clusters.length },
-  ));
+  result.prints.push(
+    createStageResult(
+      "cluster visibility",
+      "completed",
+      "Aggregated transferred relevance into cluster-level visibility and transfer reasons.",
+      { clusters: clusters.length },
+    ),
+  );
 
   const heatmap = buildHeatmap(hits, clusters, keywords);
   result.heatmap = heatmap;
   result.summary = buildSummary(hits, clusters, keywords);
-  result.prints.push(createStageResult(
-    "evidence graph",
-    "completed",
-    "Packaged evidence-bearing graph and keyword-to-cluster heatmap surfaces.",
-    { heatmapCells: heatmap.length },
-  ));
+  result.prints.push(
+    createStageResult(
+      "evidence graph",
+      "completed",
+      "Packaged evidence-bearing graph and keyword-to-cluster heatmap surfaces.",
+      { heatmapCells: heatmap.length },
+    ),
+  );
 
   if (args.stage === "query") {
     appendSkippedStages(result.prints, TOKEN_DENSE_FLOW.slice(7), "Skipped because stage=query.");
-    result.observation = buildObservation(args, keywords, hits, clusters, result.summary, validation);
+    result.observation = buildObservation(
+      args,
+      keywords,
+      hits,
+      clusters,
+      result.summary,
+      validation,
+    );
     return result;
   }
 
   const artifacts = buildEvidenceArtifacts(result.summary, hits, clusters, keywords);
   const interview = buildInterviewSession(result.summary, hits, clusters, keywords, artifacts);
   result.interview = interview;
-  result.prints.push(createStageResult(
-    "interview speakers",
-    "completed",
-    "Rendered an evidence-backed interview transcript with grounded speaker turns.",
-    { speakers: interview.speakers.length, turns: interview.turns.length },
-  ));
+  result.prints.push(
+    createStageResult(
+      "interview speakers",
+      "completed",
+      "Rendered an evidence-backed interview transcript with grounded speaker turns.",
+      { speakers: interview.speakers.length, turns: interview.turns.length },
+    ),
+  );
 
   result.artifacts = artifacts;
-  result.prints.push(createStageResult(
-    "multimodal reference artifacts",
-    "completed",
-    "Built portable reference artifacts from grounded evidence hits, clusters, and summary.",
-    { artifacts: artifacts.length },
-  ));
+  result.prints.push(
+    createStageResult(
+      "multimodal reference artifacts",
+      "completed",
+      "Built portable reference artifacts from grounded evidence hits, clusters, and summary.",
+      { artifacts: artifacts.length },
+    ),
+  );
 
   if (args.stage === "interview") {
-    result.prints.push(createSkippedStage(
-      "exportable synthesis",
-      "Skipped because stage=interview.",
-    ));
-    result.observation = buildObservation(args, keywords, hits, clusters, result.summary, validation);
+    result.prints.push(
+      createSkippedStage("exportable synthesis", "Skipped because stage=interview."),
+    );
+    result.observation = buildObservation(
+      args,
+      keywords,
+      hits,
+      clusters,
+      result.summary,
+      validation,
+    );
     return result;
   }
 
-  result.prints.push(createStageResult(
-    "exportable synthesis",
-    "completed",
-    "Prepared a complete exportable synthesis package with definition, observation, prints, evidence, and transcript.",
-    { exportedSections: 9 },
-  ));
+  result.prints.push(
+    createStageResult(
+      "exportable synthesis",
+      "completed",
+      "Prepared a complete exportable synthesis package with definition, observation, prints, evidence, and transcript.",
+      { exportedSections: 9 },
+    ),
+  );
 
   result.observation = buildObservation(args, keywords, hits, clusters, result.summary, validation);
   return result;

@@ -2,7 +2,7 @@
  * Query helpers for reading the residue stack.
  */
 
-import type { ResidueEntry, ResidueStack } from './types.js';
+import type { ResidueEntry, ResidueStack } from "./types.js";
 
 /** Find the most recent deposit from a named pass. */
 export function findResidue(stack: ResidueStack, passId: string): ResidueEntry | undefined {
@@ -20,7 +20,7 @@ export function recentResidue(stack: ResidueStack, limit?: number): ResidueStack
 
 /** Check whether a pass has already deposited into the stack. */
 export function hasRun(stack: ResidueStack, passId: string): boolean {
-  return stack.some(entry => entry.passId === passId);
+  return stack.some((entry) => entry.passId === passId);
 }
 
 /** Extract a typed value from a specific pass's deposit. */

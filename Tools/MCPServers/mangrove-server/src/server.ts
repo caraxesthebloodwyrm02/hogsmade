@@ -61,7 +61,7 @@ const SECURITY_SCRIPT_PATH = "roots/security/scripts/check_underscore_isolation.
 const EPISODE_SUMMARY_SOURCE = [
   "import json",
   "from combined_space import InteractiveIterationTool",
-  "print(json.dumps(InteractiveIterationTool().episode_summary()))"
+  "print(json.dumps(InteractiveIterationTool().episode_summary()))",
 ].join("\n");
 
 const STATUS_SOURCE = [
@@ -71,11 +71,12 @@ const STATUS_SOURCE = [
   "    'cadence': list(CADENCE),",
   "    'rhythmPassCount': RHYTHM_PASS_COUNT,",
   "    'modularPassIndex': MODULAR_PASS_INDEX",
-  "}))"
+  "}))",
 ].join("\n");
 
 function resolveDioRoot(): string {
-  const configuredRoot = process.env.PI_MANGROVE_DIO_ROOT?.trim() || process.env.MANGROVE_DIO_ROOT?.trim();
+  const configuredRoot =
+    process.env.PI_MANGROVE_DIO_ROOT?.trim() || process.env.MANGROVE_DIO_ROOT?.trim();
   if (configuredRoot) {
     return path.resolve(configuredRoot);
   }
@@ -90,14 +91,14 @@ function runCommand(
     env?: NodeJS.ProcessEnv;
     signal?: AbortSignal;
     timeoutMs?: number;
-  }
+  },
 ): Promise<CommandExecutionResult> {
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, {
       cwd: options.cwd,
       env: options.env,
       stdio: ["ignore", "pipe", "pipe"],
-      signal: options.signal
+      signal: options.signal,
     });
 
     let stdout = "";
@@ -106,13 +107,13 @@ function runCommand(
 
     const timeout = options.timeoutMs
       ? setTimeout(() => {
-        if (finished) {
-          return;
-        }
-        finished = true;
-        child.kill();
-        reject(new Error(`Command timed out after ${options.timeoutMs}ms`));
-      }, options.timeoutMs)
+          if (finished) {
+            return;
+          }
+          finished = true;
+          child.kill();
+          reject(new Error(`Command timed out after ${options.timeoutMs}ms`));
+        }, options.timeoutMs)
       : undefined;
 
     child.stdout.setEncoding("utf8");
@@ -155,11 +156,13 @@ async function runEpisodeSummary(dioRoot: string, signal?: AbortSignal): Promise
     cwd: dioRoot,
     env: process.env,
     signal,
-    timeoutMs: 5000
+    timeoutMs: 5000,
   });
 
   if (execution.code !== 0) {
-    throw new Error(execution.stderr.trim() || execution.stdout.trim() || `uv exited with code ${execution.code}`);
+    throw new Error(
+      execution.stderr.trim() || execution.stdout.trim() || `uv exited with code ${execution.code}`,
+    );
   }
 
   const payload = execution.stdout.trim();
@@ -184,11 +187,15 @@ async function runStatusQuery(dioRoot: string, signal?: AbortSignal): Promise<DI
     cwd: dioRoot,
     env: { ...process.env, PYTHONPATH: dioRoot },
     signal,
-    timeoutMs: 5000
+    timeoutMs: 5000,
   });
 
   if (execution.code !== 0) {
-    throw new Error(execution.stderr.trim() || execution.stdout.trim() || `Python exited with code ${execution.code}`);
+    throw new Error(
+      execution.stderr.trim() ||
+        execution.stdout.trim() ||
+        `Python exited with code ${execution.code}`,
+    );
   }
 
   const payload = execution.stdout.trim();
@@ -211,7 +218,7 @@ function resolveAuditTarget(dioRoot: string, requestedPath?: string): string {
 async function runSecurityAudit(
   dioRoot: string,
   params: { path?: string; format?: "text" | "json" },
-  signal?: AbortSignal
+  signal?: AbortSignal,
 ): Promise<{
   result: SecurityAuditJsonResult | string;
   format: "text" | "json";
@@ -228,13 +235,15 @@ async function runSecurityAudit(
       cwd: dioRoot,
       env: process.env,
       signal,
-      timeoutMs: 10000
-    }
+      timeoutMs: 10000,
+    },
   );
 
   if (execution.code !== 0 && execution.code !== 1) {
     throw new Error(
-      execution.stderr.trim() || execution.stdout.trim() || `Security audit exited with code ${execution.code}`
+      execution.stderr.trim() ||
+        execution.stdout.trim() ||
+        `Security audit exited with code ${execution.code}`,
     );
   }
 
@@ -248,7 +257,7 @@ async function runSecurityAudit(
       result: JSON.parse(payload) as SecurityAuditJsonResult,
       format,
       targetPath,
-      exitCode: execution.code
+      exitCode: execution.code,
     };
   }
 
@@ -256,13 +265,13 @@ async function runSecurityAudit(
     result: payload,
     format,
     targetPath,
-    exitCode: execution.code
+    exitCode: execution.code,
   };
 }
 
 async function handleEpisodeSummary(
   { partIndex }: { partIndex?: number },
-  extra: ToolContext
+  extra: ToolContext,
 ): Promise<{ content: Array<{ type: "text"; text: string }>; isError?: boolean }> {
   try {
     const dioRoot = resolveDioRoot();
@@ -270,19 +279,24 @@ async function handleEpisodeSummary(
     const result = partIndex ? selectPart(summary, partIndex) : summary;
 
     return {
-      content: [{ type: "text", text: JSON.stringify({ dioRoot, partIndex: partIndex ?? null, result }, null, 2) }]
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify({ dioRoot, partIndex: partIndex ?? null, result }, null, 2),
+        },
+      ],
     };
   } catch (error) {
     return {
       content: [{ type: "text", text: JSON.stringify({ error: String(error) }) }],
-      isError: true
+      isError: true,
     };
   }
 }
 
 async function handleSecurityAudit(
   { path: requestedPath, format }: { path?: string; format?: "text" | "json" },
-  extra: ToolContext
+  extra: ToolContext,
 ): Promise<{ content: Array<{ type: "text"; text: string }>; isError?: boolean }> {
   try {
     const dioRoot = resolveDioRoot();
@@ -296,30 +310,30 @@ async function handleSecurityAudit(
             typeof audit.result === "string"
               ? audit.result
               : JSON.stringify(
-                {
-                  dioRoot,
-                  targetPath: audit.targetPath,
-                  format: audit.format,
-                  exitCode: audit.exitCode,
-                  result: audit.result
-                },
-                null,
-                2
-              )
-        }
-      ]
+                  {
+                    dioRoot,
+                    targetPath: audit.targetPath,
+                    format: audit.format,
+                    exitCode: audit.exitCode,
+                    result: audit.result,
+                  },
+                  null,
+                  2,
+                ),
+        },
+      ],
     };
   } catch (error) {
     return {
       content: [{ type: "text", text: JSON.stringify({ error: String(error) }) }],
-      isError: true
+      isError: true,
     };
   }
 }
 
 async function handleStatus(
   { detail }: { detail?: "minimal" | "full" },
-  extra: ToolContext
+  extra: ToolContext,
 ): Promise<{ content: Array<{ type: "text"; text: string }>; isError?: boolean }> {
   try {
     const dioRoot = resolveDioRoot();
@@ -329,16 +343,18 @@ async function handleStatus(
       cadence: result.cadence,
       rhythmPassCount: result.rhythmPassCount,
       modularPassIndex: result.modularPassIndex,
-      dioRoot
+      dioRoot,
     };
 
     return {
-      content: [{ type: "text", text: JSON.stringify(status, null, detail === "full" ? 2 : undefined) }]
+      content: [
+        { type: "text", text: JSON.stringify(status, null, detail === "full" ? 2 : undefined) },
+      ],
     };
   } catch (error) {
     return {
       content: [{ type: "text", text: JSON.stringify({ error: String(error) }) }],
-      isError: true
+      isError: true,
     };
   }
 }
@@ -346,7 +362,7 @@ async function handleStatus(
 export function buildServer(): McpServer {
   const server = new McpServer({
     name: SERVER_NAME,
-    version: VERSION
+    version: VERSION,
   });
   const registerTool = server.tool.bind(server) as (...args: unknown[]) => void;
 
@@ -354,28 +370,45 @@ export function buildServer(): McpServer {
     "dio_episode_summary",
     "Read the DIO episode structure summary or one specific part from the local DIO workspace.",
     {
-      partIndex: z.number().int().min(1).max(4).optional().describe("Optional part number to return from the DIO episode summary")
+      partIndex: z
+        .number()
+        .int()
+        .min(1)
+        .max(4)
+        .optional()
+        .describe("Optional part number to return from the DIO episode summary"),
     },
-    handleEpisodeSummary
+    handleEpisodeSummary,
   );
 
   registerTool(
     "dio_status",
     "Query DIO constants (CADENCE, RHYTHM_PASS_COUNT, MODULAR_PASS_INDEX) from the local Python environment.",
     {
-      detail: z.enum(["minimal", "full"]).optional().default("minimal").describe("Level of detail to return")
+      detail: z
+        .enum(["minimal", "full"])
+        .optional()
+        .default("minimal")
+        .describe("Level of detail to return"),
     },
-    handleStatus
+    handleStatus,
   );
 
   registerTool(
     "security_audit",
     "Run the DIO underscore-isolation security audit against the DIO workspace or a specific target path.",
     {
-      path: z.string().optional().describe("Optional file or directory to audit. Relative paths resolve from the DIO root."),
-      format: z.enum(["text", "json"]).optional().default("json").describe("Output format to request from the security checker.")
+      path: z
+        .string()
+        .optional()
+        .describe("Optional file or directory to audit. Relative paths resolve from the DIO root."),
+      format: z
+        .enum(["text", "json"])
+        .optional()
+        .default("json")
+        .describe("Output format to request from the security checker."),
     },
-    handleSecurityAudit
+    handleSecurityAudit,
   );
 
   return server;
@@ -389,8 +422,7 @@ export async function startServer(): Promise<McpServer> {
 }
 
 const isEntrypoint =
-  process.argv[1] != null &&
-  pathToFileURL(process.argv[1]).href === import.meta.url;
+  process.argv[1] != null && pathToFileURL(process.argv[1]).href === import.meta.url;
 
 if (isEntrypoint) {
   async function main() {

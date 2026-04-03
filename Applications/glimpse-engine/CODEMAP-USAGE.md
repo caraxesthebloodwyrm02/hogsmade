@@ -7,18 +7,21 @@ The CodeMap JSON schema provides a comprehensive structure for generating detail
 ## Key Features
 
 ### 📍 **Exact Path Information**
+
 - Full URI paths for all files and directories
 - Precise file names with extensions
 - Hierarchical directory structure
 - Parent-child relationships
 
 ### 📊 **Detailed LOC Metrics**
+
 - **Total lines**: All lines including comments and blanks
 - **Code lines**: Actual executable code
 - **Comment lines**: Documentation and inline comments
 - **Blank lines**: Empty whitespace lines
 
 ### 🗂️ **File Classification**
+
 - **Basename**: Name without extension
 - **Extension**: Including the dot (`.js`, `.ts`, `.md`)
 - **Language**: Detected programming language
@@ -26,12 +29,14 @@ The CodeMap JSON schema provides a comprehensive structure for generating detail
 - **Line endings**: LF, CRLF, or CR
 
 ### 🔍 **Code Structure Analysis**
+
 - **Functions**: Name, type, parameters, complexity
 - **Classes**: Inheritance, methods, properties
 - **Imports/Exports**: Module dependencies
 - **Complexity metrics**: Cyclomatic, cognitive, Halstead
 
 ### 📈 **Quality Metrics**
+
 - **Maintainability index**: 0-100 scale
 - **Technical debt**: Estimated in hours
 - **Test coverage**: Lines, functions, branches
@@ -40,6 +45,7 @@ The CodeMap JSON schema provides a comprehensive structure for generating detail
 ## Example Usage
 
 ### Basic CodeMap Structure
+
 ```json
 {
   "codeMap": {
@@ -127,8 +133,9 @@ The CodeMap JSON schema provides a comprehensive structure for generating detail
 ## Implementation Guidelines
 
 ### 1. **Path Generation**
+
 ```javascript
-const path = require('path');
+const path = require("path");
 
 function generateFilePath(root, relativePath) {
   return `file://${path.resolve(root, relativePath)}`;
@@ -140,56 +147,58 @@ function generateFilePath(root, relativePath) {
 ```
 
 ### 2. **LOC Calculation**
+
 ```javascript
 function calculateLOC(content) {
-  const lines = content.split('\n');
+  const lines = content.split("\n");
   return {
     total: lines.length,
-    code: lines.filter(line => 
-      line.trim() && !line.trim().startsWith('//') && !line.trim().startsWith('*')
+    code: lines.filter(
+      (line) => line.trim() && !line.trim().startsWith("//") && !line.trim().startsWith("*"),
     ).length,
-    comment: lines.filter(line => 
-      line.trim().startsWith('//') || line.trim().startsWith('*')
-    ).length,
-    blank: lines.filter(line => !line.trim()).length
+    comment: lines.filter((line) => line.trim().startsWith("//") || line.trim().startsWith("*"))
+      .length,
+    blank: lines.filter((line) => !line.trim()).length,
   };
 }
 ```
 
 ### 3. **File Extension Mapping**
+
 ```javascript
 const LANGUAGE_MAP = {
-  '.js': 'JavaScript',
-  '.ts': 'TypeScript',
-  '.jsx': 'JavaScript',
-  '.tsx': 'TypeScript',
-  '.mjs': 'JavaScript',
-  '.cjs': 'JavaScript',
-  '.json': 'JSON',
-  '.md': 'Markdown',
-  '.html': 'HTML',
-  '.css': 'CSS',
-  '.py': 'Python',
-  '.java': 'Java',
-  '.cpp': 'C++',
-  '.c': 'C',
-  '.rs': 'Rust'
+  ".js": "JavaScript",
+  ".ts": "TypeScript",
+  ".jsx": "JavaScript",
+  ".tsx": "TypeScript",
+  ".mjs": "JavaScript",
+  ".cjs": "JavaScript",
+  ".json": "JSON",
+  ".md": "Markdown",
+  ".html": "HTML",
+  ".css": "CSS",
+  ".py": "Python",
+  ".java": "Java",
+  ".cpp": "C++",
+  ".c": "C",
+  ".rs": "Rust",
 };
 ```
 
 ### 4. **Complexity Analysis**
+
 ```javascript
 function calculateCyclomaticComplexity(functionCode) {
   let complexity = 1; // Base complexity
-  
+
   // Count decision points
-  const decisions = ['if', 'else', 'while', 'for', 'case', 'catch', '&&', '||'];
-  decisions.forEach(keyword => {
-    const regex = new RegExp(`\\b${keyword}\\b`, 'g');
+  const decisions = ["if", "else", "while", "for", "case", "catch", "&&", "||"];
+  decisions.forEach((keyword) => {
+    const regex = new RegExp(`\\b${keyword}\\b`, "g");
     const matches = functionCode.match(regex);
     if (matches) complexity += matches.length;
   });
-  
+
   return complexity;
 }
 ```
@@ -197,9 +206,10 @@ function calculateCyclomaticComplexity(functionCode) {
 ## Validation
 
 ### Using JSON Schema Validator
+
 ```javascript
-const Ajv = require('ajv');
-const schema = require('./codemap-schema.json');
+const Ajv = require("ajv");
+const schema = require("./codemap-schema.json");
 
 const ajv = new Ajv();
 const validate = ajv.compile(schema);
@@ -207,7 +217,7 @@ const validate = ajv.compile(schema);
 function validateCodeMap(codeMap) {
   const valid = validate(codeMap);
   if (!valid) {
-    console.error('Validation errors:', validate.errors);
+    console.error("Validation errors:", validate.errors);
     return false;
   }
   return true;
@@ -215,6 +225,7 @@ function validateCodeMap(codeMap) {
 ```
 
 ### Required Fields Checklist
+
 - [ ] `metadata.generatedAt` (ISO 8601 timestamp)
 - [ ] `metadata.rootPath` (file URI)
 - [ ] `metadata.totalFiles` (integer)
@@ -227,6 +238,7 @@ function validateCodeMap(codeMap) {
 ## Integration with Glimpse
 
 ### Activity Tracking Integration
+
 ```javascript
 // In activity-tracker.js
 function generateCodeMap() {
@@ -238,43 +250,44 @@ function generateCodeMap() {
         generator: "glimpse-activity-tracker",
         rootPath: `file://${process.cwd()}`,
         totalFiles: this.analyzedFiles,
-        totalLOC: this.totalLOC
+        totalLOC: this.totalLOC,
       },
       // ... rest of structure
-    }
+    },
   };
-  
+
   // Track code map generation as activity
   this.recordSession({
-    scenario: 'codemap-generation',
+    scenario: "codemap-generation",
     duration: Date.now() - startTime,
     recordCount: this.analyzedFiles,
-    complexity: 'moderate',
-    status: 'success'
+    complexity: "moderate",
+    status: "success",
   });
-  
+
   return codeMap;
 }
 ```
 
 ### Visual Feedback Integration
+
 ```javascript
 // In visual-feedback.js
 renderCodeMapView(codeMap) {
   const { metadata, directories, files } = codeMap.codeMap;
-  
+
   openFrame('🗺️ CodeMap Analysis');
-  
+
   section('Overview');
   kv('Total Files', metadata.totalFiles);
   kv('Total LOC', metadata.totalLOC);
   kv('Languages', metadata.languages.length);
-  
+
   section('Largest Files');
   const sortedFiles = Object.values(files)
     .sort((a, b) => b.loc.total - a.loc.total)
     .slice(0, 10);
-    
+
   sortedFiles.forEach(file => {
     kv(file.name, `${file.loc.total} LOC`);
   });
@@ -284,12 +297,14 @@ renderCodeMapView(codeMap) {
 ## Performance Considerations
 
 ### Large Codebases
+
 - Use streaming for file reading
 - Implement lazy evaluation for complex metrics
 - Cache results for repeated analysis
 - Consider parallel processing for independent files
 
 ### Memory Management
+
 - Process directories depth-first to limit memory usage
 - Use generators for large file lists
 - Implement incremental updates for live monitoring
@@ -297,6 +312,7 @@ renderCodeMapView(codeMap) {
 ## Extensions
 
 ### Custom Metrics
+
 ```json
 {
   "customMetrics": {
@@ -309,6 +325,7 @@ renderCodeMapView(codeMap) {
 ```
 
 ### Integration Points
+
 - **Git Integration**: Add commit history, blame information
 - **CI/CD Integration**: Build metrics, test results
 - **IDE Integration**: Real-time updates, navigation

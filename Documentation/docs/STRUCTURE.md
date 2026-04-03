@@ -1,81 +1,87 @@
 # Workspace structure and attention map
 
-This document is the **single map** for where things live and who owns what. Use it to reduce cognitive load and route work to the right place (attention taxonomy + agency).
+This is the single map for where things live in the current CascadeProjects layout.
 
-## Root directory (first glance)
+## Root directory
 
 | Purpose | Location | Notes |
-|--------|----------|------|
-| **Entry points** | `README.md`, `CLAUDE.md`, `AGENTS.md` | Start here for orientation and AI/agent rules. |
-| **Conventions** | `CONTRIBUTING.md`, `CHANGELOG.md`, `LICENSE`, `SECURITY.md` | Contributing, history, license, security policy. |
-| **Scratch / notes** | `archive/session-artifacts/` | Session scratch files; not config. |
-| **Config (root)** | `.env.example`, `.gitattributes`, `.gitignore`, `.gitmodules` | Env template, git config. See [GIT_REPO.md](GIT_REPO.md#ignored-paths) for ignored paths. |
-| **Tool config** | `mcp_config.json`, `claude_code_config.json` | MCP and editor tooling; do not commit secrets. |
-| **Docs** | `docs/` | All shared documentation; index in [docs/README.md](README.md). |
-| **Scripts** | `scripts/` | Workspace-level scripts; index in [scripts/README.md](../scripts/README.md). |
-| **Operational** | `GATE/` | GATE envelopes, contracts, results; runtime/ops data. |
-| **Root tests** | `tests/` | Cross-project integration tests (e.g. `glimpse-engine.test.mjs`). |
-| **Projects** | See below | Apps, servers, shared packages at root. |
+| --- | --- | --- |
+| Entry points | `README.md`, `CLAUDE.md`, `AGENTS.md` | Start here for workspace orientation and rules. |
+| Conventions | `CONTRIBUTING.md`, `CHANGELOG.md`, `LICENSE`, `SECURITY.md` | Shared repo policy and history. |
+| Scratch / notes | `archive/session-artifacts/` | Session scratch files; not config. |
+| Config | `.env.example`, `.gitattributes`, `.gitignore`, `.gitmodules` | Root-level repo config and submodule metadata. |
+| Tool config | `mcp_config.json`, `claude_code_config.json` | Active MCP/editor config files. |
+| Docs | `Documentation/` | Shared docs, audits, and layout notes. |
+| Scripts | `scripts/` | Workspace-level scripts and utilities. |
+| Operational data | `Projects/GATE/` | Envelopes, contracts, results, and runtime ops data. |
+| Root tests | `tests/` | Cross-project integration tests. |
+| Applications | `Applications/` | Apps, engines, and product-facing work. |
+| MCP servers | `Tools/MCPServers/` | First-party TypeScript MCP servers. |
+| Shared packages | `Components/` | Current location for shared packages and helpers. |
+| Reserved | `Shared/` | Present but currently empty. |
 
-## Projects (scope → ownership)
+## Projects
 
-Grouped by **scope** so you know where to look and what to touch.
+### First-party applications and servers
 
-### First-party apps and servers (root)
+| Project | Type | Notes |
+| --- | --- | --- |
+| `Tools/MCPServers/afloat-server/` | MCP server | Workflow orchestration and scheduled diagnostics |
+| `Tools/MCPServers/echoes-server/` | MCP server | Audit and telemetry persistence |
+| `Tools/MCPServers/grid-server/` | MCP server | GRID and GATE integration |
+| `Tools/MCPServers/lots-server/` | MCP server | Experiment catalog and runner |
+| `Tools/MCPServers/maintain-server/` | MCP server | Diagnostics, cleanup, maintenance |
+| `Tools/MCPServers/pulse-server/` | MCP server | Briefings, focus, journal, prioritization |
+| `Tools/MCPServers/seeds-server/` | MCP server | Ecosystem snapshots and scans |
+| `Tools/MCPServers/eligibility-server/` | MCP server | Promotion-gate and cycle management |
+| `Tools/MCPServers/overview-server/` | MCP server | Workspace health and checkpoint summaries |
+| `Tools/MCPServers/mangrove-server/` | MCP server | DIO bridge and security audit helpers |
+| `Tools/MCPServers/glimpse-server/` | MCP server | Glimpse cognitive-engine tools |
+| `Applications/glimpse-artifact/` | App/library | React UI and components |
+| `Applications/glimpse-engine/` | Engine | Browser visualization engine and demos |
+| `Applications/pi-mangrove/` | Workspace package | Prompt / skill assets and tooling |
+| `Projects/DIO/` | Control room suite | Airflow/light coordination and episode tooling |
+| `Projects/GATE/` | Operational store | Envelopes, contracts, and audit data |
+| `Projects/projects/viz/` | Workspace project | Visualization experiments |
+| `Components/shared-types/` | Shared package | Types and audit client |
+| `Components/shared-resilience/` | Shared package | Circuit breakers, retries, and rate limiting |
+| `Components/shared-pipeline/` | Shared package | Shared pipeline helpers |
 
-| Project | Type | Owner / scope |
-|---------|------|----------------|
-| `afloat-server/` | MCP server | Workflow orchestration, scheduled diagnostics |
-| `echoes-server/` | MCP server | Audit and telemetry persistence |
-| `grid-server/` | MCP server | GRID/GATE integration |
-| `lots-server/` | MCP server | Experiment catalog and runner |
-| `maintain-server/` | MCP server | Diagnostics, cleanup, maintenance |
-| `pulse-server/` | MCP server | Briefings, focus, journal, prioritization |
-| `seeds-server/` | MCP server | Ecosystem snapshots and scans |
-| `glimpse-artifact/` | App/library | React UI and components |
-| `glimpse-engine/` | Visualization | Data viz engine, runs in browser; includes HTML demos and tests |
-| `glimpse-server/` | MCP server | Glimpse MCP tools (analyze, compress, similarity, confidence) |
-| `shared-types/` | Shared package | Types and audit client; build before dependent servers |
-| `shared-resilience/` | Shared package | Circuit breaker, rate limit, retry patterns |
-
-Each has its own README, lockfile, and toolchain. Use [CLAUDE.md](../CLAUDE.md) / [AGENTS.md](../AGENTS.md) for build and test commands.
-
-### Nested repos (submodules)
+### Nested repos
 
 | Project | Managed in | Notes |
-|---------|------------|--------|
-| `GRID-main/` | Its own git root | Python, FastAPI, uv; see `GRID-main/docs/project/`. |
-| `mcp-tool-experiment/` | Its own git root | TypeScript, pnpm; includes MCP SDK and safety pipeline. |
+| --- | --- | --- |
+| `Projects/GRID-main/` | Its own git root | Python, FastAPI, uv; see `Projects/GRID-main/docs/project/` |
 
-
-Root repo only records their commit refs. See [GIT_REPO.md](GIT_REPO.md) and [SUBMODULES.md](SUBMODULES.md).
+Historical references to `mcp-tool-experiment` are archival only and are not active checkouts in the current tree.
 
 ## Where to put things
 
-- **New shared doc** → `docs/`; add a line to `docs/README.md`.
-- **New workspace script** → `scripts/` (or `scripts/<topic>/`); mention in `scripts/README.md`.
-- **GATE envelopes / contracts** → `GATE/` (incoming, results, contracts as per GATE design).
-- **Project-specific code** → Inside that project; do not add to root.
+- New shared docs -> `Documentation/`; update `Documentation/docs/README.md`
+- New workspace scripts -> `scripts/` or a subdirectory under it
+- GATE envelopes / contracts -> `Projects/GATE/`
+- Project-specific code -> Inside the matching project directory
 
-## Attention taxonomy (where to look)
+## Attention taxonomy
 
-| If you want to… | Look here |
-|------------------|-----------|
-| Understand the workspace | `README.md`, this file, `docs/README.md` |
-| Configure AI/agents | `CLAUDE.md`, `AGENTS.md`, `.cursor/`, `.claude/` |
-| Git and branches | `docs/GIT_REPO.md`, `docs/git-audit-guide.md`, `docs/SUBMODULES.md` |
-| Data contracts and APIs | `docs/DATA_CONTRACTS.md`, per-project READMEs |
-| Security and compliance | `SECURITY.md`, `docs/SECURITY_STATUS.md` |
+| If you want to... | Look here |
+| --- | --- |
+| Understand the workspace | `README.md`, this file, `Documentation/docs/README.md` |
+| Configure AI / agents | `CLAUDE.md`, `AGENTS.md`, `.cursor/`, `.claude/` |
+| Git and branches | `Documentation/docs/GIT_REPO.md`, `Documentation/docs/git-audit-guide.md`, `Documentation/docs/SUBMODULES.md` |
+| Data contracts and APIs | `Documentation/docs/DATA_CONTRACTS.md`, per-project READMEs |
+| Security and compliance | `SECURITY.md`, `Documentation/docs/SECURITY_STATUS.md` |
 | Run or add scripts | `scripts/`, `scripts/README.md` |
-| Phase 4 and quality | `docs/PHASE4_QUALITY_CONTRACT.md`, `docs/PROGRESS_SUMMARY.md` |
+| Quality and phase work | `Documentation/docs/PHASE4_QUALITY_CONTRACT.md`, `Documentation/docs/PROGRESS_SUMMARY.md` |
 
 ## Tool and CI health
 
-- **Build order**: `shared-types` first, then `shared-resilience`, then any dependent server. `grid-server` depends on both shared packages.
-- **Per project**: See each project README for `npm run build`, `npm test`, or `uv run pytest` / `uv run ruff check` (GRID-main). Run builds and tests after changes to confirm nothing is broken.
+- Build order: `Components/shared-types` first, then `Components/shared-resilience`, then any dependent server
+- `grid-server` depends on both shared packages
+- Run builds and tests after changes to confirm nothing is broken
 
-## Agency (who does what)
+## Agency
 
-- **Root repo** = shared docs, conventions, first-party servers, and scripts. Commit with scoped messages (e.g. `fix(glimpse-artifact): …`).
-- **Nested repos** = commit inside `GRID-main/` or `mcp-tool-experiment/` when changing those codebases; update refs at root only when intentionally recording a new submodule commit.
-- **Per-project** = each app/server/package owns its build, test, and deploy; see project README and workspace CLAUDE/AGENTS.
+- Root repo = shared docs, conventions, first-party servers, and scripts
+- Nested repo = commit inside `Projects/GRID-main/` when changing that codebase; update the root ref only when intentionally recording a new submodule commit
+- Each project owns its own build, test, and deploy flow

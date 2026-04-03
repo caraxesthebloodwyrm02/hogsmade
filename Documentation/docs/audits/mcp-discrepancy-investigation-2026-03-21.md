@@ -10,12 +10,12 @@
 
 ## Finding Index
 
-| ID | Summary | Severity | Contract Clause | Root Location |
-|----|---------|----------|-----------------|---------------|
-| MCP-D01 | `grid-agentic` + `grid-memory`: code exists, absent from canonical config | High | NR-01, Clause I.3 | `GRID-main/mcp-setup/server/` |
-| MCP-D02 | `code-analysis` + `test-runner`: custom JSON-RPC loop, not MCP SDK | Medium | Clause II.1, NR-02 | `GRID-main/mcp-setup/server/` |
-| MCP-D03 | GRID-internal config uses stale Windows paths on Linux workstation | High | Clause I.2, NR-01 | `GRID-main/mcp-setup/mcp_config.json` |
-| MCP-D04 | GRID-internal config entry points don't match actual file locations | High | Clause I.1, NR-02 | `GRID-main/mcp-setup/mcp_config.json` |
+| ID      | Summary                                                                   | Severity | Contract Clause    | Root Location                         |
+| ------- | ------------------------------------------------------------------------- | -------- | ------------------ | ------------------------------------- |
+| MCP-D01 | `grid-agentic` + `grid-memory`: code exists, absent from canonical config | High     | NR-01, Clause I.3  | `GRID-main/mcp-setup/server/`         |
+| MCP-D02 | `code-analysis` + `test-runner`: custom JSON-RPC loop, not MCP SDK        | Medium   | Clause II.1, NR-02 | `GRID-main/mcp-setup/server/`         |
+| MCP-D03 | GRID-internal config uses stale Windows paths on Linux workstation        | High     | Clause I.2, NR-01  | `GRID-main/mcp-setup/mcp_config.json` |
+| MCP-D04 | GRID-internal config entry points don't match actual file locations       | High     | Clause I.1, NR-02  | `GRID-main/mcp-setup/mcp_config.json` |
 
 ---
 
@@ -34,7 +34,7 @@ Both use MCP SDK `stdio_server()` transport correctly.
 
 - **GRID-internal config** (`GRID-main/mcp-setup/mcp_config.json`) lists both with `"enabled": false`.
 - **Canonical config** (`CascadeProjects/mcp_config.json`) has no entry for either.
-- The workspace memory states: *"Treat `CascadeProjects/mcp_config.json` as the canonical MCP source of truth; live Windsurf MCP files should mirror it."*
+- The workspace memory states: _"Treat `CascadeProjects/mcp_config.json` as the canonical MCP source of truth; live Windsurf MCP files should mirror it."_
 
 This means these servers exist as runnable code but have no declared status in the authoritative config. A future session could discover them, assume they are active, and produce decisions based on incomplete inventory.
 
@@ -62,11 +62,11 @@ CascadeProjects/mcp_config.json: (absent)
 
 ### Action required — choose one per server
 
-| Option | Action | Effect |
-|--------|--------|--------|
-| **A — Isolate** | Add entry to canonical config with `"disabled": true` and reason | Servers stay inert but are inventoried; prevents silent rediscovery |
-| **B — Activate** | Add entry to canonical config with correct Linux paths and `"enabled": true` | Servers become part of the active MCP surface |
-| **C — Remove** | Delete the server files; remove from GRID-internal config | Eliminates the drift source entirely |
+| Option           | Action                                                                       | Effect                                                              |
+| ---------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| **A — Isolate**  | Add entry to canonical config with `"disabled": true` and reason             | Servers stay inert but are inventoried; prevents silent rediscovery |
+| **B — Activate** | Add entry to canonical config with correct Linux paths and `"enabled": true` | Servers become part of the active MCP surface                       |
+| **C — Remove**   | Delete the server files; remove from GRID-internal config                    | Eliminates the drift source entirely                                |
 
 **Recommended**: Option A for both. They use SDK transport correctly, so activation is low-risk if needed later. But the canonical config must acknowledge their existence either way.
 
@@ -96,6 +96,7 @@ All other Python MCP servers (`grid-rag`, `grid-rag-enhanced`, `grid-enhanced-to
 These two servers were written as standalone scripts that manually parse JSON-RPC over stdin. They predate (or bypass) the project's adoption of the `mcp` SDK for Python servers.
 
 The result:
+
 - **Different error handling model** — bare `try/except json.JSONDecodeError: continue` vs SDK's structured error propagation
 - **No SDK lifecycle hooks** — no `initialize` negotiation beyond a manual response, no capability advertisement via SDK
 - **No structured logging** — no `structlog`, plain `print(json.dumps(response))` to stdout
@@ -134,25 +135,25 @@ async def main():
 
 ### Action required — choose one
 
-| Option | Action | Effect |
-|--------|--------|--------|
-| **A — Migrate to SDK** | Rewrite both servers to use `Server()` + `stdio_server()` like all other Python servers | Full alignment; consistent error handling, lifecycle, testability |
-| **B — Isolate and document** | Add `# TRANSPORT: custom-jsonrpc-stdio (non-SDK)` header comment; document in canonical config as intentional exception | Drift is acknowledged; code quality gap persists but is visible |
-| **C — Deprecate** | Mark as deprecated in config; route `analyze_code`/`check_security`/`run_tests` through `grid-enhanced-tools` instead | Reduces surface area; `grid-enhanced-tools` already has overlapping capabilities |
+| Option                       | Action                                                                                                                  | Effect                                                                           |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| **A — Migrate to SDK**       | Rewrite both servers to use `Server()` + `stdio_server()` like all other Python servers                                 | Full alignment; consistent error handling, lifecycle, testability                |
+| **B — Isolate and document** | Add `# TRANSPORT: custom-jsonrpc-stdio (non-SDK)` header comment; document in canonical config as intentional exception | Drift is acknowledged; code quality gap persists but is visible                  |
+| **C — Deprecate**            | Mark as deprecated in config; route `analyze_code`/`check_security`/`run_tests` through `grid-enhanced-tools` instead   | Reduces surface area; `grid-enhanced-tools` already has overlapping capabilities |
 
 **Recommended**: Option A for both. The migration is mechanical — the tool functions themselves are fine; only the transport loop needs replacement. This eliminates the protocol compliance gap.
 
 ### Code quality notes
 
-| Check | `code-analysis` | `test-runner` | SDK servers |
-|-------|-----------------|---------------|-------------|
-| Transport | `sys.stdin.readline()` loop | `sys.stdin.readline()` loop | `stdio_server()` |
-| Async | No (`def main()`) | No (`def main()`) | Yes (`async def main()`) |
-| Error handling | `except json.JSONDecodeError: continue` | `except json.JSONDecodeError: continue` | SDK-managed |
-| Logging | `print()` | `print()` | `structlog` / `logging` |
-| Type hints | Partial | Partial | Full |
-| Input validation | Manual dict access | Manual dict access | SDK + Pydantic/Zod schemas |
-| Protocol negotiation | Hardcoded `PROTOCOL_VERSION` | Hardcoded `PROTOCOL_VERSION` | SDK `create_initialization_options()` |
+| Check                | `code-analysis`                         | `test-runner`                           | SDK servers                           |
+| -------------------- | --------------------------------------- | --------------------------------------- | ------------------------------------- |
+| Transport            | `sys.stdin.readline()` loop             | `sys.stdin.readline()` loop             | `stdio_server()`                      |
+| Async                | No (`def main()`)                       | No (`def main()`)                       | Yes (`async def main()`)              |
+| Error handling       | `except json.JSONDecodeError: continue` | `except json.JSONDecodeError: continue` | SDK-managed                           |
+| Logging              | `print()`                               | `print()`                               | `structlog` / `logging`               |
+| Type hints           | Partial                                 | Partial                                 | Full                                  |
+| Input validation     | Manual dict access                      | Manual dict access                      | SDK + Pydantic/Zod schemas            |
+| Protocol negotiation | Hardcoded `PROTOCOL_VERSION`            | Hardcoded `PROTOCOL_VERSION`            | SDK `create_initialization_options()` |
 
 ### Verification command
 
@@ -192,7 +193,7 @@ The GRID-internal config was created on a Windows development environment and ne
 ### Contract mapping
 
 - **Clause I.2** (Context Awareness): The GRID-internal config presents stale context. Any tooling or agent that reads it (e.g., `ToolRegistry` in `grid/mcp/tool_registry.py`) will get non-functional paths.
-- **NR-01** (Never silently discard context): The existence of two divergent configs without a declared relationship is silent context fragmentation. `docs/CONFIG_SNAPSHOT.md` states *"`mcp_config.json` is the canonical source"* but doesn't mention the GRID-internal copy or its staleness.
+- **NR-01** (Never silently discard context): The existence of two divergent configs without a declared relationship is silent context fragmentation. `docs/CONFIG_SNAPSHOT.md` states _"`mcp_config.json` is the canonical source"_ but doesn't mention the GRID-internal copy or its staleness.
 
 ### Evidence
 
@@ -207,11 +208,11 @@ CascadeProjects/mcp_config.json:80  "command": "/home/caraxes/roots/GRID/.venv/b
 
 ### Action required — choose one
 
-| Option | Action | Effect |
-|--------|--------|--------|
-| **A — Update GRID-internal config** | Rewrite all paths to Linux equivalents; sync `enabled` status with canonical | Both configs are functional; dual-config drift risk remains |
+| Option                                 | Action                                                                                              | Effect                                                         |
+| -------------------------------------- | --------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| **A — Update GRID-internal config**    | Rewrite all paths to Linux equivalents; sync `enabled` status with canonical                        | Both configs are functional; dual-config drift risk remains    |
 | **B — Deprecate GRID-internal config** | Add `DEPRECATED: use CascadeProjects/mcp_config.json` header; stop reading it in `tool_registry.py` | Single source of truth enforced; GRID-internal becomes archive |
-| **C — Generate from canonical** | Write a script that derives `GRID-main/mcp-setup/mcp_config.json` from the canonical config | Eliminates manual sync; drift becomes mechanically impossible |
+| **C — Generate from canonical**        | Write a script that derives `GRID-main/mcp-setup/mcp_config.json` from the canonical config         | Eliminates manual sync; drift becomes mechanically impossible  |
 
 **Recommended**: Option B with a follow-up check on whether `tool_registry.py` actually reads the GRID-internal config at runtime. If it does, Option C is the correct long-term fix.
 
@@ -230,12 +231,12 @@ grep -n 'mcp_config\|mcp-setup' ~/roots/GRID/src/grid/mcp/tool_registry.py
 
 The GRID-internal config references entry points that **do not exist** at the declared paths:
 
-| Server | Config says | Actual file |
-|--------|------------|-------------|
-| `grid-agentic` | `workspace/mcp/servers/agentic/server.py` | `mcp-setup/server/agentic_mcp_server.py` |
-| `memory` | `workspace/mcp/servers/memory/server.py` | `mcp-setup/server/memory_mcp_server.py` |
-| `filesystem` | `workspace/mcp/servers/filesystem/server.py` | (no matching file found) |
-| `database` | `workspace/mcp/servers/database/server.py` | (no matching file found) |
+| Server         | Config says                                  | Actual file                              |
+| -------------- | -------------------------------------------- | ---------------------------------------- |
+| `grid-agentic` | `workspace/mcp/servers/agentic/server.py`    | `mcp-setup/server/agentic_mcp_server.py` |
+| `memory`       | `workspace/mcp/servers/memory/server.py`     | `mcp-setup/server/memory_mcp_server.py`  |
+| `filesystem`   | `workspace/mcp/servers/filesystem/server.py` | (no matching file found)                 |
+| `database`     | `workspace/mcp/servers/database/server.py`   | (no matching file found)                 |
 
 ### Where the mismatch originates
 
@@ -266,11 +267,11 @@ For `filesystem` and `database`, neither the config path nor a matching `mcp-set
 
 ### Action required — choose one
 
-| Option | Action | Effect |
-|--------|--------|--------|
-| **A — Fix paths** | Update `grid-agentic` and `memory` entries to point to actual files; remove `filesystem` and `database` phantom entries | Config becomes accurate |
-| **B — Deprecate entire GRID-internal config** | Same as MCP-D03 Option B — single source of truth | Eliminates all path mismatches at once |
-| **C — Remove phantom entries** | Delete `filesystem` and `database` from GRID-internal config; fix `grid-agentic` and `memory` paths | Partial fix; dual-config drift risk remains |
+| Option                                        | Action                                                                                                                  | Effect                                      |
+| --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
+| **A — Fix paths**                             | Update `grid-agentic` and `memory` entries to point to actual files; remove `filesystem` and `database` phantom entries | Config becomes accurate                     |
+| **B — Deprecate entire GRID-internal config** | Same as MCP-D03 Option B — single source of truth                                                                       | Eliminates all path mismatches at once      |
+| **C — Remove phantom entries**                | Delete `filesystem` and `database` from GRID-internal config; fix `grid-agentic` and `memory` paths                     | Partial fix; dual-config drift risk remains |
 
 **Recommended**: Combine with MCP-D03 resolution. If Option B (deprecate) is chosen for MCP-D03, this finding is resolved automatically.
 
@@ -310,12 +311,12 @@ The canonical config was updated during the Linux migration. The GRID-internal c
 
 ## Decision Log
 
-| Finding | Decision | Date | By |
-|---------|----------|------|----|
-| MCP-D01 | _pending_ | | |
-| MCP-D02 | _pending_ | | |
-| MCP-D03 | _pending_ | | |
-| MCP-D04 | _pending_ | | |
+| Finding | Decision  | Date | By  |
+| ------- | --------- | ---- | --- |
+| MCP-D01 | _pending_ |      |     |
+| MCP-D02 | _pending_ |      |     |
+| MCP-D03 | _pending_ |      |     |
+| MCP-D04 | _pending_ |      |     |
 
 ---
 

@@ -23,7 +23,15 @@ const STATUS_COLOR: Record<string, string> = {
   disabled: "var(--color-text-muted)",
 };
 
-function KnobDial({ color, isSelected, status }: { color: string; isSelected: boolean; status: string }) {
+function KnobDial({
+  color,
+  isSelected,
+  status,
+}: {
+  color: string;
+  isSelected: boolean;
+  status: string;
+}) {
   const indicatorAngle = status === "running" ? 270 : status === "ready" ? 220 : 140;
   return (
     <svg width="44" height="44" viewBox="0 0 44 44" className="drop-shadow-md">
@@ -38,11 +46,21 @@ function KnobDial({ color, isSelected, status }: { color: string; isSelected: bo
         </filter>
       </defs>
       {/* Track arc */}
-      <circle cx="22" cy="22" r="19" fill="none" stroke="var(--color-knob-ring)" strokeWidth="2.5" opacity="0.5" />
+      <circle
+        cx="22"
+        cy="22"
+        r="19"
+        fill="none"
+        stroke="var(--color-knob-ring)"
+        strokeWidth="2.5"
+        opacity="0.5"
+      />
       {/* Active arc (shows parameter count as fill) */}
       {isSelected && (
         <circle
-          cx="22" cy="22" r="19"
+          cx="22"
+          cy="22"
+          r="19"
           fill="none"
           stroke={color}
           strokeWidth="2.5"
@@ -56,10 +74,19 @@ function KnobDial({ color, isSelected, status }: { color: string; isSelected: bo
       {/* Knob face */}
       <circle cx="22" cy="22" r="15" fill="url(#knob-face)" filter="url(#knob-shadow)" />
       {/* Inner bevel highlight */}
-      <circle cx="22" cy="22" r="14" fill="none" stroke="var(--color-panel-border-light)" strokeWidth="0.5" opacity="0.3" />
+      <circle
+        cx="22"
+        cy="22"
+        r="14"
+        fill="none"
+        stroke="var(--color-panel-border-light)"
+        strokeWidth="0.5"
+        opacity="0.3"
+      />
       {/* Indicator line */}
       <line
-        x1="22" y1="22"
+        x1="22"
+        y1="22"
         x2={22 + 10 * Math.cos((indicatorAngle * Math.PI) / 180)}
         y2={22 + 10 * Math.sin((indicatorAngle * Math.PI) / 180)}
         stroke={isSelected ? color : "var(--color-text-muted)"}
@@ -87,9 +114,10 @@ export function Knob({ knob, isSelected, onClick, style }: KnobProps) {
         press-scale group relative flex flex-col items-center gap-1 p-2 rounded-xl
         border-2 cursor-pointer min-w-[96px]
         transition-all duration-200 ease-out
-        ${isSelected
-          ? "border-white/30 bg-panel-light shadow-lg"
-          : "border-transparent bg-panel hover:border-panel-border-light hover:bg-panel-light"
+        ${
+          isSelected
+            ? "border-white/30 bg-panel-light shadow-lg"
+            : "border-transparent bg-panel hover:border-panel-border-light hover:bg-panel-light"
         }
       `}
     >
@@ -98,9 +126,10 @@ export function Knob({ knob, isSelected, onClick, style }: KnobProps) {
         <div
           className="w-2 h-2 rounded-full"
           style={{
-            backgroundColor: knob.healthIndicator === "unknown"
-              ? "var(--color-panel-border)"
-              : `var(--color-led-${knob.healthIndicator})`,
+            backgroundColor:
+              knob.healthIndicator === "unknown"
+                ? "var(--color-panel-border)"
+                : `var(--color-led-${knob.healthIndicator})`,
             boxShadow: HEALTH_GLOW[knob.healthIndicator],
           }}
           aria-label={`Health: ${knob.healthIndicator}`}
@@ -141,7 +170,10 @@ export function Knob({ knob, isSelected, onClick, style }: KnobProps) {
 
       {/* Governance warning */}
       {knob.description.length > 120 && (
-        <div className="absolute -bottom-1 -right-1" aria-label="Governance warning: description exceeds 120 chars">
+        <div
+          className="absolute -bottom-1 -right-1"
+          aria-label="Governance warning: description exceeds 120 chars"
+        >
           <AlertTriangle size={12} className="text-led-yellow" />
         </div>
       )}

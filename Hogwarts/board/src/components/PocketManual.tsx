@@ -24,15 +24,17 @@ export function PocketManual({ knobs, visibleHouses }: PocketManualProps) {
 
   const governanceIssues = {
     descTooLong: knobs.filter((k) => k.description.length > 120).length,
-    missingParamDesc: knobs.filter((k) =>
-      k.parameters.some((p) => !p.description),
-    ).length,
+    missingParamDesc: knobs.filter((k) => k.parameters.some((p) => !p.description)).length,
     nameTooLong: knobs.filter((k) => k.id.length > 40).length,
   };
   const totalIssues = Object.values(governanceIssues).reduce((a, b) => a + b, 0);
 
   return (
-    <div className="rounded-2xl border border-panel-border bg-panel overflow-hidden shadow-md" role="complementary" aria-label="Board statistics">
+    <div
+      className="rounded-2xl border border-panel-border bg-panel overflow-hidden shadow-md"
+      role="complementary"
+      aria-label="Board statistics"
+    >
       <div className="flex items-center gap-2 px-4 py-3 border-b border-panel-border">
         <BookOpen size={12} className="text-text-muted" />
         <span className="text-[11px] text-text-muted uppercase tracking-widest font-medium">
@@ -49,8 +51,13 @@ export function PocketManual({ knobs, visibleHouses }: PocketManualProps) {
             { value: totalParams, label: "Params", color: "var(--color-text-tertiary)" },
             { value: requiredParams, label: "Required", color: "var(--color-led-yellow)" },
           ].map(({ value, label, color }) => (
-            <div key={label} className="rounded-xl bg-panel-light border border-panel-border/50 p-3 text-center">
-              <div className="text-lg font-bold tabular-nums" style={{ color }}>{value}</div>
+            <div
+              key={label}
+              className="rounded-xl bg-panel-light border border-panel-border/50 p-3 text-center"
+            >
+              <div className="text-lg font-bold tabular-nums" style={{ color }}>
+                {value}
+              </div>
               <div className="text-[10px] text-text-muted mt-0.5">{label}</div>
             </div>
           ))}
@@ -92,12 +99,16 @@ export function PocketManual({ knobs, visibleHouses }: PocketManualProps) {
             <Shield size={11} />
             <span className="text-[11px] uppercase tracking-wider font-medium">Governance</span>
           </div>
-          <div className={`rounded-xl p-3 ${totalIssues === 0 ? "bg-led-green/5 border border-led-green/20" : "bg-led-yellow/5 border border-led-yellow/20"}`}>
+          <div
+            className={`rounded-xl p-3 ${totalIssues === 0 ? "bg-led-green/5 border border-led-green/20" : "bg-led-yellow/5 border border-led-yellow/20"}`}
+          >
             {totalIssues === 0 ? (
               <span className="text-led-green text-xs font-medium">All checks passing</span>
             ) : (
               <div className="space-y-1.5">
-                <span className="text-led-yellow text-xs font-medium">{totalIssues} warning{totalIssues !== 1 ? "s" : ""}</span>
+                <span className="text-led-yellow text-xs font-medium">
+                  {totalIssues} warning{totalIssues !== 1 ? "s" : ""}
+                </span>
                 {governanceIssues.descTooLong > 0 && (
                   <div className="text-[11px] text-text-muted flex items-center gap-1.5">
                     <span className="w-1 h-1 rounded-full bg-led-yellow flex-shrink-0" />
@@ -128,18 +139,20 @@ export function PocketManual({ knobs, visibleHouses }: PocketManualProps) {
             <span className="text-[11px] uppercase tracking-wider font-medium">Active Servers</span>
           </div>
           <div className="space-y-1">
-            {SERVER_PROFILES.filter((s) => visibleHouses.includes(s.house) && s.toolCount > 0).map((s) => (
-              <div key={s.key} className="flex items-center gap-2 text-xs py-0.5">
-                <div
-                  className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                  style={{ backgroundColor: HOUSE_META[s.house].color }}
-                />
-                <span className="text-text-muted flex-1 truncate">{s.name}</span>
-                <span className="text-text-muted/60 text-[10px] bg-surface px-1.5 py-0.5 rounded">
-                  {s.runtime === "python" ? "py" : "ts"}
-                </span>
-              </div>
-            ))}
+            {SERVER_PROFILES.filter((s) => visibleHouses.includes(s.house) && s.toolCount > 0).map(
+              (s) => (
+                <div key={s.key} className="flex items-center gap-2 text-xs py-0.5">
+                  <div
+                    className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: HOUSE_META[s.house].color }}
+                  />
+                  <span className="text-text-muted flex-1 truncate">{s.name}</span>
+                  <span className="text-text-muted/60 text-[10px] bg-surface px-1.5 py-0.5 rounded">
+                    {s.runtime === "python" ? "py" : "ts"}
+                  </span>
+                </div>
+              ),
+            )}
           </div>
         </div>
       </div>

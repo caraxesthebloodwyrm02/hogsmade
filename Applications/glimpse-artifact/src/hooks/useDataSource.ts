@@ -11,121 +11,118 @@ import { useCallback, useEffect, useRef, useState } from "react";
  */
 
 export interface DataSourceConfig<T> {
-    /** Async function that returns fresh data. Receives an AbortSignal. */
-    fetcher?: (signal: AbortSignal) => Promise<T>;
-    /** Mock data used when `fetcher` is not provided. */
-    mock?: T;
-    /** Polling interval in ms. 0 = no polling (default). */
-    pollMs?: number;
-    /** Simulated loading delay for mock data in ms (default: 200). */
-    mockDelayMs?: number;
+  /** Async function that returns fresh data. Receives an AbortSignal. */
+  fetcher?: (signal: AbortSignal) => Promise<T>;
+  /** Mock data used when `fetcher` is not provided. */
+  mock?: T;
+  /** Polling interval in ms. 0 = no polling (default). */
+  pollMs?: number;
+  /** Simulated loading delay for mock data in ms (default: 200). */
+  mockDelayMs?: number;
 }
 
 export interface DataSourceResult<T> {
-    data: T;
-    loading: boolean;
-    error: string | null;
-    /** Trigger a manual re-fetch. No-op when using mock data. */
-    retry: () => void;
+  data: T;
+  loading: boolean;
+  error: string | null;
+  /** Trigger a manual re-fetch. No-op when using mock data. */
+  retry: () => void;
 }
 
 export interface DataSourceFailure<T> {
-    data?: T;
-    error: string | null;
-    usedMockFallback: boolean;
+  data?: T;
+  error: string | null;
+  usedMockFallback: boolean;
 }
 
-export function resolveDataSourceFailure<T>(
-    err: unknown,
-    mock?: T,
-): DataSourceFailure<T> {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    if (mock !== undefined) {
-        return {
-            data: mock,
-            error: null,
-            usedMockFallback: true,
-        };
-    }
-
+export function resolveDataSourceFailure<T>(err: unknown, mock?: T): DataSourceFailure<T> {
+  const message = err instanceof Error ? err.message : "Unknown error";
+  if (mock !== undefined) {
     return {
-        error: message,
-        usedMockFallback: false,
+      data: mock,
+      error: null,
+      usedMockFallback: true,
     };
+  }
+
+  return {
+    error: message,
+    usedMockFallback: false,
+  };
 }
 
 export function useDataSource<T>(config: DataSourceConfig<T>): DataSourceResult<T> {
-    const { fetcher, mock, pollMs = 0, mockDelayMs = 200 } = config;
-    const isMock = !fetcher;
+  const { fetcher, mock, pollMs = 0, mockDelayMs = 200 } = config;
+  const isMock = !fetcher;
 
-    const [data, setData] = useState<T>(() => mock ?? ([] as unknown as T));
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+  const [data, setData] = useState<T>(() => mock ?? ([] as unknown as T));
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-    const abortRef = useRef<AbortController | null>(null);
-    const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-    // Keep a stable ref to the latest fetcher so it doesn't trigger effect re-runs
-    const fetcherRef = useRef(fetcher);
-    fetcherRef.current = fetcher;
+  const abortRef = useRef<AbortController | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Keep a stable ref to the latest fetcher so it doesn't trigger effect re-runs
+  const fetcherRef = useRef(fetcher);
+  fetcherRef.current = fetcher;
 
-    const doFetch = useCallback(() => {
-        const fn = fetcherRef.current;
-        if (!fn) return;
+  const doFetch = useCallback(() => {
+    const fn = fetcherRef.current;
+    if (!fn) return;
 
-        // Abort any in-flight request
-        abortRef.current?.abort();
-        const controller = new AbortController();
-        abortRef.current = controller;
+    // Abort any in-flight request
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
 
-        setLoading(true);
-        setError(null);
+    setLoading(true);
+    setError(null);
 
-        fn(controller.signal)
-            .then((result) => {
-                if (!controller.signal.aborted) {
-                    setData(result);
-                    setLoading(false);
-                }
-            })
-            .catch((err: unknown) => {
-                if (controller.signal.aborted) return;
-                const failure = resolveDataSourceFailure(err, mock);
-                if (failure.usedMockFallback) {
-                    setData(failure.data as T);
-                    setError(null);
-                } else {
-                    setError(failure.error);
-                }
-                setLoading(false);
-            });
-    }, []);
-
-    // Initial fetch (real) or mock simulation
-    useEffect(() => {
-        if (isMock) {
-            const timer = setTimeout(() => {
-                if (mock !== undefined) setData(mock);
-                setLoading(false);
-            }, mockDelayMs);
-            return () => clearTimeout(timer);
+    fn(controller.signal)
+      .then((result) => {
+        if (!controller.signal.aborted) {
+          setData(result);
+          setLoading(false);
         }
-
-        doFetch();
-
-        // Set up polling
-        if (pollMs > 0) {
-            intervalRef.current = setInterval(doFetch, pollMs);
+      })
+      .catch((err: unknown) => {
+        if (controller.signal.aborted) return;
+        const failure = resolveDataSourceFailure(err, mock);
+        if (failure.usedMockFallback) {
+          setData(failure.data as T);
+          setError(null);
+        } else {
+          setError(failure.error);
         }
+        setLoading(false);
+      });
+  }, []);
 
-        return () => {
-            abortRef.current?.abort();
-            if (intervalRef.current) clearInterval(intervalRef.current);
-        };
-    }, [isMock, mock, mockDelayMs, doFetch, pollMs]);
+  // Initial fetch (real) or mock simulation
+  useEffect(() => {
+    if (isMock) {
+      const timer = setTimeout(() => {
+        if (mock !== undefined) setData(mock);
+        setLoading(false);
+      }, mockDelayMs);
+      return () => clearTimeout(timer);
+    }
 
-    const retry = useCallback(() => {
-        if (!isMock) doFetch();
-    }, [isMock, doFetch]);
+    doFetch();
 
-    return { data, loading, error, retry };
+    // Set up polling
+    if (pollMs > 0) {
+      intervalRef.current = setInterval(doFetch, pollMs);
+    }
+
+    return () => {
+      abortRef.current?.abort();
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [isMock, mock, mockDelayMs, doFetch, pollMs]);
+
+  const retry = useCallback(() => {
+    if (!isMock) doFetch();
+  }, [isMock, doFetch]);
+
+  return { data, loading, error, retry };
 }

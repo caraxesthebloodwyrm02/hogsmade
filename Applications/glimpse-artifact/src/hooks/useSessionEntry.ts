@@ -52,20 +52,16 @@ export interface ClusterSummary {
 // ── Energy Palette ──
 
 const ENERGY_MAP: Record<EcosystemMood, string> = {
-  thriving: "Kx5 — \"Alive\" energy",
-  steady: "deadmau5 — \"Strobe\" energy",
-  drifting: "Bonobo — \"Kerala\" energy",
+  thriving: 'Kx5 — "Alive" energy',
+  steady: 'deadmau5 — "Strobe" energy',
+  drifting: 'Bonobo — "Kerala" energy',
   recovering: "Rezz — deep focus energy",
   quiet: "ambient — lo-fi drift",
 };
 
 // ── Mood Derivation ──
 
-function deriveMood(
-  score: number | null,
-  direction: string,
-  driftSeverity: string,
-): EcosystemMood {
+function deriveMood(score: number | null, direction: string, driftSeverity: string): EcosystemMood {
   if (score === null) return "quiet";
   if (score >= 80 && direction === "improving") return "thriving";
   if (score >= 70 && driftSeverity === "none") return "steady";
@@ -115,7 +111,9 @@ function generateNarrative(
   }
 
   if (driftCount > 0) {
-    parts.push(`${driftCount} item${driftCount === 1 ? "" : "s"} need${driftCount === 1 ? "s" : ""} tending.`);
+    parts.push(
+      `${driftCount} item${driftCount === 1 ? "" : "s"} need${driftCount === 1 ? "s" : ""} tending.`,
+    );
   }
 
   return parts.join(" ");
@@ -126,7 +124,8 @@ function generateNarrative(
 const MOCK_SESSION_ENTRY: SessionEntryData = {
   ecosystemScore: 82,
   direction: "stable",
-  trustNarrative: "Grid family is solid at 85% confidence. MCP infrastructure is holding at 72%. The ecosystem is watching itself heal.",
+  trustNarrative:
+    "Grid family is solid at 85% confidence. MCP infrastructure is holding at 72%. The ecosystem is watching itself heal.",
   trustRelationships: [
     { observer: "builder", subject: "grid-family", confidence: 0.85, basis: [] },
     { observer: "builder", subject: "mcp-infrastructure", confidence: 0.72, basis: [] },
@@ -134,19 +133,45 @@ const MOCK_SESSION_ENTRY: SessionEntryData = {
     { observer: "ecosystem", subject: "self", confidence: 0.71, basis: [] },
     { observer: "newcomer", subject: "ecosystem", confidence: 0.68, basis: [] },
   ],
-  narrative: "Ecosystem holding at 82. Grid family is solid at 85% confidence. MCP infrastructure is holding at 72%. 2 items need tending.",
+  narrative:
+    "Ecosystem holding at 82. Grid family is solid at 85% confidence. MCP infrastructure is holding at 72%. 2 items need tending.",
   pulseColor: "teal",
   energyTag: ENERGY_MAP.steady,
   mood: "steady",
   lastPosition: "overview-server/src/trust.ts — relational trust computation",
-  historyWhisper: "3 weeks ago you wrote the admission gate. Today its fallback caught its first profit-mask signal.",
+  historyWhisper:
+    "3 weeks ago you wrote the admission gate. Today its fallback caught its first profit-mask signal.",
   clusters: [
     { id: "grid-family", label: "GRID Family", health: 90, trustConfidence: 0.85, issueCount: 0 },
-    { id: "mcp-infrastructure", label: "MCP Infrastructure", health: 80, trustConfidence: 0.72, issueCount: 1 },
+    {
+      id: "mcp-infrastructure",
+      label: "MCP Infrastructure",
+      health: 80,
+      trustConfidence: 0.72,
+      issueCount: 1,
+    },
     { id: "canopy-apps", label: "Canopy Apps", health: 78, trustConfidence: 0.78, issueCount: 0 },
-    { id: "glimpse-family", label: "Glimpse Family", health: 75, trustConfidence: 0.65, issueCount: 0 },
-    { id: "deployment-pipeline", label: "Deployment Pipeline", health: 60, trustConfidence: 0.55, issueCount: 2 },
-    { id: "seed-archive", label: "Seed & Archive", health: 85, trustConfidence: 0.80, issueCount: 0 },
+    {
+      id: "glimpse-family",
+      label: "Glimpse Family",
+      health: 75,
+      trustConfidence: 0.65,
+      issueCount: 0,
+    },
+    {
+      id: "deployment-pipeline",
+      label: "Deployment Pipeline",
+      health: 60,
+      trustConfidence: 0.55,
+      issueCount: 2,
+    },
+    {
+      id: "seed-archive",
+      label: "Seed & Archive",
+      health: 85,
+      trustConfidence: 0.8,
+      issueCount: 0,
+    },
   ],
   driftCount: 2,
   driftSeverity: "moderate",
@@ -190,7 +215,7 @@ function transformCheckpoint(cp: Record<string, unknown>): SessionEntryData {
   const driftSeverity = (drift?.severity as string) ?? "none";
 
   const trustNarrative = (trust?.narrative as string) ?? "";
-  const trustRelationships = ((trust?.relationships ?? []) as TrustRelationship[]);
+  const trustRelationships = (trust?.relationships ?? []) as TrustRelationship[];
 
   const mood = deriveMood(ecosystemScore, direction, driftSeverity);
   const pulseColor = derivePulseColor(mood);

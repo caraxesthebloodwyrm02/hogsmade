@@ -1,10 +1,9 @@
-import {
-  HealthCheckConfig,
-  HealthStatus
-} from '../types/index.js';
+import { HealthCheckConfig, HealthStatus } from "../types/index.js";
 
 export type HealthCheckFunction = () => Promise<{
-  healthy: boolean; details?: Record<string, unknown> }>;
+  healthy: boolean;
+  details?: Record<string, unknown>;
+}>;
 
 export interface HealthCheckOptions extends HealthCheckConfig {
   check: HealthCheckFunction;
@@ -13,16 +12,16 @@ export interface HealthCheckOptions extends HealthCheckConfig {
 
 export class HealthChecker {
   private status: HealthStatus = {
-    status: 'healthy',
+    status: "healthy",
     lastCheck: Date.now(),
     consecutiveFailures: 0,
-    consecutiveSuccesses: 0
+    consecutiveSuccesses: 0,
   };
   private interval?: ReturnType<typeof setInterval>;
 
   constructor(
     serviceName: string,
-    private readonly config: HealthCheckOptions
+    private readonly config: HealthCheckOptions,
   ) {
     // serviceName is reserved for future use (logging, metrics)
     void serviceName;
@@ -34,10 +33,7 @@ export class HealthChecker {
     }
 
     this.performCheck();
-    this.interval = setInterval(
-      () => this.performCheck(),
-      this.config.intervalMs
-    );
+    this.interval = setInterval(() => this.performCheck(), this.config.intervalMs);
   }
 
   stop(): void {
@@ -58,12 +54,15 @@ export class HealthChecker {
   private consecutiveSuccesses = 0;
   private consecutiveFailures = 0;
 
-  private async checkWithTimeout(): Promise<{ healthy: boolean; details?: Record<string, unknown> }> {
+  private async checkWithTimeout(): Promise<{
+    healthy: boolean;
+    details?: Record<string, unknown>;
+  }> {
     let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
     const timeoutPromise = new Promise<never>((_, reject) => {
       timeoutHandle = setTimeout(
-        () => reject(new Error('Health check timeout')),
-        this.config.timeoutMs
+        () => reject(new Error("Health check timeout")),
+        this.config.timeoutMs,
       );
     });
     try {
@@ -82,13 +81,12 @@ export class HealthChecker {
         this.consecutiveFailures = 0;
 
         const newStatus: HealthStatus = {
-          status: this.consecutiveSuccesses >= this.config.healthyThreshold
-            ? 'healthy'
-            : 'degraded',
+          status:
+            this.consecutiveSuccesses >= this.config.healthyThreshold ? "healthy" : "degraded",
           lastCheck: Date.now(),
           consecutiveFailures: this.consecutiveFailures,
           consecutiveSuccesses: this.consecutiveSuccesses,
-          details: result.details
+          details: result.details,
         };
 
         if (this.status.status !== newStatus.status) {
@@ -101,9 +99,8 @@ export class HealthChecker {
         this.consecutiveSuccesses = 0;
 
         const newStatus: HealthStatus = {
-          status: this.consecutiveFailures >= this.config.unhealthyThreshold
-            ? 'unhealthy'
-            : 'degraded',
+          status:
+            this.consecutiveFailures >= this.config.unhealthyThreshold ? "unhealthy" : "degraded",
           lastCheck: Date.now(),
           consecutiveFailures: this.consecutiveFailures,
           consecutiveSuccesses: this.consecutiveSuccesses,
@@ -121,13 +118,12 @@ export class HealthChecker {
       this.consecutiveSuccesses = 0;
 
       const newStatus: HealthStatus = {
-        status: this.consecutiveFailures >= this.config.unhealthyThreshold
-          ? 'unhealthy'
-          : 'degraded',
+        status:
+          this.consecutiveFailures >= this.config.unhealthyThreshold ? "unhealthy" : "degraded",
         lastCheck: Date.now(),
         consecutiveFailures: this.consecutiveFailures,
         consecutiveSuccesses: this.consecutiveSuccesses,
-        details: { error: (error as Error).message }
+        details: { error: (error as Error).message },
       };
 
       if (this.status.status !== newStatus.status) {
@@ -198,5 +194,5 @@ export const defaultHealthCheckConfig: HealthCheckConfig = {
   intervalMs: 30000,
   timeoutMs: 5000,
   unhealthyThreshold: 3,
-  healthyThreshold: 2
+  healthyThreshold: 2,
 };

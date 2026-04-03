@@ -47,34 +47,34 @@ python scripts/glimpse-bench.py warnings
 
 ## Safe vs Dangerous Mode
 
-| | Safe (default) | Dangerous (`--dangerous`) |
-|---|---|---|
-| Prompt JSON | ✓ Generated | ✓ Generated |
-| Result template | ✓ Pre-filled | ✓ Pre-filled |
-| Code isolation | Git stash anchor | Git worktree (separate branch) |
-| Main branch | Untouched | Untouched |
-| Use for | Warmups, read-only tasks, practice | Tasks that modify code |
+|                 | Safe (default)                     | Dangerous (`--dangerous`)      |
+| --------------- | ---------------------------------- | ------------------------------ |
+| Prompt JSON     | ✓ Generated                        | ✓ Generated                    |
+| Result template | ✓ Pre-filled                       | ✓ Pre-filled                   |
+| Code isolation  | Git stash anchor                   | Git worktree (separate branch) |
+| Main branch     | Untouched                          | Untouched                      |
+| Use for         | Warmups, read-only tasks, practice | Tasks that modify code         |
 
 ## Benchmark Tasks (7)
 
-| ID | Difficulty | What It Tests |
-|----|-----------|---------------|
-| B1-read-only | Easy | Read comprehension, rule compliance |
-| B2-targeted-edit | Easy | Surgical edits, metric verification |
-| B3-multi-file | Medium | Cross-file coordination |
-| B4-debugging | Medium | Enumerate-first debugging discipline |
-| B5-architecture | Hard | Architecture reasoning, trade-off analysis |
-| B6-test-gen | Hard | Test writing, pattern matching |
-| B7-docs-evidence | Medium | Evidence-backed documentation |
+| ID               | Difficulty | What It Tests                              |
+| ---------------- | ---------- | ------------------------------------------ |
+| B1-read-only     | Easy       | Read comprehension, rule compliance        |
+| B2-targeted-edit | Easy       | Surgical edits, metric verification        |
+| B3-multi-file    | Medium     | Cross-file coordination                    |
+| B4-debugging     | Medium     | Enumerate-first debugging discipline       |
+| B5-architecture  | Hard       | Architecture reasoning, trade-off analysis |
+| B6-test-gen      | Hard       | Test writing, pattern matching             |
+| B7-docs-evidence | Medium     | Evidence-backed documentation              |
 
 ## Scoring (0-3 per dimension, max 15)
 
-| Score | Meaning |
-|-------|---------|
-| 0 | Failed — wrong output, hallucination, rule violation |
-| 1 | Partial — right direction, missed constraints or added filler |
-| 2 | Good — correct, followed rules, minor inefficiencies |
-| 3 | Excellent — correct, concise, evidence-backed, minimal tool calls |
+| Score | Meaning                                                           |
+| ----- | ----------------------------------------------------------------- |
+| 0     | Failed — wrong output, hallucination, rule violation              |
+| 1     | Partial — right direction, missed constraints or added filler     |
+| 2     | Good — correct, followed rules, minor inefficiencies              |
+| 3     | Excellent — correct, concise, evidence-backed, minimal tool calls |
 
 **Dimensions**: Correctness · Rule Compliance · Credit Efficiency · Evidence Quality · Scope Discipline
 
@@ -91,19 +91,20 @@ python scripts/glimpse-bench.py warnings
 
 ## File Map
 
-| File | Location | Purpose |
-|------|----------|---------|
-| `scripts/glimpse-bench.py` | Workspace root | Automation script (list, run, score, leaderboard, warnings) |
-| `.claude/prompts/glimpse-template.json` | Workspace root | Reusable 7-step template with `{{VARIABLE}}` placeholders |
-| `.claude/prompts/glimpse-benchmark-tasks.json` | Workspace root | 7 pre-defined tasks with acceptance criteria |
-| `.claude/prompts/response-discipline-demo.json` | Workspace root | Original working example (GRID README update) |
-| `memory/context/model-catalog.md` | Workspace root | Full model inventory across 6 tools |
-| `memory/context/model-benchmark-log.md` | Workspace root | Living results log + suitability matrix |
-| `benchmarks/` | Workspace root | Generated prompts + result files per run |
+| File                                            | Location       | Purpose                                                     |
+| ----------------------------------------------- | -------------- | ----------------------------------------------------------- |
+| `scripts/glimpse-bench.py`                      | Workspace root | Automation script (list, run, score, leaderboard, warnings) |
+| `.claude/prompts/glimpse-template.json`         | Workspace root | Reusable 7-step template with `{{VARIABLE}}` placeholders   |
+| `.claude/prompts/glimpse-benchmark-tasks.json`  | Workspace root | 7 pre-defined tasks with acceptance criteria                |
+| `.claude/prompts/response-discipline-demo.json` | Workspace root | Original working example (GRID README update)               |
+| `memory/context/model-catalog.md`               | Workspace root | Full model inventory across 6 tools                         |
+| `memory/context/model-benchmark-log.md`         | Workspace root | Living results log + suitability matrix                     |
+| `benchmarks/`                                   | Workspace root | Generated prompts + result files per run                    |
 
 ## Origin
 
 This system emerged organically from diagnosing two alignment failures:
+
 1. **Decorative recommendation inflation** — AI fabricated metrics and mapped user vocabulary to marketing keywords
 2. **Reactive fix loops** — AI fixed issues one-by-one instead of scanning comprehensively first
 
@@ -125,9 +126,7 @@ Edit `.claude/prompts/glimpse-benchmark-tasks.json` and add to the `tasks` array
   "difficulty": "medium",
   "expected_tool_calls": "3-5",
   "risks": ["R1: Risk description", "R2: Another risk"],
-  "acceptance": [
-    {"id": "A1", "criterion": "What must be true", "verify": "How to check it"}
-  ],
+  "acceptance": [{ "id": "A1", "criterion": "What must be true", "verify": "How to check it" }],
   "deny_on_output": ["things the model must NOT produce"]
 }
 ```

@@ -190,9 +190,8 @@ ${input.observations.map((note) => `- ${note.id}: ${note.message} — ${note.sur
 }
 
 export function compileFormArtifacts(input: CompileArtifactsInput): FormArtifact[] {
-  const requestedTargets = input.args.formTarget === "all"
-    ? [...ALL_FORM_TARGETS]
-    : [input.args.formTarget];
+  const requestedTargets =
+    input.args.formTarget === "all" ? [...ALL_FORM_TARGETS] : [input.args.formTarget];
 
   const builders: Record<Exclude<FormArtifact["kind"], never>, () => FormArtifact> = {
     server_tool: () => buildServerToolManifest(input),

@@ -57,24 +57,29 @@ The Pattern Registry system extends the Glimpse engine with reusable analytical 
 ## Built-in Patterns
 
 ### Temporal Patterns
+
 - **Temporal Clustering** - Detects activity concentrations in time periods
 - **Generational Waves** - Identifies innovation waves and generational patterns
 - **Sequential Dependency** - Finds chronological influence chains
 
 ### Influence Patterns
+
 - **Influence Cascade** - Key influencers with branching influence trees
 - **Hub-and-Spoke** - Central hub entities with many connections
 - **Cross-Pollination** - Ideas spreading between different domains
 
 ### Geographic Patterns
+
 - **Geographic Hotspot** - Innovation activity concentration in locations
 - **Regional Clusters** - Geographic region-based groupings
 
 ### Domain Bridge Patterns
+
 - **Domain Bridging** - Cross-domain influence and interdisciplinary connections
 - **Domain Convergence** - Multiple domains converging on similar problems
 
 ### Structural Patterns
+
 - **Complex Network** - Dense networks with multiple relationship types
 - **Hierarchical Structure** - Clear hierarchical relationships
 - **Sparse Network** - Light connections with clear clustering
@@ -84,8 +89,8 @@ The Pattern Registry system extends the Glimpse engine with reusable analytical 
 ### Basic Pattern Matching
 
 ```javascript
-import { createPatternRegistry } from './core/registry.js';
-import { runContextPipeline } from './core/engine.js';
+import { createPatternRegistry } from "./core/registry.js";
+import { runContextPipeline } from "./core/engine.js";
 
 // Run standard pipeline
 const result = runContextPipeline(data, "json", config);
@@ -97,9 +102,9 @@ const patternRegistry = createPatternRegistry();
 const matches = patternRegistry.matchPatterns(result, functionRegistry);
 
 // Process pattern matches
-matches.forEach(match => {
+matches.forEach((match) => {
   console.log(`${match.patternName}: ${match.score.toFixed(2)}`);
-  match.insights.forEach(insight => {
+  match.insights.forEach((insight) => {
     console.log(`💡 ${insight.generated}`);
   });
 });
@@ -108,32 +113,32 @@ matches.forEach(match => {
 ### Custom Pattern Registration
 
 ```javascript
-import { PatternRegistry } from './core/registry.js';
+import { PatternRegistry } from "./core/registry.js";
 
 const registry = new PatternRegistry();
 
 registry.register({
-  id: 'my-custom-pattern',
-  name: 'My Custom Pattern',
-  category: 'custom',
+  id: "my-custom-pattern",
+  name: "My Custom Pattern",
+  category: "custom",
   conditions: [
     {
-      type: 'entity',
-      function: 'taxonomy_score',
-      args: { domain: 'my-domain', min_score: 2 },
-      threshold: 0.5
-    }
+      type: "entity",
+      function: "taxonomy_score",
+      args: { domain: "my-domain", min_score: 2 },
+      threshold: 0.5,
+    },
   ],
   insights: [
     {
-      type: 'custom-insight',
-      template: 'Custom pattern detected: {0} entities match criteria',
-      priority: 70
-    }
+      type: "custom-insight",
+      template: "Custom pattern detected: {0} entities match criteria",
+      priority: 70,
+    },
   ],
   viewRecommendations: [
-    { view: 'constellation', score: 0.8, reason: 'Custom pattern visualization' }
-  ]
+    { view: "constellation", score: 0.8, reason: "Custom pattern visualization" },
+  ],
 });
 ```
 
@@ -171,7 +176,7 @@ export function my_pattern_function(context, args) {
     matched: true,
     value: result,
     score: calculatedScore,
-    reason: "Explanation of pattern match"
+    reason: "Explanation of pattern match",
   };
 }
 

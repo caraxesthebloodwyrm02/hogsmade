@@ -60,14 +60,7 @@ function createIndexedDocument({
 }
 
 test("buildKeywordBundleFromText keeps grounded terms and isolates unknown terms", () => {
-  const vocabulary = new Set([
-    "keyword",
-    "graph",
-    "cluster",
-    "search",
-    "token",
-    "evidence",
-  ]);
+  const vocabulary = new Set(["keyword", "graph", "cluster", "search", "token", "evidence"]);
 
   const bundle = buildKeywordBundleFromText(
     {
@@ -218,8 +211,7 @@ test("runContextSearch returns grounded artifacts against the repo", async () =>
 
   const result = await runContextSearch(
     {
-      scenarioText:
-        "deterministic context search keywords graph cluster interview evidence",
+      scenarioText: "deterministic context search keywords graph cluster interview evidence",
       maxKeywords: 8,
       provider: "deterministic",
     },
@@ -229,20 +221,22 @@ test("runContextSearch returns grounded artifacts against the repo", async () =>
   assert.ok(result.keywords.accepted.length >= 3);
   assert.ok(result.hits.length >= 1);
   assert.ok(result.clusters.length >= 1);
-  assert.equal(
-    result.interview.turns[result.interview.turns.length - 1]?.text,
-    result.summary,
-  );
+  assert.equal(result.interview.turns[result.interview.turns.length - 1]?.text, result.summary);
 });
 
 test("parseRuntimeArgs applies defaults, recognizes flags, and clamps max keywords", () => {
   const args = parseRuntimeArgs([
     "--scenario=token dense workflow",
-    "--context", "repo-native evidence",
-    "--problem", "show mechanical stages",
-    "--max-keywords", "30",
-    "--provider", "openai",
-    "--stage", "query",
+    "--context",
+    "repo-native evidence",
+    "--problem",
+    "show mechanical stages",
+    "--max-keywords",
+    "30",
+    "--provider",
+    "openai",
+    "--stage",
+    "query",
     "--print-json",
   ]);
 
@@ -259,15 +253,19 @@ test("runContextSearchWorkflow fails closed on empty scenario text", async () =>
   const repoRoot = path.resolve(process.cwd(), "..");
 
   await assert.rejects(
-    () => runContextSearchWorkflow({
-      scenarioText: "   ",
-      optionalContext: "",
-      optionalProblemFrame: "",
-      maxKeywords: 8,
-      provider: "deterministic",
-      stage: "full",
-      printJson: false,
-    }, repoRoot),
+    () =>
+      runContextSearchWorkflow(
+        {
+          scenarioText: "   ",
+          optionalContext: "",
+          optionalProblemFrame: "",
+          maxKeywords: 8,
+          provider: "deterministic",
+          stage: "full",
+          printJson: false,
+        },
+        repoRoot,
+      ),
     /scenarioText is required/,
   );
 });
@@ -353,15 +351,18 @@ test("buildObservation reports stable counts and top-result fields", () => {
 test("printWorkflowSummary emits stages in the token-dense order", async () => {
   const repoRoot = path.resolve(process.cwd(), "..");
 
-  const result = await runContextSearchWorkflow({
-    scenarioText: "scenario token keyword search graph cluster interview evidence",
-    optionalContext: "",
-    optionalProblemFrame: "",
-    maxKeywords: 8,
-    provider: "deterministic",
-    stage: "full",
-    printJson: false,
-  }, repoRoot);
+  const result = await runContextSearchWorkflow(
+    {
+      scenarioText: "scenario token keyword search graph cluster interview evidence",
+      optionalContext: "",
+      optionalProblemFrame: "",
+      maxKeywords: 8,
+      provider: "deterministic",
+      stage: "full",
+      printJson: false,
+    },
+    repoRoot,
+  );
 
   const stageOrder = result.prints.map((entry) => entry.stage);
   assert.deepEqual(stageOrder, [
@@ -393,25 +394,37 @@ test("stage boundaries stop at the intended output surface", async () => {
     printJson: false,
   };
 
-  const keywordStage = await runContextSearchWorkflow({ ...baseInput, stage: "keywords" as const }, repoRoot);
+  const keywordStage = await runContextSearchWorkflow(
+    { ...baseInput, stage: "keywords" as const },
+    repoRoot,
+  );
   assert.equal(keywordStage.hits.length, 0);
   assert.equal(keywordStage.artifacts.length, 0);
   assert.equal(keywordStage.interview.turns.length, 0);
   assert.equal(keywordStage.prints[3]?.status, "skipped");
 
-  const queryStage = await runContextSearchWorkflow({ ...baseInput, stage: "query" as const }, repoRoot);
+  const queryStage = await runContextSearchWorkflow(
+    { ...baseInput, stage: "query" as const },
+    repoRoot,
+  );
   assert.ok(queryStage.hits.length >= 1);
   assert.ok(queryStage.graph.nodes.length >= 1);
   assert.equal(queryStage.artifacts.length, 0);
   assert.equal(queryStage.interview.turns.length, 0);
   assert.equal(queryStage.prints[7]?.status, "skipped");
 
-  const interviewStage = await runContextSearchWorkflow({ ...baseInput, stage: "interview" as const }, repoRoot);
+  const interviewStage = await runContextSearchWorkflow(
+    { ...baseInput, stage: "interview" as const },
+    repoRoot,
+  );
   assert.ok(interviewStage.artifacts.length >= 1);
   assert.ok(interviewStage.interview.turns.length >= 1);
   assert.equal(interviewStage.prints[9]?.status, "skipped");
 
-  const fullStage = await runContextSearchWorkflow({ ...baseInput, stage: "full" as const }, repoRoot);
+  const fullStage = await runContextSearchWorkflow(
+    { ...baseInput, stage: "full" as const },
+    repoRoot,
+  );
   assert.equal(fullStage.prints[9]?.status, "completed");
 });
 
@@ -430,27 +443,37 @@ test("provider posture does not change deterministic scoring", () => {
     }),
   ];
 
-  const deterministicBundle = buildKeywordBundleFromText({
-    scenarioText: "token search graph cluster evidence",
-    optionalContext: "",
-    optionalProblemFrame: "",
-    maxKeywords: 8,
-    provider: "deterministic",
-  }, vocabulary);
+  const deterministicBundle = buildKeywordBundleFromText(
+    {
+      scenarioText: "token search graph cluster evidence",
+      optionalContext: "",
+      optionalProblemFrame: "",
+      maxKeywords: 8,
+      provider: "deterministic",
+    },
+    vocabulary,
+  );
 
-  const providerBundle = buildKeywordBundleFromText({
-    scenarioText: "token search graph cluster evidence",
-    optionalContext: "",
-    optionalProblemFrame: "",
-    maxKeywords: 8,
-    provider: "openai",
-  }, vocabulary);
+  const providerBundle = buildKeywordBundleFromText(
+    {
+      scenarioText: "token search graph cluster evidence",
+      optionalContext: "",
+      optionalProblemFrame: "",
+      maxKeywords: 8,
+      provider: "openai",
+    },
+    vocabulary,
+  );
 
   const deterministicHits = searchIndexedDocuments(deterministicBundle, docs);
   const providerHits = searchIndexedDocuments(providerBundle, docs);
 
   assert.deepEqual(
     providerHits.map((hit) => ({ id: hit.id, score: hit.score, matchedTerms: hit.matchedTerms })),
-    deterministicHits.map((hit) => ({ id: hit.id, score: hit.score, matchedTerms: hit.matchedTerms })),
+    deterministicHits.map((hit) => ({
+      id: hit.id,
+      score: hit.score,
+      matchedTerms: hit.matchedTerms,
+    })),
   );
 });

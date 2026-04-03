@@ -3,17 +3,9 @@
   "repoName": "CascadeProjects",
   "defaultBranch": "main",
   "allowAgentFix": true,
-  "requiredChecks": [
-    "pr-contract",
-    "root-ts-ci",
-    "secrets-scan",
-    "codeql"
-  ],
+  "requiredChecks": ["pr-contract", "root-ts-ci", "secrets-scan", "codeql"],
   "riskTiers": {
-    "tier0Globs": [
-      "docs/**",
-      "**/*.md"
-    ],
+    "tier0Globs": ["docs/**", "**/*.md"],
     "tier2Globs": [
       ".github/workflows/**",
       "GATE/**",
@@ -28,9 +20,7 @@
     {
       "name": "full-check",
       "workingDirectory": ".",
-      "commands": [
-        "bash scripts/run_repo_contract_checks.sh"
-      ]
+      "commands": ["bash scripts/run_repo_contract_checks.sh"]
     }
   ]
 }

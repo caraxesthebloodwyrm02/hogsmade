@@ -10,9 +10,15 @@
  *   guard.js     — DriftGuard orchestrator + factory
  */
 
-export { VERSION, DEFAULT_STATE_PATH, LOG_PATH, DRIFT_POLICIES, DriftFormulas } from './formulas.js';
-export { DriftDetector } from './detector.js';
-export { DriftResolver } from './resolver.js';
-export { DriftTelemetry } from './telemetry.js';
-export { DriftGuard, createDriftGuard } from './guard.js';
-export { default } from './guard.js';
+export {
+  VERSION,
+  DEFAULT_STATE_PATH,
+  LOG_PATH,
+  DRIFT_POLICIES,
+  DriftFormulas,
+} from "./formulas.js";
+export { DriftDetector } from "./detector.js";
+export { DriftResolver } from "./resolver.js";
+export { DriftTelemetry } from "./telemetry.js";
+export { DriftGuard, createDriftGuard } from "./guard.js";
+export { default } from "./guard.js";

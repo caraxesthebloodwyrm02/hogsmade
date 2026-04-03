@@ -1,5 +1,7 @@
 # DriftGuard CLI — Complete Reference
 
+**Archival note**: This reference predates the 2026-04-04 workspace layout reorg. The `cd` example below still uses the older flat engine path and is historical, not current operator guidance.
+
 ## Installation
 
 DriftGuard CLI is included with Glimpse Engine. No separate installation required.
@@ -13,10 +15,13 @@ cd /home/caraxes/CascadeProjects/glimpse-engine
 ## Quick Start Commands
 
 ### Health Check
+
 ```bash
 npm run glimpse:health
 ```
+
 **Output:**
+
 ```
 🔍 DriftGuard Health Check
 
@@ -26,6 +31,7 @@ Policy:     adaptive
 ```
 
 ### CI/CD Validation
+
 ```bash
 # Standard check (warnings only)
 npm run glimpse:ci
@@ -38,10 +44,13 @@ npm run glimpse:ci -- --heal
 ```
 
 ### Auto-Healing
+
 ```bash
 npm run glimpse:heal
 ```
+
 **Output:**
+
 ```
 🔧 DriftGuard Auto-Heal
 
@@ -51,10 +60,13 @@ npm run glimpse:heal
 ```
 
 ### Trend Analysis
+
 ```bash
 npm run glimpse:trends
 ```
+
 **Output:**
+
 ```
 📊 DriftGuard Trend Analysis
 
@@ -65,10 +77,13 @@ Trend:         STABLE
 ```
 
 ### Policy Listing
+
 ```bash
 npm run glimpse:policies
 ```
+
 **Output:**
+
 ```
 📋 Available Policies
 
@@ -132,6 +147,7 @@ State:      ✓ HEALTHY
 ### Scenario 2: CI/CD Pipeline
 
 **GitHub Actions workflow:**
+
 ```yaml
 name: Validate
 on: [push, pull_request]
@@ -145,6 +161,7 @@ jobs:
 ```
 
 **Output on success:**
+
 ```
 🔒 DriftGuard CI Check (strict)
 
@@ -152,6 +169,7 @@ jobs:
 ```
 
 **Output on failure:**
+
 ```
 🔒 DriftGuard CI Check (strict)
 
@@ -182,6 +200,7 @@ Trend:         DEGRADING
 ### Scenario 4: Multi-Environment Policy
 
 **Production (strict):**
+
 ```bash
 # .github/workflows/production.yml
 - name: Production Validation
@@ -190,6 +209,7 @@ Trend:         DEGRADING
 ```
 
 **Development (adaptive):**
+
 ```bash
 # Developer workflow
 $ npm run glimpse:ci  # Permissive by default
@@ -197,6 +217,7 @@ $ npm run glimpse:ci  # Permissive by default
 ```
 
 **Research (permissive):**
+
 ```bash
 # Experiments
 $ npm run glimpse:ci -- --policy=permissive
@@ -207,11 +228,11 @@ $ npm run glimpse:ci -- --policy=permissive
 
 ## Exit Codes
 
-| Code | Meaning |
-|------|---------|
-| 0 | Success / Healthy |
-| 1 | Drift detected / Unhealthy |
-| 99 | Unknown error |
+| Code | Meaning                    |
+| ---- | -------------------------- |
+| 0    | Success / Healthy          |
+| 1    | Drift detected / Unhealthy |
+| 99   | Unknown error              |
 
 ---
 
@@ -256,11 +277,11 @@ HEALTHCHECK --interval=30s --timeout=3s \
 ### Custom Policy (via API)
 
 ```javascript
-import { DriftGuard, DRIFT_POLICIES } from './core/drift-guard/index.js';
+import { DriftGuard, DRIFT_POLICIES } from "./core/drift-guard/index.js";
 
 const customPolicy = {
   ...DRIFT_POLICIES.STRICT,
-  thresholds: { COVERAGE: 0.75, LINE_DIFF: 5 }
+  thresholds: { COVERAGE: 0.75, LINE_DIFF: 5 },
 };
 
 const guard = new DriftGuard({ policy: customPolicy });
@@ -270,17 +291,17 @@ await guard.ci(true);
 ### Programmatic Usage
 
 ```javascript
-import { createDriftGuard } from './core/engine.js';
+import { createDriftGuard } from "./core/engine.js";
 
 const guard = createDriftGuard();
 
 // Health check
 const result = await guard.guard();
-console.log(result.healthy ? 'OK' : 'DRIFT');
+console.log(result.healthy ? "OK" : "DRIFT");
 
 // With auto-heal
 const result = await guard.guard({ execute: true });
-console.log(result.report.healed ? 'Healed' : 'Manual intervention needed');
+console.log(result.report.healed ? "Healed" : "Manual intervention needed");
 ```
 
 ---
@@ -288,6 +309,7 @@ console.log(result.report.healed ? 'Healed' : 'Manual intervention needed');
 ## Troubleshooting
 
 ### Command not found
+
 ```bash
 # Ensure you're in the correct directory
 cd /home/caraxes/CascadeProjects/glimpse-engine
@@ -295,11 +317,13 @@ npm run glimpse:health
 ```
 
 ### Permission denied
+
 ```bash
 chmod +x cli-drift-guard-real.mjs
 ```
 
 ### No drift detected but files differ
+
 ```bash
 # Check both paths exist
 ls -la glimpse.master.yaml
@@ -310,11 +334,11 @@ ls -la default-master.js
 
 ## Environment Variables
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `DRIFTGUARD_POLICY` | Default policy | `adaptive` |
-| `DRIFTGUARD_AUTOHEAL` | Enable auto-heal | `false` |
-| `DRIFTGUARD_STRICT` | Strict mode | `false` |
+| Variable              | Description      | Default    |
+| --------------------- | ---------------- | ---------- |
+| `DRIFTGUARD_POLICY`   | Default policy   | `adaptive` |
+| `DRIFTGUARD_AUTOHEAL` | Enable auto-heal | `false`    |
+| `DRIFTGUARD_STRICT`   | Strict mode      | `false`    |
 
 ---
 

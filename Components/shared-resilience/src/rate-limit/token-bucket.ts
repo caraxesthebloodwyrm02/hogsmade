@@ -2,8 +2,8 @@ import {
   RateLimitConfig,
   RateLimitMetrics,
   RateLimitExceededError,
-  ResilienceContext
-} from '../types/index.js';
+  ResilienceContext,
+} from "../types/index.js";
 
 export interface RateLimitOptions extends RateLimitConfig {
   onTokenConsumed?: (tokensRemaining: number) => void;
@@ -26,7 +26,7 @@ export class TokenBucketRateLimiter {
 
   constructor(
     private readonly serviceName: string,
-    private readonly config: RateLimitOptions
+    private readonly config: RateLimitOptions,
   ) {
     this.tokens = config.burstSize;
     this.lastRefillTime = Date.now();
@@ -34,7 +34,7 @@ export class TokenBucketRateLimiter {
       tokensAvailable: this.tokens,
       queueSize: 0,
       totalRequests: 0,
-      throttledRequests: 0
+      throttledRequests: 0,
     };
     this.startRefillTimer();
   }
@@ -72,18 +72,13 @@ export class TokenBucketRateLimiter {
       this.metrics.tokensAvailable = Math.floor(this.tokens);
       this.config.onTokenConsumed?.(this.tokens);
 
-      request.operation()
-        .then(request.resolve)
-        .catch(request.reject);
+      request.operation().then(request.resolve).catch(request.reject);
     }
 
     this.metrics.queueSize = this.queue.length;
   }
 
-  async execute<T>(
-    operation: () => Promise<T>,
-    context: ResilienceContext
-  ): Promise<T> {
+  async execute<T>(operation: () => Promise<T>, context: ResilienceContext): Promise<T> {
     this.metrics.totalRequests++;
 
     if (this.tokens >= 1) {
@@ -106,7 +101,7 @@ export class TokenBucketRateLimiter {
         resolve: resolve as (value: unknown) => void,
         reject,
         operation,
-        context
+        context,
       });
       this.metrics.queueSize = this.queue.length;
     });
@@ -130,7 +125,7 @@ export class TokenBucketRateLimiter {
     }
 
     for (const request of this.queue) {
-      request.reject(new Error('Rate limiter destroyed'));
+      request.reject(new Error("Rate limiter destroyed"));
     }
     this.queue = [];
   }
@@ -180,5 +175,5 @@ export const globalRateLimitRegistry = new RateLimitRegistry();
 export const defaultRateLimitConfig: RateLimitConfig = {
   tokensPerSecond: 10,
   burstSize: 20,
-  maxQueueSize: 100
+  maxQueueSize: 100,
 };

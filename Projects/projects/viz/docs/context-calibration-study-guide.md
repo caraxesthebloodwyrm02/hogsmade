@@ -10,7 +10,7 @@ You write a prompt. The model responds — but it missed the point. Not because 
 
 The usual reaction: rewrite the prompt, try again, hope it lands. That's guessing.
 
-**Context Calibration** replaces guessing with measurement. Before writing the next prompt, you diagnose *where* and *how far off* the model was — then apply targeted correction.
+**Context Calibration** replaces guessing with measurement. Before writing the next prompt, you diagnose _where_ and _how far off_ the model was — then apply targeted correction.
 
 ---
 
@@ -20,11 +20,11 @@ This tool borrows directly from **room acoustic calibration** — the process au
 
 ### The room problem
 
-A speaker plays music perfectly. But the room changes the sound: walls reflect it, corners trap bass, furniture absorbs highs. What you hear isn't what the speaker played — it's the speaker *plus the room's distortions*.
+A speaker plays music perfectly. But the room changes the sound: walls reflect it, corners trap bass, furniture absorbs highs. What you hear isn't what the speaker played — it's the speaker _plus the room's distortions_.
 
 ### The AI problem
 
-You write a clear prompt. But the model changes the meaning: training biases amplify some ideas, attention limits cause blind spots, context window boundaries cut off earlier instructions. What the model responds with isn't what you said — it's your input *plus the model's distortions*.
+You write a clear prompt. But the model changes the meaning: training biases amplify some ideas, attention limits cause blind spots, context window boundaries cut off earlier instructions. What the model responds with isn't what you said — it's your input _plus the model's distortions_.
 
 Same problem. Same solution: measure the distortion, then counteract it.
 
@@ -72,16 +72,16 @@ In audio, delay is a precisely timed repeat of a signal. Unlike echo (chaotic, u
 
 These are the measurement points on the spectrum. Each one names a type of context where things can go wrong:
 
-| Dimension | What it measures | Over-indexing (+dB) | Under-reading (-dB) |
-|-----------|-----------------|---------------------|---------------------|
-| **Specificity** | How precisely scoped is the context? | Model narrowed scope you didn't intend | Model interpreted too broadly |
-| **Clarity** | How clearly does the prompt communicate intent? | Model "filled in" clarity you didn't provide | Model couldn't parse your intent |
-| **Constraints** | Are boundaries and limitations stated? | Model invented constraints you didn't set | Model ignored stated boundaries |
-| **Domain** | Is vocabulary and domain context sufficient? | Model mapped wrong domain assumptions | Model lacked domain knowledge |
-| **Assumptions** | What unstated assumptions exist? | Model assumed things you didn't say | Model ignored implicit information |
-| **Evidence** | Are claims grounded with examples? | Model treated weak evidence as strong | Model dismissed your evidence |
-| **Confidence** | Model's certainty level | Over-confident = false assumptions | Under-confident = hedging on facts |
-| **Tension** | Attention strain across competing signals | Model locked onto one signal, ignored others | Model spread attention too thin |
+| Dimension       | What it measures                                | Over-indexing (+dB)                          | Under-reading (-dB)                |
+| --------------- | ----------------------------------------------- | -------------------------------------------- | ---------------------------------- |
+| **Specificity** | How precisely scoped is the context?            | Model narrowed scope you didn't intend       | Model interpreted too broadly      |
+| **Clarity**     | How clearly does the prompt communicate intent? | Model "filled in" clarity you didn't provide | Model couldn't parse your intent   |
+| **Constraints** | Are boundaries and limitations stated?          | Model invented constraints you didn't set    | Model ignored stated boundaries    |
+| **Domain**      | Is vocabulary and domain context sufficient?    | Model mapped wrong domain assumptions        | Model lacked domain knowledge      |
+| **Assumptions** | What unstated assumptions exist?                | Model assumed things you didn't say          | Model ignored implicit information |
+| **Evidence**    | Are claims grounded with examples?              | Model treated weak evidence as strong        | Model dismissed your evidence      |
+| **Confidence**  | Model's certainty level                         | Over-confident = false assumptions           | Under-confident = hedging on facts |
+| **Tension**     | Attention strain across competing signals       | Model locked onto one signal, ignored others | Model spread attention too thin    |
 
 ---
 
@@ -98,6 +98,7 @@ For each dimension where the model went wrong, click **+ Add Band** on the calib
 ### Step 3: Set the reading
 
 For each band:
+
 - **Dimension**: which context dimension was distorted?
 - **Gain**: how severely? Drag up for over-indexing, down for under-reading.
 - **Q (width)**: is this a narrow assumption ("model thinks X is exactly Y") or a wide misunderstanding ("model misreads this entire area")?
@@ -147,17 +148,20 @@ The strip between spectrum and controls shows aggregate readings:
 ## Current state — honest assessment
 
 ### What works well
+
 - The EQ metaphor maps cleanly: named dimensions on X, severity on Y, composite curve shows the full picture
 - The measurement workflow (add bands, set readings, read corrections) is coherent
 - Export/import lets you save calibration profiles and compare across sessions
 
 ### What needs more work
+
 - **Phase knob** is currently manual — you set it yourself based on judgment, not measurement
 - **Q (width)** maps imperfectly to discrete named dimensions — it's more useful on continuous spectra
 - **Delay correction panel** gives template-based advice, not custom analysis per case
 - The tool is strongest when you already know something went wrong and want to name it precisely. It's weaker at discovering problems you can't yet articulate.
 
 ### What's next (if we continue)
+
 - A **phaser** — multi-turn patching that targets one dimension at a time, batches corrections, and synthesizes them
 - Better correction generation — less template, more context-aware
 - Probe measurement — structured test prompts that measure the model's response before you try your real prompt
@@ -166,14 +170,14 @@ The strip between spectrum and controls shows aggregate readings:
 
 ## Key terms reference
 
-| Term | Audio meaning | Context calibration meaning |
-|------|--------------|----------------------------|
-| Band | A single EQ filter targeting one frequency range | A measurement point targeting one context dimension |
-| Gain | Volume boost or cut at that frequency | Severity of distortion on that dimension |
-| Q (bandwidth) | How narrow or wide the filter affects | How specific or broad the model's misunderstanding is |
-| Phase | Angular offset between two signals | Angular offset between user intent and model interpretation |
-| Composite curve | Sum of all EQ bands | Full distortion profile across all dimensions |
-| 0 dB | No change to the signal | Model understood correctly |
-| Delay | Precisely timed signal repeat | Calculated context addition to close a measured gap |
-| Echo | Uncontrolled room reflections | Raw model additions (assumptions, hallucinations) |
-| Calibration | Measure room, apply correction, re-measure | Measure context gap, revise prompt, re-measure |
+| Term            | Audio meaning                                    | Context calibration meaning                                 |
+| --------------- | ------------------------------------------------ | ----------------------------------------------------------- |
+| Band            | A single EQ filter targeting one frequency range | A measurement point targeting one context dimension         |
+| Gain            | Volume boost or cut at that frequency            | Severity of distortion on that dimension                    |
+| Q (bandwidth)   | How narrow or wide the filter affects            | How specific or broad the model's misunderstanding is       |
+| Phase           | Angular offset between two signals               | Angular offset between user intent and model interpretation |
+| Composite curve | Sum of all EQ bands                              | Full distortion profile across all dimensions               |
+| 0 dB            | No change to the signal                          | Model understood correctly                                  |
+| Delay           | Precisely timed signal repeat                    | Calculated context addition to close a measured gap         |
+| Echo            | Uncontrolled room reflections                    | Raw model additions (assumptions, hallucinations)           |
+| Calibration     | Measure room, apply correction, re-measure       | Measure context gap, revise prompt, re-measure              |

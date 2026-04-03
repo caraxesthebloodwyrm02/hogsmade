@@ -30,7 +30,7 @@ export class SessionRateLimiter {
   check(operationName: string): string | null {
     const now = Date.now();
     const cutoff = now - this.config.windowMs;
-    this.timestamps = this.timestamps.filter(t => t > cutoff);
+    this.timestamps = this.timestamps.filter((t) => t > cutoff);
 
     if (this.timestamps.length >= this.config.maxCalls) {
       const oldest = this.timestamps[0];
@@ -45,7 +45,7 @@ export class SessionRateLimiter {
   /** Current number of calls within the active window. */
   get currentCount(): number {
     const cutoff = Date.now() - this.config.windowMs;
-    this.timestamps = this.timestamps.filter(t => t > cutoff);
+    this.timestamps = this.timestamps.filter((t) => t > cutoff);
     return this.timestamps.length;
   }
 

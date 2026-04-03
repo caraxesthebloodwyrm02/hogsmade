@@ -21,9 +21,7 @@
   "user_fingerprint": "219ef2ea5fb7a488e0f2d31775be6f4813d87eac5e170e650fb8701904c1ff62",
   "machine_fingerprint": "8e78fd240af53bccb828adcef2c8b07f0145ac047720789e8c6ece5b37b2f087",
   "scope": {
-    "permissions": [
-      "read_only"
-    ],
+    "permissions": ["read_only"],
     "target_project": "GRID-main",
     "target_path": null,
     "max_execution_time_seconds": 300,

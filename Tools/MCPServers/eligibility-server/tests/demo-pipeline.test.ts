@@ -56,6 +56,8 @@ describe("demo execute pipeline", () => {
 
     expect(report.scenario.id).toBe("compat-evaluate");
     expect(report.runtimeStory).toContain("Support-balance assist");
-    expect(report.topologyArtifact.nodes.some((node) => node.id === "support-balance-assist")).toBe(true);
+    expect(report.topologyArtifact.nodes.some((node) => node.id === "support-balance-assist")).toBe(
+      true,
+    );
   });
 });

@@ -3,10 +3,10 @@
  * @description Unified orchestrator — Detect → Analyze → Resolve → Log
  */
 
-import { DRIFT_POLICIES } from './formulas.js';
-import { DriftDetector } from './detector.js';
-import { DriftResolver } from './resolver.js';
-import { DriftTelemetry } from './telemetry.js';
+import { DRIFT_POLICIES } from "./formulas.js";
+import { DriftDetector } from "./detector.js";
+import { DriftResolver } from "./resolver.js";
+import { DriftTelemetry } from "./telemetry.js";
 
 // ═══════════════════════════════════════════════════════════════════
 // DRIFTGUARD — Unified Orchestrator
@@ -49,7 +49,7 @@ export class DriftGuard {
       resolution = await this.resolver.execute(decision);
 
       // Re-verify if healed
-      if (resolution.status === 'SUCCESS') {
+      if (resolution.status === "SUCCESS") {
         report.verification = this.detector.detect();
         report.healed = !report.verification.drift.detected;
       }
@@ -64,7 +64,7 @@ export class DriftGuard {
       severity: report.drift?.severity,
       duration: report.duration,
       action: decision.action,
-      resolution: resolution?.status
+      resolution: resolution?.status,
     };
 
     this.state.runs = [...(this.state.runs || []), runRecord].slice(-100); // Keep last 100
@@ -73,11 +73,11 @@ export class DriftGuard {
 
     return {
       runId,
-      healthy: report.state === 'HEALTHY',
+      healthy: report.state === "HEALTHY",
       report,
       decision,
       resolution,
-      trends: this.telemetry.analyzeTrends()
+      trends: this.telemetry.analyzeTrends(),
     };
   }
 
@@ -110,7 +110,7 @@ export class DriftGuard {
    */
   health() {
     const report = this.detector.detect();
-    return report.state === 'HEALTHY';
+    return report.state === "HEALTHY";
   }
 }
 

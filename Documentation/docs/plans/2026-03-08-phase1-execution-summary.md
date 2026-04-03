@@ -18,11 +18,11 @@
 
 ### 1.1 Workspace Git History
 
-| Item | Status | Notes |
-|------|--------|--------|
-| `.gitignore` at root | Done | Comprehensive; includes `*.ndjson`, editor state, secrets, build artifacts |
-| `*.ndjson` intentionally ignored | Done | Comment in `.gitignore`: "Operational data: audit logs (append-only NDJSON). Intentionally not versioned." |
-| First workspace-root commit | **Pending** | Root has `git init` but **no commits yet**. Create first commit with current tree. |
+| Item                             | Status      | Notes                                                                                                      |
+| -------------------------------- | ----------- | ---------------------------------------------------------------------------------------------------------- |
+| `.gitignore` at root             | Done        | Comprehensive; includes `*.ndjson`, editor state, secrets, build artifacts                                 |
+| `*.ndjson` intentionally ignored | Done        | Comment in `.gitignore`: "Operational data: audit logs (append-only NDJSON). Intentionally not versioned." |
+| First workspace-root commit      | **Pending** | Root has `git init` but **no commits yet**. Create first commit with current tree.                         |
 
 **Next action**: From workspace root, create the first commit (e.g. `git add` per spec, then `git commit -m "chore: initial workspace baseline (Phase 1 housekeeping)"`). Do not start Wave 2 until this exists.
 
@@ -30,12 +30,12 @@
 
 ### 1.2 Environment Variable Migration
 
-| Server | Config module | Required env vars | Fail-loud when missing | README |
-|--------|---------------|--------------------|------------------------|--------|
-| grid-server | `src/config.ts` | `GATE_DIR`, `CASCADE_WORKSPACE_ROOT` | Yes | Documents both |
-| lots-server | `src/config.ts` | `LOTS_EXPERIMENTS_DIR` | Yes | Documents it |
-| seeds-server | `src/config.ts` | `SEEDS_ROOT` | Yes | Documents it |
-| maintain-server | `src/config.ts` | `CASCADE_WORKSPACE_ROOT`, `SEEDS_ROOT` | Yes | Documents both |
+| Server          | Config module   | Required env vars                      | Fail-loud when missing | README         |
+| --------------- | --------------- | -------------------------------------- | ---------------------- | -------------- |
+| grid-server     | `src/config.ts` | `GATE_DIR`, `CASCADE_WORKSPACE_ROOT`   | Yes                    | Documents both |
+| lots-server     | `src/config.ts` | `LOTS_EXPERIMENTS_DIR`                 | Yes                    | Documents it   |
+| seeds-server    | `src/config.ts` | `SEEDS_ROOT`                           | Yes                    | Documents it   |
+| maintain-server | `src/config.ts` | `CASCADE_WORKSPACE_ROOT`, `SEEDS_ROOT` | Yes                    | Documents both |
 
 Root `.env.example` exists with: `CASCADE_WORKSPACE_ROOT`, `GATE_DIR`, `LOTS_EXPERIMENTS_DIR`, `SEEDS_ROOT`, optional `GRID_API_URL`, `ECHOES_AUDIT_PATH`, and optional overrides.
 
@@ -47,15 +47,15 @@ Root `.env.example` exists with: `CASCADE_WORKSPACE_ROOT`, `GATE_DIR`, `LOTS_EXP
 
 ### 1.3 MCP Server Smoke Tests
 
-| Server | `buildServer()` / testable shape | Vitest | `tests/smoke.test.ts` | Result |
-|--------|----------------------------------|--------|------------------------|--------|
-| echoes-server | Yes (`buildServer()` in server.ts) | Yes | Yes | 2 tests pass |
-| grid-server | Config + server; tests use getConfig + env | Yes | Yes | 2 tests pass |
-| lots-server | Config + server; tests use getConfig + env | Yes | Yes | 2 tests pass |
-| seeds-server | Config + server; tests use getConfig + env | Yes | Yes | 2 tests pass |
-| maintain-server | Config + server; tests use getConfig + env | Yes | Yes | 2 tests pass |
-| pulse-server | Yes (`buildServer()` in server.ts) | Yes | Yes | 2 tests pass |
-| afloat-server | Yes (`buildServer()` in server.ts) | Yes | Yes | 2 tests pass |
+| Server          | `buildServer()` / testable shape           | Vitest | `tests/smoke.test.ts` | Result       |
+| --------------- | ------------------------------------------ | ------ | --------------------- | ------------ |
+| echoes-server   | Yes (`buildServer()` in server.ts)         | Yes    | Yes                   | 2 tests pass |
+| grid-server     | Config + server; tests use getConfig + env | Yes    | Yes                   | 2 tests pass |
+| lots-server     | Config + server; tests use getConfig + env | Yes    | Yes                   | 2 tests pass |
+| seeds-server    | Config + server; tests use getConfig + env | Yes    | Yes                   | 2 tests pass |
+| maintain-server | Config + server; tests use getConfig + env | Yes    | Yes                   | 2 tests pass |
+| pulse-server    | Yes (`buildServer()` in server.ts)         | Yes    | Yes                   | 2 tests pass |
+| afloat-server   | Yes (`buildServer()` in server.ts)         | Yes    | Yes                   | 2 tests pass |
 
 **Exit criteria met**: Every MCP server has at least one passing smoke test (tool registration and config/health or tool call).
 
@@ -63,11 +63,11 @@ Root `.env.example` exists with: `CASCADE_WORKSPACE_ROOT`, `GATE_DIR`, `LOTS_EXP
 
 ### 1.4 Afloat Consolidation
 
-| Item | Status | Notes |
-|------|--------|--------|
-| `Afloat/` at workspace root | **Not present** | Directory list shows `afloat-server/` only; no `Afloat/` folder. |
-| Canonical Afloat location | Done | `CLAUDE.md` and `AGENTS.md` already list only `afloat-server/` as the workflow MCP server. |
-| Move `Afloat/agents.md` → `afloat-server/docs/` | N/A | No `Afloat/` to move from. If `Afloat/` is recreated or exists elsewhere, move `agents.md` and remove empty `Afloat/`. |
+| Item                                            | Status          | Notes                                                                                                                  |
+| ----------------------------------------------- | --------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `Afloat/` at workspace root                     | **Not present** | Directory list shows `afloat-server/` only; no `Afloat/` folder.                                                       |
+| Canonical Afloat location                       | Done            | `CLAUDE.md` and `AGENTS.md` already list only `afloat-server/` as the workflow MCP server.                             |
+| Move `Afloat/agents.md` → `afloat-server/docs/` | N/A             | No `Afloat/` to move from. If `Afloat/` is recreated or exists elsewhere, move `agents.md` and remove empty `Afloat/`. |
 
 **Exit criteria met**: Afloat has one canonical location (`afloat-server/`). No duplicate concept at root.
 
@@ -91,20 +91,20 @@ Root `.env.example` exists with: `CASCADE_WORKSPACE_ROOT`, `GATE_DIR`, `LOTS_EXP
 
 ## Wave 1 Exit Criteria — Checklist
 
-| Criterion | Met |
-|-----------|-----|
-| All 4 path-sensitive servers start from env-backed config without silent machine-layout guesses | Yes |
-| Every MCP server has at least one passing smoke test | Yes |
-| Afloat has one canonical location | Yes (`afloat-server/`) |
-| Workspace root has initial git history | **No** — create first commit |
+| Criterion                                                                                       | Met                          |
+| ----------------------------------------------------------------------------------------------- | ---------------------------- |
+| All 4 path-sensitive servers start from env-backed config without silent machine-layout guesses | Yes                          |
+| Every MCP server has at least one passing smoke test                                            | Yes                          |
+| Afloat has one canonical location                                                               | Yes (`afloat-server/`)       |
+| Workspace root has initial git history                                                          | **No** — create first commit |
 
 ---
 
 ## Exact Next Actions
 
-1. **Create the first workspace-root commit**  
-   - Stage files per spec (exclude node_modules, build artifacts, secrets; respect `.gitignore`).  
-   - Commit with a message that reflects Phase 1 baseline (e.g. initial housekeeping).  
+1. **Create the first workspace-root commit**
+   - Stage files per spec (exclude node_modules, build artifacts, secrets; respect `.gitignore`).
+   - Commit with a message that reflects Phase 1 baseline (e.g. initial housekeeping).
    - This unblocks tracking all further work at workspace root.
 
 2. **Optional**: If you later introduce or find an `Afloat/` directory, complete 1.4 by moving `Afloat/agents.md` into `afloat-server/docs/` and removing the empty `Afloat/`.

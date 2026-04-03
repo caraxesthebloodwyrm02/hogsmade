@@ -44,19 +44,30 @@ export function buildDataProfile(records, config) {
     has_space_dimension: descriptors.some((descriptor) => descriptor.dimension === "space"),
     has_metric_dimension: descriptors.some((descriptor) => descriptor.type === "number"),
     has_text_fields: descriptors.some((descriptor) => descriptor.hasText),
-    has_geo_coordinates: descriptors.some((descriptor) => ["latitude", "lat"].includes(descriptor.name.toLowerCase()))
-      && descriptors.some((descriptor) => ["longitude", "lng"].includes(descriptor.name.toLowerCase())),
-    has_role_or_mood: descriptors.some((descriptor) => /role|mood|event|object|setting/i.test(descriptor.name)),
-    has_influence_field: descriptors.some((descriptor) => /influenced|inspired|based_on|derived/i.test(descriptor.name)),
+    has_geo_coordinates:
+      descriptors.some((descriptor) =>
+        ["latitude", "lat"].includes(descriptor.name.toLowerCase()),
+      ) &&
+      descriptors.some((descriptor) =>
+        ["longitude", "lng"].includes(descriptor.name.toLowerCase()),
+      ),
+    has_role_or_mood: descriptors.some((descriptor) =>
+      /role|mood|event|object|setting/i.test(descriptor.name),
+    ),
+    has_influence_field: descriptors.some((descriptor) =>
+      /influenced|inspired|based_on|derived/i.test(descriptor.name),
+    ),
   };
 
   const timeValues = [];
   records.forEach((record) => {
-    descriptors.filter((descriptor) => descriptor.dimension === "time").forEach((descriptor) => {
-      const value = normalizeScalar(record[descriptor.name]);
-      if (typeof value === "number") timeValues.push(value);
-      else if (/^\d{4}$/.test(String(value || ""))) timeValues.push(Number(value));
-    });
+    descriptors
+      .filter((descriptor) => descriptor.dimension === "time")
+      .forEach((descriptor) => {
+        const value = normalizeScalar(record[descriptor.name]);
+        if (typeof value === "number") timeValues.push(value);
+        else if (/^\d{4}$/.test(String(value || ""))) timeValues.push(Number(value));
+      });
   });
 
   return {
@@ -70,7 +81,9 @@ export function buildDataProfile(records, config) {
       return acc;
     }, {}),
     flags,
-    timeRange: timeValues.length ? { min: Math.min(...timeValues), max: Math.max(...timeValues) } : null,
+    timeRange: timeValues.length
+      ? { min: Math.min(...timeValues), max: Math.max(...timeValues) }
+      : null,
   };
 }
 
@@ -85,7 +98,9 @@ function chooseEntityColumn(profile) {
 }
 
 function chooseTypeColumn(profile) {
-  const explicit = profile.descriptors.find((descriptor) => /type|kind|class|role/i.test(descriptor.name));
+  const explicit = profile.descriptors.find((descriptor) =>
+    /type|kind|class|role/i.test(descriptor.name),
+  );
   return explicit?.name || null;
 }
 
@@ -106,15 +121,20 @@ export function detectTones(text, config) {
   const tones = {};
   const haystack = String(text || "").toLowerCase();
   Object.entries(config.semantic_packs?.tone_cues || {}).forEach(([tone, cues]) => {
-    tones[tone] = (cues || []).reduce((count, cue) => count + (includesWord(haystack, cue) ? 1 : 0), 0);
+    tones[tone] = (cues || []).reduce(
+      (count, cue) => count + (includesWord(haystack, cue) ? 1 : 0),
+      0,
+    );
   });
   return tones;
 }
 
 function inferEntityType(recordText) {
   const text = String(recordText || "").toLowerCase();
-  if (/protagonist|antagonist|mentor|ally|witness|informant|inventor|artist|person/.test(text)) return "person";
-  if (/invention|engine|telephone|telegraph|radio|device|machine|cinema|photography/.test(text)) return "artifact";
+  if (/protagonist|antagonist|mentor|ally|witness|informant|inventor|artist|person/.test(text))
+    return "person";
+  if (/invention|engine|telephone|telegraph|radio|device|machine|cinema|photography/.test(text))
+    return "artifact";
   if (/theory|law|principle/.test(text)) return "theory";
   if (/movement|revolution|era/.test(text)) return "movement";
   if (/event|blackout|revelation|exchange|confrontation/.test(text)) return "event";
@@ -123,4 +143,3 @@ function inferEntityType(recordText) {
 }
 
 export { chooseEntityColumn, chooseTypeColumn, inferEntityType };
-

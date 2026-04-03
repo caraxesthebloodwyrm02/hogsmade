@@ -402,35 +402,17 @@
       </a>
     </div>
 
-    <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">
-      Bright
-    </button>
+    <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">Bright</button>
 
     <div class="legend-bar" id="legendBar">
-      <span
-        ><span class="lg-dot" style="background: #00ff88"></span
-        >Production</span
-      >
-      <span
-        ><span class="lg-dot" style="background: #00ccff"></span>Active</span
-      >
-      <span
-        ><span class="lg-dot" style="background: #fbbf24"></span>Working</span
-      >
-      <span
-        ><span class="lg-dot" style="background: #ff3366"></span>Pre-alpha</span
-      >
+      <span><span class="lg-dot" style="background: #00ff88"></span>Production</span>
+      <span><span class="lg-dot" style="background: #00ccff"></span>Active</span>
+      <span><span class="lg-dot" style="background: #fbbf24"></span>Working</span>
+      <span><span class="lg-dot" style="background: #ff3366"></span>Pre-alpha</span>
       <span>|</span>
-      <span
-        ><span class="lg-dot" style="background: #00ff88"></span>System
-        Eng</span
-      >
-      <span
-        ><span class="lg-dot" style="background: #ff00ff"></span>Visual ID</span
-      >
-      <span
-        ><span class="lg-dot" style="background: #00ccff"></span>Audience</span
-      >
+      <span><span class="lg-dot" style="background: #00ff88"></span>System Eng</span>
+      <span><span class="lg-dot" style="background: #ff00ff"></span>Visual ID</span>
+      <span><span class="lg-dot" style="background: #00ccff"></span>Audience</span>
     </div>
 
     <div class="ctrl-bar" id="ctrlBar">
@@ -552,11 +534,7 @@
                     loc: "~5k",
                     tests: 106,
                     desc: "Resilience library on PyPI. Circuit breaking, rate limiting, retry.",
-                    labels: [
-                      "Boundary Design",
-                      "Meticulous",
-                      "Research Experiment",
-                    ],
+                    labels: ["Boundary Design", "Meticulous", "Research Experiment"],
                   },
                   {
                     id: "symphony",
@@ -633,11 +611,7 @@
                     status: "complete",
                     tier: "T3 Supporting",
                     desc: "Cognitive analysis engine. Rules, lenses, presets.",
-                    labels: [
-                      "Hypnocurrency",
-                      "Infraliminal",
-                      "Conditional Recognition",
-                    ],
+                    labels: ["Hypnocurrency", "Infraliminal", "Conditional Recognition"],
                   },
                   {
                     id: "afloat",
@@ -783,9 +757,7 @@
               podPositions.push({
                 id: pod.id,
                 x: reg.cx + (col - 0.5) * gapX,
-                y:
-                  reg.cy +
-                  (row - (Math.ceil(pods.length / 2) - 1) * 0.5) * gapY,
+                y: reg.cy + (row - (Math.ceil(pods.length / 2) - 1) * 0.5) * gapY,
                 r,
                 ns: nsKey,
                 pod,
@@ -828,14 +800,7 @@
 
       // --- RENDERING ---
       function drawBackground() {
-        const grad = ctx.createRadialGradient(
-          W / 2,
-          H / 2,
-          0,
-          W / 2,
-          H / 2,
-          Math.max(W, H) * 0.7,
-        );
+        const grad = ctx.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, Math.max(W, H) * 0.7);
         grad.addColorStop(0, "#0a0a18");
         grad.addColorStop(1, "#06060e");
         ctx.fillStyle = grad;
@@ -918,11 +883,7 @@
           ctx.font = "9px monospace";
           ctx.letterSpacing = "2px";
           ctx.fillStyle = color;
-          ctx.fillText(
-            CLUSTER.namespaces[nsKey].label.toUpperCase(),
-            rx + 12,
-            ry + 16,
-          );
+          ctx.fillText(CLUSTER.namespaces[nsKey].label.toUpperCase(), rx + 12, ry + 16);
           ctx.restore();
         });
       }
@@ -932,16 +893,10 @@
           const fromPod = podPositions.find((p) => p.id === svc.from);
           const toPod = podPositions.find((p) => p.id === svc.to);
           if (!fromPod || !toPod) return;
-          if (
-            activeNs !== "all" &&
-            activeNs !== fromPod.ns &&
-            activeNs !== toPod.ns
-          )
-            return;
+          if (activeNs !== "all" && activeNs !== fromPod.ns && activeNs !== toPod.ns) return;
 
           const isHighlighted =
-            hoveredPod &&
-            (hoveredPod.id === svc.from || hoveredPod.id === svc.to);
+            hoveredPod && (hoveredPod.id === svc.from || hoveredPod.id === svc.to);
           const alpha = isHighlighted ? 0.6 : hoveredPod ? 0.05 : 0.12;
 
           // Bezier curve
@@ -962,14 +917,8 @@
             const particleCount = isHighlighted ? 5 : 2;
             for (let i = 0; i < particleCount; i++) {
               const t = (time * 0.003 + i / particleCount) % 1;
-              const px =
-                (1 - t) * (1 - t) * fromPod.x +
-                2 * (1 - t) * t * mx +
-                t * t * toPod.x;
-              const py =
-                (1 - t) * (1 - t) * fromPod.y +
-                2 * (1 - t) * t * my +
-                t * t * toPod.y;
+              const px = (1 - t) * (1 - t) * fromPod.x + 2 * (1 - t) * t * mx + t * t * toPod.x;
+              const py = (1 - t) * (1 - t) * fromPod.y + 2 * (1 - t) * t * my + t * t * toPod.y;
               ctx.globalAlpha = alpha * (1 - Math.abs(t - 0.5) * 2);
               ctx.fillStyle = "#00ccff";
               ctx.beginPath();
@@ -1020,10 +969,7 @@
           ctx.beginPath();
           ctx.arc(p.x, p.y, r + 4, 0, Math.PI * 2);
           ctx.strokeStyle = statusColor;
-          ctx.lineWidth =
-            p.pod.status === "pre-alpha"
-              ? 1 + Math.sin(time * 0.06) * 0.8
-              : 1.5;
+          ctx.lineWidth = p.pod.status === "pre-alpha" ? 1 + Math.sin(time * 0.06) * 0.8 : 1.5;
           ctx.globalAlpha = (isFaded ? 0.1 : 0.4) + (isHovered ? 0.3 : 0);
           ctx.stroke();
 
@@ -1121,8 +1067,7 @@
         for (let i = podPositions.length - 1; i >= 0; i--) {
           const p = podPositions[i];
           if (activeNs !== "all" && activeNs !== p.ns) continue;
-          if (typeof isPodVisible === "function" && !isPodVisible(p.pod))
-            continue;
+          if (typeof isPodVisible === "function" && !isPodVisible(p.pod)) continue;
           const dx = mx - p.x,
             dy = my - p.y;
           if (dx * dx + dy * dy < (p.r + 8) * (p.r + 8)) return p;
@@ -1155,8 +1100,7 @@
         document.getElementById("dpName").textContent = pod.name;
         document.getElementById("dpName").style.color = COLORS[p.ns];
         document.getElementById("dpTier").textContent = pod.tier;
-        document.getElementById("dpTier").style.color =
-          STATUS_COLORS[pod.status];
+        document.getElementById("dpTier").style.color = STATUS_COLORS[pod.status];
 
         let meta = `Status: <span>${pod.status}</span>`;
         if (pod.health != null)
@@ -1230,10 +1174,7 @@
         activeNs = ns;
         closeDetail();
         document.querySelectorAll(".ns-tab").forEach((t) => {
-          t.classList.toggle(
-            "active",
-            (ns === "all" && !t.dataset.ns) || t.dataset.ns === ns,
-          );
+          t.classList.toggle("active", (ns === "all" && !t.dataset.ns) || t.dataset.ns === ns);
         });
       }
 
@@ -1282,24 +1223,16 @@
             totalLOC += p.locRaw || 0;
           }
         }
-        document.getElementById("statsProjects").innerHTML =
-          "Pods <b>" + totalPods + "</b>";
+        document.getElementById("statsProjects").innerHTML = "Pods <b>" + totalPods + "</b>";
         document.getElementById("statsLOC").innerHTML =
-          "LOC <b>" +
-          (totalLOC >= 1000 ? Math.round(totalLOC / 1000) + "k" : totalLOC) +
-          "</b>";
+          "LOC <b>" + (totalLOC >= 1000 ? Math.round(totalLOC / 1000) + "k" : totalLOC) + "</b>";
         document.getElementById("statsDeps").innerHTML =
           "Deps <b>" + CLUSTER.services.length + "</b>";
         if (CLUSTER.evalSummary) {
           const ev = CLUSTER.evalSummary;
           document.getElementById("statsVerdict").innerHTML =
-            "Ecosystem <b>" +
-            ev.ecosystemScore +
-            "% " +
-            ev.ecosystemVerdict +
-            "</b>";
-          document.getElementById("healthVal").textContent =
-            ev.ecosystemScore + "%";
+            "Ecosystem <b>" + ev.ecosystemScore + "% " + ev.ecosystemVerdict + "</b>";
+          document.getElementById("healthVal").textContent = ev.ecosystemScore + "%";
         }
       }
 
@@ -1395,10 +1328,7 @@
           ctx.beginPath();
           ctx.arc(p.x, p.y, r + 4, 0, Math.PI * 2);
           ctx.strokeStyle = statusColor;
-          ctx.lineWidth =
-            p.pod.status === "pre-alpha"
-              ? 1 + Math.sin(time * 0.06) * 0.8
-              : 1.5;
+          ctx.lineWidth = p.pod.status === "pre-alpha" ? 1 + Math.sin(time * 0.06) * 0.8 : 1.5;
           ctx.globalAlpha = (isFaded ? 0.1 : 0.4) + (isHovered ? 0.3 : 0);
           ctx.stroke();
 
@@ -1486,8 +1416,7 @@
             if (w.y < -100) w.y = H + 50;
             if (w.y > H + 100) w.y = -50;
             ctx.save();
-            ctx.globalAlpha =
-              w.opacity * 0.6 + Math.sin(time * 0.008 + w.size) * 0.005;
+            ctx.globalAlpha = w.opacity * 0.6 + Math.sin(time * 0.008 + w.size) * 0.005;
             ctx.font = `300 ${w.size}px 'SF Mono', monospace`;
             ctx.fillStyle = "#c8b8a8";
             ctx.fillText(w.text, w.x, w.y);
@@ -1530,13 +1459,7 @@
             ctx.lineWidth = 1;
             ctx.setLineDash([4, 8]);
             ctx.beginPath();
-            ctx.roundRect(
-              minX - pad,
-              minY - pad,
-              maxX - minX + pad * 2,
-              maxY - minY + pad * 2,
-              12,
-            );
+            ctx.roundRect(minX - pad, minY - pad, maxX - minX + pad * 2, maxY - minY + pad * 2, 12);
             ctx.stroke();
             ctx.setLineDash([]);
             ctx.globalAlpha = 0.25;
@@ -1562,15 +1485,9 @@
             const fromPod = podPositions.find((p) => p.id === svc.from);
             const toPod = podPositions.find((p) => p.id === svc.to);
             if (!fromPod || !toPod) return;
-            if (
-              activeNs !== "all" &&
-              activeNs !== fromPod.ns &&
-              activeNs !== toPod.ns
-            )
-              return;
+            if (activeNs !== "all" && activeNs !== fromPod.ns && activeNs !== toPod.ns) return;
             const isHighlighted =
-              hoveredPod &&
-              (hoveredPod.id === svc.from || hoveredPod.id === svc.to);
+              hoveredPod && (hoveredPod.id === svc.from || hoveredPod.id === svc.to);
             const alpha = isHighlighted ? 0.5 : hoveredPod ? 0.04 : 0.1;
             const mx = (fromPod.x + toPod.x) / 2,
               my = (fromPod.y + toPod.y) / 2 - 40;

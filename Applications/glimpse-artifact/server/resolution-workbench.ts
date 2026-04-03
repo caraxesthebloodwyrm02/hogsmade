@@ -7,12 +7,7 @@ import {
   type KeywordBundle,
 } from "./context-search";
 
-export type ResolutionMode =
-  | "recognition"
-  | "reward"
-  | "review"
-  | "restriction"
-  | "penalty";
+export type ResolutionMode = "recognition" | "reward" | "review" | "restriction" | "penalty";
 
 export interface ResolutionWorkbenchRequest {
   prompt: string;
@@ -329,12 +324,12 @@ const RANDOM_QUESTIONS: Record<ResolutionMode, string[]> = {
 
 let cachedIndex:
   | {
-    root: string;
-    builtAt: number;
-    sources: IndexedSource[];
-    vocabulary: Set<string>;
-    endpoints: EndpointRecord[];
-  }
+      root: string;
+      builtAt: number;
+      sources: IndexedSource[];
+      vocabulary: Set<string>;
+      endpoints: EndpointRecord[];
+    }
   | undefined;
 
 function splitIdentifierParts(value: string): string[] {
@@ -457,7 +452,7 @@ async function walkTextFiles(targetPath: string): Promise<string[]> {
     const nextPath = path.join(targetPath, entry.name);
 
     if (entry.isDirectory()) {
-      files.push(...await walkTextFiles(nextPath));
+      files.push(...(await walkTextFiles(nextPath)));
       continue;
     }
 
@@ -478,11 +473,7 @@ function extractSnippet(content: string, index: number): string {
 function buildSource(relativePath: string, content: string): IndexedSource {
   const title = extractTitle(relativePath, content);
   const cluster = relativePath.split("/")[0] || "root";
-  const tokens = new Set([
-    ...tokenize(relativePath),
-    ...tokenize(title),
-    ...tokenize(content),
-  ]);
+  const tokens = new Set([...tokenize(relativePath), ...tokenize(title), ...tokenize(content)]);
 
   return {
     id: relativePath,
@@ -514,7 +505,9 @@ function extractEndpoints(source: IndexedSource): EndpointRecord[] {
     });
   }
 
-  for (const match of content.matchAll(/@router\.(get|post|put|patch|delete)\(\s*["']([^"']+)["']/gi)) {
+  for (const match of content.matchAll(
+    /@router\.(get|post|put|patch|delete)\(\s*["']([^"']+)["']/gi,
+  )) {
     const method = (match[1] ?? "get").toLowerCase();
     const route = match[2]?.trim();
     if (!route) continue;
@@ -567,7 +560,7 @@ async function buildIndex(repoRoot: string): Promise<{
   for (const root of INCLUDED_ROOTS) {
     const absoluteRoot = path.join(repoRoot, root);
     try {
-      files.push(...await walkTextFiles(absoluteRoot));
+      files.push(...(await walkTextFiles(absoluteRoot)));
     } catch {
       // optional root
     }
@@ -641,7 +634,8 @@ function scoreEndpointCandidates(
     let score = 0;
     const matchedTerms = new Set<string>();
     const reasons: string[] = [];
-    const haystack = `${endpoint.label} ${endpoint.route ?? ""} ${endpoint.filePath} ${endpoint.snippet}`.toLowerCase();
+    const haystack =
+      `${endpoint.label} ${endpoint.route ?? ""} ${endpoint.filePath} ${endpoint.snippet}`.toLowerCase();
 
     for (const keyword of keywords.accepted) {
       const terms = [keyword.term, keyword.canonicalTerm, ...keyword.expansions];
@@ -682,11 +676,17 @@ function scoreEndpointCandidates(
       reasons.push(`mode-aligned with ${modeOverlap.slice(0, 3).join(", ")}`);
     }
 
-    if (endpoint.endpointType === "http_route" && (mode === "restriction" || mode === "penalty" || mode === "review")) {
+    if (
+      endpoint.endpointType === "http_route" &&
+      (mode === "restriction" || mode === "penalty" || mode === "review")
+    ) {
       score += 0.65;
     }
 
-    if (endpoint.endpointType === "mcp_tool" && (mode === "recognition" || mode === "reward" || mode === "review")) {
+    if (
+      endpoint.endpointType === "mcp_tool" &&
+      (mode === "recognition" || mode === "reward" || mode === "review")
+    ) {
       score += 0.55;
     }
 
@@ -723,7 +723,10 @@ function scoreEndpointCandidates(
 
   return sorted.map((candidate, index) => {
     const rankPenalty = index * 0.04;
-    const confidence = Math.max(0.18, Math.min(0.97, candidate.score / topScore - rankPenalty + 0.08));
+    const confidence = Math.max(
+      0.18,
+      Math.min(0.97, candidate.score / topScore - rankPenalty + 0.08),
+    );
     return {
       ...candidate,
       confidence: Number(confidence.toFixed(2)),
@@ -743,7 +746,8 @@ function scoreFileSurfaces(
     let score = 0;
     const matchedTerms = new Set<string>();
     const reasons: string[] = [];
-    const haystack = `${source.title} ${source.path} ${source.content.slice(0, 3000)}`.toLowerCase();
+    const haystack =
+      `${source.title} ${source.path} ${source.content.slice(0, 3000)}`.toLowerCase();
 
     for (const keyword of keywords.accepted) {
       const terms = [keyword.term, keyword.canonicalTerm, ...keyword.expansions];
@@ -809,7 +813,10 @@ function scoreFileSurfaces(
     .slice(0, 8)
     .map((candidate, index, all) => {
       const topScore = all[0]?.score ?? 1;
-      const confidence = Math.max(0.16, Math.min(0.93, candidate.score / topScore - index * 0.05 + 0.06));
+      const confidence = Math.max(
+        0.16,
+        Math.min(0.93, candidate.score / topScore - index * 0.05 + 0.06),
+      );
       return {
         ...candidate,
         confidence: Number(confidence.toFixed(2)),
@@ -823,8 +830,9 @@ function mergeCandidates(
   endpointCandidates: ResolutionCandidate[],
   fileCandidates: ResolutionCandidate[],
 ): ResolutionCandidate[] {
-  const merged = [...endpointCandidates, ...fileCandidates]
-    .sort((left, right) => right.score - left.score);
+  const merged = [...endpointCandidates, ...fileCandidates].sort(
+    (left, right) => right.score - left.score,
+  );
 
   const seen = new Set<string>();
   const deduped: ResolutionCandidate[] = [];
@@ -877,7 +885,11 @@ function buildHeatmap(
   return keywords.accepted.flatMap((keyword) =>
     clusters.map((cluster) => {
       const score = candidates
-        .filter((candidate) => candidate.cluster === cluster.id && candidate.matchedTerms.includes(keyword.canonicalTerm))
+        .filter(
+          (candidate) =>
+            candidate.cluster === cluster.id &&
+            candidate.matchedTerms.includes(keyword.canonicalTerm),
+        )
         .reduce((sum, candidate) => sum + candidate.score, 0);
 
       return {
@@ -950,23 +962,34 @@ function buildObservation(
   const topCandidate = candidates[0];
   const secondCandidate = candidates[1];
   const dominantCluster = clusters[0];
-  const evidenceCount = candidates.reduce((sum, candidate) => sum + candidate.evidenceRefs.length, 0);
-  const gap = topCandidate && secondCandidate
-    ? topCandidate.score - secondCandidate.score
-    : topCandidate
-      ? topCandidate.score
-      : 0;
+  const evidenceCount = candidates.reduce(
+    (sum, candidate) => sum + candidate.evidenceRefs.length,
+    0,
+  );
+  const gap =
+    topCandidate && secondCandidate
+      ? topCandidate.score - secondCandidate.score
+      : topCandidate
+        ? topCandidate.score
+        : 0;
 
   const confidenceBase = topCandidate
-    ? Math.min(0.96, 0.28 + topCandidate.confidence * 0.42 + Math.min(0.18, gap * 0.03) + Math.min(0.12, evidenceCount * 0.01))
+    ? Math.min(
+        0.96,
+        0.28 +
+          topCandidate.confidence * 0.42 +
+          Math.min(0.18, gap * 0.03) +
+          Math.min(0.12, evidenceCount * 0.01),
+      )
     : 0.12;
 
   const confidenceScore = Number(confidenceBase.toFixed(2));
-  const confidenceSummary = confidenceScore >= 0.75
-    ? "High confidence: a leading endpoint and cluster are materially ahead of the rest."
-    : confidenceScore >= 0.5
-      ? "Moderate confidence: there is signal, but the top endpoint still has meaningful competition."
-      : "Low confidence: keep reading, answer the question queue, and avoid direct consequence.";
+  const confidenceSummary =
+    confidenceScore >= 0.75
+      ? "High confidence: a leading endpoint and cluster are materially ahead of the rest."
+      : confidenceScore >= 0.5
+        ? "Moderate confidence: there is signal, but the top endpoint still has meaningful competition."
+        : "Low confidence: keep reading, answer the question queue, and avoid direct consequence.";
 
   const ambiguitySummary = !topCandidate
     ? "No grounded endpoint candidates yet."
@@ -1015,12 +1038,17 @@ export function buildQuestionQueue(
     });
   }
 
-  if (topCandidate && secondCandidate && Math.abs(topCandidate.score - secondCandidate.score) < 1.4) {
+  if (
+    topCandidate &&
+    secondCandidate &&
+    Math.abs(topCandidate.score - secondCandidate.score) < 1.4
+  ) {
     questions.push({
       id: "q-close-candidates",
       kind: "focused",
       question: `Is the real target closer to ${topCandidate.label} or ${secondCandidate.label}, and why?`,
-      rationale: "The top two candidates are too close to separate cleanly without user sharpening.",
+      rationale:
+        "The top two candidates are too close to separate cleanly without user sharpening.",
       affects: [topCandidate.id, secondCandidate.id],
     });
   }
@@ -1039,8 +1067,10 @@ export function buildQuestionQueue(
     questions.push({
       id: "q-recognition-shape",
       kind: "focused",
-      question: "Are you trying to identify the person, the proof trail, or the system surface that should carry the recognition?",
-      rationale: "Recognition and reward modes need a clear distinction between contributor identity and delivery surface.",
+      question:
+        "Are you trying to identify the person, the proof trail, or the system surface that should carry the recognition?",
+      rationale:
+        "Recognition and reward modes need a clear distinction between contributor identity and delivery surface.",
       affects: candidates.slice(0, 4).map((candidate) => candidate.id),
     });
   }
@@ -1049,21 +1079,25 @@ export function buildQuestionQueue(
     questions.push({
       id: "q-penalty-shape",
       kind: "focused",
-      question: "Is the issue primarily unethical actor behavior, unhealthy endpoint behavior, or a contract boundary failure?",
-      rationale: "Penalty and restriction modes should separate actor, endpoint, and contract causes before recommending consequence.",
+      question:
+        "Is the issue primarily unethical actor behavior, unhealthy endpoint behavior, or a contract boundary failure?",
+      rationale:
+        "Penalty and restriction modes should separate actor, endpoint, and contract causes before recommending consequence.",
       affects: candidates.slice(0, 4).map((candidate) => candidate.id),
     });
   }
 
   const randomPool = RANDOM_QUESTIONS[mode];
-  const fallbackQuestion = randomPool[(keywords.accepted.length + candidates.length) % randomPool.length];
+  const fallbackQuestion =
+    randomPool[(keywords.accepted.length + candidates.length) % randomPool.length];
   questions.push({
     id: "q-random-bounded",
     kind: "random",
     question: fallbackQuestion,
-    rationale: observation.confidenceScore < 0.75
-      ? "A bounded displacement question can expose the hidden angle that deterministic ranking still lacks."
-      : "A displacement question can test whether the top candidate remains stable under reframing.",
+    rationale:
+      observation.confidenceScore < 0.75
+        ? "A bounded displacement question can expose the hidden angle that deterministic ranking still lacks."
+        : "A displacement question can test whether the top candidate remains stable under reframing.",
     affects: candidates.slice(0, 3).map((candidate) => candidate.id),
   });
 
@@ -1094,7 +1128,10 @@ function buildArtifacts(
       kind: "candidate_ladder",
       content: candidates
         .slice(0, 4)
-        .map((candidate, index) => `${index + 1}. ${candidate.label} (${candidate.endpointType}, ${candidate.cluster})`)
+        .map(
+          (candidate, index) =>
+            `${index + 1}. ${candidate.label} (${candidate.endpointType}, ${candidate.cluster})`,
+        )
         .join(" | "),
       evidenceRefs: candidates.slice(0, 4).flatMap((candidate) => candidate.evidenceRefs),
     },
@@ -1154,9 +1191,10 @@ function buildTranscript(
     {
       id: "turn-synthesizer",
       speaker: "synthesizer",
-      text: questions.length > 0
-        ? `Next move: ${questions[0]?.question}`
-        : observation.recommendedNextStep,
+      text:
+        questions.length > 0
+          ? `Next move: ${questions[0]?.question}`
+          : observation.recommendedNextStep,
       evidenceRefs: candidates.slice(0, 3).flatMap((candidate) => candidate.evidenceRefs),
     },
   ];

@@ -30,7 +30,7 @@ This document curates vision-agent tasks and defines UI/UX responsibilities and 
 
 ### Delegation by agent type
 
-Map tasks by capability: *generation* (e.g. visual-to-code, diagram generation) vs *analysis* (e.g. consistency checks, document summarization), and *precise localization* (e.g. accessibility, layout extraction) vs *holistic understanding* (e.g. design-system alignment). See prior research or conversation transcripts for model-specific strengths (e.g. Kimi K2.5, Pixtral-style).
+Map tasks by capability: _generation_ (e.g. visual-to-code, diagram generation) vs _analysis_ (e.g. consistency checks, document summarization), and _precise localization_ (e.g. accessibility, layout extraction) vs _holistic understanding_ (e.g. design-system alignment). See prior research or conversation transcripts for model-specific strengths (e.g. Kimi K2.5, Pixtral-style).
 
 ### Phase 4 alignment
 
@@ -40,14 +40,14 @@ For the list of Phase 4 initiatives (Mycelium Dashboard, Glimpse components, rea
 
 ## 3. UI/UX responsibilities and task ownership
 
-| Area | Responsibility | Owner | Notes |
-|------|----------------|-------|--------|
-| Progress-and-vision artifact | Content, structure, Mermaid, links | Human-maintained | Update when phases or project list change |
-| Design system and tokens | Palette, typography, spacing, components | e.g. Glimpse / design lead | Single source for Phase 4 UI |
-| Mycelium Dashboard (4.1) | Layout, data binding, health grid, audit stream, experiments, pulse | Dev + design | Connects GRID Mycelium to MCP data |
-| Glimpse components (4.2) | Health gauges, audit timeline, experiment charts, workflow cards | Component library owner | Reusable across dashboard and GATE |
-| Real-time event stream (4.3) | WebSocket UX, loading/error states, fan-out model | Design doc first, then implementation | Design doc covers hosting, auth, coexistence |
-| GATE visualization (4.4) | Envelope flow, nonce registry, deployment history, risk scores | Dev + design | Read-only visualization of pipeline |
+| Area                         | Responsibility                                                      | Owner                                 | Notes                                        |
+| ---------------------------- | ------------------------------------------------------------------- | ------------------------------------- | -------------------------------------------- |
+| Progress-and-vision artifact | Content, structure, Mermaid, links                                  | Human-maintained                      | Update when phases or project list change    |
+| Design system and tokens     | Palette, typography, spacing, components                            | e.g. Glimpse / design lead            | Single source for Phase 4 UI                 |
+| Mycelium Dashboard (4.1)     | Layout, data binding, health grid, audit stream, experiments, pulse | Dev + design                          | Connects GRID Mycelium to MCP data           |
+| Glimpse components (4.2)     | Health gauges, audit timeline, experiment charts, workflow cards    | Component library owner               | Reusable across dashboard and GATE           |
+| Real-time event stream (4.3) | WebSocket UX, loading/error states, fan-out model                   | Design doc first, then implementation | Design doc covers hosting, auth, coexistence |
+| GATE visualization (4.4)     | Envelope flow, nonce registry, deployment history, risk scores      | Dev + design                          | Read-only visualization of pipeline          |
 
 **Owner:** "Owner" can be a role or team name; fill per repo or project.
 

@@ -1,6 +1,7 @@
 # WSL Cleanup & Performance Optimization Guide
 
 ## Quick Start - Run Everything
+
 ```bash
 #!/bin/bash
 # Run all optimizations in sequence
@@ -35,6 +36,7 @@ free -h
 ## 1. Package Management Cleanup
 
 ### Update and Remove Unused Packages
+
 ```bash
 # Update package lists and upgrade packages
 sudo apt update && sudo apt upgrade -y
@@ -51,6 +53,7 @@ sudo apt autoclean
 ```
 
 ### Deep Package Cleanup
+
 ```bash
 # Remove configuration files of uninstalled packages
 sudo apt purge $(dpkg --list | grep "^rc" | awk '{print $2}')
@@ -64,6 +67,7 @@ sudo rm -rf /var/cache/apt/archives/*
 ```
 
 ### List Large Packages (find what to uninstall)
+
 ```bash
 # Show packages sorted by installed size
 dpkg-query -W -f='${Installed-Size;10}\t${Package}\n' | sort -k1 -rn | head -30
@@ -77,6 +81,7 @@ dpkg-query -W --format='${Installed-Size} ${Package}\n' | sort -rn | awk '{print
 ## 2. Temporary Files & Cache Cleanup
 
 ### Clear System Temporary Files
+
 ```bash
 # Remove /tmp contents (safe - only old files)
 sudo rm -rf /tmp/*
@@ -92,6 +97,7 @@ sudo journalctl --vacuum-time=7d
 ```
 
 ### Clear Application Caches
+
 ```bash
 # Clear user package cache
 rm -rf ~/.cache/pip
@@ -107,6 +113,7 @@ sudo rm -rf /var/lib/snapd/cache/*
 ```
 
 ### Clear Log Files
+
 ```bash
 # Safely truncate logs to 0 size (keeps file structure)
 sudo find /var/log -type f -name "*.log" -exec truncate -s 0 {} \;
@@ -125,6 +132,7 @@ sudo journalctl -u systemd-logind --vacuum=10M
 ## 3. Memory Optimization
 
 ### Release Memory (Cache Drop)
+
 ```bash
 # Clear page cache, dentries, and inodes
 sync && echo 3 | sudo tee /proc/sys/vm/drop_caches > /dev/null
@@ -134,6 +142,7 @@ sync && echo 1 | sudo tee /proc/sys/vm/drop_caches > /dev/null
 ```
 
 ### Check Memory Usage
+
 ```bash
 # Overall memory status
 free -h
@@ -150,6 +159,7 @@ sudo smem -s rss -n 20
 ```
 
 ### Monitor Memory in Real-Time
+
 ```bash
 # Watch mode
 watch -n 1 free -h
@@ -163,6 +173,7 @@ top -p $(pgrep -d',' -u username)
 ## 4. Disk Space Management
 
 ### Check Disk Usage
+
 ```bash
 # Overall disk usage
 df -h
@@ -178,6 +189,7 @@ find / -type f -size +100M -exec ls -lh {} \; 2>/dev/null | awk '{print $5, $9}'
 ```
 
 ### Remove Large Log Files
+
 ```bash
 # Find and remove old logs (older than 30 days)
 find /var/log -type f -name "*.log" -mtime +30 -delete
@@ -191,6 +203,7 @@ sudo tail -n 100000 /var/log/syslog | sudo tee /var/log/syslog > /dev/null
 ## 5. WSL-Specific Optimizations
 
 ### Manage WSL Virtual Disk (VHDX)
+
 ```bash
 # Compact WSL disk to free space (Windows PowerShell - run as Admin)
 wsl --shutdown
@@ -209,6 +222,7 @@ wsl -l -v
 ```
 
 ### WSL Memory Limit Configuration
+
 ```bash
 # Create/edit ~/.wslconfig (Windows)
 # Location: C:\Users\<username>\.wslconfig
@@ -221,6 +235,7 @@ localhostForwarding=true
 ```
 
 ### Check WSL System Resources
+
 ```bash
 # From WSL terminal
 nproc                    # Number of processors
@@ -234,6 +249,7 @@ df -h                    # Disk usage
 ## 6. Kernel and System Tuning
 
 ### Optimize Swappiness (reduce swap usage)
+
 ```bash
 # Check current value (0-100, lower = prefer RAM)
 cat /proc/sys/vm/swappiness
@@ -250,6 +266,7 @@ echo "vm.vfs_cache_pressure=50" | sudo tee -a /etc/sysctl.conf
 ```
 
 ### Disable Unnecessary Services
+
 ```bash
 # List running services
 sudo systemctl list-units --type=service --state=running
@@ -347,6 +364,7 @@ echo -e "${GREEN}═════════════════════
 ```
 
 **Usage:**
+
 ```bash
 chmod +x wsl-cleanup.sh
 ./wsl-cleanup.sh
@@ -357,6 +375,7 @@ chmod +x wsl-cleanup.sh
 ## 8. Scheduled Maintenance
 
 ### Weekly Cleanup via Cron
+
 ```bash
 # Edit crontab
 crontab -e
@@ -366,6 +385,7 @@ crontab -e
 ```
 
 ### Automated Daily Light Cleanup
+
 ```bash
 # Add to ~/.bashrc for auto-cleanup on login
 # Uncomment if desired:
@@ -377,6 +397,7 @@ crontab -e
 ## 9. Safety Checklist
 
 ✅ **Safe to Run:**
+
 - `apt update/upgrade/autoremove`
 - Clearing `/tmp` and `/var/tmp`
 - Clearing logs
@@ -384,12 +405,14 @@ crontab -e
 - Package cache cleanup
 
 ⚠️ **Use Caution:**
+
 - Don't delete `/var/log` directory itself, only files
 - Don't disable critical services (ssh, networking, etc.)
 - Test scripts on non-critical systems first
 - Back up important data before major operations
 
 ❌ **Never Do:**
+
 - `rm -rf /` or `rm -rf /*`
 - Delete system directories
 - Change permissions on system files carelessly
@@ -411,18 +434,18 @@ watch -n 2 'clear; df -h /; echo "---"; free -h; echo "---"; ps aux --sort=-%mem
 
 ## Quick Reference Table
 
-| Task | Command |
-|------|---------|
-| Update all packages | `sudo apt update && sudo apt upgrade -y` |
-| Remove unused packages | `sudo apt autoremove -y && sudo apt autopurge -y` |
-| Clear all caches | `sudo apt clean && sudo apt autoclean` |
-| Clear temp files | `sudo rm -rf /tmp/* /var/tmp/*` |
-| Clear journal logs | `sudo journalctl --vacuum=50M` |
-| Release memory | `sync && echo 3 \| sudo tee /proc/sys/vm/drop_caches > /dev/null` |
-| Check disk usage | `df -h /` |
-| Check memory usage | `free -h` |
-| Find large files | `find / -type f -size +100M 2>/dev/null` |
-| Full cleanup | `./wsl-cleanup.sh` |
+| Task                   | Command                                                           |
+| ---------------------- | ----------------------------------------------------------------- |
+| Update all packages    | `sudo apt update && sudo apt upgrade -y`                          |
+| Remove unused packages | `sudo apt autoremove -y && sudo apt autopurge -y`                 |
+| Clear all caches       | `sudo apt clean && sudo apt autoclean`                            |
+| Clear temp files       | `sudo rm -rf /tmp/* /var/tmp/*`                                   |
+| Clear journal logs     | `sudo journalctl --vacuum=50M`                                    |
+| Release memory         | `sync && echo 3 \| sudo tee /proc/sys/vm/drop_caches > /dev/null` |
+| Check disk usage       | `df -h /`                                                         |
+| Check memory usage     | `free -h`                                                         |
+| Find large files       | `find / -type f -size +100M 2>/dev/null`                          |
+| Full cleanup           | `./wsl-cleanup.sh`                                                |
 
 ---
 
@@ -441,4 +464,3 @@ sudo du -sh / && free -h && df -h /
 # Check improvement
 # Calculate freed space and compare memory/disk metrics
 ```
-

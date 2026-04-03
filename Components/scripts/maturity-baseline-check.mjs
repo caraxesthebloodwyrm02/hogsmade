@@ -62,8 +62,7 @@ const missingInDist = srcTools.filter((t) => !distTools.includes(t));
 
 const precedentStoreSrc = read(precedentStore);
 const precedentUsesHomeDefault =
-  precedentStoreSrc.includes("homedir()") &&
-  precedentStoreSrc.includes("DEFAULT_DIR");
+  precedentStoreSrc.includes("homedir()") && precedentStoreSrc.includes("DEFAULT_DIR");
 
 const serverSrc = read(srcServer);
 const queryAuditErrorAlias =
@@ -86,8 +85,7 @@ const checks = [
   {
     pillar: "isolation",
     id: "precedent_store_env_scoped",
-    description:
-      "Precedent store root is derived from env-scoped data dir in sandbox mode.",
+    description: "Precedent store root is derived from env-scoped data dir in sandbox mode.",
     status: boolStatus(!precedentUsesHomeDefault),
     evidence: precedentUsesHomeDefault
       ? "precedent-store.ts defaults to ~/.echoes/precedents via homedir()"
@@ -106,8 +104,7 @@ const checks = [
   {
     pillar: "dependency_completeness",
     id: "local_python_runtime_deps",
-    description:
-      "Current local Python runtime has minimum imports for GRID intelligence tooling.",
+    description: "Current local Python runtime has minimum imports for GRID intelligence tooling.",
     status: boolStatus(dep.missing.length === 0),
     evidence:
       dep.missing.length === 0

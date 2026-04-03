@@ -17,7 +17,18 @@
 import { execSync } from "node:child_process";
 import { writeFileSync } from "node:fs";
 import { createInterface } from "node:readline";
-import { runContextPipeline, loadHistory, applyOverrides, learnFromRun, buildSessionRecap, buildPathContext, runPaths, assessCalibrationNeed, prepareInterview, applyInterviewModulation } from "../core/engine.js";
+import {
+  runContextPipeline,
+  loadHistory,
+  applyOverrides,
+  learnFromRun,
+  buildSessionRecap,
+  buildPathContext,
+  runPaths,
+  assessCalibrationNeed,
+  prepareInterview,
+  applyInterviewModulation,
+} from "../core/engine.js";
 
 // ============================================================================
 // 1. Parse unified diff into structured records
@@ -47,7 +58,7 @@ function parseDiff(raw) {
       hunk = {
         startOld: m ? +m[1] : 0,
         startNew: m ? +m[2] : 0,
-        context: (m && m[3] ? m[3].trim() : ""),
+        context: m && m[3] ? m[3].trim() : "",
         added: [],
         removed: [],
       };
@@ -92,7 +103,10 @@ function filesToRecords(files) {
       hunkCount: f.hunks.length,
       vector: vectors.primary,
       vectors: vectors.all,
-      hunkContexts: f.hunks.map((h) => h.context).filter(Boolean).join("; "),
+      hunkContexts: f.hunks
+        .map((h) => h.context)
+        .filter(Boolean)
+        .join("; "),
     };
   });
 }
@@ -108,7 +122,7 @@ function classifyChangeVector(file) {
   if (a > 0 && d > 0 && d > a * 2) all.push("contraction");
   if (a > 0 && d > 0 && Math.abs(a - d) <= Math.max(a, d) * 0.3) all.push("refactor");
   if (file.hunks.length >= 3) all.push("scattered");
-  if (file.hunks.length === 1 && (a + d) <= 5) all.push("surgical");
+  if (file.hunks.length === 1 && a + d <= 5) all.push("surgical");
 
   if (all.length === 0) all.push("mixed");
   return { primary: all[0], all };
@@ -123,43 +137,228 @@ const config = {
 
   semantic_packs: {
     synonym_groups: {
-      "js":   ["javascript", "js", "mjs", "cjs"],
-      "ts":   ["typescript", "ts", "tsx"],
-      "style": ["css", "scss", "less", "tailwind"],
-      "config": ["json", "yaml", "yml", "toml", "ini", "env"],
-      "test":  ["test", "spec", "tests", "specs"],
-      "src":   ["src", "lib", "core", "utils"],
+      js: ["javascript", "js", "mjs", "cjs"],
+      ts: ["typescript", "ts", "tsx"],
+      style: ["css", "scss", "less", "tailwind"],
+      config: ["json", "yaml", "yml", "toml", "ini", "env"],
+      test: ["test", "spec", "tests", "specs"],
+      src: ["src", "lib", "core", "utils"],
     },
   },
 
   taxonomy: {
     domains: [
-      { id: "logic",    label: "Logic",        keywords: ["function", "return", "if", "else", "switch", "for", "while", "class", "export", "import", "const", "let", "async", "await"] },
-      { id: "structure", label: "Structure",    keywords: ["rename", "move", "directory", "file", "path", "module", "package", "index", "entry"] },
-      { id: "data",     label: "Data",          keywords: ["schema", "model", "type", "interface", "record", "field", "column", "table", "json", "yaml"] },
-      { id: "style",    label: "Presentation",  keywords: ["css", "color", "font", "margin", "padding", "display", "flex", "grid", "animation", "transition"] },
-      { id: "test",     label: "Testing",       keywords: ["test", "spec", "expect", "assert", "describe", "it", "mock", "stub", "coverage"] },
-      { id: "config",   label: "Configuration", keywords: ["config", "env", "setting", "option", "flag", "threshold", "parameter", "default"] },
+      {
+        id: "logic",
+        label: "Logic",
+        keywords: [
+          "function",
+          "return",
+          "if",
+          "else",
+          "switch",
+          "for",
+          "while",
+          "class",
+          "export",
+          "import",
+          "const",
+          "let",
+          "async",
+          "await",
+        ],
+      },
+      {
+        id: "structure",
+        label: "Structure",
+        keywords: [
+          "rename",
+          "move",
+          "directory",
+          "file",
+          "path",
+          "module",
+          "package",
+          "index",
+          "entry",
+        ],
+      },
+      {
+        id: "data",
+        label: "Data",
+        keywords: [
+          "schema",
+          "model",
+          "type",
+          "interface",
+          "record",
+          "field",
+          "column",
+          "table",
+          "json",
+          "yaml",
+        ],
+      },
+      {
+        id: "style",
+        label: "Presentation",
+        keywords: [
+          "css",
+          "color",
+          "font",
+          "margin",
+          "padding",
+          "display",
+          "flex",
+          "grid",
+          "animation",
+          "transition",
+        ],
+      },
+      {
+        id: "test",
+        label: "Testing",
+        keywords: [
+          "test",
+          "spec",
+          "expect",
+          "assert",
+          "describe",
+          "it",
+          "mock",
+          "stub",
+          "coverage",
+        ],
+      },
+      {
+        id: "config",
+        label: "Configuration",
+        keywords: [
+          "config",
+          "env",
+          "setting",
+          "option",
+          "flag",
+          "threshold",
+          "parameter",
+          "default",
+        ],
+      },
     ],
   },
 
   function_registry: {
-    field_exists:     { scope: ["dataset", "entity"], args: { path: "field_selector" } },
-    taxonomy_score:   { scope: ["entity"], args: { path: "field_selector", domain: "lens_id", min_score: "numeric_threshold" } },
-    data_shape:       { scope: ["dataset"], args: { min_records: "numeric_threshold" } },
-    dimension_count:  { scope: ["dataset"], args: { dimension: "dimension_name", min_count: "numeric_threshold" } },
-    record_range:     { scope: ["dataset"], args: { min: "numeric_threshold", max: "numeric_threshold" } },
+    field_exists: { scope: ["dataset", "entity"], args: { path: "field_selector" } },
+    taxonomy_score: {
+      scope: ["entity"],
+      args: { path: "field_selector", domain: "lens_id", min_score: "numeric_threshold" },
+    },
+    data_shape: { scope: ["dataset"], args: { min_records: "numeric_threshold" } },
+    dimension_count: {
+      scope: ["dataset"],
+      args: { dimension: "dimension_name", min_count: "numeric_threshold" },
+    },
+    record_range: {
+      scope: ["dataset"],
+      args: { min: "numeric_threshold", max: "numeric_threshold" },
+    },
   },
 
   rules: [
-    { id: "rule-logic",     label: "Logic changes",      applies_to: "entity", priority: 80, function: "taxonomy_score", args: { path: "entity.domain_keyword_hits", domain: "logic",     min_score: 1 }, returns: "score", weight_strategy: "direct_score", derive: [{ action: "boost_lens", lens: "logic",     score: 0.9 }], affects: ["context_lens"] },
-    { id: "rule-structure",  label: "Structural changes",  applies_to: "entity", priority: 80, function: "taxonomy_score", args: { path: "entity.domain_keyword_hits", domain: "structure", min_score: 1 }, returns: "score", weight_strategy: "direct_score", derive: [{ action: "boost_lens", lens: "structure", score: 0.9 }], affects: ["context_lens"] },
-    { id: "rule-data",       label: "Data layer changes",  applies_to: "entity", priority: 80, function: "taxonomy_score", args: { path: "entity.domain_keyword_hits", domain: "data",      min_score: 1 }, returns: "score", weight_strategy: "direct_score", derive: [{ action: "boost_lens", lens: "data",      score: 0.9 }], affects: ["context_lens"] },
-    { id: "rule-style",      label: "Style changes",       applies_to: "entity", priority: 75, function: "taxonomy_score", args: { path: "entity.domain_keyword_hits", domain: "style",     min_score: 1 }, returns: "score", weight_strategy: "direct_score", derive: [{ action: "boost_lens", lens: "style",     score: 0.9 }], affects: ["context_lens"] },
-    { id: "rule-test",       label: "Test changes",        applies_to: "entity", priority: 75, function: "taxonomy_score", args: { path: "entity.domain_keyword_hits", domain: "test",      min_score: 1 }, returns: "score", weight_strategy: "direct_score", derive: [{ action: "boost_lens", lens: "test",      score: 0.9 }], affects: ["context_lens"] },
-    { id: "rule-config",     label: "Config changes",      applies_to: "entity", priority: 70, function: "taxonomy_score", args: { path: "entity.domain_keyword_hits", domain: "config",    min_score: 1 }, returns: "score", weight_strategy: "direct_score", derive: [{ action: "boost_lens", lens: "config",    score: 0.9 }], affects: ["context_lens"] },
-    { id: "rule-has-dirs",   label: "Has directory spread", applies_to: "dataset", priority: 60, function: "dimension_count", args: { dimension: "space", min_count: 1 }, returns: "score", derive: [{ action: "prefer_view", view: "clusters", score: 0.6 }], affects: ["view"] },
-    { id: "rule-size",       label: "Diff size",           applies_to: "dataset", priority: 40, function: "record_range", args: { min: 2, max: 200 }, returns: "boolean", derive: [{ action: "prefer_view", view: "constellation", score: 0.4 }], affects: ["view"] },
+    {
+      id: "rule-logic",
+      label: "Logic changes",
+      applies_to: "entity",
+      priority: 80,
+      function: "taxonomy_score",
+      args: { path: "entity.domain_keyword_hits", domain: "logic", min_score: 1 },
+      returns: "score",
+      weight_strategy: "direct_score",
+      derive: [{ action: "boost_lens", lens: "logic", score: 0.9 }],
+      affects: ["context_lens"],
+    },
+    {
+      id: "rule-structure",
+      label: "Structural changes",
+      applies_to: "entity",
+      priority: 80,
+      function: "taxonomy_score",
+      args: { path: "entity.domain_keyword_hits", domain: "structure", min_score: 1 },
+      returns: "score",
+      weight_strategy: "direct_score",
+      derive: [{ action: "boost_lens", lens: "structure", score: 0.9 }],
+      affects: ["context_lens"],
+    },
+    {
+      id: "rule-data",
+      label: "Data layer changes",
+      applies_to: "entity",
+      priority: 80,
+      function: "taxonomy_score",
+      args: { path: "entity.domain_keyword_hits", domain: "data", min_score: 1 },
+      returns: "score",
+      weight_strategy: "direct_score",
+      derive: [{ action: "boost_lens", lens: "data", score: 0.9 }],
+      affects: ["context_lens"],
+    },
+    {
+      id: "rule-style",
+      label: "Style changes",
+      applies_to: "entity",
+      priority: 75,
+      function: "taxonomy_score",
+      args: { path: "entity.domain_keyword_hits", domain: "style", min_score: 1 },
+      returns: "score",
+      weight_strategy: "direct_score",
+      derive: [{ action: "boost_lens", lens: "style", score: 0.9 }],
+      affects: ["context_lens"],
+    },
+    {
+      id: "rule-test",
+      label: "Test changes",
+      applies_to: "entity",
+      priority: 75,
+      function: "taxonomy_score",
+      args: { path: "entity.domain_keyword_hits", domain: "test", min_score: 1 },
+      returns: "score",
+      weight_strategy: "direct_score",
+      derive: [{ action: "boost_lens", lens: "test", score: 0.9 }],
+      affects: ["context_lens"],
+    },
+    {
+      id: "rule-config",
+      label: "Config changes",
+      applies_to: "entity",
+      priority: 70,
+      function: "taxonomy_score",
+      args: { path: "entity.domain_keyword_hits", domain: "config", min_score: 1 },
+      returns: "score",
+      weight_strategy: "direct_score",
+      derive: [{ action: "boost_lens", lens: "config", score: 0.9 }],
+      affects: ["context_lens"],
+    },
+    {
+      id: "rule-has-dirs",
+      label: "Has directory spread",
+      applies_to: "dataset",
+      priority: 60,
+      function: "dimension_count",
+      args: { dimension: "space", min_count: 1 },
+      returns: "score",
+      derive: [{ action: "prefer_view", view: "clusters", score: 0.6 }],
+      affects: ["view"],
+    },
+    {
+      id: "rule-size",
+      label: "Diff size",
+      applies_to: "dataset",
+      priority: 40,
+      function: "record_range",
+      args: { min: 2, max: 200 },
+      returns: "boolean",
+      derive: [{ action: "prefer_view", view: "constellation", score: 0.4 }],
+      affects: ["view"],
+    },
   ],
 
   defaults: {
@@ -171,10 +370,10 @@ const config = {
 
   view_specs: {
     constellation: { label: "Change Network" },
-    clusters:      { label: "Directory Clusters" },
-    timeline:      { label: "Hunk Sequence" },
-    matrix:        { label: "File-Domain Matrix" },
-    flow:          { label: "Change Flow" },
+    clusters: { label: "Directory Clusters" },
+    timeline: { label: "Hunk Sequence" },
+    matrix: { label: "File-Domain Matrix" },
+    flow: { label: "Change Flow" },
   },
 };
 
@@ -191,7 +390,9 @@ function getDiffText() {
       timeout: 5000,
     });
     if (diff.trim().length > 0) return { source: "git diff HEAD~1", text: diff };
-  } catch (_) { /* fall through */ }
+  } catch (_) {
+    /* fall through */
+  }
 
   // Embedded sample: a realistic multi-file diff
   return { source: "embedded sample", text: SAMPLE_DIFF };
@@ -278,8 +479,14 @@ diff --git a/package.json b/package.json
 // 5. Run
 // ============================================================================
 
-const HISTORY_PATH = new URL("../../.glimpse-history.json", import.meta.url).pathname.replace(/^\/([A-Z]:)/, "$1");
-const TRACES_PATH  = new URL("../../.glimpse-traces.jsonl", import.meta.url).pathname.replace(/^\/([A-Z]:)/, "$1");
+const HISTORY_PATH = new URL("../../.glimpse-history.json", import.meta.url).pathname.replace(
+  /^\/([A-Z]:)/,
+  "$1",
+);
+const TRACES_PATH = new URL("../../.glimpse-traces.jsonl", import.meta.url).pathname.replace(
+  /^\/([A-Z]:)/,
+  "$1",
+);
 
 const t0 = performance.now();
 
@@ -306,18 +513,28 @@ const result = runContextPipeline(records, "json", activeConfig, {
 const elapsed = (performance.now() - t0).toFixed(1);
 
 // Run the full learning cycle: log -> collect -> refine -> improve
-const learning = learnFromRun(records, result, activeConfig, { source, elapsed: +elapsed }, {
-  historyPath: HISTORY_PATH,
-  tracesPath: TRACES_PATH,
-});
+const learning = learnFromRun(
+  records,
+  result,
+  activeConfig,
+  { source, elapsed: +elapsed },
+  {
+    historyPath: HISTORY_PATH,
+    tracesPath: TRACES_PATH,
+  },
+);
 
 // ============================================================================
 // 6. PATH evaluation — weighted accumulation of session signals
 // ============================================================================
 
 const pathCtx = buildPathContext(
-  records, result, learning.trace,
-  loadHistory(HISTORY_PATH), learning.comparison, learning.refinement
+  records,
+  result,
+  learning.trace,
+  loadHistory(HISTORY_PATH),
+  learning.comparison,
+  learning.refinement,
 );
 const pathResult = runPaths(pathCtx);
 
@@ -325,9 +542,16 @@ const pathResult = runPaths(pathCtx);
 // 7. Session recap — compact, glanceable, terminal-first
 // ============================================================================
 
-const recap = buildSessionRecap(records, result, learning.refinement, { source, elapsed: +elapsed }, learning.comparison, pathResult);
+const recap = buildSessionRecap(
+  records,
+  result,
+  learning.refinement,
+  { source, elapsed: +elapsed },
+  learning.comparison,
+  pathResult,
+);
 console.log("");
-recap.forEach(line => console.log(line));
+recap.forEach((line) => console.log(line));
 
 // ============================================================================
 // 8. Decisional Interview — calibration suggestion + manual invocation
@@ -344,15 +568,17 @@ if (wantsInterview) {
   const interview = prepareInterview(pathResult, pathCtx);
   if (interview.questions.length > 0) {
     const rl = createInterface({ input: process.stdin, output: process.stdout });
-    const ask = (q) => new Promise(resolve => rl.question(q, resolve));
+    const ask = (q) => new Promise((resolve) => rl.question(q, resolve));
 
-    console.log(`\n  ── Decisional Interview (${interview.assessment.severity}, ${interview.questions.length} questions) ──`);
+    console.log(
+      `\n  ── Decisional Interview (${interview.assessment.severity}, ${interview.questions.length} questions) ──`,
+    );
     console.log(`  ${interview.assessment.reason}\n`);
 
     const answers = [];
     for (const q of interview.questions) {
       console.log(`  [${q.domain}/${q.mechanic}] ${q.text}`);
-      q.options.forEach(o => console.log(`    ${o.label}. ${o.text}`));
+      q.options.forEach((o) => console.log(`    ${o.label}. ${o.text}`));
       const selected = (await ask("  > ")).trim().toUpperCase();
       answers.push({ questionId: q.id, selectedLabel: selected });
       console.log("");
@@ -363,7 +589,9 @@ if (wantsInterview) {
     const modulated = applyInterviewModulation(pathResult, interviewResult);
 
     console.log(`  ── Interview Result ──`);
-    console.log(`  posture: ${interviewResult.postureLabel} (${(interviewResult.confidence * 100).toFixed(0)}% alignment)`);
+    console.log(
+      `  posture: ${interviewResult.postureLabel} (${(interviewResult.confidence * 100).toFixed(0)}% alignment)`,
+    );
     console.log(`  → ${modulated.nudge}`);
   } else {
     console.log(`\n  No calibration needed — session is clean.`);
@@ -372,7 +600,11 @@ if (wantsInterview) {
 
 // Vectorcounts still needed for JSON payload
 const vectorCounts = {};
-records.forEach((r) => r.vectors.forEach((v) => { vectorCounts[v] = (vectorCounts[v] || 0) + 1; }));
+records.forEach((r) =>
+  r.vectors.forEach((v) => {
+    vectorCounts[v] = (vectorCounts[v] || 0) + 1;
+  }),
+);
 
 // ============================================================================
 // 7. Write JSON for the HTML visualizer
@@ -395,23 +627,33 @@ const payload = {
     churnTrend: learning.refinement.churnTrend,
     driftWarnings: learning.refinement.driftWarnings,
     improvements: learning.improvements,
-    confidenceTrend: (loadHistory(HISTORY_PATH).confidenceTrend || []).map(c => ({
-      ts: c.ts, overall: c.overall, gaps: c.gaps,
+    confidenceTrend: (loadHistory(HISTORY_PATH).confidenceTrend || []).map((c) => ({
+      ts: c.ts,
+      overall: c.overall,
+      gaps: c.gaps,
     })),
   },
   entities: result.entities.map((e) => ({
-    id: e.id, name: e.name, type: e.type,
+    id: e.id,
+    name: e.name,
+    type: e.type,
     dims: e.dimensions,
     lensScores: result.facts.entityLensScores[e.id] || {},
   })),
   relations: result.relations.map((r) => ({
-    id: r.id, source: r.source, target: r.target, type: r.type,
+    id: r.id,
+    source: r.source,
+    target: r.target,
+    type: r.type,
     similarity: r.similarity ?? null,
     tags: r.tags || [],
   })),
 };
 
-const outPath = new URL("../../diff-glimpse-output.json", import.meta.url).pathname.replace(/^\/([A-Z]:)/, "$1");
+const outPath = new URL("../../diff-glimpse-output.json", import.meta.url).pathname.replace(
+  /^\/([A-Z]:)/,
+  "$1",
+);
 writeFileSync(outPath, JSON.stringify(payload, null, 2), "utf-8");
 console.log(`\n  Output: ${outPath}`);
 console.log(`  Open diff-glimpse.html to visualize.\n`);

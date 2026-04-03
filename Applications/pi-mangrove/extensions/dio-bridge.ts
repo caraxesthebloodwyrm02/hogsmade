@@ -35,15 +35,15 @@ const TOOL_PARAMETERS = Type.Object({
     Type.Integer({
       description: "Optional part number to return from the DIO episode summary",
       minimum: 1,
-      maximum: 4
-    })
-  )
+      maximum: 4,
+    }),
+  ),
 });
 
 const PYTHON_SOURCE = [
   "import json",
   "from combined_space import InteractiveIterationTool",
-  "print(json.dumps(InteractiveIterationTool().episode_summary()))"
+  "print(json.dumps(InteractiveIterationTool().episode_summary()))",
 ].join("\n");
 
 function resolveDioRoot(): string {
@@ -59,7 +59,7 @@ function runEpisodeSummary(dioRoot: string, signal?: AbortSignal): Promise<Episo
     const child = spawn("uv", ["run", "python", "-c", PYTHON_SOURCE], {
       cwd: dioRoot,
       stdio: ["ignore", "pipe", "pipe"],
-      signal
+      signal,
     });
 
     let stdout = "";
@@ -98,8 +98,8 @@ function runEpisodeSummary(dioRoot: string, signal?: AbortSignal): Promise<Episo
       } catch (error) {
         reject(
           new Error(
-            `Failed to parse DIO summary JSON: ${error instanceof Error ? error.message : String(error)}`
-          )
+            `Failed to parse DIO summary JSON: ${error instanceof Error ? error.message : String(error)}`,
+          ),
         );
       }
     });
@@ -119,9 +119,9 @@ const STATUS_PARAMETERS = Type.Object({
     Type.String({
       description: "Level of detail to return",
       enum: ["minimal", "full"],
-      default: "minimal"
-    })
-  )
+      default: "minimal",
+    }),
+  ),
 });
 
 const STATUS_PYTHON_SOURCE = [
@@ -131,7 +131,7 @@ const STATUS_PYTHON_SOURCE = [
   "    'cadence': list(CADENCE),",
   "    'rhythmPassCount': RHYTHM_PASS_COUNT,",
   "    'modularPassIndex': MODULAR_PASS_INDEX",
-  "}))"
+  "}))",
 ].join("\n");
 
 type DIOStatusResult = {
@@ -147,7 +147,7 @@ function runStatusQuery(dioRoot: string, signal?: AbortSignal): Promise<DIOStatu
       cwd: dioRoot,
       env: { ...process.env, PYTHONPATH: dioRoot },
       stdio: ["ignore", "pipe", "pipe"],
-      signal
+      signal,
     });
 
     let stdout = "";
@@ -196,7 +196,9 @@ function runStatusQuery(dioRoot: string, signal?: AbortSignal): Promise<DIOStatu
         const result = JSON.parse(payload) as DIOStatusResult;
         resolve(result);
       } catch (error) {
-        reject(new Error(`JSON parse failed: ${error instanceof Error ? error.message : String(error)}`));
+        reject(
+          new Error(`JSON parse failed: ${error instanceof Error ? error.message : String(error)}`),
+        );
       }
     });
   });
@@ -228,16 +230,16 @@ type CommandExecutionResult = {
 const SECURITY_AUDIT_PARAMETERS = Type.Object({
   path: Type.Optional(
     Type.String({
-      description: "Optional file or directory to audit. Relative paths resolve from the DIO root."
-    })
+      description: "Optional file or directory to audit. Relative paths resolve from the DIO root.",
+    }),
   ),
   format: Type.Optional(
     Type.String({
       description: "Output format to request from the security checker.",
       enum: ["text", "json"],
-      default: "json"
-    })
-  )
+      default: "json",
+    }),
+  ),
 });
 
 const SECURITY_SCRIPT_PATH = "roots/security/scripts/check_underscore_isolation.py";
@@ -249,14 +251,14 @@ function runCommand(
     cwd: string;
     env?: NodeJS.ProcessEnv;
     signal?: AbortSignal;
-  }
+  },
 ): Promise<CommandExecutionResult> {
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, {
       cwd: options.cwd,
       env: options.env,
       stdio: ["ignore", "pipe", "pipe"],
-      signal: options.signal
+      signal: options.signal,
     });
 
     let stdout = "";
@@ -295,7 +297,7 @@ function resolveAuditTarget(dioRoot: string, requestedPath?: string): string {
 async function runSecurityAudit(
   dioRoot: string,
   params: SecurityAuditParameters,
-  signal?: AbortSignal
+  signal?: AbortSignal,
 ): Promise<{
   result: SecurityAuditJsonResult | string;
   format: "text" | "json";
@@ -310,12 +312,15 @@ async function runSecurityAudit(
     {
       cwd: dioRoot,
       env: process.env,
-      signal
-    }
+      signal,
+    },
   );
 
   if (execution.code !== 0 && execution.code !== 1) {
-    const message = execution.stderr.trim() || execution.stdout.trim() || `Security audit exited with code ${execution.code}`;
+    const message =
+      execution.stderr.trim() ||
+      execution.stdout.trim() ||
+      `Security audit exited with code ${execution.code}`;
     throw new Error(message);
   }
 
@@ -330,11 +335,11 @@ async function runSecurityAudit(
         result: JSON.parse(payload) as SecurityAuditJsonResult,
         format,
         targetPath,
-        exitCode: execution.code
+        exitCode: execution.code,
       };
     } catch (error) {
       throw new Error(
-        `Failed to parse security audit JSON: ${error instanceof Error ? error.message : String(error)}`
+        `Failed to parse security audit JSON: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
   }
@@ -343,7 +348,7 @@ async function runSecurityAudit(
     result: payload,
     format,
     targetPath,
-    exitCode: execution.code
+    exitCode: execution.code,
   };
 }
 
@@ -352,7 +357,8 @@ export default function dioBridgeExtension(pi: ExtensionAPI) {
   pi.registerTool({
     name: "dio_episode_summary",
     label: "DIO Episode Summary",
-    description: "Read the DIO episode structure summary or one specific part from the local DIO workspace.",
+    description:
+      "Read the DIO episode structure summary or one specific part from the local DIO workspace.",
     parameters: TOOL_PARAMETERS,
     async execute(_toolCallId: string, params: ToolParameters, signal: AbortSignal | undefined) {
       const dioRoot = resolveDioRoot();
@@ -363,25 +369,30 @@ export default function dioBridgeExtension(pi: ExtensionAPI) {
         content: [
           {
             type: "text",
-            text: JSON.stringify(result, null, 2)
-          }
+            text: JSON.stringify(result, null, 2),
+          },
         ],
         details: {
           dioRoot,
           partIndex: params.partIndex ?? null,
-          result
-        }
+          result,
+        },
       };
-    }
+    },
   });
 
   // Tool 2: DIO Status (constants query)
   pi.registerTool({
     name: "dio:status",
     label: "DIO Status",
-    description: "Query DIO constants (CADENCE, RHYTHM_PASS_COUNT, MODULAR_PASS_INDEX) from the local Python environment.",
+    description:
+      "Query DIO constants (CADENCE, RHYTHM_PASS_COUNT, MODULAR_PASS_INDEX) from the local Python environment.",
     parameters: STATUS_PARAMETERS,
-    async execute(_toolCallId: string, params: { detail?: "minimal" | "full" }, signal: AbortSignal | undefined) {
+    async execute(
+      _toolCallId: string,
+      params: { detail?: "minimal" | "full" },
+      signal: AbortSignal | undefined,
+    ) {
       const dioRoot = resolveDioRoot();
       const result = await runStatusQuery(dioRoot, signal);
 
@@ -390,27 +401,32 @@ export default function dioBridgeExtension(pi: ExtensionAPI) {
         cadence: result.cadence,
         rhythmPassCount: result.rhythmPassCount,
         modularPassIndex: result.modularPassIndex,
-        dioRoot
+        dioRoot,
       };
 
       return {
         content: [
           {
             type: "text",
-            text: JSON.stringify(status, null, params.detail === "full" ? 2 : undefined)
-          }
+            text: JSON.stringify(status, null, params.detail === "full" ? 2 : undefined),
+          },
         ],
-        details: status
+        details: status,
       };
-    }
+    },
   });
 
   pi.registerTool({
     name: "security:audit",
     label: "Security Audit",
-    description: "Run the DIO underscore-isolation security audit against the DIO workspace or a specific target path.",
+    description:
+      "Run the DIO underscore-isolation security audit against the DIO workspace or a specific target path.",
     parameters: SECURITY_AUDIT_PARAMETERS,
-    async execute(_toolCallId: string, params: SecurityAuditParameters, signal: AbortSignal | undefined) {
+    async execute(
+      _toolCallId: string,
+      params: SecurityAuditParameters,
+      signal: AbortSignal | undefined,
+    ) {
       const dioRoot = resolveDioRoot();
       const audit = await runSecurityAudit(dioRoot, params, signal);
 
@@ -418,17 +434,20 @@ export default function dioBridgeExtension(pi: ExtensionAPI) {
         content: [
           {
             type: "text",
-            text: typeof audit.result === "string" ? audit.result : JSON.stringify(audit.result, null, 2)
-          }
+            text:
+              typeof audit.result === "string"
+                ? audit.result
+                : JSON.stringify(audit.result, null, 2),
+          },
         ],
         details: {
           dioRoot,
           targetPath: audit.targetPath,
           format: audit.format,
           exitCode: audit.exitCode,
-          result: audit.result
-        }
+          result: audit.result,
+        },
       };
-    }
+    },
   });
 }

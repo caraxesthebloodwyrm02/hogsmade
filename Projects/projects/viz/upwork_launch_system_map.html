@@ -1,159 +1,385 @@
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:var(--font-sans);color:var(--color-text-primary);line-height:1.7}
-.phase-row{display:flex;gap:8px;margin:0 0 6px}
-.phase-box{flex:1;border-radius:var(--border-radius-lg);padding:14px 16px;cursor:pointer;border:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary);transition:border-color .2s,background .2s}
-.phase-box.active{border-color:var(--color-border-info);background:var(--color-background-info)}
-.phase-box:hover{border-color:var(--color-border-secondary)}
-.phase-label{font-size:11px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.5px;margin:0 0 4px}
-.phase-box.active .phase-label{color:var(--color-text-info)}
-.phase-title{font-size:14px;font-weight:500;margin:0 0 2px}
-.phase-sub{font-size:12px;color:var(--color-text-secondary)}
-.detail-panel{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:20px;margin:0 0 20px;min-height:180px}
-.detail-title{font-size:16px;font-weight:500;margin:0 0 12px}
-.detail-body{font-size:13px;line-height:1.8;color:var(--color-text-secondary)}
-.detail-body strong{color:var(--color-text-primary);font-weight:500}
-.task-list{list-style:none;padding:0;margin:8px 0 0}
-.task-list li{padding:4px 0;font-size:13px;display:flex;align-items:baseline;gap:8px}
-.task-list li::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-top:6px}
-.task-list li.chrome::before{background:var(--color-text-info)}
-.task-list li.manual::before{background:var(--color-text-warning)}
-.task-list li.daily::before{background:var(--color-text-success)}
-.legend{display:flex;gap:16px;margin:8px 0 0;font-size:11px;color:var(--color-text-tertiary)}
-.legend span{display:flex;align-items:center;gap:4px}
-.legend span::before{content:"";width:6px;height:6px;border-radius:50%;display:inline-block}
-.legend .l-chrome::before{background:var(--color-text-info)}
-.legend .l-manual::before{background:var(--color-text-warning)}
-.legend .l-daily::before{background:var(--color-text-success)}
-.axis-section{margin:0 0 20px}
-.axis-title{font-size:13px;font-weight:500;margin:0 0 8px}
-.axis-track{position:relative;height:36px;background:var(--color-background-secondary);border-radius:18px;border:0.5px solid var(--color-border-tertiary);overflow:hidden;margin:0 0 4px}
-.axis-fill{position:absolute;top:0;left:0;height:100%;border-radius:18px;transition:width .4s ease}
-.axis-marker{position:absolute;top:50%;transform:translate(-50%,-50%);width:14px;height:14px;border-radius:50%;border:2px solid var(--color-background-primary);z-index:2;transition:left .4s ease}
-.axis-labels{display:flex;justify-content:space-between;font-size:11px;color:var(--color-text-tertiary)}
-.gate-row{display:flex;gap:8px;margin:0 0 16px}
-.gate-card{flex:1;padding:12px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary)}
-.gate-date{font-size:11px;font-weight:500;color:var(--color-text-secondary);margin:0 0 2px}
-.gate-name{font-size:13px;font-weight:500;margin:0 0 4px}
-.gate-q{font-size:12px;color:var(--color-text-secondary);line-height:1.5}
-.gate-card.critical{border-color:var(--color-border-danger);background:var(--color-background-danger)}
-.gate-card.critical .gate-date{color:var(--color-text-danger)}
-.section-label{font-size:11px;font-weight:500;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.6px;margin:0 0 8px}
-.disaster-table{width:100%;border-collapse:collapse;font-size:12px;margin:6px 0}
-.disaster-table td{padding:6px 8px;border-bottom:0.5px solid var(--color-border-tertiary);vertical-align:top}
-.disaster-table td:first-child{font-weight:500;white-space:nowrap;width:35%}
-.disaster-table td:last-child{color:var(--color-text-secondary)}
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+  body {
+    font-family: var(--font-sans);
+    color: var(--color-text-primary);
+    line-height: 1.7;
+  }
+  .phase-row {
+    display: flex;
+    gap: 8px;
+    margin: 0 0 6px;
+  }
+  .phase-box {
+    flex: 1;
+    border-radius: var(--border-radius-lg);
+    padding: 14px 16px;
+    cursor: pointer;
+    border: 0.5px solid var(--color-border-tertiary);
+    background: var(--color-background-secondary);
+    transition:
+      border-color 0.2s,
+      background 0.2s;
+  }
+  .phase-box.active {
+    border-color: var(--color-border-info);
+    background: var(--color-background-info);
+  }
+  .phase-box:hover {
+    border-color: var(--color-border-secondary);
+  }
+  .phase-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0 0 4px;
+  }
+  .phase-box.active .phase-label {
+    color: var(--color-text-info);
+  }
+  .phase-title {
+    font-size: 14px;
+    font-weight: 500;
+    margin: 0 0 2px;
+  }
+  .phase-sub {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+  }
+  .detail-panel {
+    background: var(--color-background-primary);
+    border: 0.5px solid var(--color-border-tertiary);
+    border-radius: var(--border-radius-lg);
+    padding: 20px;
+    margin: 0 0 20px;
+    min-height: 180px;
+  }
+  .detail-title {
+    font-size: 16px;
+    font-weight: 500;
+    margin: 0 0 12px;
+  }
+  .detail-body {
+    font-size: 13px;
+    line-height: 1.8;
+    color: var(--color-text-secondary);
+  }
+  .detail-body strong {
+    color: var(--color-text-primary);
+    font-weight: 500;
+  }
+  .task-list {
+    list-style: none;
+    padding: 0;
+    margin: 8px 0 0;
+  }
+  .task-list li {
+    padding: 4px 0;
+    font-size: 13px;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .task-list li::before {
+    content: "";
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 6px;
+  }
+  .task-list li.chrome::before {
+    background: var(--color-text-info);
+  }
+  .task-list li.manual::before {
+    background: var(--color-text-warning);
+  }
+  .task-list li.daily::before {
+    background: var(--color-text-success);
+  }
+  .legend {
+    display: flex;
+    gap: 16px;
+    margin: 8px 0 0;
+    font-size: 11px;
+    color: var(--color-text-tertiary);
+  }
+  .legend span {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .legend span::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+  .legend .l-chrome::before {
+    background: var(--color-text-info);
+  }
+  .legend .l-manual::before {
+    background: var(--color-text-warning);
+  }
+  .legend .l-daily::before {
+    background: var(--color-text-success);
+  }
+  .axis-section {
+    margin: 0 0 20px;
+  }
+  .axis-title {
+    font-size: 13px;
+    font-weight: 500;
+    margin: 0 0 8px;
+  }
+  .axis-track {
+    position: relative;
+    height: 36px;
+    background: var(--color-background-secondary);
+    border-radius: 18px;
+    border: 0.5px solid var(--color-border-tertiary);
+    overflow: hidden;
+    margin: 0 0 4px;
+  }
+  .axis-fill {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    border-radius: 18px;
+    transition: width 0.4s ease;
+  }
+  .axis-marker {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid var(--color-background-primary);
+    z-index: 2;
+    transition: left 0.4s ease;
+  }
+  .axis-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--color-text-tertiary);
+  }
+  .gate-row {
+    display: flex;
+    gap: 8px;
+    margin: 0 0 16px;
+  }
+  .gate-card {
+    flex: 1;
+    padding: 12px;
+    border-radius: var(--border-radius-md);
+    border: 0.5px solid var(--color-border-tertiary);
+    background: var(--color-background-secondary);
+  }
+  .gate-date {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    margin: 0 0 2px;
+  }
+  .gate-name {
+    font-size: 13px;
+    font-weight: 500;
+    margin: 0 0 4px;
+  }
+  .gate-q {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    line-height: 1.5;
+  }
+  .gate-card.critical {
+    border-color: var(--color-border-danger);
+    background: var(--color-background-danger);
+  }
+  .gate-card.critical .gate-date {
+    color: var(--color-text-danger);
+  }
+  .section-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--color-text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin: 0 0 8px;
+  }
+  .disaster-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    margin: 6px 0;
+  }
+  .disaster-table td {
+    padding: 6px 8px;
+    border-bottom: 0.5px solid var(--color-border-tertiary);
+    vertical-align: top;
+  }
+  .disaster-table td:first-child {
+    font-weight: 500;
+    white-space: nowrap;
+    width: 35%;
+  }
+  .disaster-table td:last-child {
+    color: var(--color-text-secondary);
+  }
 </style>
 
-<div style="padding:4px 0">
+<div style="padding: 4px 0">
+  <div class="section-label">The system — click to explore</div>
 
-<div class="section-label">The system — click to explore</div>
-
-<div class="phase-row" id="phases">
-  <div class="phase-box active" onclick="showPhase(0)">
-    <div class="phase-label">P0</div>
-    <div class="phase-title">Profile polish</div>
-    <div class="phase-sub">Chrome agent</div>
+  <div class="phase-row" id="phases">
+    <div class="phase-box active" onclick="showPhase(0)">
+      <div class="phase-label">P0</div>
+      <div class="phase-title">Profile polish</div>
+      <div class="phase-sub">Chrome agent</div>
+    </div>
+    <div class="phase-box" onclick="showPhase(1)">
+      <div class="phase-label">P1</div>
+      <div class="phase-title">Verification</div>
+      <div class="phase-sub">Manual</div>
+    </div>
+    <div class="phase-box" onclick="showPhase(2)">
+      <div class="phase-label">P2</div>
+      <div class="phase-title">Outreach</div>
+      <div class="phase-sub">3 waves</div>
+    </div>
+    <div class="phase-box" onclick="showPhase(3)">
+      <div class="phase-label">P3</div>
+      <div class="phase-title">Delivery</div>
+      <div class="phase-sub">First contract</div>
+    </div>
   </div>
-  <div class="phase-box" onclick="showPhase(1)">
-    <div class="phase-label">P1</div>
-    <div class="phase-title">Verification</div>
-    <div class="phase-sub">Manual</div>
-  </div>
-  <div class="phase-box" onclick="showPhase(2)">
-    <div class="phase-label">P2</div>
-    <div class="phase-title">Outreach</div>
-    <div class="phase-sub">3 waves</div>
-  </div>
-  <div class="phase-box" onclick="showPhase(3)">
-    <div class="phase-label">P3</div>
-    <div class="phase-title">Delivery</div>
-    <div class="phase-sub">First contract</div>
-  </div>
-</div>
 
-<div class="detail-panel" id="detail"></div>
+  <div class="detail-panel" id="detail"></div>
 
-<div class="section-label" style="margin-top:20px">The goldilocks zone — 4 axes</div>
+  <div class="section-label" style="margin-top: 20px">The goldilocks zone — 4 axes</div>
 
-<div class="axis-section">
-  <div class="axis-title">Rate</div>
-  <div class="axis-track">
-    <div class="axis-fill" style="width:42%;background:var(--color-background-success);opacity:.3"></div>
-    <div class="axis-marker" style="left:42%;background:var(--color-text-success)"></div>
+  <div class="axis-section">
+    <div class="axis-title">Rate</div>
+    <div class="axis-track">
+      <div
+        class="axis-fill"
+        style="width: 42%; background: var(--color-background-success); opacity: 0.3"
+      ></div>
+      <div class="axis-marker" style="left: 42%; background: var(--color-text-success)"></div>
+    </div>
+    <div class="axis-labels">
+      <span>$20 floor</span><span>$25 display / $30 proposal</span><span>$35 post-review</span>
+    </div>
   </div>
-  <div class="axis-labels"><span>$20 floor</span><span>$25 display / $30 proposal</span><span>$35 post-review</span></div>
-</div>
 
-<div class="axis-section">
-  <div class="axis-title">Proposal quality vs quantity</div>
-  <div class="axis-track">
-    <div class="axis-fill" style="width:55%;background:var(--color-background-info);opacity:.3"></div>
-    <div class="axis-marker" style="left:55%;background:var(--color-text-info)"></div>
+  <div class="axis-section">
+    <div class="axis-title">Proposal quality vs quantity</div>
+    <div class="axis-track">
+      <div
+        class="axis-fill"
+        style="width: 55%; background: var(--color-background-info); opacity: 0.3"
+      ></div>
+      <div class="axis-marker" style="left: 55%; background: var(--color-text-info)"></div>
+    </div>
+    <div class="axis-labels">
+      <span>5 generic/day</span><span>1-2 targeted/day</span><span>0 (closing)</span>
+    </div>
   </div>
-  <div class="axis-labels"><span>5 generic/day</span><span>1-2 targeted/day</span><span>0 (closing)</span></div>
-</div>
 
-<div class="axis-section">
-  <div class="axis-title">Voice calibration</div>
-  <div class="axis-track">
-    <div class="axis-fill" style="width:50%;background:var(--color-background-warning);opacity:.3"></div>
-    <div class="axis-marker" style="left:50%;background:var(--color-text-warning)"></div>
+  <div class="axis-section">
+    <div class="axis-title">Voice calibration</div>
+    <div class="axis-track">
+      <div
+        class="axis-fill"
+        style="width: 50%; background: var(--color-background-warning); opacity: 0.3"
+      ></div>
+      <div class="axis-marker" style="left: 50%; background: var(--color-text-warning)"></div>
+    </div>
+    <div class="axis-labels">
+      <span>Oversell</span><span>"I built X. It does Y."</span><span>Undersell</span>
+    </div>
   </div>
-  <div class="axis-labels"><span>Oversell</span><span>"I built X. It does Y."</span><span>Undersell</span></div>
-</div>
 
-<div class="axis-section">
-  <div class="axis-title">Time investment</div>
-  <div class="axis-track">
-    <div class="axis-fill" style="width:38%;background:var(--color-background-danger);opacity:.3"></div>
-    <div class="axis-marker" style="left:38%;background:var(--color-text-danger)"></div>
+  <div class="axis-section">
+    <div class="axis-title">Time investment</div>
+    <div class="axis-track">
+      <div
+        class="axis-fill"
+        style="width: 38%; background: var(--color-background-danger); opacity: 0.3"
+      ></div>
+      <div class="axis-marker" style="left: 38%; background: var(--color-text-danger)"></div>
+    </div>
+    <div class="axis-labels">
+      <span>3+ hrs/day burnout</span><span>15-20 min + responsive</span><span>Weekly neglect</span>
+    </div>
   </div>
-  <div class="axis-labels"><span>3+ hrs/day burnout</span><span>15-20 min + responsive</span><span>Weekly neglect</span></div>
-</div>
 
-<div class="section-label" style="margin-top:20px">Decision gates — the pass/fail moments</div>
+  <div class="section-label" style="margin-top: 20px">Decision gates — the pass/fail moments</div>
 
-<div class="gate-row">
-  <div class="gate-card critical">
-    <div class="gate-date">Mar 18</div>
-    <div class="gate-name">Video + ID</div>
-    <div class="gate-q">35% engagement boost. Rising Talent prerequisite.</div>
+  <div class="gate-row">
+    <div class="gate-card critical">
+      <div class="gate-date">Mar 18</div>
+      <div class="gate-name">Video + ID</div>
+      <div class="gate-q">35% engagement boost. Rising Talent prerequisite.</div>
+    </div>
+    <div class="gate-card critical">
+      <div class="gate-date">Mar 26</div>
+      <div class="gate-name">Wave 1 eval</div>
+      <div class="gate-q">0 of 8 responses? Stop. Diagnose before Wave 2.</div>
+    </div>
+    <div class="gate-card">
+      <div class="gate-date">Apr 2</div>
+      <div class="gate-name">Wave 2 eval</div>
+      <div class="gate-q">Active conversation? Shift to closing.</div>
+    </div>
+    <div class="gate-card critical">
+      <div class="gate-date">Apr 10</div>
+      <div class="gate-name">Sprint review</div>
+      <div class="gate-q">Contract signed = success. No traction = pivot.</div>
+    </div>
   </div>
-  <div class="gate-card critical">
-    <div class="gate-date">Mar 26</div>
-    <div class="gate-name">Wave 1 eval</div>
-    <div class="gate-q">0 of 8 responses? Stop. Diagnose before Wave 2.</div>
-  </div>
-  <div class="gate-card">
-    <div class="gate-date">Apr 2</div>
-    <div class="gate-name">Wave 2 eval</div>
-    <div class="gate-q">Active conversation? Shift to closing.</div>
-  </div>
-  <div class="gate-card critical">
-    <div class="gate-date">Apr 10</div>
-    <div class="gate-name">Sprint review</div>
-    <div class="gate-q">Contract signed = success. No traction = pivot.</div>
-  </div>
-</div>
 
-<div class="section-label" style="margin-top:20px">Disaster signals — early detection</div>
+  <div class="section-label" style="margin-top: 20px">Disaster signals — early detection</div>
 
-<table class="disaster-table">
-  <tr><td>0 responses / 8 proposals</td><td>Targeting or template broken. Diagnose before spending more connects.</td></tr>
-  <tr><td>Clients ask lower rate</td><td>Counter with scope reduction. Floor: $25. Never $20.</td></tr>
-  <tr><td>"Test work" requests</td><td>Wrong job tier. Tighten scoring filter.</td></tr>
-  <tr><td>Views but no proposal clicks</td><td>Profile fine, proposals weak. Rewrite opening line.</td></tr>
-  <tr><td>3+ convos, no close</td><td>Offer 15-min scoping call. Closing skill gap, not proposal gap.</td></tr>
-</table>
-
+  <table class="disaster-table">
+    <tr>
+      <td>0 responses / 8 proposals</td>
+      <td>Targeting or template broken. Diagnose before spending more connects.</td>
+    </tr>
+    <tr>
+      <td>Clients ask lower rate</td>
+      <td>Counter with scope reduction. Floor: $25. Never $20.</td>
+    </tr>
+    <tr>
+      <td>"Test work" requests</td>
+      <td>Wrong job tier. Tighten scoring filter.</td>
+    </tr>
+    <tr>
+      <td>Views but no proposal clicks</td>
+      <td>Profile fine, proposals weak. Rewrite opening line.</td>
+    </tr>
+    <tr>
+      <td>3+ convos, no close</td>
+      <td>Offer 15-min scoping call. Closing skill gap, not proposal gap.</td>
+    </tr>
+  </table>
 </div>
 
 <script>
-const phases = [
-  {
-    title: 'P0: Profile polish',
-    body: `<strong>Owner:</strong> Chrome agent (autonomous)<br><strong>Timeline:</strong> March 16-17<br><strong>Goal:</strong> 100% profile completion<br>
+  const phases = [
+    {
+      title: "P0: Profile polish",
+      body: `<strong>Owner:</strong> Chrome agent (autonomous)<br><strong>Timeline:</strong> March 16-17<br><strong>Goal:</strong> 100% profile completion<br>
 <div class="legend"><span class="l-chrome">Chrome agent</span><span class="l-manual">Manual (you)</span></div>
 <ul class="task-list">
 <li class="chrome">Update headline (70 chars, no truncation)</li>
@@ -165,11 +391,11 @@ const phases = [
 <li class="chrome">Enable availability badge + contract-to-hire</li>
 <li class="chrome">Full profile audit (13-point checklist)</li>
 </ul>
-<br><strong>Schema ready:</strong> chrome_agent_schema.json (9 tasks, all text pre-written)`
-  },
-  {
-    title: 'P1: Verification',
-    body: `<strong>Owner:</strong> You (60%), Chrome agent (40%)<br><strong>Timeline:</strong> March 18-19<br><strong>Goal:</strong> Rising Talent eligibility<br>
+<br><strong>Schema ready:</strong> chrome_agent_schema.json (9 tasks, all text pre-written)`,
+    },
+    {
+      title: "P1: Verification",
+      body: `<strong>Owner:</strong> You (60%), Chrome agent (40%)<br><strong>Timeline:</strong> March 18-19<br><strong>Goal:</strong> Rising Talent eligibility<br>
 <div class="legend"><span class="l-manual">Manual (you)</span><span class="l-chrome">Chrome agent</span></div>
 <ul class="task-list">
 <li class="manual">Record 30-45 sec video intro (script provided)</li>
@@ -179,22 +405,22 @@ const phases = [
 <li class="manual">Complete Working Style Assessment (quiz)</li>
 <li class="chrome">Verify Rising Talent badge eligibility</li>
 </ul>
-<br><strong>Impact:</strong> Video = 35% engagement boost. ID = trust signal + badge unlock. Both are on your calendar for March 18.`
-  },
-  {
-    title: 'P2: Outreach (3 waves)',
-    body: `<strong>Owner:</strong> You (100% — human judgment required)<br><strong>Timeline:</strong> March 20 – April 10<br><strong>Budget:</strong> 150 connects = 23 proposals max<br>
+<br><strong>Impact:</strong> Video = 35% engagement boost. ID = trust signal + badge unlock. Both are on your calendar for March 18.`,
+    },
+    {
+      title: "P2: Outreach (3 waves)",
+      body: `<strong>Owner:</strong> You (100% — human judgment required)<br><strong>Timeline:</strong> March 20 – April 10<br><strong>Budget:</strong> 150 connects = 23 proposals max<br>
 <div class="legend"><span class="l-daily">Daily routine</span></div>
 <ul class="task-list">
 <li class="daily"><strong>Wave 1</strong> (Mar 20-26): 8 proposals, 48 connects. Calibration.</li>
 <li class="daily"><strong>Wave 2</strong> (Mar 27-Apr 2): 8 proposals, 48 connects. Refined targeting.</li>
 <li class="daily"><strong>Wave 3</strong> (Apr 3-9): 7 proposals, 42 connects + 12 reserve.</li>
 </ul>
-<br><strong>Daily:</strong> 15-20 min at 5PM UTC+6 (US East waking up). Score jobs ≥15/20 only. 1-2 proposals. Check messages at 10AM.<br><br><strong>Hard rules:</strong> Never boost. Never score &lt;15. Never generic. Stop proposals when you have an active lead.`
-  },
-  {
-    title: 'P3: First contract delivery',
-    body: `<strong>Owner:</strong> You (100%)<br><strong>Timeline:</strong> April 6-15 (after contract signed)<br><strong>Target scope:</strong> $500-1200 fixed, 5-7 day turnaround<br>
+<br><strong>Daily:</strong> 15-20 min at 5PM UTC+6 (US East waking up). Score jobs ≥15/20 only. 1-2 proposals. Check messages at 10AM.<br><br><strong>Hard rules:</strong> Never boost. Never score &lt;15. Never generic. Stop proposals when you have an active lead.`,
+    },
+    {
+      title: "P3: First contract delivery",
+      body: `<strong>Owner:</strong> You (100%)<br><strong>Timeline:</strong> April 6-15 (after contract signed)<br><strong>Target scope:</strong> $500-1200 fixed, 5-7 day turnaround<br>
 <ul class="task-list">
 <li class="manual">Kickoff call / message clarification (30 min)</li>
 <li class="manual">Build integration — core work (15-30 hrs)</li>
@@ -204,14 +430,17 @@ const phases = [
 <li class="manual">3-5 days post-delivery support</li>
 <li class="manual">Request testimonial + review</li>
 </ul>
-<br><strong>This is the audition.</strong> Over-deliver on docs and tests. Daily standup message even with no code changes. Ask for review after 3 days of confirmed working delivery.<br><br><strong>After 5-star review:</strong> Raise rate to $35/hr immediately.`
-  }
-];
+<br><strong>This is the audition.</strong> Over-deliver on docs and tests. Daily standup message even with no code changes. Ask for review after 3 days of confirmed working delivery.<br><br><strong>After 5-star review:</strong> Raise rate to $35/hr immediately.`,
+    },
+  ];
 
-function showPhase(i) {
-  document.querySelectorAll('.phase-box').forEach((b,j) => b.classList.toggle('active', j===i));
-  const p = phases[i];
-  document.getElementById('detail').innerHTML = `<div class="detail-title">${p.title}</div><div class="detail-body">${p.body}</div>`;
-}
-showPhase(0);
+  function showPhase(i) {
+    document
+      .querySelectorAll(".phase-box")
+      .forEach((b, j) => b.classList.toggle("active", j === i));
+    const p = phases[i];
+    document.getElementById("detail").innerHTML =
+      `<div class="detail-title">${p.title}</div><div class="detail-body">${p.body}</div>`;
+  }
+  showPhase(0);
 </script>

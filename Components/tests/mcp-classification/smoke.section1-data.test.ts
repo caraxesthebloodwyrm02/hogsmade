@@ -12,10 +12,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 // ── Shared helpers ────────────────────────────────────────────────────────────
 
 interface TestServer {
-  _registeredTools: Record<
-    string,
-    { inputSchema?: unknown; handler: (...args: any[]) => unknown }
-  >;
+  _registeredTools: Record<string, { inputSchema?: unknown; handler: (...args: any[]) => unknown }>;
 }
 
 type ToolResult = { content: Array<{ text: string }>; isError?: boolean };

@@ -87,7 +87,7 @@ The action should be a PowerShell command that:
 
 **Healthy example shape:**
 
-- `Execute`: powershell.exe  
+- `Execute`: powershell.exe
 - `Arguments`: `-NoProfile -ExecutionPolicy Bypass -Command "$env:CASCADE_WORKSPACE_ROOT='...'; $env:SEEDS_ROOT='...'; $env:ECHOES_AUDIT_PATH='...'; Set-Location '...'; npx -y tsx 'scripts\run_scheduled_diagnostics.ts'"`
 
 If the env vars are embedded, the working directory is correct, and the runner path is correct, registration-side environment work is proven.
@@ -185,14 +185,14 @@ Look for a new line containing `"source":"afloat-scheduler"`, `"tool":"scheduled
 
 E2E proof is complete only if all are true:
 
-| # | Criterion |
-|---|-----------|
-| A | Task is registered |
-| B | Action contains injected env vars |
-| C | Task can be started manually |
-| D | LastTaskResult = 0 |
-| E | New maintain report exists |
-| F | New afloat-scheduler audit line exists |
+| #   | Criterion                              |
+| --- | -------------------------------------- |
+| A   | Task is registered                     |
+| B   | Action contains injected env vars      |
+| C   | Task can be started manually           |
+| D   | LastTaskResult = 0                     |
+| E   | New maintain report exists             |
+| F   | New afloat-scheduler audit line exists |
 
 If all six are true, the Phase 3 scheduler path is proven.
 
@@ -226,12 +226,12 @@ Get-Content $env:ECHOES_AUDIT_PATH -Tail 10
 
 ## Common failure cases
 
-| Symptom | Meaning | Fix |
-|---------|--------|-----|
-| Registration fails with “Missing required environment variable” | One of the three env vars was not set in the session | Set all three, then rerun registration. |
-| Task registers but LastTaskResult ≠ 0 | npx/tsx not available to task, path/quoting, or execution policy | Inspect the action command; run the same PowerShell command manually in an interactive session. |
-| Report exists but no audit line | Runner ran but audit write failed | Check ECHOES_AUDIT_PATH directory exists and is writable; confirm path in task action. |
-| Audit line exists with status failure | Runner caught an error and emitted a failure event | Inspect `metadata.error` in the last audit line. |
+| Symptom                                                         | Meaning                                                          | Fix                                                                                             |
+| --------------------------------------------------------------- | ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| Registration fails with “Missing required environment variable” | One of the three env vars was not set in the session             | Set all three, then rerun registration.                                                         |
+| Task registers but LastTaskResult ≠ 0                           | npx/tsx not available to task, path/quoting, or execution policy | Inspect the action command; run the same PowerShell command manually in an interactive session. |
+| Report exists but no audit line                                 | Runner ran but audit write failed                                | Check ECHOES_AUDIT_PATH directory exists and is writable; confirm path in task action.          |
+| Audit line exists with status failure                           | Runner caught an error and emitted a failure event               | Inspect `metadata.error` in the last audit line.                                                |
 
 ---
 

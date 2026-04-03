@@ -9,11 +9,11 @@ Standards for every user-facing string in the Glimpse artifact. Glimpse is a sce
 
 ## Voice
 
-| Attribute | Means | Does not mean |
-|-----------|-------|---------------|
-| Plain | Short sentences, common words, no jargon | Dumbed-down or patronizing |
-| Calm | No urgency language, no exclamation marks | Passive or vague |
-| Spatial | Uses real-world metaphors (canvas, shelf, branch, seed) | Skeuomorphic decoration |
+| Attribute | Means                                                   | Does not mean              |
+| --------- | ------------------------------------------------------- | -------------------------- |
+| Plain     | Short sentences, common words, no jargon                | Dumbed-down or patronizing |
+| Calm      | No urgency language, no exclamation marks               | Passive or vague           |
+| Spatial   | Uses real-world metaphors (canvas, shelf, branch, seed) | Skeuomorphic decoration    |
 
 ## Rules
 
@@ -24,14 +24,14 @@ Standards for every user-facing string in the Glimpse artifact. Glimpse is a sce
 5. **No tech leakage.** Never surface IDs, status codes, or internal names. Say "Something went wrong — try again" not "Error 500."
 6. **Metaphor-consistent.** Use the project's vocabulary:
 
-   | Concept | Use | Avoid |
-   |---------|-----|-------|
-   | Starting point | seed | node, item, entry |
-   | Variation | branch | fork (noun), version |
-   | Snapshot of a branch | glimpse | snapshot, preview |
-   | Work surface | canvas | board, workspace |
-   | Annotation | note | comment, sticky |
-   | Pipeline view | GATE | pipeline, flow |
+   | Concept              | Use     | Avoid                |
+   | -------------------- | ------- | -------------------- |
+   | Starting point       | seed    | node, item, entry    |
+   | Variation            | branch  | fork (noun), version |
+   | Snapshot of a branch | glimpse | snapshot, preview    |
+   | Work surface         | canvas  | board, workspace     |
+   | Annotation           | note    | comment, sticky      |
+   | Pipeline view        | GATE    | pipeline, flow       |
 
 7. **Empty states** must include: what this area is for + one action to populate it.
    - Good: "No branches yet. Fork a seed to start exploring."

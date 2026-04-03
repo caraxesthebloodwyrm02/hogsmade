@@ -46,15 +46,15 @@ This creates a natural gradient: early passes are **active** (transform state), 
 
 ### 1.2 Invariants (Enforced by Tests)
 
-| # | Invariant | Enforcement |
-|---|-----------|-------------|
-| I1 | Passes execute in declared array order | `pipeline.test.ts` — order + state threading |
-| I2 | Residue stack grows by exactly 1 per pass | `pipeline.test.ts` — length check |
-| I3 | Residue is deeply frozen after deposit | `pipeline.test.ts` — mutation throws TypeError |
-| I4 | Pass N reads only R[0..N-1], never R[N..] | Structural — runner copies+freezes before each call |
-| I5 | State threads forward (output.state → next input.state) | `pipeline.test.ts` — arithmetic chain |
-| I6 | Zero passes → initial state + empty residue | `pipeline.test.ts` — empty pipeline case |
-| I7 | Each ResidueEntry has passId + ISO timestamp + frozen data | `governance.test.ts` — timestamp validation |
+| #   | Invariant                                                  | Enforcement                                         |
+| --- | ---------------------------------------------------------- | --------------------------------------------------- |
+| I1  | Passes execute in declared array order                     | `pipeline.test.ts` — order + state threading        |
+| I2  | Residue stack grows by exactly 1 per pass                  | `pipeline.test.ts` — length check                   |
+| I3  | Residue is deeply frozen after deposit                     | `pipeline.test.ts` — mutation throws TypeError      |
+| I4  | Pass N reads only R[0..N-1], never R[N..]                  | Structural — runner copies+freezes before each call |
+| I5  | State threads forward (output.state → next input.state)    | `pipeline.test.ts` — arithmetic chain               |
+| I6  | Zero passes → initial state + empty residue                | `pipeline.test.ts` — empty pipeline case            |
+| I7  | Each ResidueEntry has passId + ISO timestamp + frozen data | `governance.test.ts` — timestamp validation         |
 
 ### 1.3 Module Map
 
@@ -93,12 +93,12 @@ PipelineResult<T> { pipelineId, state: T, residue: ResidueStack, passCount, dura
 
 ### 2.2 Compatibility with Existing Systems
 
-| System | Type Bridge | Direction |
-|--------|-------------|-----------|
-| `MCPPolicyEngine` (shared-types) | A pass can call `engine.evaluateStrict(ctx)` internally and deposit the `PolicyResult` into residue | Pipeline wraps policy engine |
-| `emitAudit` (shared-types) | `auditMarkPass(source)` mirrors the audit event shape; a pass could call `emitAudit()` as a side effect | Pipeline feeds audit trail |
-| Glimpse `multi-pass.js` | Glimpse state shape maps to `TState`; each Glimpse pass (rule eval, cross-ref, consolidation) maps to `Pass<GlimpseState>` | Future migration target |
-| GRID `BoundaryEngine` | Prevention→Detection→Remediation maps to 3 `Pass<BoundaryState>` objects | Same pattern, Python port future |
+| System                           | Type Bridge                                                                                                                | Direction                        |
+| -------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
+| `MCPPolicyEngine` (shared-types) | A pass can call `engine.evaluateStrict(ctx)` internally and deposit the `PolicyResult` into residue                        | Pipeline wraps policy engine     |
+| `emitAudit` (shared-types)       | `auditMarkPass(source)` mirrors the audit event shape; a pass could call `emitAudit()` as a side effect                    | Pipeline feeds audit trail       |
+| Glimpse `multi-pass.js`          | Glimpse state shape maps to `TState`; each Glimpse pass (rule eval, cross-ref, consolidation) maps to `Pass<GlimpseState>` | Future migration target          |
+| GRID `BoundaryEngine`            | Prevention→Detection→Remediation maps to 3 `Pass<BoundaryState>` objects                                                   | Same pattern, Python port future |
 
 ---
 
@@ -119,14 +119,14 @@ PipelineResult<T> { pipelineId, state: T, residue: ResidueStack, passCount, dura
 
 ### 3.2 Integration Classification
 
-| Target | Complexity | Risk | Test Strategy |
-|--------|-----------|------|---------------|
-| T1: grid-server | Medium | Low — additive, no existing pipeline | Unit → Integration |
-| T2: glimpse-server | Medium | Low — wraps existing analyze flow | Unit → Integration |
-| T3: echoes-server | Low | Low — audit is append-only | Unit only |
-| T4: afloat-server | Medium | Medium — workflow state is complex | Unit → Integration → Contract |
-| T5: seeds-server | Low | Low — scoring is pure | Unit only |
-| T6: glimpse-engine | High | Medium — JS→TS bridge, large state | Unit → Contract → Migration |
+| Target             | Complexity | Risk                                 | Test Strategy                 |
+| ------------------ | ---------- | ------------------------------------ | ----------------------------- |
+| T1: grid-server    | Medium     | Low — additive, no existing pipeline | Unit → Integration            |
+| T2: glimpse-server | Medium     | Low — wraps existing analyze flow    | Unit → Integration            |
+| T3: echoes-server  | Low        | Low — audit is append-only           | Unit only                     |
+| T4: afloat-server  | Medium     | Medium — workflow state is complex   | Unit → Integration → Contract |
+| T5: seeds-server   | Low        | Low — scoring is pure                | Unit only                     |
+| T6: glimpse-engine | High       | Medium — JS→TS bridge, large state   | Unit → Contract → Migration   |
 
 ---
 
@@ -153,6 +153,7 @@ These tests define the contract. No integration proceeds until Phase 0 is green.
 **Goal**: Prove that each integration target's domain state can flow through the pipeline without the target's actual runtime.
 
 **Pattern**: For each target, create `tests/integration/<target>.adapter.test.ts` that:
+
 1. Defines the target's `TState` type
 2. Creates mock passes matching the target's actual processing stages
 3. Asserts residue accumulation matches expected deposit shapes
@@ -259,7 +260,7 @@ interface WorkflowExecutionState {
   steps: Array<{ id: string; type: string; config: Record<string, unknown> }>;
   currentStep: number;
   results: Record<string, unknown>;
-  status: 'pending' | 'running' | 'complete' | 'failed';
+  status: "pending" | "running" | "complete" | "failed";
 }
 
 // Passes to implement (async pipeline)
@@ -321,17 +322,18 @@ src/adapters/
 
 #### Step 2.2 — Implementation order (by risk, ascending)
 
-| Order | Target | Why this order |
-|-------|--------|----------------|
-| 1 | seeds-server | Simplest state, pure scoring, 2 passes |
-| 2 | echoes-server | Simple state, uses existing AuditIntegrityGuard |
-| 3 | grid-server | Medium state, uses existing GateSecurityPolicy |
-| 4 | glimpse-server | Medium state, bridges to Glimpse analysis |
-| 5 | afloat-server | Complex state, async pipeline, workflow orchestration |
+| Order | Target         | Why this order                                        |
+| ----- | -------------- | ----------------------------------------------------- |
+| 1     | seeds-server   | Simplest state, pure scoring, 2 passes                |
+| 2     | echoes-server  | Simple state, uses existing AuditIntegrityGuard       |
+| 3     | grid-server    | Medium state, uses existing GateSecurityPolicy        |
+| 4     | glimpse-server | Medium state, bridges to Glimpse analysis             |
+| 5     | afloat-server  | Complex state, async pipeline, workflow orchestration |
 
 #### Step 2.3 — Per-adapter implementation checklist
 
 For each adapter:
+
 - [ ] Define `TState` interface (export from adapter module)
 - [ ] Implement each `Pass<TState>` or `AsyncPass<TState>`
 - [ ] Each pass deposits under a namespaced key (e.g., `gate:nonce-check`)
@@ -510,6 +512,7 @@ Phase 5: Glimpse Engine Bridge
 ### Build Order Impact
 
 Current build order (from root CLAUDE.md):
+
 ```
 1. shared-types
 2. shared-resilience
@@ -524,27 +527,27 @@ Current build order (from root CLAUDE.md):
 
 ## 6. Risk Registry
 
-| Risk | Impact | Mitigation |
-|------|--------|------------|
-| TState explosion — overly complex domain states | Adapter complexity, hard-to-debug pipelines | Cap at 10 state fields per adapter; split into sub-pipelines if larger |
-| Residue size growth in long pipelines | Memory pressure, slow freeze operations | Monitor `durationMs`; add `maxResidue` option if > 50 passes needed |
-| Frozen residue blocks legitimate read patterns | Adapter authors confused by TypeError on mutation | Clear error message in docs; residue query helpers handle all read patterns |
-| Async pass error propagation | Unhandled rejections crash pipeline | Phase 4 tests must cover async error cases; consider `onError` hook |
-| Glimpse engine bridge (Phase 5) state size | GlimpseEngineState is very large (~20 fields) | Use sub-state pattern: pipeline operates on slice, maps back to full state |
-| shared-types breaking change | Contract tests in Phase 3 fail | Contract tests are the early warning system — that's their purpose |
+| Risk                                            | Impact                                            | Mitigation                                                                  |
+| ----------------------------------------------- | ------------------------------------------------- | --------------------------------------------------------------------------- |
+| TState explosion — overly complex domain states | Adapter complexity, hard-to-debug pipelines       | Cap at 10 state fields per adapter; split into sub-pipelines if larger      |
+| Residue size growth in long pipelines           | Memory pressure, slow freeze operations           | Monitor `durationMs`; add `maxResidue` option if > 50 passes needed         |
+| Frozen residue blocks legitimate read patterns  | Adapter authors confused by TypeError on mutation | Clear error message in docs; residue query helpers handle all read patterns |
+| Async pass error propagation                    | Unhandled rejections crash pipeline               | Phase 4 tests must cover async error cases; consider `onError` hook         |
+| Glimpse engine bridge (Phase 5) state size      | GlimpseEngineState is very large (~20 fields)     | Use sub-state pattern: pipeline operates on slice, maps back to full state  |
+| shared-types breaking change                    | Contract tests in Phase 3 fail                    | Contract tests are the early warning system — that's their purpose          |
 
 ---
 
 ## 7. Success Criteria
 
-| Phase | Metric | Target |
-|-------|--------|--------|
-| 0 | Foundation tests | 32/32 pass (ACHIEVED) |
-| 1 | Adapter test count | >= 25 failing tests across 5 adapters |
-| 2 | Adapter test pass rate | 100% (all red → green) |
-| 3 | Contract tests | >= 9 tests covering 3 contracts |
-| 4 | Integration tests | >= 6 tests across 3 servers, 0 regressions |
-| 5 | Equivalence proof | Entity lens scores match within 0.01 tolerance |
-| All | Total test count | >= 72 |
-| All | Build time | < 3s for full `npm run build` |
-| All | Test time | < 5s for full `npm test` |
+| Phase | Metric                 | Target                                         |
+| ----- | ---------------------- | ---------------------------------------------- |
+| 0     | Foundation tests       | 32/32 pass (ACHIEVED)                          |
+| 1     | Adapter test count     | >= 25 failing tests across 5 adapters          |
+| 2     | Adapter test pass rate | 100% (all red → green)                         |
+| 3     | Contract tests         | >= 9 tests covering 3 contracts                |
+| 4     | Integration tests      | >= 6 tests across 3 servers, 0 regressions     |
+| 5     | Equivalence proof      | Entity lens scores match within 0.01 tolerance |
+| All   | Total test count       | >= 72                                          |
+| All   | Build time             | < 3s for full `npm run build`                  |
+| All   | Test time              | < 5s for full `npm test`                       |

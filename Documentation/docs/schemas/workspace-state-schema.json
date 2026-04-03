@@ -67,7 +67,7 @@
                 "type": "string",
                 "enum": [
                   "ingest",
-                  "profile", 
+                  "profile",
                   "entities",
                   "relations_fuzzy",
                   "mode_detection",
@@ -154,10 +154,19 @@
             "type": "object",
             "properties": {
               "name": { "type": "string" },
-              "type": { "type": "string", "enum": ["framework", "mcp_server", "library", "tool", "archive"] },
-              "language": { "type": "string", "enum": ["python", "typescript", "javascript", "mixed"] },
+              "type": {
+                "type": "string",
+                "enum": ["framework", "mcp_server", "library", "tool", "archive"]
+              },
+              "language": {
+                "type": "string",
+                "enum": ["python", "typescript", "javascript", "mixed"]
+              },
               "size_mb": { "type": "number" },
-              "status": { "type": "string", "enum": ["production", "development", "complete", "archived"] },
+              "status": {
+                "type": "string",
+                "enum": ["production", "development", "complete", "archived"]
+              },
               "has_git": { "type": "boolean" },
               "has_ci_cd": { "type": "boolean" },
               "has_tests": { "type": "boolean" }

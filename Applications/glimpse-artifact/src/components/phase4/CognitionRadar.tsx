@@ -48,7 +48,12 @@ export function CognitionRadar({ patterns, loading }: CognitionRadarProps) {
 
   return (
     <div className="flex flex-col lg:flex-row gap-6 items-start">
-      <svg viewBox="0 0 400 400" className="w-full max-w-[400px] shrink-0" role="img" aria-label="Cognition Pattern Radar">
+      <svg
+        viewBox="0 0 400 400"
+        className="w-full max-w-[400px] shrink-0"
+        role="img"
+        aria-label="Cognition Pattern Radar"
+      >
         {/* Background rings */}
         {rings.map((frac) => (
           <circle
@@ -162,7 +167,9 @@ export function CognitionRadar({ patterns, loading }: CognitionRadarProps) {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium text-ink">{p.name}</span>
-                    <span className="text-xs font-mono text-teal-600">{Math.round(p.activation * 100)}%</span>
+                    <span className="text-xs font-mono text-teal-600">
+                      {Math.round(p.activation * 100)}%
+                    </span>
                   </div>
                   <div className="mt-1 h-1.5 rounded-full bg-surface-raised overflow-hidden">
                     <div

@@ -86,11 +86,11 @@ windows-task-scheduler.md now states that the task will fail at runtime if requi
 
 **Goal**: Local pattern detection in lots-server drives experiment proposals (no GRID API).
 
-| Action | Detail |
-|--------|--------|
-| Design spike | Define which GRID-main API (if any) exposes “deviation patterns” or recommendations; define the proposal schema that lots-server can accept (e.g. experiment draft with hypothesis, script template, expected outcome). |
-| Policy | Keep proposals as suggestions or drafts; require explicit user confirmation before auto-registering experiments until quality is proven. |
-| Implementation | Only after spike: add a flow (e.g. afloat or pulse tool) that calls GRID, maps to a proposal, and either returns it for user approval or writes a draft into lots-server. |
+| Action         | Detail                                                                                                                                                                                                                  |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Design spike   | Define which GRID-main API (if any) exposes “deviation patterns” or recommendations; define the proposal schema that lots-server can accept (e.g. experiment draft with hypothesis, script template, expected outcome). |
+| Policy         | Keep proposals as suggestions or drafts; require explicit user confirmation before auto-registering experiments until quality is proven.                                                                                |
+| Implementation | Only after spike: add a flow (e.g. afloat or pulse tool) that calls GRID, maps to a proposal, and either returns it for user approval or writes a draft into lots-server.                                               |
 
 ---
 
@@ -98,11 +98,11 @@ windows-task-scheduler.md now states that the task will fail at runtime if requi
 
 **Goal**: Pulse learns from preferences and de-prioritizes or promotes briefing sections.
 
-| Action | Detail |
-|--------|--------|
-| Store preferences | `~/.pulse/preferences.json` via `briefing_preferences_set` — `skippedBriefingSections`, `promotedSignals`. |
-| Use in briefing | Morning briefing omits skipped sections and reorders priorities/warnings by promoted substrings. |
-| No change to data contracts | Use existing pulse and Echoes data; adaptation is local to pulse. |
+| Action                      | Detail                                                                                                     |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Store preferences           | `~/.pulse/preferences.json` via `briefing_preferences_set` — `skippedBriefingSections`, `promotedSignals`. |
+| Use in briefing             | Morning briefing omits skipped sections and reorders priorities/warnings by promoted substrings.           |
+| No change to data contracts | Use existing pulse and Echoes data; adaptation is local to pulse.                                          |
 
 ---
 
@@ -120,15 +120,15 @@ windows-task-scheduler.md now states that the task will fail at runtime if requi
 
 ## Summary table
 
-| Priority | Item | Status |
-|----------|------|--------|
-| 1 | E2E scheduled diagnostics verification | Done |
-| 2 | Scheduler audit via shared audit-client | Done |
-| 3 | Docs: task runtime env failure sentence | Done |
-| 4 | Phase 3.1 Threshold + scan_workspaces in runner | Done |
-| 5 | Pulse `what_should_i_work_on` rules-based improvements | Done |
-| 6 | Phase 3.2 pattern-driven experiment suggestions (lots-server) | Done |
-| 7 | Phase 3.3 adaptive briefings | Done |
+| Priority | Item                                                          | Status |
+| -------- | ------------------------------------------------------------- | ------ |
+| 1        | E2E scheduled diagnostics verification                        | Done   |
+| 2        | Scheduler audit via shared audit-client                       | Done   |
+| 3        | Docs: task runtime env failure sentence                       | Done   |
+| 4        | Phase 3.1 Threshold + scan_workspaces in runner               | Done   |
+| 5        | Pulse `what_should_i_work_on` rules-based improvements        | Done   |
+| 6        | Phase 3.2 pattern-driven experiment suggestions (lots-server) | Done   |
+| 7        | Phase 3.3 adaptive briefings                                  | Done   |
 
 ---
 

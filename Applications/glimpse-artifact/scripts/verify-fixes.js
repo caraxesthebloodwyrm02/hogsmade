@@ -40,9 +40,8 @@ function verifyFixes() {
     {
       name: "Loading/data separation",
       test: (content) =>
-        content.includes(
-          "loading\n              ? Array.from({ length: 3 })",
-        ) && content.includes(": verifications.map("),
+        content.includes("loading\n              ? Array.from({ length: 3 })") &&
+        content.includes(": verifications.map("),
       expected: "Should have separate loading and data paths",
     },
     {
@@ -58,15 +57,12 @@ function verifyFixes() {
       name: "Pre-generated mock data",
       test: (content) =>
         content.includes("generateMockVerifications") &&
-        content.includes(
-          "const MOCK_VERIFICATIONS = generateMockVerifications()",
-        ),
+        content.includes("const MOCK_VERIFICATIONS = generateMockVerifications()"),
       expected: "Should pre-generate mock data for consistency",
     },
     {
       name: "Reduced loading delay",
-      test: (content) =>
-        content.includes("setTimeout(() => {") && content.includes("}, 200);"),
+      test: (content) => content.includes("setTimeout(() => {") && content.includes("}, 200);"),
       expected: "Should use 200ms delay instead of 600ms",
     },
   ]);
@@ -93,8 +89,7 @@ function verifyFixes() {
   allChecksPassed &= checkFile("src/views/ScenarioCanvasView.tsx", [
     {
       name: "useMemo imported",
-      test: (content) =>
-        content.includes("import {") && content.includes("useMemo"),
+      test: (content) => content.includes("import {") && content.includes("useMemo"),
       expected: "Should import useMemo",
     },
     {
@@ -139,9 +134,7 @@ function verifyFixes() {
   ]);
 
   console.log("\n=== Verification Complete ===");
-  console.log(
-    allChecksPassed ? "\n✅ All checks passed!" : "\n❌ Some checks failed!",
-  );
+  console.log(allChecksPassed ? "\n✅ All checks passed!" : "\n❌ Some checks failed!");
 
   return allChecksPassed;
 }

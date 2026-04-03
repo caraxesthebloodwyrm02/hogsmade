@@ -100,7 +100,12 @@ const MOCK_EVENTS: AuditEvent[] = [
 ];
 
 export function useAuditStream(): UseAuditStreamResult {
-  const { data: events, loading, error, retry } = useDataSource<AuditEvent[]>({
+  const {
+    data: events,
+    loading,
+    error,
+    retry,
+  } = useDataSource<AuditEvent[]>({
     fetcher: async (signal) => {
       const res = await fetch("/api/audit/events?limit=50", { signal });
       if (!res.ok) throw new Error(`Audit fetch failed (${res.status})`);

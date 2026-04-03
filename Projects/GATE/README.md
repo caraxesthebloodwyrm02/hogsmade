@@ -4,13 +4,13 @@ Staging directory for sealed envelopes and verification artifacts. Used by grid-
 
 ## Layout
 
-| Path | Purpose |
-|------|--------|
-| `incoming/` | Sealed envelopes (JSON) awaiting verification |
-| `results/` | Verification result payloads |
-| `audit.ndjson` | Audit log (one JSON object per line; UTC timestamps) |
+| Path                   | Purpose                                                                                       |
+| ---------------------- | --------------------------------------------------------------------------------------------- |
+| `incoming/`            | Sealed envelopes (JSON) awaiting verification                                                 |
+| `results/`             | Verification result payloads                                                                  |
+| `audit.ndjson`         | Audit log (one JSON object per line; UTC timestamps)                                          |
 | `.nonce_registry.json` | Nonce lifecycle (format may differ from GRID-main `boundaries/transition_gate` NonceRegistry) |
-| `*.contract.json` | Contract and schema for receiving agent / partition rules |
+| `*.contract.json`      | Contract and schema for receiving agent / partition rules                                     |
 
 ## Envelope schema
 

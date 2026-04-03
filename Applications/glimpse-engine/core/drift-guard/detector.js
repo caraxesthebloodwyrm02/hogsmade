@@ -3,9 +3,9 @@
  * @description File-based drift inspection engine
  */
 
-import { readFileSync, existsSync } from 'node:fs';
-import path from 'node:path';
-import { DriftFormulas } from './formulas.js';
+import { readFileSync, existsSync } from "node:fs";
+import path from "node:path";
+import { DriftFormulas } from "./formulas.js";
 
 // ═══════════════════════════════════════════════════════════════════
 // DETECTOR — Extraction & Comparison Engine
@@ -13,8 +13,8 @@ import { DriftFormulas } from './formulas.js';
 
 export class DriftDetector {
   constructor(config = {}) {
-    this.yamlPath = config.yamlPath || 'glimpse.master.yaml';
-    this.jsPath = config.jsPath || 'default-master.js';
+    this.yamlPath = config.yamlPath || "glimpse.master.yaml";
+    this.jsPath = config.jsPath || "default-master.js";
     this.root = config.root || process.cwd();
   }
 
@@ -33,15 +33,15 @@ export class DriftDetector {
     if (!match) {
       return {
         success: false,
-        error: 'no_template_literal_found',
-        content: null
+        error: "no_template_literal_found",
+        content: null,
       };
     }
 
     return {
       success: true,
       content: match[1],
-      error: null
+      error: null,
     };
   }
 
@@ -54,11 +54,11 @@ export class DriftDetector {
     const report = {
       timestamp: new Date().toISOString(),
       duration: 0,
-      state: 'unknown',
+      state: "unknown",
       yaml: { exists: false, hash: null, lines: 0 },
       embedded: { exists: false, hash: null, lines: 0, extractable: false },
-      drift: { detected: false, severity: 'none', lineDiff: 0 },
-      recommendations: []
+      drift: { detected: false, severity: "none", lineDiff: 0 },
+      recommendations: [],
     };
 
     try {
@@ -70,21 +70,21 @@ export class DriftDetector {
       report.embedded.exists = existsSync(jsPath);
 
       if (!report.yaml.exists || !report.embedded.exists) {
-        report.state = 'MISSING_SOURCE';
+        report.state = "MISSING_SOURCE";
         report.drift.detected = report.yaml.exists !== report.embedded.exists;
         report.recommendations.push({
-          severity: 'critical',
-          action: report.yaml.exists ? 'extract_from_embedded' : 'restore_backup'
+          severity: "critical",
+          action: report.yaml.exists ? "extract_from_embedded" : "restore_backup",
         });
         return report;
       }
 
       // Phase 2: Content extraction
-      const yamlContent = readFileSync(yamlPath, 'utf8');
-      const jsContent = readFileSync(jsPath, 'utf8');
+      const yamlContent = readFileSync(yamlPath, "utf8");
+      const jsContent = readFileSync(jsPath, "utf8");
 
       report.yaml.content = yamlContent.slice(0, 100); // Preview
-      report.yaml.lines = yamlContent.split('\n').length;
+      report.yaml.lines = yamlContent.split("\n").length;
       report.yaml.hash = DriftFormulas.computeHash(yamlContent);
 
       // Phase 3: Embedded extraction
@@ -92,17 +92,17 @@ export class DriftDetector {
       report.embedded.extractable = embedded.success;
 
       if (!embedded.success) {
-        report.state = 'EXTRACTION_FAILED';
+        report.state = "EXTRACTION_FAILED";
         report.drift.detected = true;
         report.recommendations.push({
-          severity: 'critical',
-          action: 'regenerate_fallback',
-          reason: embedded.error
+          severity: "critical",
+          action: "regenerate_fallback",
+          reason: embedded.error,
         });
         return report;
       }
 
-      report.embedded.lines = embedded.content.split('\n').length;
+      report.embedded.lines = embedded.content.split("\n").length;
       report.embedded.hash = DriftFormulas.computeHash(embedded.content);
 
       // Phase 4: Drift calculation
@@ -113,28 +113,27 @@ export class DriftDetector {
       report.duration = Date.now() - startTime;
 
       if (report.drift.detected) {
-        report.state = 'DRIFT_DETECTED';
+        report.state = "DRIFT_DETECTED";
         report.recommendations.push({
           severity: report.drift.severity,
-          action: 'run_sync_script',
-          command: 'node scripts/sync-default-master.mjs',
+          action: "run_sync_script",
+          command: "node scripts/sync-default-master.mjs",
           metadata: {
             lineDiff: report.drift.lineDiff,
             yamlHash: report.yaml.hash,
-            embeddedHash: report.embedded.hash
-          }
+            embeddedHash: report.embedded.hash,
+          },
         });
       } else {
-        report.state = 'HEALTHY';
+        report.state = "HEALTHY";
       }
-
     } catch (error) {
-      report.state = 'ERROR';
+      report.state = "ERROR";
       report.error = error.message;
       report.recommendations.push({
-        severity: 'critical',
-        action: 'manual_investigation',
-        reason: error.message
+        severity: "critical",
+        action: "manual_investigation",
+        reason: error.message,
       });
     }
 

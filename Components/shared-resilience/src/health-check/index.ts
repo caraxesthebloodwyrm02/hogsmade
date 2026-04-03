@@ -1,1 +1,1 @@
-export * from './health-check.js';
+export * from "./health-check.js";

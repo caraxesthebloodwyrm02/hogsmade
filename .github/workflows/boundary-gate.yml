@@ -10,12 +10,12 @@ name: Boundary & Safety Gate
 on:
   pull_request:
     paths:
-      - 'Projects/GRID-main/**/safety/**'
-      - 'Projects/GRID-main/**/security/**'
-      - 'Projects/GRID-main/**/boundaries/**'
-      - 'Projects/GRID-main/.claude/rules/safety.md'
-      - 'Projects/GRID-main/.claude/rules/behavioral-shield.md'
-      - 'Projects/GRID-main/mcp-setup/server/**'
+      - "Projects/GRID-main/**/safety/**"
+      - "Projects/GRID-main/**/security/**"
+      - "Projects/GRID-main/**/boundaries/**"
+      - "Projects/GRID-main/.claude/rules/safety.md"
+      - "Projects/GRID-main/.claude/rules/behavioral-shield.md"
+      - "Projects/GRID-main/mcp-setup/server/**"
 
 permissions:
   pull-requests: write
@@ -36,7 +36,7 @@ jobs:
       - name: Set up Python 3.13
         uses: actions/setup-python@v6
         with:
-          python-version: '3.13'
+          python-version: "3.13"
 
       - name: Install uv and test dependencies
         run: |

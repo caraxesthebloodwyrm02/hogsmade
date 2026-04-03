@@ -10,16 +10,19 @@
 #### Example: iterate.skill Migration
 
 **Step 1: Read source**
+
 ```bash
 read ~/.claude/commands/iterate.md
 ```
 
 **Step 2: Create target structure**
+
 ```bash
 mkdir -p /home/caraxes/CascadeProjects/pi-mangrove/skills/iterate
 ```
 
 **Step 3: Write SKILL.md with validated frontmatter**
+
 ```markdown
 ---
 name: iterate
@@ -29,39 +32,44 @@ description: Freelance project delivery framework. Use when the user asks to sta
 # Iterate Framework
 
 ## When to Use
+
 - User says "start a project," "create a milestone," or "plan delivery"
 - Context involves contractor agreements, milestone tracking, or delivery gates
 
 ## Steps
+
 1. **Understand** — Clarify objective, constraints, and success criteria
 2. **Plan** — Break into milestones with defined outputs and deadlines
 3. **Implement** — Execute with checkpoint commits
 4. **Verify** — Validate against initial criteria before mark complete
 
 ## Hard Constraints
+
 - Do not expand scope beyond user-defined milestones
 - Each milestone must have explicit deliverable and validation criteria
 - Gate pass required before marking milestone complete
 
 ## Example Invocation
+
 User: "I need to build a Python API for data processing"
 → Load iterate skill, establish milestones, proceed through cadence
 ```
 
 **Step 4: Verify YAML validity**
+
 ```bash
 python3 -c "import yaml; yaml.safe_load(open('/home/caraxes/CascadeProjects/pi-mangrove/skills/iterate/SKILL.md').read().split('---')[1])"
 ```
 
 ### Migration Queue
 
-| Skill | Source | Priority | Complexity |
-|-------|--------|----------|------------|
-| iterate | `~/.claude/commands/iterate.md` | P1 | Low |
-| glimpse | `~/.claude/commands/glimpse.md` | P1 | Medium |
-| lifeguard-review | `~/.claude/commands/lifeguard-review.md` | P1 | Low |
-| trust-layer-review | `~/.claude/commands/trust-layer-review.md` | P2 | Low |
-| screen-budget | `~/.claude/commands/screen-budget.md` | P2 | Low |
+| Skill              | Source                                     | Priority | Complexity |
+| ------------------ | ------------------------------------------ | -------- | ---------- |
+| iterate            | `~/.claude/commands/iterate.md`            | P1       | Low        |
+| glimpse            | `~/.claude/commands/glimpse.md`            | P1       | Medium     |
+| lifeguard-review   | `~/.claude/commands/lifeguard-review.md`   | P1       | Low        |
+| trust-layer-review | `~/.claude/commands/trust-layer-review.md` | P2       | Low        |
+| screen-budget      | `~/.claude/commands/screen-budget.md`      | P2       | Low        |
 
 ### Quick Migration Template
 
@@ -121,31 +129,35 @@ description: Review code, architecture, or AI output against TUV-001 clauses (Th
 # TUV-001 Contract Review
 
 ## Condition I: Fidelity to Objective
+
 - [ ] Output aligns with stated user goal
 - [ ] No scope expansion without explicit request
 - [ ] Re-anchoring triggered if objective drift detected
 
 ## Condition II: Integrity of Output
+
 - [ ] No hallucinated APIs, paths, or dependencies
 - [ ] File edits verified against actual content
 - [ ] `/shield-break` invoked if context corruption suspected
 
 ## Condition III: Accountability for Actions
+
 - [ ] All file operations logged in audit trail
 - [ ] Never-rules respected (no hardcoded secrets, no sudo without explicit block)
 - [ ] `/breach-state` invoked for never-rule violations
 
 ## Verification
+
 State "TUV-001 reviewed" and list any clauses requiring recovery actions.
 ```
 
 ### Prompt Template Queue
 
-| Template | Purpose | Trigger |
-|----------|---------|---------|
-| tuv-review | Trust contract audit | `/tuv-review` |
-| safety-gate | Never-rule violation check | `/safety-gate` |
-| trust-contract | Breach recovery protocol | `/trust-contract` |
+| Template       | Purpose                    | Trigger           |
+| -------------- | -------------------------- | ----------------- |
+| tuv-review     | Trust contract audit       | `/tuv-review`     |
+| safety-gate    | Never-rule violation check | `/safety-gate`    |
+| trust-contract | Breach recovery protocol   | `/trust-contract` |
 
 ---
 
@@ -153,7 +165,7 @@ State "TUV-001 reviewed" and list any clauses requiring recovery actions.
 
 ### P5.1: Package README
 
-```markdown
+````markdown
 # @mangrove/pi-mangrove
 
 Mangrove ecosystem integration for pi — DIO bridge, security automation, and canonical skills.
@@ -165,22 +177,23 @@ pi install /home/caraxes/CascadeProjects/pi-mangrove
 # or for workspace auto-load:
 # packages: ["../pi-mangrove"] in .pi/settings.json
 ```
+````
 
 ## Tools
 
-| Tool | Description |
-|------|-------------|
-| `dio_episode_summary` | Read DIO episode structure |
-| `dio:status` | Query DIO constants (CADENCE, RHYTHM_PASS_COUNT) |
-| `security:audit` | Run cross-module isolation scan |
+| Tool                  | Description                                      |
+| --------------------- | ------------------------------------------------ |
+| `dio_episode_summary` | Read DIO episode structure                       |
+| `dio:status`          | Query DIO constants (CADENCE, RHYTHM_PASS_COUNT) |
+| `security:audit`      | Run cross-module isolation scan                  |
 
 ## Skills
 
-| Skill | Use When |
-|-------|----------|
-| `iterate` | Freelance project delivery |
-| `glimpse` | Glimpse cognitive engine maintenance |
-| `lifeguard-review` | Production API review |
+| Skill              | Use When                             |
+| ------------------ | ------------------------------------ |
+| `iterate`          | Freelance project delivery           |
+| `glimpse`          | Glimpse cognitive engine maintenance |
+| `lifeguard-review` | Production API review                |
 
 ## Prompts
 
@@ -195,7 +208,8 @@ cd /home/caraxes/CascadeProjects/pi-mangrove
 npm install
 npm run typecheck
 ```
-```
+
+````
 
 ### P5.2: Workspace AGENTS.md Integration
 
@@ -223,7 +237,7 @@ This workspace includes `pi-mangrove` via `.pi/settings.json`.
 | DIO phase info | `dio:status` |
 | Security scan | `security:audit` |
 | Skill help | `/skill:iterate` |
-```
+````
 
 ### P5.3: Full Install Cycle Test
 

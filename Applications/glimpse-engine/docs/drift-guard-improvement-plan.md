@@ -1,4 +1,5 @@
 # DriftGuard Improvement Strategy
+
 ## Coverage Enhancement & Technical Debt Reduction Plan
 
 **Version**: 2.2.0 Target | **Last Updated**: 2026-03-31 | **Priority**: P1
@@ -8,12 +9,14 @@
 ## Executive Summary
 
 Current State:
+
 - **Source Code**: 715 lines, 2 files
-- **Tests**: 249 lines, 1 file  
+- **Tests**: 249 lines, 1 file
 - **Coverage Gap**: ~65% (estimated)
 - **Debt Surface**: Medium (4 identified areas)
 
 Target State (3-Month Plan):
+
 - **Coverage**: 95%+
 - **Debt Surface**: Low (all 4 areas addressed)
 - **Test Ratio**: 3:1 (tests:source)
@@ -24,13 +27,13 @@ Target State (3-Month Plan):
 
 ### 1.1 Debt Surface Assessment
 
-| ID | Area | Severity | Impact | Effort |
-|----|------|----------|--------|--------|
-| **D1** | Single-file architecture (index.js: 595 lines) | Medium | Maintainability, testability | 8 hrs |
-| **D2** | Missing edge case tests | High | Reliability | 12 hrs |
-| **D3**: | No performance benchmarks | Low | Scalability concerns | 4 hrs |
-| **D4** | Error handling not exhaustively tested | Medium | Resilience | 6 hrs |
-| **D5** | No integration tests with pipeline | High | Real-world validation | 10 hrs |
+| ID      | Area                                           | Severity | Impact                       | Effort |
+| ------- | ---------------------------------------------- | -------- | ---------------------------- | ------ |
+| **D1**  | Single-file architecture (index.js: 595 lines) | Medium   | Maintainability, testability | 8 hrs  |
+| **D2**  | Missing edge case tests                        | High     | Reliability                  | 12 hrs |
+| **D3**: | No performance benchmarks                      | Low      | Scalability concerns         | 4 hrs  |
+| **D4**  | Error handling not exhaustively tested         | Medium   | Resilience                   | 6 hrs  |
+| **D5**  | No integration tests with pipeline             | High     | Real-world validation        | 10 hrs |
 
 ### 1.2 Code Quality Metrics
 
@@ -67,6 +70,7 @@ OVERALL           ██████░░░░  71%
 ### 2.2 Coverage Gaps Identified
 
 #### Gap 1: DriftDetector Error Paths
+
 ```javascript
 // Not tested: File read errors, corrupted JS extraction
 detect() {
@@ -75,6 +79,7 @@ detect() {
 ```
 
 #### Gap 2: DriftResolver Execution
+
 ```javascript
 // Not tested: Actual child process execution
 async execute(plan) {
@@ -83,6 +88,7 @@ async execute(plan) {
 ```
 
 #### Gap 3: Telemetry Persistence
+
 ```javascript
 // Not tested: Actual file I/O, race conditions
 saveState() {
@@ -91,25 +97,26 @@ saveState() {
 ```
 
 #### Gap 4: Formula Edge Cases
+
 ```javascript
 // Partially tested:
-calculateSeverity(lineDiff) 
-  // Missing: Negative lines, extreme values (0, 1000+)
+calculateSeverity(lineDiff);
+// Missing: Negative lines, extreme values (0, 1000+)
 
-isDrift(hash1, hash2)
-  // Missing: Null/undefined inputs
+isDrift(hash1, hash2);
+// Missing: Null/undefined inputs
 ```
 
 ### 2.3 Target Coverage Matrix
 
-| Component | Current | Target | Priority |
-|-----------|---------|--------|----------|
-| DriftFormulas | 78% | 100% | P1 |
-| DriftDetector | 80% | 95% | P1 |
-| DriftResolver | 90% | 95% | P2 |
-| DriftTelemetry | 60% | 90% | P1 |
-| DriftGuard | 65% | 90% | P1 |
-| **Integration** | 0% | 80% | P0 |
+| Component       | Current | Target | Priority |
+| --------------- | ------- | ------ | -------- |
+| DriftFormulas   | 78%     | 100%   | P1       |
+| DriftDetector   | 80%     | 95%    | P1       |
+| DriftResolver   | 90%     | 95%    | P2       |
+| DriftTelemetry  | 60%     | 90%    | P1       |
+| DriftGuard      | 65%     | 90%    | P1       |
+| **Integration** | 0%      | 80%    | P0       |
 
 ---
 
@@ -122,6 +129,7 @@ isDrift(hash1, hash2)
 **Current**: `core/drift-guard/index.js` (595 lines)
 
 **Target Architecture**:
+
 ```
 core/drift-guard/
 ├── core/
@@ -136,6 +144,7 @@ core/drift-guard/
 ```
 
 **Benefits**:
+
 - Single responsibility per file
 - Easier testing (isolated imports)
 - Better tree-shaking
@@ -145,17 +154,17 @@ core/drift-guard/
 
 ```javascript
 // Current (mixed):
-export { DriftGuard, DriftFormulas, DriftDetector } // 11 exports
+export { DriftGuard, DriftFormulas, DriftDetector }; // 11 exports
 
 // Target (layered):
 // core/formulas.js
-export { DriftFormulas, computeHash, isDrift, calculateSeverity }
+export { DriftFormulas, computeHash, isDrift, calculateSeverity };
 
-// core/detector.js  
-export { DriftDetector }
+// core/detector.js
+export { DriftDetector };
 
 // core/resolver.js
-export { DriftResolver, DRIFT_POLICIES }
+export { DriftResolver, DRIFT_POLICIES };
 
 // etc.
 ```
@@ -168,27 +177,27 @@ export { DriftResolver, DRIFT_POLICIES }
 // tests/drift-guard/formulas.test.js
 // Target: 30+ test cases
 
-describe('DriftFormulas.computeHash', () => {
-  test('handles empty string', () => {});        // ✗ Missing
-  test('handles unicode', () => {});             // ✗ Missing
-  test('handles binary data', () => {});         // ✗ Missing
-  test('produces different hashes for similar strings', () => {});
-  test('produces consistent 16-char output', () => {});
+describe("DriftFormulas.computeHash", () => {
+  test("handles empty string", () => {}); // ✗ Missing
+  test("handles unicode", () => {}); // ✗ Missing
+  test("handles binary data", () => {}); // ✗ Missing
+  test("produces different hashes for similar strings", () => {});
+  test("produces consistent 16-char output", () => {});
 });
 
-describe('DriftFormulas.coverageGap', () => {
-  test('zero total returns safe ratio', () => {});  // ✗ Missing
-  test('exactly at threshold', () => {});         // ✗ Missing
-  test('negative covered count', () => {});         // ✗ Missing
-  test('extremely high numbers', () => {});          // ✗ Missing
-  test('floating point precision', () => {});        // ✗ Missing
+describe("DriftFormulas.coverageGap", () => {
+  test("zero total returns safe ratio", () => {}); // ✗ Missing
+  test("exactly at threshold", () => {}); // ✗ Missing
+  test("negative covered count", () => {}); // ✗ Missing
+  test("extremely high numbers", () => {}); // ✗ Missing
+  test("floating point precision", () => {}); // ✗ Missing
 });
 
-describe('DriftFormulas.suggestAdjustment', () => {
-  test('exactly 3 runs (boundary)', () => {});
-  test('high variance with stable mean', () => {});
-  test('exactly 1 gap per run (stability)', () => {});
-  test('zero variance', () => {});
+describe("DriftFormulas.suggestAdjustment", () => {
+  test("exactly 3 runs (boundary)", () => {});
+  test("high variance with stable mean", () => {});
+  test("exactly 1 gap per run (stability)", () => {});
+  test("zero variance", () => {});
 });
 ```
 
@@ -198,21 +207,24 @@ describe('DriftFormulas.suggestAdjustment', () => {
 // tests/drift-guard/detector.test.js
 // Target: 15+ test cases with mocked fs
 
-import { mock, test } from 'node:test';
+import { mock, test } from "node:test";
 
-describe('DriftDetector with mocked fs', () => {
-  test('handles permission denied', mockFailed({
-    code: 'EACCES',
-    path: 'master.yaml'
-  }));
-  
-  test('handles corrupted YAML', mockCorrupted('not::valid{yaml'));
-  
-  test('handles truncated JS file', mockTruncated('export const DEF'));
-  
-  test('handles concurrent modification race', mockRaceCondition());
-  
-  test('handles very large files (100MB+)', mockLarge(100 * 1024 * 1024));
+describe("DriftDetector with mocked fs", () => {
+  test(
+    "handles permission denied",
+    mockFailed({
+      code: "EACCES",
+      path: "master.yaml",
+    }),
+  );
+
+  test("handles corrupted YAML", mockCorrupted("not::valid{yaml"));
+
+  test("handles truncated JS file", mockTruncated("export const DEF"));
+
+  test("handles concurrent modification race", mockRaceCondition());
+
+  test("handles very large files (100MB+)", mockLarge(100 * 1024 * 1024));
 });
 ```
 
@@ -222,13 +234,13 @@ describe('DriftDetector with mocked fs', () => {
 // tests/drift-guard/resolver.test.js
 // Target: 10+ tests with real subprocess
 
-describe('DriftResolver.execute', () => {
-  test('successfully runs sync script');
-  test('handles command not found');
-  test('handles timeout');
-  test('handles non-zero exit code');
-  test('captures stderr');
-  test('captures stdout');
+describe("DriftResolver.execute", () => {
+  test("successfully runs sync script");
+  test("handles command not found");
+  test("handles timeout");
+  test("handles non-zero exit code");
+  test("captures stderr");
+  test("captures stdout");
 });
 ```
 
@@ -238,13 +250,13 @@ describe('DriftResolver.execute', () => {
 // tests/drift-guard/telemetry.test.js
 // Target: 8 stress tests
 
-describe('DriftTelemetry under load', () => {
-  test('1000 sequential writes', async () => {});
-  test('100 concurrent writes', async () => {});
-  test('handles disk full', mockDiskError('ENOSPC'));
-  test('handles read-only filesystem', mockDiskError('EROFS'));
-  test('recovers from corrupted state file');
-  test('maintains order under stress');
+describe("DriftTelemetry under load", () => {
+  test("1000 sequential writes", async () => {});
+  test("100 concurrent writes", async () => {});
+  test("handles disk full", mockDiskError("ENOSPC"));
+  test("handles read-only filesystem", mockDiskError("EROFS"));
+  test("recovers from corrupted state file");
+  test("maintains order under stress");
 });
 ```
 
@@ -255,12 +267,12 @@ describe('DriftTelemetry under load', () => {
 ```javascript
 // tests/drift-guard/integration/pipeline.test.js
 
-describe('DriftGuard + Pipeline', () => {
-  test('guard runs before pipeline execution');
-  test('drift blocks pipeline if strict');
-  test('drift logs warning but allows if permissive');
-  test('recovered drift continues pipeline');
-  test('guard metadata attached to pipeline result');
+describe("DriftGuard + Pipeline", () => {
+  test("guard runs before pipeline execution");
+  test("drift blocks pipeline if strict");
+  test("drift logs warning but allows if permissive");
+  test("recovered drift continues pipeline");
+  test("guard metadata attached to pipeline result");
 });
 ```
 
@@ -269,8 +281,8 @@ describe('DriftGuard + Pipeline', () => {
 ```javascript
 // tests/drift-guard/e2e/workflows.test.js
 
-describe('Real-world workflows', () => {
-  test('30-day simulated development cycle', async () => {
+describe("Real-world workflows", () => {
+  test("30-day simulated development cycle", async () => {
     // Simulate: edit, check, drift, heal, verify
     for (const day of range(30)) {
       // 10% chance of drift
@@ -278,13 +290,13 @@ describe('Real-world workflows', () => {
       // Verify state
     }
   });
-  
-  test('multi-developer concurrent editing', async () => {
+
+  test("multi-developer concurrent editing", async () => {
     // Simulate concurrent modifications
     // Race condition handling
   });
-  
-  test('power failure mid-write recovery', async () => {
+
+  test("power failure mid-write recovery", async () => {
     // Corruption detection and recovery
   });
 });
@@ -374,11 +386,11 @@ class DriftGuardError extends Error {
 
 // Error codes:
 const ERRORS = {
-  EXTRACTION_FAILED: 'E001',
-  HASH_MISMATCH: 'E002',
-  AUTO_HEAL_FAILED: 'E003',
-  FILE_NOT_FOUND: 'E004',
-  PERMISSION_DENIED: 'E005'
+  EXTRACTION_FAILED: "E001",
+  HASH_MISMATCH: "E002",
+  AUTO_HEAL_FAILED: "E003",
+  FILE_NOT_FOUND: "E004",
+  PERMISSION_DENIED: "E005",
 };
 ```
 
@@ -400,12 +412,12 @@ coverageGap()                | ~0.1ms  | Sync calc
 
 ### 5.2 Optimization Targets
 
-| Metric | Current | Target | Strategy |
-|--------|---------|--------|----------|
-| **Cold start detect** | 15ms | <10ms | Async file reads, caching |
-| **Hash computation** | 0.5ms | <0.1ms | Cached hashes |
-| **Telemetry write** | 2ms | <1ms | Buffered writes |
-| **Memory usage** | ~2MB | <1MB | Stream vs buffer |
+| Metric                | Current | Target | Strategy                  |
+| --------------------- | ------- | ------ | ------------------------- |
+| **Cold start detect** | 15ms    | <10ms  | Async file reads, caching |
+| **Hash computation**  | 0.5ms   | <0.1ms | Cached hashes             |
+| **Telemetry write**   | 2ms     | <1ms   | Buffered writes           |
+| **Memory usage**      | ~2MB    | <1MB   | Stream vs buffer          |
 
 ### 5.3 Caching Strategy
 
@@ -432,12 +444,12 @@ class DriftDetector {
 
 ### 6.1 Documentation Debt
 
-| Task | Current | Target | Effort |
-|------|---------|--------|--------|
-| API Reference | Partial | Complete | 4 hrs |
-| Architecture Diagrams | None | Visual + Text | 3 hrs |
-| Troubleshooting Guide | None | Comprehensive | 2 hrs |
-| Migration Guide | None | From 2.1 -> 2.2 | 1 hr |
+| Task                  | Current | Target          | Effort |
+| --------------------- | ------- | --------------- | ------ |
+| API Reference         | Partial | Complete        | 4 hrs  |
+| Architecture Diagrams | None    | Visual + Text   | 3 hrs  |
+| Troubleshooting Guide | None    | Comprehensive   | 2 hrs  |
+| Migration Guide       | None    | From 2.1 -> 2.2 | 1 hr   |
 
 ### 6.2 Tooling Improvements
 
@@ -464,7 +476,7 @@ class DriftDetector {
 telemetry.record({
   // Current:
   state, driftDetected, duration
-  
+
   // Add:
   memoryUsage: process.memoryUsage().heapUsed,
   cpuTime: process.cpuUsage(),
@@ -481,11 +493,11 @@ metrics:
   - name: drift_rate_24h
     query: count(driftDetected=true) / total * 100
     alert: > 10%
-  
+
   - name: avg_detection_time
     query: mean(duration) where method='detect'
     alert: > 50ms
-  
+
   - name: coverage_gap_rate
     query: count(gap.detected=true) / total
     alert: > 30%
@@ -497,14 +509,14 @@ metrics:
 
 ### 8.1 Time Estimates
 
-| Phase | Tasks | Hours | Deadline |
-|-------|-------|-------|----------|
-| **Phase 1** | Refactoring | 8 | Day 3 |
-| **Phase 2** | Test expansion | 20 | Day 10 |
-| **Phase 3** | Integration | 16 | Day 17 |
-| **Phase 4** | Performance | 8 | Day 21 |
-| **Phase 5** | Documentation | 10 | Day 25 |
-| **Total** | | **62 hrs** | **Week 4** |
+| Phase       | Tasks          | Hours      | Deadline   |
+| ----------- | -------------- | ---------- | ---------- |
+| **Phase 1** | Refactoring    | 8          | Day 3      |
+| **Phase 2** | Test expansion | 20         | Day 10     |
+| **Phase 3** | Integration    | 16         | Day 17     |
+| **Phase 4** | Performance    | 8          | Day 21     |
+| **Phase 5** | Documentation  | 10         | Day 25     |
+| **Total**   |                | **62 hrs** | **Week 4** |
 
 ### 8.2 Skill Requirements
 
@@ -515,12 +527,12 @@ metrics:
 
 ### 8.3 Risk Mitigation
 
-| Risk | Probability | Impact | Mitigation |
-|------|-------------|--------|------------|
-| Breaking changes | Medium | High | Comprehensive migration guide |
-| Test flakiness | Low | Medium | Retry logic, deterministic fixtures |
-| Performance regression | Low | High | Benchmark comparison |
-| Documentation drift | High | Low | Automated doc checks |
+| Risk                   | Probability | Impact | Mitigation                          |
+| ---------------------- | ----------- | ------ | ----------------------------------- |
+| Breaking changes       | Medium      | High   | Comprehensive migration guide       |
+| Test flakiness         | Low         | Medium | Retry logic, deterministic fixtures |
+| Performance regression | Low         | High   | Benchmark comparison                |
+| Documentation drift    | High        | Low    | Automated doc checks                |
 
 ---
 
@@ -529,21 +541,25 @@ metrics:
 ### 9.1 Coverage Gates
 
 **Stage 1 (Week 1)**: Refactor without coverage loss
+
 - [ ] All existing tests pass
 - [ ] No new bugs introduced
 - [ ] Bundle size < 20 KB
 
 **Stage 2 (Week 2)**: Core coverage 90%+
+
 - [ ] DriftFormulas: 100%
 - [ ] DriftDetector: 90%
 - [ ] DriftTelemetry: 90%
 
 **Stage 3 (Week 3)**: Integration coverage 80%+
+
 - [ ] Pipeline integration tests
 - [ ] E2E workflow tests
 - [ ] Performance benchmarks
 
 **Stage 4 (Week 4)**: Production ready
+
 - [ ] Coverage 95%+
 - [ ] All debt items cleared
 - [ ] Documentation complete
@@ -568,13 +584,13 @@ metrics:
 
 ### A. Tools & Libraries
 
-| Purpose | Tool | Version |
-|---------|------|---------|
-| Coverage | c8 | ^8.0.0 |
-| Mocking | native node:test mock | ^20.0.0 |
-| Complexity | jscpd | ^3.5.0 |
-| Benchmarks | benchmark.js | ^2.1.4 |
-| Docs | typedoc | ^0.25.0 |
+| Purpose    | Tool                  | Version |
+| ---------- | --------------------- | ------- |
+| Coverage   | c8                    | ^8.0.0  |
+| Mocking    | native node:test mock | ^20.0.0 |
+| Complexity | jscpd                 | ^3.5.0  |
+| Benchmarks | benchmark.js          | ^2.1.4  |
+| Docs       | typedoc               | ^0.25.0 |
 
 ### B. Related Documentation
 

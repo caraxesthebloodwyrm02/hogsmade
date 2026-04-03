@@ -18,7 +18,7 @@ organic texture, bioluminescent signals floating in deep water.
 **Tone**: Scientific-organic. Not clinical sterile, not jungle chaos.
 Think: a marine biology research station at twilight.
 
-**Differentiation**: The thing someone remembers is the *atmosphere* —
+**Differentiation**: The thing someone remembers is the _atmosphere_ —
 the feeling that this dashboard is alive, breathing, that data surfaces
 are slightly translucent and layered like water.
 
@@ -33,55 +33,59 @@ complete token set designed for dark-mode observatory UIs:
 ```css
 :root {
   /* ── Deep substrate (backgrounds) ── */
-  --mangrove-abyss:       #0b1215;   /* deepest bg — near-black with green undertone */
-  --mangrove-deep:        #111d22;   /* primary surface */
-  --mangrove-mid:         #172a30;   /* cards, panels */
-  --mangrove-shallow:     #1e3a40;   /* elevated surfaces, hover states */
+  --mangrove-abyss: #0b1215; /* deepest bg — near-black with green undertone */
+  --mangrove-deep: #111d22; /* primary surface */
+  --mangrove-mid: #172a30; /* cards, panels */
+  --mangrove-shallow: #1e3a40; /* elevated surfaces, hover states */
 
   /* ── Sediment layer (borders, dividers, muted elements) ── */
-  --sediment-dark:        #2a3f3a;   /* subtle borders */
-  --sediment-mid:         #3d5c52;   /* active borders, outlines */
-  --sediment-light:       #5a7a6e;   /* muted icons, secondary text */
+  --sediment-dark: #2a3f3a; /* subtle borders */
+  --sediment-mid: #3d5c52; /* active borders, outlines */
+  --sediment-light: #5a7a6e; /* muted icons, secondary text */
 
   /* ── Bioluminescence (accent signals) ── */
-  --biolum-cyan:          #4ecdc4;   /* primary accent — teal-cyan */
-  --biolum-cyan-muted:    #3a9e97;   /* hover/pressed states */
-  --biolum-cyan-ghost:    rgba(78, 205, 196, 0.08);  /* ghost fills */
-  --biolum-cyan-glow:     rgba(78, 205, 196, 0.25);  /* glow halos */
+  --biolum-cyan: #4ecdc4; /* primary accent — teal-cyan */
+  --biolum-cyan-muted: #3a9e97; /* hover/pressed states */
+  --biolum-cyan-ghost: rgba(78, 205, 196, 0.08); /* ghost fills */
+  --biolum-cyan-glow: rgba(78, 205, 196, 0.25); /* glow halos */
 
-  --biolum-amber:         #f0a830;   /* warning / highlight accent */
-  --biolum-amber-muted:   #c88a20;
-  --biolum-amber-ghost:   rgba(240, 168, 48, 0.08);
+  --biolum-amber: #f0a830; /* warning / highlight accent */
+  --biolum-amber-muted: #c88a20;
+  --biolum-amber-ghost: rgba(240, 168, 48, 0.08);
 
-  --biolum-coral:         #e85d5d;   /* error / critical signal */
-  --biolum-coral-muted:   #c44040;
-  --biolum-coral-ghost:   rgba(232, 93, 93, 0.08);
+  --biolum-coral: #e85d5d; /* error / critical signal */
+  --biolum-coral-muted: #c44040;
+  --biolum-coral-ghost: rgba(232, 93, 93, 0.08);
 
-  --biolum-violet:        #a78bfa;   /* info / special lens accent */
-  --biolum-violet-muted:  #8b6fd4;
+  --biolum-violet: #a78bfa; /* info / special lens accent */
+  --biolum-violet-muted: #8b6fd4;
 
   /* ── Canopy (text hierarchy) ── */
-  --text-primary:         #e8f0ec;   /* high contrast — slightly warm white */
-  --text-secondary:       #9bb5a8;   /* body copy, descriptions */
-  --text-tertiary:        #6b8a7d;   /* timestamps, metadata, captions */
-  --text-ghost:           #4a6b5e;   /* disabled, placeholder */
+  --text-primary: #e8f0ec; /* high contrast — slightly warm white */
+  --text-secondary: #9bb5a8; /* body copy, descriptions */
+  --text-tertiary: #6b8a7d; /* timestamps, metadata, captions */
+  --text-ghost: #4a6b5e; /* disabled, placeholder */
 
   /* ── Surface effects ── */
-  --glass-fill:           rgba(22, 42, 48, 0.65);
-  --glass-border:         rgba(78, 205, 196, 0.12);
-  --glass-blur:           12px;
+  --glass-fill: rgba(22, 42, 48, 0.65);
+  --glass-border: rgba(78, 205, 196, 0.12);
+  --glass-blur: 12px;
 
   /* ── Gradients ── */
-  --gradient-surface:     linear-gradient(145deg, #111d22 0%, #172a30 100%);
-  --gradient-accent:      linear-gradient(135deg, #4ecdc4 0%, #3a9e97 50%, #2d8b8b 100%);
-  --gradient-warm:        linear-gradient(135deg, #f0a830 0%, #e85d5d 100%);
-  --gradient-depth:       radial-gradient(ellipse at 30% 20%, rgba(78,205,196,0.06) 0%, transparent 60%);
+  --gradient-surface: linear-gradient(145deg, #111d22 0%, #172a30 100%);
+  --gradient-accent: linear-gradient(135deg, #4ecdc4 0%, #3a9e97 50%, #2d8b8b 100%);
+  --gradient-warm: linear-gradient(135deg, #f0a830 0%, #e85d5d 100%);
+  --gradient-depth: radial-gradient(
+    ellipse at 30% 20%,
+    rgba(78, 205, 196, 0.06) 0%,
+    transparent 60%
+  );
 
   /* ── Shadows ── */
-  --shadow-sm:            0 1px 3px rgba(0,0,0,0.4), 0 0 0 1px rgba(78,205,196,0.05);
-  --shadow-md:            0 4px 12px rgba(0,0,0,0.5), 0 0 0 1px rgba(78,205,196,0.06);
-  --shadow-lg:            0 8px 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(78,205,196,0.08);
-  --shadow-glow:          0 0 20px rgba(78,205,196,0.15), 0 0 60px rgba(78,205,196,0.05);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(78, 205, 196, 0.05);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(78, 205, 196, 0.06);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(78, 205, 196, 0.08);
+  --shadow-glow: 0 0 20px rgba(78, 205, 196, 0.15), 0 0 60px rgba(78, 205, 196, 0.05);
 }
 ```
 
@@ -90,7 +94,7 @@ complete token set designed for dark-mode observatory UIs:
 - **Green-undertone blacks** prevent the "dead screen" look of pure `#000`.
   Every dark shade has a hint of the mangrove's submerged green.
 - **Bioluminescence accents** are chromatic opposites of the substrate — cyan
-  on dark teal pops *hard* without being garish.
+  on dark teal pops _hard_ without being garish.
 - **Four-step depth ladder** (`abyss → deep → mid → shallow`) gives Claude Code
   explicit elevation tokens instead of guessing opacity values.
 - **Ghost fills** (8% opacity accent) are the secret to making interactive
@@ -100,12 +104,12 @@ complete token set designed for dark-mode observatory UIs:
 
 ## 3. Typography Usage Rules
 
-You already have excellent fonts loaded. Here's how to *deploy* them:
+You already have excellent fonts loaded. Here's how to _deploy_ them:
 
 ```css
 /* ── Font assignments ── */
 body {
-  font-family: 'DM Sans', sans-serif;
+  font-family: "DM Sans", sans-serif;
   font-weight: 400;
   font-size: 14px;
   line-height: 1.6;
@@ -118,25 +122,31 @@ body {
 .metric-value,
 .hero-stat,
 h1 {
-  font-family: 'Fraunces', serif;
+  font-family: "Fraunces", serif;
   font-weight: 700;
   color: var(--text-primary);
-  letter-spacing: -0.02em;  /* tighten display text */
+  letter-spacing: -0.02em; /* tighten display text */
 }
 
 /* Section headers — DM Sans medium weight */
-h2, h3, .panel-title {
-  font-family: 'DM Sans', sans-serif;
+h2,
+h3,
+.panel-title {
+  font-family: "DM Sans", sans-serif;
   font-weight: 500;
   color: var(--text-primary);
   letter-spacing: 0.02em;
   text-transform: uppercase;
-  font-size: 11px;  /* small caps feel for labels */
+  font-size: 11px; /* small caps feel for labels */
 }
 
 /* Code, data values, IDs — JetBrains Mono */
-code, .data-cell, .lens-id, .rule-tag, .confidence-score {
-  font-family: 'JetBrains Mono', monospace;
+code,
+.data-cell,
+.lens-id,
+.rule-tag,
+.confidence-score {
+  font-family: "JetBrains Mono", monospace;
   font-weight: 400;
   font-size: 12px;
   letter-spacing: 0.03em;
@@ -145,14 +155,14 @@ code, .data-cell, .lens-id, .rule-tag, .confidence-score {
 /* ── The "observatory readout" trick ── */
 /* Use Fraunces for BIG numbers and JetBrains Mono for small ones */
 .stat-large {
-  font-family: 'Fraunces', serif;
+  font-family: "Fraunces", serif;
   font-size: 2.5rem;
   font-weight: 700;
   color: var(--biolum-cyan);
   line-height: 1;
 }
 .stat-label {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   font-size: 10px;
   font-weight: 500;
   text-transform: uppercase;
@@ -193,7 +203,7 @@ use translucent layered surfaces:
 
 /* ── Inner glow — adds the "living" feel ── */
 .glass-panel::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
@@ -211,13 +221,13 @@ use translucent layered surfaces:
 
 /* ── Atmospheric depth layer on the page body ── */
 body::before {
-  content: '';
+  content: "";
   position: fixed;
   inset: 0;
   background:
     var(--gradient-depth),
-    radial-gradient(ellipse at 70% 80%, rgba(240,168,48,0.03) 0%, transparent 50%),
-    radial-gradient(circle at 50% 50%, rgba(78,205,196,0.02) 0%, transparent 70%);
+    radial-gradient(ellipse at 70% 80%, rgba(240, 168, 48, 0.03) 0%, transparent 50%),
+    radial-gradient(circle at 50% 50%, rgba(78, 205, 196, 0.02) 0%, transparent 70%);
   pointer-events: none;
   z-index: 0;
 }
@@ -266,12 +276,24 @@ body::before {
 }
 
 /* Stagger children */
-.glass-panel:nth-child(1) { animation-delay: 0.05s; }
-.glass-panel:nth-child(2) { animation-delay: 0.12s; }
-.glass-panel:nth-child(3) { animation-delay: 0.19s; }
-.glass-panel:nth-child(4) { animation-delay: 0.26s; }
-.glass-panel:nth-child(5) { animation-delay: 0.33s; }
-.glass-panel:nth-child(6) { animation-delay: 0.40s; }
+.glass-panel:nth-child(1) {
+  animation-delay: 0.05s;
+}
+.glass-panel:nth-child(2) {
+  animation-delay: 0.12s;
+}
+.glass-panel:nth-child(3) {
+  animation-delay: 0.19s;
+}
+.glass-panel:nth-child(4) {
+  animation-delay: 0.26s;
+}
+.glass-panel:nth-child(5) {
+  animation-delay: 0.33s;
+}
+.glass-panel:nth-child(6) {
+  animation-delay: 0.4s;
+}
 ```
 
 In React, you can do this more cleanly:
@@ -283,19 +305,26 @@ const stagger = (index: number, base = 50) => ({
 });
 
 // Usage
-{panels.map((panel, i) => (
-  <div className="glass-panel surface-anim" style={stagger(i)} key={panel.id}>
-    {/* ... */}
-  </div>
-))}
+{
+  panels.map((panel, i) => (
+    <div className="glass-panel surface-anim" style={stagger(i)} key={panel.id}>
+      {/* ... */}
+    </div>
+  ));
+}
 ```
 
 ### 5b. Pulse / breathing glow on active elements
 
 ```css
 @keyframes breathe {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(78, 205, 196, 0); }
-  50% { box-shadow: 0 0 16px 2px rgba(78, 205, 196, 0.2); }
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(78, 205, 196, 0);
+  }
+  50% {
+    box-shadow: 0 0 16px 2px rgba(78, 205, 196, 0.2);
+  }
 }
 
 .active-lens,
@@ -330,7 +359,7 @@ const stagger = (index: number, base = 50) => ({
 ### 5d. Data value count-up animation (React)
 
 ```tsx
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from "react";
 
 function AnimatedValue({ value, duration = 800 }: { value: number; duration?: number }) {
   const [display, setDisplay] = useState(0);
@@ -370,41 +399,41 @@ small inline SVGs** for a distinctive observatory feel. Here's a curated set:
 ```tsx
 const SYMBOLS = {
   // ── Lens types ──
-  lens:       '◉',   // U+25C9 — fisheye/lens
-  focus:      '◎',   // U+25CE — bullseye
-  scope:      '⊙',   // U+2299 — circled dot (scope/observation)
+  lens: "◉", // U+25C9 — fisheye/lens
+  focus: "◎", // U+25CE — bullseye
+  scope: "⊙", // U+2299 — circled dot (scope/observation)
 
   // ── Navigation / state ──
-  active:     '●',   // U+25CF — filled circle
-  inactive:   '○',   // U+25CB — hollow circle
-  expand:     '▾',   // U+25BE — small down triangle
-  collapse:   '▴',   // U+25B4 — small up triangle
-  nav:        '›',   // U+203A — single right angle quote
+  active: "●", // U+25CF — filled circle
+  inactive: "○", // U+25CB — hollow circle
+  expand: "▾", // U+25BE — small down triangle
+  collapse: "▴", // U+25B4 — small up triangle
+  nav: "›", // U+203A — single right angle quote
 
   // ── Data signals ──
-  rising:     '↑',   // U+2191
-  falling:    '↓',   // U+2193
-  steady:     '→',   // U+2192
-  spark:      '✦',   // U+2726 — four-pointed star (insight/spark)
-  branch:     '⑂',   // U+2442 — fork (branching logic)
+  rising: "↑", // U+2191
+  falling: "↓", // U+2193
+  steady: "→", // U+2192
+  spark: "✦", // U+2726 — four-pointed star (insight/spark)
+  branch: "⑂", // U+2442 — fork (branching logic)
 
   // ── Confidence / strength ──
-  high:       '■',   // U+25A0 — filled square
-  medium:     '◧',   // U+25E7 — half-filled square
-  low:        '□',   // U+25A1 — hollow square
+  high: "■", // U+25A0 — filled square
+  medium: "◧", // U+25E7 — half-filled square
+  low: "□", // U+25A1 — hollow square
 
   // ── Domain markers ──
-  root:       '⌘',   // U+2318 — place of interest (root concept)
-  leaf:       '❧',   // U+2767 — rotated floral heart (leaf/terminal)
-  wave:       '〰',  // U+3030 — wavy dash (flow/sequence)
-  gate:       '⊞',   // U+229E — squared plus (GATE view)
+  root: "⌘", // U+2318 — place of interest (root concept)
+  leaf: "❧", // U+2767 — rotated floral heart (leaf/terminal)
+  wave: "〰", // U+3030 — wavy dash (flow/sequence)
+  gate: "⊞", // U+229E — squared plus (GATE view)
 
   // ── Observatory specific ──
-  observe:    '⊕',   // U+2295 — circled plus (observation point)
-  trace:      '⋮',   // U+22EE — vertical ellipsis (pathway)
-  cluster:    '⬡',   // U+2B21 — hexagon (cluster/cell)
-  matrix:     '⊞',   // U+229E — squared plus (matrix view)
-  timeline:   '⏤',   // U+23E4 — horizontal bar (timeline)
+  observe: "⊕", // U+2295 — circled plus (observation point)
+  trace: "⋮", // U+22EE — vertical ellipsis (pathway)
+  cluster: "⬡", // U+2B21 — hexagon (cluster/cell)
+  matrix: "⊞", // U+229E — squared plus (matrix view)
+  timeline: "⏤", // U+23E4 — horizontal bar (timeline)
 } as const;
 ```
 
@@ -428,7 +457,7 @@ function LensBadge({ lens }: { lens: { id: string; score: number; domain: string
   align-items: center;
   gap: 6px;
   padding: 3px 10px;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   font-size: 11px;
   letter-spacing: 0.04em;
   color: var(--biolum-cyan);
@@ -477,9 +506,33 @@ const NodeGraphIcon = () => (
     <circle cx="12" cy="6" r="1.5" fill="currentColor" opacity="0.6" />
     <circle cx="6" cy="12" r="1.5" fill="currentColor" opacity="0.6" />
     <circle cx="12" cy="13" r="1.5" fill="currentColor" opacity="0.4" />
-    <line x1="5.2" y1="4.8" x2="10.8" y2="5.6" stroke="currentColor" strokeWidth="0.8" opacity="0.3" />
-    <line x1="4.8" y1="5.2" x2="5.6" y2="10.8" stroke="currentColor" strokeWidth="0.8" opacity="0.3" />
-    <line x1="7.2" y1="12.2" x2="10.8" y2="12.8" stroke="currentColor" strokeWidth="0.8" opacity="0.3" />
+    <line
+      x1="5.2"
+      y1="4.8"
+      x2="10.8"
+      y2="5.6"
+      stroke="currentColor"
+      strokeWidth="0.8"
+      opacity="0.3"
+    />
+    <line
+      x1="4.8"
+      y1="5.2"
+      x2="5.6"
+      y2="10.8"
+      stroke="currentColor"
+      strokeWidth="0.8"
+      opacity="0.3"
+    />
+    <line
+      x1="7.2"
+      y1="12.2"
+      x2="10.8"
+      y2="12.8"
+      stroke="currentColor"
+      strokeWidth="0.8"
+      opacity="0.3"
+    />
   </svg>
 );
 
@@ -502,7 +555,7 @@ ceiling. A radial or bar-based confidence meter using the observatory metaphor:
 ```tsx
 function ConfidenceMeter({ value, label }: { value: number; label: string }) {
   const pct = Math.round(value * 100);
-  const hue = value > 0.7 ? 'cyan' : value > 0.4 ? 'amber' : 'coral';
+  const hue = value > 0.7 ? "cyan" : value > 0.4 ? "amber" : "coral";
   const accentVar = `var(--biolum-${hue})`;
   const ghostVar = `var(--biolum-${hue}-ghost)`;
 
@@ -518,12 +571,8 @@ function ConfidenceMeter({ value, label }: { value: number; label: string }) {
           }}
         />
         {/* Tick marks */}
-        {[25, 50, 75].map(tick => (
-          <div
-            key={tick}
-            className="confidence-tick"
-            style={{ left: `${tick}%` }}
-          />
+        {[25, 50, 75].map((tick) => (
+          <div key={tick} className="confidence-tick" style={{ left: `${tick}%` }} />
         ))}
       </div>
       <div className="confidence-readout">
@@ -574,14 +623,14 @@ function ConfidenceMeter({ value, label }: { value: number; label: string }) {
 }
 
 .confidence-value {
-  font-family: 'Fraunces', serif;
+  font-family: "Fraunces", serif;
   font-size: 1.5rem;
   font-weight: 700;
   line-height: 1;
 }
 
 .confidence-label {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -639,15 +688,25 @@ function ConfidenceMeter({ value, label }: { value: number; label: string }) {
 }
 
 /* Hero metric card — spans 4 cols, feels dominant */
-.card-hero { grid-column: span 4; }
+.card-hero {
+  grid-column: span 4;
+}
 /* Standard card */
-.card-standard { grid-column: span 3; }
+.card-standard {
+  grid-column: span 3;
+}
 /* Wide panel (evidence table, timeline) */
-.card-wide { grid-column: span 8; }
+.card-wide {
+  grid-column: span 8;
+}
 /* Sidebar panel (lens list, rule summary) */
-.card-aside { grid-column: span 4; }
+.card-aside {
+  grid-column: span 4;
+}
 /* Full bleed (constellation view, flow diagram) */
-.card-full { grid-column: 1 / -1; }
+.card-full {
+  grid-column: 1 / -1;
+}
 ```
 
 ---
@@ -658,13 +717,15 @@ function ConfidenceMeter({ value, label }: { value: number; label: string }) {
 
 ```css
 @property --border-angle {
-  syntax: '<angle>';
+  syntax: "<angle>";
   initial-value: 0deg;
   inherits: false;
 }
 
 @keyframes rotate-border {
-  to { --border-angle: 360deg; }
+  to {
+    --border-angle: 360deg;
+  }
 }
 
 .active-panel {
@@ -672,13 +733,14 @@ function ConfidenceMeter({ value, label }: { value: number; label: string }) {
   background:
     var(--glass-fill) padding-box,
     conic-gradient(
-      from var(--border-angle),
-      rgba(78,205,196,0.3),
-      rgba(78,205,196,0.05) 40%,
-      rgba(240,168,48,0.15) 50%,
-      rgba(78,205,196,0.05) 60%,
-      rgba(78,205,196,0.3)
-    ) border-box;
+        from var(--border-angle),
+        rgba(78, 205, 196, 0.3),
+        rgba(78, 205, 196, 0.05) 40%,
+        rgba(240, 168, 48, 0.15) 50%,
+        rgba(78, 205, 196, 0.05) 60%,
+        rgba(78, 205, 196, 0.3)
+      )
+      border-box;
   animation: rotate-border 8s linear infinite;
   border-radius: 12px;
 }
@@ -688,18 +750,21 @@ function ConfidenceMeter({ value, label }: { value: number; label: string }) {
 
 ```css
 @keyframes shimmer {
-  from { background-position: -200% center; }
-  to   { background-position: 200% center; }
+  from {
+    background-position: -200% center;
+  }
+  to {
+    background-position: 200% center;
+  }
 }
 
 .skeleton {
-  background:
-    linear-gradient(
-      90deg,
-      var(--sediment-dark) 30%,
-      var(--sediment-mid) 50%,
-      var(--sediment-dark) 70%
-    );
+  background: linear-gradient(
+    90deg,
+    var(--sediment-dark) 30%,
+    var(--sediment-mid) 50%,
+    var(--sediment-dark) 70%
+  );
   background-size: 200% 100%;
   animation: shimmer 1.8s ease-in-out infinite;
   border-radius: 6px;
@@ -731,12 +796,12 @@ function ConfidenceMeter({ value, label }: { value: number; label: string }) {
 
 ```tsx
 const DOMAIN_COLORS: Record<string, string> = {
-  'botany':     '#4ecdc4',
-  'sound':      '#a78bfa',
-  'emotion':    '#f0a830',
-  'narrative':  '#e85d5d',
-  'structure':  '#6bba7d',
-  'default':    '#5a7a6e',
+  botany: "#4ecdc4",
+  sound: "#a78bfa",
+  emotion: "#f0a830",
+  narrative: "#e85d5d",
+  structure: "#6bba7d",
+  default: "#5a7a6e",
 };
 
 function RuleTag({ rule }: { rule: { id: string; domain: string } }) {
@@ -745,11 +810,13 @@ function RuleTag({ rule }: { rule: { id: string; domain: string } }) {
   return (
     <span
       className="rule-tag"
-      style={{
-        '--tag-color': color,
-        '--tag-ghost': `${color}14`,
-        '--tag-border': `${color}28`,
-      } as React.CSSProperties}
+      style={
+        {
+          "--tag-color": color,
+          "--tag-ghost": `${color}14`,
+          "--tag-border": `${color}28`,
+        } as React.CSSProperties
+      }
     >
       <span className="rule-tag-dot" />
       {rule.id}
@@ -764,7 +831,7 @@ function RuleTag({ rule }: { rule: { id: string; domain: string } }) {
   align-items: center;
   gap: 5px;
   padding: 2px 8px;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   font-size: 11px;
   color: var(--tag-color);
   background: var(--tag-ghost);
@@ -785,7 +852,7 @@ function RuleTag({ rule }: { rule: { id: string; domain: string } }) {
 ### 10b. Section divider with label
 
 ```tsx
-function SectionDivider({ label, symbol = '◉' }: { label: string; symbol?: string }) {
+function SectionDivider({ label, symbol = "◉" }: { label: string; symbol?: string }) {
   return (
     <div className="section-divider">
       <div className="section-divider-line" />
@@ -820,7 +887,7 @@ function SectionDivider({ label, symbol = '◉' }: { label: string; symbol?: str
 }
 
 .section-divider-label {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.14em;
@@ -859,6 +926,7 @@ If Claude Code is stuck, feed it these one at a time:
 ## 12. Prompt Templates for Claude Code
 
 ### For applying the color system:
+
 ```
 Replace all hardcoded color values in the CSS/Tailwind with the CSS
 custom properties from the Mangrove Observatory palette (attached).
@@ -870,6 +938,7 @@ for interactive states.
 ```
 
 ### For component styling:
+
 ```
 Restyle this component using the glass-panel pattern:
 background: rgba(22,42,48,0.65), backdrop-filter: blur(12px),
@@ -881,6 +950,7 @@ for hero metrics, DM Sans 500 for section labels.
 ```
 
 ### For animations:
+
 ```
 Add entrance animations to the dashboard cards using the "surface"
 keyframe: translateY(12px) → 0, opacity 0 → 1, filter blur(4px) → 0,

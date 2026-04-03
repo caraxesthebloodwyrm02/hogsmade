@@ -80,7 +80,9 @@ export async function fetchJson(url, timeoutMs) {
 }
 
 export async function createPreflightReport(options = {}) {
-  const timeoutMs = Number(options.timeoutMs ?? process.env.GRID_PREFLIGHT_TIMEOUT_MS ?? DEFAULT_TIMEOUT_MS);
+  const timeoutMs = Number(
+    options.timeoutMs ?? process.env.GRID_PREFLIGHT_TIMEOUT_MS ?? DEFAULT_TIMEOUT_MS,
+  );
   if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
     return {
       pass: false,
@@ -112,9 +114,7 @@ export async function createPreflightReport(options = {}) {
       apiV1Health: checks[1],
       admissionStats: checks[2],
     },
-    summary: checks[2].ok
-      ? "Admission backend reachable"
-      : "Admission backend unavailable",
+    summary: checks[2].ok ? "Admission backend reachable" : "Admission backend unavailable",
   };
 }
 

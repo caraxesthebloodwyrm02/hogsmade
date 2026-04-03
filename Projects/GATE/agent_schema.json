@@ -31,12 +31,7 @@
     },
     "machine_fingerprint": {
       "algorithm": "SHA-256",
-      "attributes": [
-        "node_name",
-        "platform_system",
-        "platform_machine",
-        "username"
-      ]
+      "attributes": ["node_name", "platform_system", "platform_machine", "username"]
     },
     "nonce": {
       "format": "uuid4_hex",
@@ -340,12 +335,7 @@
     "grid-server": {
       "path": "<TRUSTED_SOURCE_ROOT>/cascadeprojects/grid-server",
       "port": 8080,
-      "allowed_permissions": [
-        "deploy",
-        "run_tests",
-        "start_server",
-        "write_results"
-      ],
+      "allowed_permissions": ["deploy", "run_tests", "start_server", "write_results"],
       "description": "GRID-main deployment target"
     },
     "afloat-server": {
@@ -357,12 +347,7 @@
     "echoes-server": {
       "path": "<TRUSTED_SOURCE_ROOT>/cascadeprojects/echoes-server",
       "port": 8000,
-      "allowed_permissions": [
-        "deploy",
-        "run_tests",
-        "start_server",
-        "write_results"
-      ],
+      "allowed_permissions": ["deploy", "run_tests", "start_server", "write_results"],
       "description": "Echoes deployment target"
     },
     "lots-server": {

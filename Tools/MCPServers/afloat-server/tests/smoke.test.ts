@@ -34,20 +34,22 @@ describe("afloat-server smoke", () => {
   });
 
   it("registers expected tools", () => {
-    expect(getToolNames(buildServer())).toEqual(expect.arrayContaining([
-      "health_check",
-      "workflow_create",
-      "workflow_list",
-      "workflow_get",
-      "workflow_execute",
-      "workflow_history",
-    ]));
+    expect(getToolNames(buildServer())).toEqual(
+      expect.arrayContaining([
+        "health_check",
+        "workflow_create",
+        "workflow_list",
+        "workflow_get",
+        "workflow_execute",
+        "workflow_history",
+      ]),
+    );
   });
 
   it("runs health_check and workflow_list", async () => {
     const server = buildServer();
-    const health = await invokeTool(server, "health_check") as { isError?: boolean };
-    const list = await invokeTool(server, "workflow_list", { limit: 5 }) as { isError?: boolean };
+    const health = (await invokeTool(server, "health_check")) as { isError?: boolean };
+    const list = (await invokeTool(server, "workflow_list", { limit: 5 })) as { isError?: boolean };
     expect(health.isError).not.toBe(true);
     expect(list.isError).not.toBe(true);
   });

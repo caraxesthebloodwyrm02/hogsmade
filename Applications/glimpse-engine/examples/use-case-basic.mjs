@@ -80,14 +80,7 @@ const config = {
       {
         id: "mathematics",
         label: "Mathematics",
-        keywords: [
-          "theorem",
-          "proof",
-          "equation",
-          "formula",
-          "calculation",
-          "logic",
-        ],
+        keywords: ["theorem", "proof", "equation", "formula", "calculation", "logic"],
       },
       {
         id: "physics",
@@ -216,15 +209,11 @@ const result = runContextPipeline(sampleData, "json", config);
 console.log("📊 Dataset Summary");
 console.log(`   Records: ${result.profile.recordCount}`);
 console.log(`   Fields: ${result.profile.columns.join(", ")}`);
-console.log(
-  `   Time Range: ${result.profile.timeRange?.min} - ${result.profile.timeRange?.max}\n`,
-);
+console.log(`   Time Range: ${result.profile.timeRange?.min} - ${result.profile.timeRange?.max}\n`);
 
 console.log("🔍 Context Lenses");
 result.contextLenses.forEach((lens, i) => {
-  console.log(
-    `   ${i + 1}. ${lens.label} (score: ${lens.score}, role: ${lens.role})`,
-  );
+  console.log(`   ${i + 1}. ${lens.label} (score: ${lens.score}, role: ${lens.role})`);
 });
 console.log();
 

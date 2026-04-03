@@ -15,6 +15,7 @@ This directory contains actionable checklists for optimizing the GRID-main codeb
 ## Usage
 
 Each checklist file follows a P0/P1/P2 priority system:
+
 - **P0**: Security vulnerabilities, runtime failures, blocking issues
 - **P1**: Performance, maintainability, technical debt
 - **P2**: Code hygiene, documentation, nice-to-haves
@@ -37,26 +38,26 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.13'
-      
+
       - name: Install uv
         run: pip install uv
-        
+
       - name: Install dependencies
         run: cd GRID-main && uv sync --group dev --group test
-        
+
       - name: Run deduplication check
         run: |
           cd GRID-main
           # Example automated check (placeholder)
           python scripts/check_duplicate_imports.py || echo "::warning::Potential duplicate imports found"
-          
+
       - name: Validate minimal setup
         run: |
           cd GRID-main
           uv sync --group dev --group test --no-dev > /dev/null 2>&1 || echo "::error::Minimal setup failed"
 
       # Add more automated checks here referencing specific checklist items
-      
+
   # Extend existing test job
   test:
     # ... existing steps ...

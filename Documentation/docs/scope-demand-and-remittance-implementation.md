@@ -9,13 +9,13 @@ Deliverable from the plan: synthesized scopes, steps per scope, and a single sta
 
 The project has **five direct-beneficiary scopes**. One is highest in market demand; the rest are ordered by scale in your data.
 
-| Scope | Approx. scale | Defining moment | Priority by demand |
-|-------|----------------|-----------------|--------------------|
-| **Remittance** | $17.17 B (H1 FY25-26) | FX credited to you (bank/MFS) | **1 — highest** |
-| RMG / Export | $9.97 B (Jul–Sep) | LC/FX received by you | 2 |
-| FDI | $1.41 B (Jan–Sep) | Equity/reinvested earnings booked to your firm | 3 |
-| E‑commerce (card) | Tk 21.93 cr (Aug) | Transaction settled to you | 4 |
-| Domestic (retail, services, real estate) | Not quantified | Invoice paid / COD / deed or advance to you | 5 |
+| Scope                                    | Approx. scale         | Defining moment                                | Priority by demand |
+| ---------------------------------------- | --------------------- | ---------------------------------------------- | ------------------ |
+| **Remittance**                           | $17.17 B (H1 FY25-26) | FX credited to you (bank/MFS)                  | **1 — highest**    |
+| RMG / Export                             | $9.97 B (Jul–Sep)     | LC/FX received by you                          | 2                  |
+| FDI                                      | $1.41 B (Jan–Sep)     | Equity/reinvested earnings booked to your firm | 3                  |
+| E‑commerce (card)                        | Tk 21.93 cr (Aug)     | Transaction settled to you                     | 4                  |
+| Domestic (retail, services, real estate) | Not quantified        | Invoice paid / COD / deed or advance to you    | 5                  |
 
 **Builder traits** (who operates in the highest-demand scope): beneficiary-centric, settlement-moment focus, formal-channel trust, cross-border orientation, simple communication.
 
@@ -69,37 +69,37 @@ One path from start to “plan implemented” using the scopes and remittance fo
 
 **Start**
 
-1. **Pick your primary scope.**  
-   - Default for “highest market demand” = **Remittance.**  
+1. **Pick your primary scope.**
+   - Default for “highest market demand” = **Remittance.**
    - If you are payee: you receive work payment via remittance. If payer: you send work payment to BD via remittance. If intermediary: you enable or formalize such contracts.
 
-2. **Confirm your role and counterparty.**  
-   - Payer: diaspora employer, international client, remote company.  
-   - Payee: BD freelancer, contractor, vendor.  
+2. **Confirm your role and counterparty.**
+   - Payer: diaspora employer, international client, remote company.
+   - Payee: BD freelancer, contractor, vendor.
    - Intermediary: bank/MFS, platform, EOR.
 
-3. **Use the steps for that scope (Section 2).**  
-   - For Remittance: steps 1–5 under “Scope 1: Remittance.”  
+3. **Use the steps for that scope (Section 2).**
+   - For Remittance: steps 1–5 under “Scope 1: Remittance.”
    - For other scopes: follow the corresponding 4-step block.
 
-4. **Define the work-payment contract.**  
+4. **Define the work-payment contract.**
    - In writing or platform terms: what work, what payment, which channel (for Remittance: bank/MFS), and when revenue is recognized (for Remittance: when FX is credited to beneficiary).
 
-5. **Execute and record.**  
+5. **Execute and record.**
    - Do the work; send or receive payment; record the defining moment (e.g. “FX credited on [date]” or “LC received on [date]”).
 
-6. **Reconcile and repeat.**  
+6. **Reconcile and repeat.**
    - Match payments to work/orders; treat “credited” or “received” as revenue. Use the same flow for the next contract.
 
 **Complete**
 
-- You have: (a) chosen a scope (Remittance or other), (b) identified role and entities, (c) followed the steps for that scope, (d) a clear contract that ties work to payment and defines the moment revenue is recognized, and (e) at least one cycle executed and recorded.  
+- You have: (a) chosen a scope (Remittance or other), (b) identified role and entities, (c) followed the steps for that scope, (d) a clear contract that ties work to payment and defines the moment revenue is recognized, and (e) at least one cycle executed and recorded.
 - For Remittance specifically: at least one work-payment flow where settlement = money sent from abroad and credited to a BD account (bank/MFS), with both sides agreeing that “revenue happened” at that moment.
 
 ---
 
 **Summary**
 
-- **Synthesized scopes:** Five streams (Remittance highest), with scale, defining moment, and priority.  
-- **Steps per scope:** Concrete 4–5 step blocks for Remittance, Export, FDI, E‑commerce, Domestic.  
+- **Synthesized scopes:** Five streams (Remittance highest), with scale, defining moment, and priority.
+- **Steps per scope:** Concrete 4–5 step blocks for Remittance, Export, FDI, E‑commerce, Domestic.
 - **Start-to-complete:** One merged flow from “pick scope” to “contract defined and one cycle executed,” with Remittance as the default for highest demand and work-payment contracts.

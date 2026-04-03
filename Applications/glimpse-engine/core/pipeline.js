@@ -15,17 +15,10 @@ import { summarizeLenses } from "../functions/rules.js";
 import { runMultiPassInference } from "./multi-pass.js";
 import { detectDataComplexity, selectPipelineMode } from "./modes.js";
 import { findInvariantPatterns, rankByDensity } from "./compression.js";
-import {
-  selectGroundingProvider,
-  applyGrounding,
-  applyGroundingAsync,
-} from "./grounding.js";
+import { selectGroundingProvider, applyGrounding, applyGroundingAsync } from "./grounding.js";
 import { normalizeRecords } from "../utils/parsing.js";
 import { bucketYear } from "../utils/utils.js";
-import {
-  bucketYearAdaptive,
-  computeTemporalRange,
-} from "../analysis/temporal.js";
+import { bucketYearAdaptive, computeTemporalRange } from "../analysis/temporal.js";
 import {
   createConfidenceFrame,
   detectGaps,
@@ -110,13 +103,8 @@ export function computeClusters(context, dimension) {
         "Unknown";
     else if (dimension === "space") key = entity.dimensions.space || "Unknown";
     else if (dimension === "domain")
-      key =
-        entity.dimensions.domain ||
-        context.contextLenses[0]?.label ||
-        entity.type ||
-        "General";
-    else if (dimension === "catalyst")
-      key = entity.dimensions.catalyst || "Unknown";
+      key = entity.dimensions.domain || context.contextLenses[0]?.label || entity.type || "General";
+    else if (dimension === "catalyst") key = entity.dimensions.catalyst || "Unknown";
     else if (dimension === "type") key = entity.type || "Unknown";
     groups[key] ||= [];
     groups[key].push(entity.id);
@@ -127,9 +115,7 @@ export function computeClusters(context, dimension) {
       label,
       entities: entityIds,
       size: entityIds.length,
-      density: context.entities.length
-        ? entityIds.length / context.entities.length
-        : 0,
+      density: context.entities.length ? entityIds.length / context.entities.length : 0,
     }))
     .sort((a, b) => b.size - a.size);
 }
@@ -141,13 +127,7 @@ function buildPipelineState(rawData, fileType, config, options = {}) {
   const profile = buildDataProfile(records, config);
   const entities = buildEntities(records, profile, config);
   const base = buildBaseRelations(entities);
-  const datasetScope = buildDatasetScope(
-    records,
-    profile,
-    entities,
-    base.relations,
-    config,
-  );
+  const datasetScope = buildDatasetScope(records, profile, entities, base.relations, config);
 
   // Phase 3: Mode detection — adapt pipeline depth to data complexity
   const complexity = detectDataComplexity(profile, entities, base.relations);
@@ -155,16 +135,10 @@ function buildPipelineState(rawData, fileType, config, options = {}) {
 
   // Phase 1C + 2: Confidence-tracked multi-pass inference
   const confidenceFrame = createConfidenceFrame();
-  const ruleState = runMultiPassInference(
-    config,
-    datasetScope,
-    entities,
-    base.relations,
-    {
-      maxPasses: modeSettings.passCount,
-      confidenceFrame,
-    },
-  );
+  const ruleState = runMultiPassInference(config, datasetScope, entities, base.relations, {
+    maxPasses: modeSettings.passCount,
+    confidenceFrame,
+  });
   const allEvidences = [...base.evidences, ...ruleState.evidences];
   const evidenceIndex = createEvidenceIndex(allEvidences);
   const contextLenses = summarizeLenses(
@@ -174,12 +148,12 @@ function buildPipelineState(rawData, fileType, config, options = {}) {
   );
 
   const relations = base.relations.map((relation) => {
-    const sourceLens = Object.entries(
-      ruleState.entityLensScores[relation.source] || {},
-    ).sort((a, b) => b[1] - a[1])[0]?.[0];
-    const targetLens = Object.entries(
-      ruleState.entityLensScores[relation.target] || {},
-    ).sort((a, b) => b[1] - a[1])[0]?.[0];
+    const sourceLens = Object.entries(ruleState.entityLensScores[relation.source] || {}).sort(
+      (a, b) => b[1] - a[1],
+    )[0]?.[0];
+    const targetLens = Object.entries(ruleState.entityLensScores[relation.target] || {}).sort(
+      (a, b) => b[1] - a[1],
+    )[0]?.[0];
     if (sourceLens && targetLens && sourceLens !== targetLens) {
       relation.tags ||= [];
       relation.tags.push("cross-domain-bridge");
@@ -217,12 +191,7 @@ function buildPipelineState(rawData, fileType, config, options = {}) {
   const confidenceReport = summarizeConfidence(confidenceFrame);
 
   // Phase 4A: Insight compression — find invariant patterns ranked by density
-  const invariantPatterns = findInvariantPatterns(
-    allEvidences,
-    entities,
-    relations,
-    contextLenses,
-  );
+  const invariantPatterns = findInvariantPatterns(allEvidences, entities, relations, contextLenses);
   const rankedPatterns = rankByDensity(invariantPatterns);
 
   return {
@@ -273,12 +242,7 @@ export function runContextPipeline(rawData, fileType, config, options = {}) {
   return buildPipelineOutput(state, groundedInsights);
 }
 
-export async function runContextPipelineAsync(
-  rawData,
-  fileType,
-  config,
-  options = {},
-) {
+export async function runContextPipelineAsync(rawData, fileType, config, options = {}) {
   const state = buildPipelineState(rawData, fileType, config, options);
   if (!state) return null;
 

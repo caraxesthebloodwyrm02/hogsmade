@@ -1,9 +1,5 @@
-import { useMemo } from 'react';
-import type {
-  CycleSnapshot,
-  MomentumFrame,
-  PromotionGateResult,
-} from '@/components/phase4/types';
+import { useMemo } from "react";
+import type { CycleSnapshot, MomentumFrame, PromotionGateResult } from "@/components/phase4/types";
 
 // ── Shader buffer data shape ────────────────────────────────────────
 
@@ -34,19 +30,26 @@ const FLOATS_PER_VERTEX = 13;
 // WeightBand encoding matching pipeline.ts:116-121
 function encodeBand(band: string | null): number {
   switch (band) {
-    case 'dominant': return 3;
-    case 'elevated': return 2;
-    case 'steady': return 1;
-    default: return 0; // trace
+    case "dominant":
+      return 3;
+    case "elevated":
+      return 2;
+    case "steady":
+      return 1;
+    default:
+      return 0; // trace
   }
 }
 
 // ConditionSeverity encoding matching pipeline.ts:269-325
 function encodeSeverity(severity: string): number {
   switch (severity) {
-    case 'priority': return 2;
-    case 'watch': return 1;
-    default: return 0; // info
+    case "priority":
+      return 2;
+    case "watch":
+      return 1;
+    default:
+      return 0; // info
   }
 }
 
@@ -67,11 +70,16 @@ function stableFraction(seed: string, salt: string): number {
 // CycleBeat → int matching types.ts:190
 function encodeBeat(beat: string): number {
   switch (beat) {
-    case 'map': return 0;
-    case 'balance': return 1;
-    case 'tighten': return 2;
-    case 'verify': return 3;
-    default: return 0;
+    case "map":
+      return 0;
+    case "balance":
+      return 1;
+    case "tighten":
+      return 2;
+    case "verify":
+      return 3;
+    default:
+      return 0;
   }
 }
 
@@ -80,25 +88,25 @@ function encodeBeat(beat: string): number {
 // Each pass's deposit count is normalized to 0-255 for the R channel
 
 const PASS_IDS = [
-  'normalize-runtime-args',
-  'build-attribute-catalog',
-  'derive-analog-weights',
-  'project-vertical-hierarchy',
-  'derive-condition-notes',
-  'derive-observation-notes',
-  'compile-reusable-forms',
-  'emit-collection-table',
+  "normalize-runtime-args",
+  "build-attribute-catalog",
+  "derive-analog-weights",
+  "project-vertical-hierarchy",
+  "derive-condition-notes",
+  "derive-observation-notes",
+  "compile-reusable-forms",
+  "emit-collection-table",
 ];
 
 const DEPOSIT_KEYS: Record<string, string> = {
-  'normalize-runtime-args': 'seed',
-  'build-attribute-catalog': 'attributeCount',
-  'derive-analog-weights': 'weightCount',
-  'project-vertical-hierarchy': 'hierarchyCount',
-  'derive-condition-notes': 'conditionCount',
-  'derive-observation-notes': 'observationCount',
-  'compile-reusable-forms': 'formCount',
-  'emit-collection-table': 'rowCount',
+  "normalize-runtime-args": "seed",
+  "build-attribute-catalog": "attributeCount",
+  "derive-analog-weights": "weightCount",
+  "project-vertical-hierarchy": "hierarchyCount",
+  "derive-condition-notes": "conditionCount",
+  "derive-observation-notes": "observationCount",
+  "compile-reusable-forms": "formCount",
+  "emit-collection-table": "rowCount",
 };
 
 function buildResidueTexture(snapshot: CycleSnapshot): Uint8Array {
@@ -111,8 +119,8 @@ function buildResidueTexture(snapshot: CycleSnapshot): Uint8Array {
   const counts: Record<string, number> = {
     seed: 1, // normalize always produces 1 seed
     attributeCount: 10, // default catalog has 10 attributes
-    weightCount: result.table.rows.filter(r => r.rowType === 'attribute').length || 30,
-    hierarchyCount: result.table.rows.filter(r => r.rowType === 'dimension').length || 18,
+    weightCount: result.table.rows.filter((r) => r.rowType === "attribute").length || 30,
+    hierarchyCount: result.table.rows.filter((r) => r.rowType === "dimension").length || 18,
     conditionCount: snapshot.caseRecord.conditionNotes.length,
     observationCount: snapshot.caseRecord.observationNotes.length,
     formCount: 5, // typically 5 form kinds
@@ -126,10 +134,10 @@ function buildResidueTexture(snapshot: CycleSnapshot): Uint8Array {
     // Normalize: clamp count to 0-50 range, map to 0-255
     const normalized = Math.min(255, Math.round((Math.min(count, 50) / 50) * 255));
     const offset = i * 4;
-    tex[offset] = normalized;     // R: brightness
+    tex[offset] = normalized; // R: brightness
     tex[offset + 1] = normalized; // G
     tex[offset + 2] = Math.round(normalized * 0.7); // B: slightly cooler
-    tex[offset + 3] = 255;       // A: fully opaque
+    tex[offset + 3] = 255; // A: fully opaque
   }
 
   return tex;
@@ -159,11 +167,14 @@ export function useEligibilityPipeline(
 
     // Build dimension score lookup from table rows
     const dimScores = new Map<string, Record<string, number>>();
-    const weightData = new Map<string, { totalRaw: number; count: number; maxBand: string; maxInfluence: number }>();
+    const weightData = new Map<
+      string,
+      { totalRaw: number; count: number; maxBand: string; maxInfluence: number }
+    >();
 
     if (result) {
       for (const row of result.table.rows) {
-        if (row.rowType === 'dimension' && row.dimensionScore !== null) {
+        if (row.rowType === "dimension" && row.dimensionScore !== null) {
           let entry = dimScores.get(row.candidateId);
           if (!entry) {
             entry = {};
@@ -171,17 +182,17 @@ export function useEligibilityPipeline(
           }
           entry[row.dimension] = row.dimensionScore;
         }
-        if (row.rowType === 'attribute' && row.weightRaw !== null) {
+        if (row.rowType === "attribute" && row.weightRaw !== null) {
           let wd = weightData.get(row.candidateId);
           if (!wd) {
-            wd = { totalRaw: 0, count: 0, maxBand: 'trace', maxInfluence: 0.5 };
+            wd = { totalRaw: 0, count: 0, maxBand: "trace", maxInfluence: 0.5 };
             weightData.set(row.candidateId, wd);
           }
           wd.totalRaw += row.weightRaw;
           wd.count += 1;
           const bandVal = encodeBand(row.weightBand);
           if (bandVal > encodeBand(wd.maxBand)) {
-            wd.maxBand = row.weightBand ?? 'trace';
+            wd.maxBand = row.weightBand ?? "trace";
           }
         }
       }
@@ -196,9 +207,7 @@ export function useEligibilityPipeline(
     }
 
     // Promotion status
-    const promotionPassed = promotionGate
-      ? (promotionGate.passed ? 1.0 : -1.0)
-      : 0.0;
+    const promotionPassed = promotionGate ? (promotionGate.passed ? 1.0 : -1.0) : 0.0;
 
     // Seed for FNV noise
     const seed = result?.table.rows[0]?.seed ?? caseRecord.caseId;
@@ -208,10 +217,16 @@ export function useEligibilityPipeline(
       const dims = dimScores.get(cid) ?? {};
       const wd = weightData.get(cid);
 
-      const overallScore = dims['overall'] ?? 0.5;
+      const overallScore = dims["overall"] ?? 0.5;
       // Find dominant dimension (highest score excluding overall)
       let dominantScore = 0;
-      for (const dim of ['governance', 'usability', 'integration', 'observability', 'operational_fit']) {
+      for (const dim of [
+        "governance",
+        "usability",
+        "integration",
+        "observability",
+        "operational_fit",
+      ]) {
         const s = dims[dim] ?? 0;
         if (s > dominantScore) dominantScore = s;
       }
@@ -220,19 +235,19 @@ export function useEligibilityPipeline(
       const noise = stableFraction(seed, cid);
 
       const offset = i * FLOATS_PER_VERTEX;
-      vertices[offset] = overallScore;                          // a_position.x
-      vertices[offset + 1] = dominantScore;                     // a_position.y
-      vertices[offset + 2] = avgWeight;                         // a_weightRaw
+      vertices[offset] = overallScore; // a_position.x
+      vertices[offset + 1] = dominantScore; // a_position.y
+      vertices[offset + 2] = avgWeight; // a_weightRaw
       vertices[offset + 3] = clamp(1.0 + (avgWeight - 0.5) * 0.5, 0.5, 1.5); // a_runtimeInfluence approx
-      vertices[offset + 4] = wd ? encodeBand(wd.maxBand) : 0;  // a_weightBand
+      vertices[offset + 4] = wd ? encodeBand(wd.maxBand) : 0; // a_weightBand
       vertices[offset + 5] = conditionSeverities.get(cid) ?? 0; // a_conditionSeverity
-      vertices[offset + 6] = promotionPassed;                   // a_promotionPassed
-      vertices[offset + 7] = noise;                             // a_fnvNoise
-      vertices[offset + 8] = dims['governance'] ?? 0.5;         // a_dimensionScores.x
-      vertices[offset + 9] = dims['usability'] ?? 0.5;          // a_dimensionScores.y
-      vertices[offset + 10] = dims['integration'] ?? 0.5;       // a_dimensionScores.z
-      vertices[offset + 11] = dims['observability'] ?? 0.5;     // a_dimensionScores.w
-      vertices[offset + 12] = dims['operational_fit'] ?? 0.5;   // a_opFitScore
+      vertices[offset + 6] = promotionPassed; // a_promotionPassed
+      vertices[offset + 7] = noise; // a_fnvNoise
+      vertices[offset + 8] = dims["governance"] ?? 0.5; // a_dimensionScores.x
+      vertices[offset + 9] = dims["usability"] ?? 0.5; // a_dimensionScores.y
+      vertices[offset + 10] = dims["integration"] ?? 0.5; // a_dimensionScores.z
+      vertices[offset + 11] = dims["observability"] ?? 0.5; // a_dimensionScores.w
+      vertices[offset + 12] = dims["operational_fit"] ?? 0.5; // a_opFitScore
     }
 
     const residueTexture = buildResidueTexture(snapshot);
@@ -240,19 +255,19 @@ export function useEligibilityPipeline(
     // Extract args from the case's routine args or default
     const args = caseRecord.latestEligibilityResult
       ? {
-        governance: 1.0,
-        usability: 1.0,
-        integration: 1.0,
-        observability: 1.0,
-        operationalFit: 1.0,
-      }
+          governance: 1.0,
+          usability: 1.0,
+          integration: 1.0,
+          observability: 1.0,
+          operationalFit: 1.0,
+        }
       : {
-        governance: 1.0,
-        usability: 1.0,
-        integration: 1.0,
-        observability: 1.0,
-        operationalFit: 1.0,
-      };
+          governance: 1.0,
+          usability: 1.0,
+          integration: 1.0,
+          observability: 1.0,
+          operationalFit: 1.0,
+        };
 
     return {
       vertices,

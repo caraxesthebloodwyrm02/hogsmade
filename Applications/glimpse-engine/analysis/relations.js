@@ -3,12 +3,7 @@
  * Builds base relations between entities and manages evidence records.
  */
 
-import {
-  bucketYear,
-  findBestEntityMatch,
-  flattenRecord,
-  normalizeName,
-} from "../utils/utils.js";
+import { bucketYear, findBestEntityMatch, flattenRecord, normalizeName } from "../utils/utils.js";
 import { scoreTaxonomy } from "./profiling.js";
 import { computeDimensionSimilarity } from "./similarity.js";
 
@@ -31,17 +26,9 @@ export function buildBaseRelations(entities) {
   const relations = [];
   const evidences = [];
   // Use normalized names as keys for better matching
-  const byName = new Map(
-    entities.map((entity) => [normalizeName(entity.name), entity]),
-  );
+  const byName = new Map(entities.map((entity) => [normalizeName(entity.name), entity]));
 
-  const influenceColumns = [
-    "influenced_by",
-    "inspired_by",
-    "based_on",
-    "derived",
-    "source",
-  ];
+  const influenceColumns = ["influenced_by", "inspired_by", "based_on", "derived", "source"];
   entities.forEach((entity) => {
     const record = entity.properties || {};
     let explicitInfluence = "";
@@ -94,9 +81,7 @@ export function buildBaseRelations(entities) {
 
       // Space similarity (fuzzy)
       if (a.dimensions.space && b.dimensions.space) {
-        const sim = computeDimensionSimilarity(
-          a.dimensions.space, b.dimensions.space, "space"
-        );
+        const sim = computeDimensionSimilarity(a.dimensions.space, b.dimensions.space, "space");
         if (sim.matched || sim.score >= simThreshold) {
           const scaledConfidence = 0.42 + 0.2 * sim.score; // 0.42..0.62
           const evidence = createEvidence({
@@ -125,9 +110,7 @@ export function buildBaseRelations(entities) {
 
       // Temporal similarity (continuous distance, replaces decade-only buckets)
       if (a.dimensions.time != null && b.dimensions.time != null) {
-        const sim = computeDimensionSimilarity(
-          a.dimensions.time, b.dimensions.time, "time"
-        );
+        const sim = computeDimensionSimilarity(a.dimensions.time, b.dimensions.time, "time");
         // Also keep backward compat: decade bucket match always qualifies
         const bucketA = bucketYear(a.dimensions.time);
         const bucketB = bucketYear(b.dimensions.time);
@@ -162,9 +145,7 @@ export function buildBaseRelations(entities) {
 
       // Domain similarity (fuzzy)
       if (a.dimensions.domain && b.dimensions.domain) {
-        const sim = computeDimensionSimilarity(
-          a.dimensions.domain, b.dimensions.domain, "domain"
-        );
+        const sim = computeDimensionSimilarity(a.dimensions.domain, b.dimensions.domain, "domain");
         if (sim.matched || sim.score >= simThreshold) {
           const scaledConfidence = 0.47 + 0.2 * sim.score; // 0.47..0.67
           const evidence = createEvidence({
@@ -205,21 +186,13 @@ export function computeDatasetDomainHits(records, config) {
   return scoreTaxonomy(text, config);
 }
 
-export function buildDatasetScope(
-  records,
-  profile,
-  entities,
-  relations,
-  config,
-) {
+export function buildDatasetScope(records, profile, entities, relations, config) {
   const domainHits = computeDatasetDomainHits(records, config);
   return {
     dataset: {
       record_count: records.length,
       relation_density:
-        entities.length > 1
-          ? relations.length / (entities.length * entities.length)
-          : 0,
+        entities.length > 1 ? relations.length / (entities.length * entities.length) : 0,
       domain_keyword_hits: domainHits,
       flags: {
         has_time_dimension: profile.flags.has_time_dimension,
@@ -228,9 +201,7 @@ export function buildDatasetScope(
         has_text_fields: profile.flags.has_text_fields,
         has_geo_coordinates: profile.flags.has_geo_coordinates,
         has_role_or_mood: profile.flags.has_role_or_mood,
-        has_influence_links: relations.some(
-          (relation) => relation.type === "influenced",
-        ),
+        has_influence_links: relations.some((relation) => relation.type === "influenced"),
       },
       dimension_counts: {
         time: (profile.dimensionMap.time || []).length,
