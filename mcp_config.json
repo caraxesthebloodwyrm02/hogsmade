@@ -32,7 +32,7 @@
       ],
       "env": {
         "CASCADE_WORKSPACE_ROOT": "/home/caraxes/CascadeProjects",
-        "GATE_DIR": "/home/caraxes/CascadeProjects/GATE",
+        "GATE_DIR": "/home/caraxes/CascadeProjects/Projects/GATE",
         "GRID_API_URL": "http://localhost:8080"
       }
     },

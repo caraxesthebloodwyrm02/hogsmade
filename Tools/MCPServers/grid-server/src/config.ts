@@ -1,4 +1,5 @@
 import path from "path";
+import fs from "fs";
 
 function requiredPath(name: string): string {
   const value = process.env[name]?.trim();
@@ -10,10 +11,13 @@ function requiredPath(name: string): string {
 
 export function getConfig() {
   const workspaceRoot = requiredPath("CASCADE_WORKSPACE_ROOT");
-  const gateDir = requiredPath("GATE_DIR");
-  const trustedSourcePartitions = (
-    process.env.GATE_TRUSTED_SOURCE_PARTITIONS || ""
-  )
+  const configuredGateDir = requiredPath("GATE_DIR");
+  const fallbackGateDir = path.join(workspaceRoot, "Projects", "GATE");
+  const gateDir =
+    fs.existsSync(configuredGateDir) || !fs.existsSync(fallbackGateDir)
+      ? configuredGateDir
+      : fallbackGateDir;
+  const trustedSourcePartitions = (process.env.GATE_TRUSTED_SOURCE_PARTITIONS || "")
     .split(",")
     .map((entry) => entry.trim())
     .filter(Boolean);
@@ -27,22 +31,22 @@ export function getConfig() {
     trustedSourcePartitions,
     deploymentTargets: {
       "grid-server": {
-        path: path.join(workspaceRoot, "grid-server"),
+        path: path.join(workspaceRoot, "Tools", "MCPServers", "grid-server"),
         port: 8080,
         permissions: ["deploy", "run_tests", "start_server", "write_results"],
       },
       "afloat-server": {
-        path: path.join(workspaceRoot, "afloat-server"),
+        path: path.join(workspaceRoot, "Tools", "MCPServers", "afloat-server"),
         port: 3000,
         permissions: ["deploy", "start_server"],
       },
       "echoes-server": {
-        path: path.join(workspaceRoot, "echoes-server"),
+        path: path.join(workspaceRoot, "Tools", "MCPServers", "echoes-server"),
         port: 8000,
         permissions: ["deploy", "run_tests", "start_server", "write_results"],
       },
       "lots-server": {
-        path: path.join(workspaceRoot, "lots-server"),
+        path: path.join(workspaceRoot, "Tools", "MCPServers", "lots-server"),
         port: 8001,
         permissions: ["deploy", "run_tests"],
       },
