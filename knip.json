@@ -1,0 +1,22 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "ignore": [
+    "Projects/**",
+    "Documentation/**",
+    "Hogwarts/**",
+    ".cursor/**",
+    ".agents/**",
+    "Applications/glimpse-engine/**"
+  ],
+  "workspaces": {
+    "Components/shared-types": {
+      "ignore": ["examples/**"]
+    },
+    "Tools/MCPServers/afloat-server": {
+      "entry": ["src/server.ts", "scripts/run_scheduled_diagnostics.ts"]
+    },
+    "Tools/MCPServers/eligibility-server": {
+      "ignore": ["examples/**"]
+    }
+  }
+}
