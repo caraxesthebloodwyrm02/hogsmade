@@ -1,0 +1,22 @@
+# Dependencies & build
+**/node_modules/
+**/dist/
+**/build/
+**/coverage/
+**/.vite/
+**/.turbo/
+
+# Locks & bundles
+package-lock.json
+**/*.lock
+**/*.min.js
+**/*.min.css
+
+# Submodule — analyzed/formatted in GRID repo
+Projects/GRID-main/
+
+# Generated / vendor
+**/*.generated.*
+
+# Read-only / restricted in this environment (optional local audits)
+Documentation/docs/audits/non-glimpse-mcp-security-report-2026-03-21.md

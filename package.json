@@ -24,6 +24,9 @@
     "Applications/glimpse-engine"
   ],
   "scripts": {
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "knip": "node Components/scripts/run-knip-workspaces.mjs",
     "lint:all": "npm run --workspaces lint",
     "build:all": "npm run --workspaces build",
     "test:all": "npm run --workspaces test",
@@ -34,6 +37,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
+    "prettier": "^3.5.3",
     "typescript": "~5.9.3"
   },
   "engines": {
