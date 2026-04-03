@@ -1,6 +1,6 @@
 {
   "_README": "Claude Code MCP config — merge this into ~/.claude.json under the 'mcpServers' key",
-  "_updated": "2026-03-21",
+  "_updated": "2026-04-04",
   "_note": "Claude Code supports 'cwd' unlike Windsurf, so Python servers use relative args + cwd. All TS servers use npx tsx with absolute paths.",
   "mcpServers": {
     "echoes-server": {
@@ -8,7 +8,7 @@
       "args": [
         "-y",
         "tsx",
-        "/home/caraxes/CascadeProjects/echoes-server/src/server.ts"
+        "/home/caraxes/CascadeProjects/Tools/MCPServers/echoes-server/src/server.ts"
       ],
       "env": {
         "ECHOES_AUDIT_PATH": "/home/caraxes/.echoes/audit.ndjson"
@@ -19,11 +19,11 @@
       "args": [
         "-y",
         "tsx",
-        "/home/caraxes/CascadeProjects/grid-server/src/server.ts"
+        "/home/caraxes/CascadeProjects/Tools/MCPServers/grid-server/src/server.ts"
       ],
       "env": {
         "CASCADE_WORKSPACE_ROOT": "/home/caraxes/CascadeProjects",
-        "GATE_DIR": "/home/caraxes/CascadeProjects/GATE",
+        "GATE_DIR": "/home/caraxes/CascadeProjects/Projects/GATE",
         "GRID_API_URL": "http://localhost:8080"
       }
     },
@@ -32,7 +32,7 @@
       "args": [
         "-y",
         "tsx",
-        "/home/caraxes/CascadeProjects/afloat-server/src/server.ts"
+        "/home/caraxes/CascadeProjects/Tools/MCPServers/afloat-server/src/server.ts"
       ],
       "env": {}
     },
@@ -41,7 +41,7 @@
       "args": [
         "-y",
         "tsx",
-        "/home/caraxes/CascadeProjects/lots-server/src/server.ts"
+        "/home/caraxes/CascadeProjects/Tools/MCPServers/lots-server/src/server.ts"
       ],
       "env": {
         "LOTS_EXPERIMENTS_DIR": "/home/caraxes/CascadeProjects/experiments",
@@ -53,11 +53,11 @@
       "args": [
         "-y",
         "tsx",
-        "/home/caraxes/CascadeProjects/seeds-server/src/server.ts"
+        "/home/caraxes/CascadeProjects/Tools/MCPServers/seeds-server/src/server.ts"
       ],
       "env": {
         "SEEDS_ROOT": "/home/caraxes/CascadeProjects",
-        "SEEDS_ROOTS": "/home/caraxes/CascadeProjects,/home/caraxes/canopy,/home/caraxes/grove"
+        "SEEDS_ROOTS": "/home/caraxes/CascadeProjects"
       }
     },
     "pulse-server": {
@@ -65,15 +65,13 @@
       "args": [
         "-y",
         "tsx",
-        "/home/caraxes/CascadeProjects/pulse-server/src/server.ts"
+        "/home/caraxes/CascadeProjects/Tools/MCPServers/pulse-server/src/server.ts"
       ],
       "env": {}
     },
     "grid-rag": {
       "command": "/home/caraxes/CascadeProjects/Projects/GRID-main/.venv/bin/python",
-      "args": [
-        "mcp-setup/server/rag_mcp_server.py"
-      ],
+      "args": ["mcp-setup/server/rag_mcp_server.py"],
       "cwd": "/home/caraxes/CascadeProjects/Projects/GRID-main",
       "env": {
         "PYTHONPATH": "/home/caraxes/CascadeProjects/Projects/GRID-main/src:/home/caraxes/CascadeProjects/Projects/GRID-main",
@@ -91,7 +89,7 @@
       "args": [
         "-y",
         "tsx",
-        "/home/caraxes/CascadeProjects/maintain-server/src/server.ts"
+        "/home/caraxes/CascadeProjects/Tools/MCPServers/maintain-server/src/server.ts"
       ],
       "env": {
         "CASCADE_WORKSPACE_ROOT": "/home/caraxes/CascadeProjects",
@@ -104,13 +102,13 @@
       "args": [
         "-y",
         "tsx",
-        "/home/caraxes/CascadeProjects/overview-server/src/server.ts"
+        "/home/caraxes/CascadeProjects/Tools/MCPServers/overview-server/src/server.ts"
       ],
       "env": {
         "CASCADE_WORKSPACE_ROOT": "/home/caraxes/CascadeProjects",
         "SEEDS_ROOT": "/home/caraxes/CascadeProjects",
         "ECHOES_AUDIT_PATH": "/home/caraxes/.echoes/audit.ndjson",
-        "GATE_DIR": "/home/caraxes/CascadeProjects/GATE"
+        "GATE_DIR": "/home/caraxes/CascadeProjects/Projects/GATE"
       }
     },
     "mangrove-server": {
@@ -118,7 +116,7 @@
       "args": [
         "-y",
         "tsx",
-        "/home/caraxes/CascadeProjects/mangrove-server/src/server.ts"
+        "/home/caraxes/CascadeProjects/Tools/MCPServers/mangrove-server/src/server.ts"
       ],
       "env": {
         "MANGROVE_DIO_ROOT": "/home/caraxes/CascadeProjects/DIO"
@@ -129,16 +127,13 @@
       "args": [
         "-y",
         "tsx",
-        "/home/caraxes/CascadeProjects/glimpse-server/src/server.ts"
+        "/home/caraxes/CascadeProjects/Tools/MCPServers/glimpse-server/src/server.ts"
       ],
       "env": {}
     },
     "grid-intelligence": {
       "command": "/home/caraxes/CascadeProjects/Projects/GRID-main/.venv/bin/python",
-      "args": [
-        "-m",
-        "grid.mcp.intelligence_server"
-      ],
+      "args": ["-m", "grid.mcp.intelligence_server"],
       "cwd": "/home/caraxes/CascadeProjects/Projects/GRID-main",
       "env": {
         "PYTHONPATH": "/home/caraxes/CascadeProjects/Projects/GRID-main/src:/home/caraxes/CascadeProjects/Projects/GRID-main"
@@ -149,7 +144,7 @@
       "args": [
         "-y",
         "tsx",
-        "/home/caraxes/CascadeProjects/eligibility-server/src/server.ts"
+        "/home/caraxes/CascadeProjects/Tools/MCPServers/eligibility-server/src/server.ts"
       ],
       "env": {
         "ECHOES_AUDIT_PATH": "/home/caraxes/.echoes/audit.ndjson",
@@ -158,9 +153,7 @@
     },
     "grid-enhanced-tools": {
       "command": "/home/caraxes/CascadeProjects/Projects/GRID-main/.venv/bin/python",
-      "args": [
-        "mcp-setup/server/enhanced_tools_mcp_server.py"
-      ],
+      "args": ["mcp-setup/server/enhanced_tools_mcp_server.py"],
       "cwd": "/home/caraxes/CascadeProjects/Projects/GRID-main",
       "env": {
         "PYTHONPATH": "/home/caraxes/CascadeProjects/Projects/GRID-main/src:/home/caraxes/CascadeProjects/Projects/GRID-main"
@@ -168,9 +161,7 @@
     },
     "code-analysis": {
       "command": "/home/caraxes/CascadeProjects/Projects/GRID-main/.venv/bin/python",
-      "args": [
-        "mcp-setup/server/code_analysis_mcp_server.py"
-      ],
+      "args": ["mcp-setup/server/code_analysis_mcp_server.py"],
       "cwd": "/home/caraxes/CascadeProjects/Projects/GRID-main",
       "env": {
         "PYTHONPATH": "/home/caraxes/CascadeProjects/Projects/GRID-main/src:/home/caraxes/CascadeProjects/Projects/GRID-main",
@@ -179,9 +170,7 @@
     },
     "test-runner": {
       "command": "/home/caraxes/CascadeProjects/Projects/GRID-main/.venv/bin/python",
-      "args": [
-        "mcp-setup/server/test_runner_mcp_server.py"
-      ],
+      "args": ["mcp-setup/server/test_runner_mcp_server.py"],
       "cwd": "/home/caraxes/CascadeProjects/Projects/GRID-main",
       "env": {
         "PYTHONPATH": "/home/caraxes/CascadeProjects/Projects/GRID-main/src:/home/caraxes/CascadeProjects/Projects/GRID-main",
@@ -190,9 +179,7 @@
     },
     "portfolio-safety-lens": {
       "command": "/home/caraxes/CascadeProjects/Projects/GRID-main/.venv/bin/python",
-      "args": [
-        "mcp-setup/server/portfolio_safety_mcp_server.py"
-      ],
+      "args": ["mcp-setup/server/portfolio_safety_mcp_server.py"],
       "cwd": "/home/caraxes/CascadeProjects/Projects/GRID-main",
       "env": {
         "PYTHONPATH": "/home/caraxes/CascadeProjects/Projects/GRID-main/src:/home/caraxes/CascadeProjects/Projects/GRID-main:/home/caraxes/seed/archive/Coinbase_from_zip"

@@ -44,7 +44,7 @@ const KNOWN_REPOS: Record<string, { description: string; stack: string; path?: s
   GRID: {
     description: "Full-stack AI framework",
     stack: "Python 3.13+, FastAPI, ChromaDB",
-    path: "/home/caraxes/roots/GRID",
+    path: "/home/caraxes/CascadeProjects/Projects/GRID-main",
   },
   afloat: {
     description: "Next.js workflow app",
@@ -64,9 +64,15 @@ const KNOWN_REPOS: Record<string, { description: string; stack: string; path?: s
   apiguard: {
     description: "API security gateway",
     stack: "Python 3.13+",
+    // Legacy external repo: retained until a canonical in-workspace path exists.
     path: "/home/caraxes/roots/apiguard",
   },
-  Vision: { description: "AI vision project", stack: "Python", path: "/home/caraxes/grove/Vision" },
+  Vision: {
+    description: "AI vision project",
+    stack: "Python",
+    // Legacy external repo: retained until a canonical in-workspace path exists.
+    path: "/home/caraxes/grove/Vision",
+  },
   hogsmade: {
     description: "MCP server monorepo",
     stack: "TypeScript, Node.js",

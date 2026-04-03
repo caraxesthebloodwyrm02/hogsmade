@@ -1,7 +1,7 @@
 {
   "_README": "Canonical MCP config — single source of truth for all editors",
   "_inventory": "mcp_inventory.manifest.json — bootstrap types and excluded servers; run scripts/verify_mcp_inventory.py",
-  "_updated": "2026-03-24",
+  "_updated": "2026-04-04",
   "_usage": {
     "windsurf": "Configured at ~/.codeium/windsurf/windsurf/mcp_config.json (absolutized Python paths, no cwd)",
     "windsurf-next": "Configured at ~/.codeium/windsurf-next/mcp_config.json (same format as windsurf)",
@@ -66,7 +66,7 @@
       ],
       "env": {
         "SEEDS_ROOT": "/home/caraxes/CascadeProjects",
-        "SEEDS_ROOTS": "/home/caraxes/CascadeProjects,/home/caraxes/canopy,/home/caraxes/grove"
+        "SEEDS_ROOTS": "/home/caraxes/CascadeProjects"
       }
     },
     "pulse-server": {
@@ -82,9 +82,7 @@
     },
     "grid-rag": {
       "command": "/home/caraxes/CascadeProjects/Projects/GRID-main/.venv/bin/python",
-      "args": [
-        "mcp-setup/server/rag_mcp_server.py"
-      ],
+      "args": ["mcp-setup/server/rag_mcp_server.py"],
       "env": {
         "PYTHONPATH": "/home/caraxes/CascadeProjects/Projects/GRID-main/src:/home/caraxes/CascadeProjects/Projects/GRID-main",
         "OLLAMA_BASE_URL": "http://localhost:11434"
@@ -92,27 +90,21 @@
     },
     "grid-enhanced-tools": {
       "command": "/home/caraxes/CascadeProjects/Projects/GRID-main/.venv/bin/python",
-      "args": [
-        "mcp-setup/server/enhanced_tools_mcp_server.py"
-      ],
+      "args": ["mcp-setup/server/enhanced_tools_mcp_server.py"],
       "env": {
         "PYTHONPATH": "/home/caraxes/CascadeProjects/Projects/GRID-main/src:/home/caraxes/CascadeProjects/Projects/GRID-main"
       }
     },
     "portfolio-safety-lens": {
       "command": "/home/caraxes/CascadeProjects/Projects/GRID-main/.venv/bin/python",
-      "args": [
-        "mcp-setup/server/portfolio_safety_mcp_server.py"
-      ],
+      "args": ["mcp-setup/server/portfolio_safety_mcp_server.py"],
       "env": {
         "PYTHONPATH": "/home/caraxes/CascadeProjects/Projects/GRID-main/src:/home/caraxes/CascadeProjects/Projects/GRID-main:/home/caraxes/seed/archive/Coinbase_from_zip"
       }
     },
     "code-analysis": {
       "command": "/home/caraxes/CascadeProjects/Projects/GRID-main/.venv/bin/python",
-      "args": [
-        "mcp-setup/server/code_analysis_mcp_server.py"
-      ],
+      "args": ["mcp-setup/server/code_analysis_mcp_server.py"],
       "env": {
         "PYTHONPATH": "/home/caraxes/CascadeProjects/Projects/GRID-main/src:/home/caraxes/CascadeProjects/Projects/GRID-main",
         "EXTRA_ALLOWED_ROOTS": "/home/caraxes/CascadeProjects"
@@ -120,9 +112,7 @@
     },
     "test-runner": {
       "command": "/home/caraxes/CascadeProjects/Projects/GRID-main/.venv/bin/python",
-      "args": [
-        "mcp-setup/server/test_runner_mcp_server.py"
-      ],
+      "args": ["mcp-setup/server/test_runner_mcp_server.py"],
       "env": {
         "PYTHONPATH": "/home/caraxes/CascadeProjects/Projects/GRID-main/src:/home/caraxes/CascadeProjects/Projects/GRID-main",
         "EXTRA_ALLOWED_ROOTS": "/home/caraxes/CascadeProjects"
@@ -152,7 +142,7 @@
         "CASCADE_WORKSPACE_ROOT": "/home/caraxes/CascadeProjects",
         "SEEDS_ROOT": "/home/caraxes/CascadeProjects",
         "ECHOES_AUDIT_PATH": "/home/caraxes/.echoes/audit.ndjson",
-        "GATE_DIR": "/home/caraxes/CascadeProjects/GATE"
+        "GATE_DIR": "/home/caraxes/CascadeProjects/Projects/GATE"
       }
     },
     "mangrove-server": {
@@ -177,10 +167,7 @@
     },
     "grid-intelligence": {
       "command": "/home/caraxes/CascadeProjects/Projects/GRID-main/.venv/bin/python",
-      "args": [
-        "-m",
-        "grid.mcp.intelligence_server"
-      ],
+      "args": ["-m", "grid.mcp.intelligence_server"],
       "env": {
         "PYTHONPATH": "/home/caraxes/CascadeProjects/Projects/GRID-main/src:/home/caraxes/CascadeProjects/Projects/GRID-main"
       }

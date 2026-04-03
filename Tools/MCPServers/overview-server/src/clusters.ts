@@ -21,7 +21,7 @@ export const CLUSTER_DEFINITIONS: ClusterDef[] = [
     label: "GRID Family",
     description: "Core AI framework and its dependent servers",
     entities: [
-      { name: "GRID", type: "repo", path: "/home/caraxes/roots/GRID" },
+      { name: "GRID", type: "repo", path: "/home/caraxes/CascadeProjects/Projects/GRID-main" },
       { name: "grid-server", type: "mcp-server", auditSource: "grid-server" },
       { name: "grid-rag", type: "mcp-server", auditSource: null },
       { name: "grid-rag-enhanced", type: "mcp-server", auditSource: null },
@@ -42,8 +42,12 @@ export const CLUSTER_DEFINITIONS: ClusterDef[] = [
     description: "Shared libraries and observability servers",
     entities: [
       { name: "hogsmade", type: "repo", path: "/home/caraxes/CascadeProjects" },
-      { name: "shared-types", type: "repo", path: "/home/caraxes/CascadeProjects/shared-types" },
-      { name: "shared-resilience", type: "repo", path: "/home/caraxes/CascadeProjects/shared-resilience" },
+      { name: "shared-types", type: "repo", path: "/home/caraxes/CascadeProjects/Components/shared-types" },
+      {
+        name: "shared-resilience",
+        type: "repo",
+        path: "/home/caraxes/CascadeProjects/Components/shared-resilience",
+      },
       { name: "echoes-server", type: "mcp-server", auditSource: "echoes-server" },
       { name: "seeds-server", type: "mcp-server", auditSource: "seeds-server" },
       { name: "pulse-server", type: "mcp-server", auditSource: "pulse-server" },
@@ -64,8 +68,8 @@ export const CLUSTER_DEFINITIONS: ClusterDef[] = [
     label: "Canopy Applications",
     description: "Standalone applications",
     entities: [
-      { name: "afloat", type: "repo", path: "/home/caraxes/canopy/afloat" },
-      { name: "echoes", type: "repo", path: "/home/caraxes/canopy/echoes" },
+      { name: "afloat", type: "repo", path: "/home/caraxes/CascadeProjects/Tools/MCPServers/afloat-server" },
+      { name: "echoes", type: "repo", path: "/home/caraxes/CascadeProjects/Tools/MCPServers/echoes-server" },
       { name: "afloat-server", type: "mcp-server", auditSource: "afloat-server" },
     ],
     dependencyEdges: [
@@ -77,8 +81,12 @@ export const CLUSTER_DEFINITIONS: ClusterDef[] = [
     label: "Glimpse Family",
     description: "Cognitive rendering engine and artifacts",
     entities: [
-      { name: "glimpse-engine", type: "repo", path: "/home/caraxes/roots/glimpse-engine" },
-      { name: "glimpse-artifact", type: "repo", path: "/home/caraxes/CascadeProjects/glimpse-artifact" },
+      { name: "glimpse-engine", type: "repo", path: "/home/caraxes/CascadeProjects/Applications/glimpse-engine" },
+      {
+        name: "glimpse-artifact",
+        type: "repo",
+        path: "/home/caraxes/CascadeProjects/Applications/glimpse-artifact",
+      },
       { name: "glimpse-server", type: "mcp-server", auditSource: null },
     ],
     dependencyEdges: [
@@ -91,8 +99,8 @@ export const CLUSTER_DEFINITIONS: ClusterDef[] = [
     label: "Deployment Pipeline",
     description: "GATE verification, CI/CD, governance",
     entities: [
-      { name: "GATE", type: "data-store", path: "/home/caraxes/CascadeProjects/GATE" },
-      { name: "apiguard", type: "repo", path: "/home/caraxes/roots/apiguard" },
+      { name: "GATE", type: "data-store", path: "/home/caraxes/CascadeProjects/Projects/GATE" },
+      { name: "apiguard", type: "repo", path: "/home/caraxes/roots/apiguard" }, // legacy external root
     ],
     dependencyEdges: [],
   },
@@ -101,8 +109,8 @@ export const CLUSTER_DEFINITIONS: ClusterDef[] = [
     label: "Seed & Archive",
     description: "Templates, archive, and secondary repos",
     entities: [
-      { name: "seed", type: "repo", path: "/home/caraxes/seed" },
-      { name: "Vision", type: "repo", path: "/home/caraxes/grove/Vision" },
+      { name: "seed", type: "repo", path: "/home/caraxes/seed" }, // legacy external root
+      { name: "Vision", type: "repo", path: "/home/caraxes/grove/Vision" }, // legacy external root
     ],
     dependencyEdges: [],
   },
