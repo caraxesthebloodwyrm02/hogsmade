@@ -2,7 +2,7 @@ name: Root TypeScript CI
 
 on:
   pull_request:
-    paths:
+    paths: &root-ts-ci-paths
       - ".github/workflows/root-typescript-ci.yml"
       - "Components/shared-types/**"
       - "Components/shared-resilience/**"
@@ -26,6 +26,10 @@ on:
       - "sample-innovations.json"
       - "sample-scenario.json"
       - "sample-cross-context-demo.json"
+  push:
+    branches:
+      - hogsmade
+    paths: *root-ts-ci-paths
   workflow_dispatch:
 
 permissions:
