@@ -1,18 +1,15 @@
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-
 import tsParser from "@typescript-eslint/parser";
 import tsPlugin from "@typescript-eslint/eslint-plugin";
 import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
 
-const rootDir = path.dirname(fileURLToPath(import.meta.url));
-
 export default [
   {
+    name: "global-ignores",
     ignores: ["dist/**", "node_modules/**"],
   },
   {
+    name: "typescript-react",
     files: ["src/**/*.{ts,tsx}", "vite.config.ts"],
     languageOptions: {
       ecmaVersion: "latest",
