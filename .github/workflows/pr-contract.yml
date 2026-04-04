@@ -10,6 +10,7 @@ permissions:
 jobs:
   validate:
     name: pr-contract
+    if: github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
     steps:
       - name: Validate required PR sections
