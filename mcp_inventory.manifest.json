@@ -73,6 +73,13 @@
       "gridPythonScript": "mcp-setup/server/grid_rag_mcp_server.py"
     },
     {
+      "mcpServerKey": "grid-rag-enhanced",
+      "runtime": "python",
+      "bootstrapType": "mcp_sdk_stdio_python",
+      "pythonModule": "grid.mcp.enhanced_rag_server",
+      "gridPythonScript": null
+    },
+    {
       "mcpServerKey": "grid-enhanced-tools",
       "runtime": "python",
       "bootstrapType": "mcp_sdk_stdio_python",
