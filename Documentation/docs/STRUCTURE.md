@@ -18,7 +18,7 @@ This is the single map for where things live in the current CascadeProjects layo
 | Applications | `Applications/` | Apps, engines, and product-facing work. |
 | MCP servers | `Tools/MCPServers/` | First-party TypeScript MCP servers. |
 | Shared packages | `Components/` | Current location for shared packages and helpers. |
-| Reserved | `Shared/` | Present but currently empty. |
+| Governance | `Hogwarts/` | Board UI, houses, arena, governors. |
 
 ## Projects
 

@@ -30,8 +30,7 @@ This file provides guidance to Claude when working in `/home/caraxes/CascadeProj
 | GATE | `Projects/GATE` - envelopes, contracts, and runtime data |
 | CascadeProjects | `/home/caraxes/CascadeProjects` |
 | Components | `Components/` - current shared package location |
-| Shared | Reserved workspace namespace; currently empty |
-| mcp-tool-experiment | Historical reference only; no active checkout in this tree |
+| Hogwarts | `Hogwarts/` - governance simulation and board UI |
 
 ### Active Workspace Areas
 
@@ -68,7 +67,7 @@ This is a multi-project workspace. The current layout is namespaced rather than 
 | `Projects/` | Operational projects | `GRID-main`, `DIO`, `GATE`, `projects/viz` |
 | `Components/` | Shared packages | `shared-types`, `shared-resilience`, `shared-pipeline` |
 | `Documentation/` | Shared docs and audits | Workspace guides, audits, and conventions |
-| `Shared/` | Reserved namespace | Present but currently empty |
+| `Hogwarts/` | Governance sim | Board UI, houses, arena, governors |
 
 ## Per-Project Guidance
 

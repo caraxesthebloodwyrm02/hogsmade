@@ -7,7 +7,7 @@ CascadeProjects is a multi-project local workspace. The current layout is namesp
 - `Projects/` for operational projects such as `GRID-main`, `DIO`, and `GATE`
 - `Documentation/` for shared docs and audits
 - `Components/` for shared package code currently in this tree
-- `Shared/` exists as a workspace container, but it is currently empty
+- `Hogwarts/` for the governance simulation and board UI
 
 - **Where things live**: [Documentation/docs/STRUCTURE.md](Documentation/docs/STRUCTURE.md) - directory map, attention taxonomy, and ownership.
 - **AI / agents**: See [CLAUDE.md](CLAUDE.md) and [AGENTS.md](AGENTS.md) for workspace guidance, project commands, and coding rules.
@@ -17,7 +17,19 @@ CascadeProjects is a multi-project local workspace. The current layout is namesp
 
 ## Workspace Overview
 
-This root repo is the dedicated local repository for the workspace. It tracks shared docs, scripts, the first-party servers, and the namespaced projects in this tree. `Projects/GRID-main` is a nested repository; current references to `mcp-tool-experiment` are historical and should not be treated as an active checkout in this tree.
+This root repo is the dedicated local repository for the workspace. It tracks shared docs, scripts, the first-party servers, and the namespaced projects in this tree. `Projects/GRID-main` is a git submodule pointing to the [GRID-INTELLIGENCE/GRID](https://github.com/GRID-INTELLIGENCE/GRID) repository.
+
+### Key Versions (April 2026)
+
+| Component | Version | Notes |
+|-----------|---------|-------|
+| GRID (Python) | 2.8.0 | `Projects/GRID-main` submodule |
+| TypeScript | ~6.0.2 | All TS packages + GRID frontend |
+| Node.js | 22 | CI and local |
+| Python | 3.13 | All Python projects |
+| MCP SDK | ^1.28.0 | TypeScript MCP servers |
+
+No packages are published to npm (monorepo is private). See [Documentation/docs/NPM_RELEASE_STRATEGY.md](Documentation/docs/NPM_RELEASE_STRATEGY.md).
 
 ## Projects
 
@@ -55,21 +67,19 @@ This root repo is the dedicated local repository for the workspace. It tracks sh
 | `GATE` | Operational store | `Projects/GATE/` | Envelopes, contracts, results, nonce registry |
 | `pi-mangrove` | Workspace package | `Applications/pi-mangrove/` | Skills, prompts, extensions for pi agent |
 | `projects/viz` | Standalone workspace | `Projects/projects/viz/` | Visualizations and research experiments |
+| `Hogwarts` | Governance sim | `Hogwarts/` | Board UI, houses, arena, governors |
 
 ### Nested Repos
 
 | Project | Managed in | Notes |
 | --- | --- | --- |
-| `GRID-main` | Its own git root | Python, FastAPI, uv; managed as a nested repository under `Projects/` |
+| `GRID-main` | Git submodule | Python 3.13, FastAPI, uv; points to [GRID-INTELLIGENCE/GRID](https://github.com/GRID-INTELLIGENCE/GRID) |
 
 ### Workspace Infrastructure
 
 | Project | Type | Location | Notes |
 | --- | --- | --- | --- |
-| `Documentation` | Docs | `Documentation/` | Shared documentation and audits |
-| `scripts` | Workspace scripts | `scripts/` | CI, benchmarking, utility scripts |
-| `tests` | Root tests | `tests/` | Cross-project integration tests |
-| `experiments` | Experiments | `experiments/` | Experimental work and prototypes |
-| `Shared` | Workspace container | `Shared/` | Reserved namespace; currently empty |
+| `Documentation` | Docs | `Documentation/` | Shared documentation, audits, and archive |
+| `experiments` | Experiments | `experiments/` | Lots-server experiment catalog |
 
 Use each project's README plus [CLAUDE.md](CLAUDE.md) and [AGENTS.md](AGENTS.md) for build, test, and run instructions.
