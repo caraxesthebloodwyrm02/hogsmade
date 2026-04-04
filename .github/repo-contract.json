@@ -8,19 +8,19 @@
     "tier0Globs": ["docs/**", "**/*.md"],
     "tier2Globs": [
       ".github/workflows/**",
-      "GATE/**",
+      "Projects/GATE/**",
       "mcp_config.json",
       "claude_code_config.json",
       "SECURITY.md",
       ".trufflehog.yml",
-      "GRID-main/**"
+      "Projects/GRID-main/**"
     ]
   },
   "trustedCommands": [
     {
       "name": "full-check",
       "workingDirectory": ".",
-      "commands": ["bash scripts/run_repo_contract_checks.sh"]
+      "commands": ["bash Components/scripts/run_repo_contract_checks.sh"]
     }
   ]
 }

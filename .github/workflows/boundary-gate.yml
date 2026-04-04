@@ -73,7 +73,7 @@ jobs:
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
-          python Components/scripts/boundary_review.py
+          python3 Components/scripts/boundary_review.py
 
       - name: Post PR review
         if: always()
@@ -104,7 +104,7 @@ jobs:
 
       - name: Fail if blocking findings exist
         run: |
-          python -c "
+          python3 -c "
           import json, sys
           r = json.load(open('review_output.json'))
           if r.get('blocking'):

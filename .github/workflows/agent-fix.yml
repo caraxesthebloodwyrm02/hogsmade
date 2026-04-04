@@ -63,7 +63,7 @@ jobs:
 
       - name: Run trusted repo checks
         if: steps.guard.outputs.eligible == 'true'
-        run: bash scripts/run_repo_contract_checks.sh
+        run: bash Components/scripts/run_repo_contract_checks.sh
 
       - name: Commit and push changes
         if: steps.guard.outputs.eligible == 'true'
