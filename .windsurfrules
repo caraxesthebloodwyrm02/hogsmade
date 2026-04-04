@@ -14,12 +14,13 @@ This file is the Windsurf adapter for the shared Mangrove development rules. If 
 
 ## Workspace
 
-This is a multi-project monorepo. Key projects:
-- `shared-types/` — build first (`npm install && npm run build`)
-- MCP servers: afloat-server, echoes-server, grid-server, lots-server, maintain-server, pulse-server, seeds-server
-- `GRID-main/` — git submodule → `roots/GRID` (Python, `uv sync`)
-- `mcp-tool-experiment/` — pnpm workspace
-- `glimpse-artifact/` — React component library
+This is a namespaced multi-project monorepo. Key areas:
+- `Components/shared-types/` — build first (`npm install && npm run build`)
+- `Components/shared-resilience/` — build after shared-types
+- `Tools/MCPServers/` — 11 TypeScript MCP servers (afloat, echoes, eligibility, glimpse, grid, lots, maintain, mangrove, overview, pulse, seeds)
+- `Projects/GRID-main/` — git submodule → GRID-INTELLIGENCE/GRID (Python, `uv sync`)
+- `Applications/glimpse-artifact/` — React component library
+- `Applications/glimpse-engine/` — Browser visualization engine
 
 ## Standards
 
@@ -29,11 +30,11 @@ This is a multi-project monorepo. Key projects:
 - **Trailing whitespace**: trim on save
 - **Final newline**: insert on save
 - **Commits**: conventional — `feat(scope):`, `fix(scope):`, `test(scope):`
-- **Package managers**: npm (MCP servers), pnpm (mcp-tool-experiment), uv (GRID/Python)
+- **Package managers**: npm (Components + MCP servers), uv (GRID/Python)
 
 ## MCP Servers
 
-15 servers defined in `mcp_config.json` (8 TypeScript MCP servers + 7 Python GRID servers). Python servers use GRID venv at `/home/caraxes/roots/GRID/.venv/bin/python`.
+18 servers defined in `mcp_config.json` (11 TypeScript + 7 Python GRID servers). Python servers use GRID venv at `/home/caraxes/CascadeProjects/Projects/GRID-main/.venv/bin/python`.
 
 ## OS Guardrails Adapter
 
