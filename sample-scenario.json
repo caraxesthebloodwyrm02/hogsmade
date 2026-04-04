@@ -1,0 +1,62 @@
+[
+  {
+    "character": "Amara",
+    "role": "protagonist",
+    "location": "Old Dhaka",
+    "object": "ceramic lantern",
+    "event": "the blackout",
+    "mood": "determined",
+    "tension": 8,
+    "connections": 5
+  },
+  {
+    "character": "Rahim",
+    "role": "mentor",
+    "location": "University Library",
+    "object": "leather journal",
+    "event": "the discovery",
+    "mood": "cryptic",
+    "tension": 4,
+    "connections": 7
+  },
+  {
+    "character": "Nadia",
+    "role": "ally",
+    "location": "Rooftop Garden",
+    "object": "shortwave radio",
+    "event": "the signal",
+    "mood": "anxious",
+    "tension": 6,
+    "connections": 3
+  },
+  {
+    "character": "Karim",
+    "role": "antagonist",
+    "location": "Warehouse District",
+    "object": "forged document",
+    "event": "the confrontation",
+    "mood": "calculating",
+    "tension": 9,
+    "connections": 4
+  },
+  {
+    "character": "Fatima",
+    "role": "witness",
+    "location": "Old Dhaka",
+    "object": "photograph",
+    "event": "the revelation",
+    "mood": "haunted",
+    "tension": 7,
+    "connections": 2
+  },
+  {
+    "character": "Tariq",
+    "role": "informant",
+    "location": "River Terminal",
+    "object": "encrypted drive",
+    "event": "the exchange",
+    "mood": "nervous",
+    "tension": 5,
+    "connections": 6
+  }
+]

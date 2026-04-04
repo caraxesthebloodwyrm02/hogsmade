@@ -65,7 +65,7 @@ async function checkNotebookReadiness() {
 }
 
 async function loadConfig() {
-  const yamlPath = resolve(ROOT, "glimpse.master.yaml");
+  const yamlPath = resolve(ROOT, "Applications/glimpse-engine/glimpse.master.yaml");
   const yamlText = await readFile(yamlPath, "utf8");
   return {
     yamlPath,
