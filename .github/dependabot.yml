@@ -22,7 +22,7 @@ updates:
           - "patch"
 
   - package-ecosystem: "npm"
-    directory: "/shared-types"
+    directory: "/Components/shared-types"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5
@@ -34,7 +34,7 @@ updates:
       prefix: "deps(npm)"
       include: "scope"
     groups:
-      mcp-and-artifacts:
+      shared-types:
         patterns:
           - "*"
         update-types:
@@ -42,7 +42,7 @@ updates:
           - "patch"
 
   - package-ecosystem: "npm"
-    directory: "/afloat-server"
+    directory: "/Components/shared-resilience"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5
@@ -54,7 +54,7 @@ updates:
       prefix: "deps(npm)"
       include: "scope"
     groups:
-      mcp-and-artifacts:
+      shared-resilience:
         patterns:
           - "*"
         update-types:
@@ -62,7 +62,7 @@ updates:
           - "patch"
 
   - package-ecosystem: "npm"
-    directory: "/echoes-server"
+    directory: "/Components/shared-pipeline"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5
@@ -74,7 +74,7 @@ updates:
       prefix: "deps(npm)"
       include: "scope"
     groups:
-      mcp-and-artifacts:
+      shared-pipeline:
         patterns:
           - "*"
         update-types:
@@ -82,7 +82,7 @@ updates:
           - "patch"
 
   - package-ecosystem: "npm"
-    directory: "/grid-server"
+    directory: "/Tools/MCPServers/afloat-server"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5
@@ -94,7 +94,7 @@ updates:
       prefix: "deps(npm)"
       include: "scope"
     groups:
-      mcp-and-artifacts:
+      mcp-servers:
         patterns:
           - "*"
         update-types:
@@ -102,7 +102,7 @@ updates:
           - "patch"
 
   - package-ecosystem: "npm"
-    directory: "/lots-server"
+    directory: "/Tools/MCPServers/echoes-server"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5
@@ -114,7 +114,7 @@ updates:
       prefix: "deps(npm)"
       include: "scope"
     groups:
-      mcp-and-artifacts:
+      mcp-servers:
         patterns:
           - "*"
         update-types:
@@ -122,7 +122,7 @@ updates:
           - "patch"
 
   - package-ecosystem: "npm"
-    directory: "/maintain-server"
+    directory: "/Tools/MCPServers/eligibility-server"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5
@@ -134,7 +134,7 @@ updates:
       prefix: "deps(npm)"
       include: "scope"
     groups:
-      mcp-and-artifacts:
+      mcp-servers:
         patterns:
           - "*"
         update-types:
@@ -142,7 +142,7 @@ updates:
           - "patch"
 
   - package-ecosystem: "npm"
-    directory: "/pulse-server"
+    directory: "/Tools/MCPServers/glimpse-server"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5
@@ -154,7 +154,7 @@ updates:
       prefix: "deps(npm)"
       include: "scope"
     groups:
-      mcp-and-artifacts:
+      mcp-servers:
         patterns:
           - "*"
         update-types:
@@ -162,7 +162,7 @@ updates:
           - "patch"
 
   - package-ecosystem: "npm"
-    directory: "/seeds-server"
+    directory: "/Tools/MCPServers/grid-server"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5
@@ -174,7 +174,7 @@ updates:
       prefix: "deps(npm)"
       include: "scope"
     groups:
-      mcp-and-artifacts:
+      mcp-servers:
         patterns:
           - "*"
         update-types:
@@ -182,7 +182,7 @@ updates:
           - "patch"
 
   - package-ecosystem: "npm"
-    directory: "/glimpse-artifact"
+    directory: "/Tools/MCPServers/lots-server"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5
@@ -194,7 +194,127 @@ updates:
       prefix: "deps(npm)"
       include: "scope"
     groups:
-      mcp-and-artifacts:
+      mcp-servers:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  - package-ecosystem: "npm"
+    directory: "/Tools/MCPServers/maintain-server"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "npm"
+      - "automated"
+    commit-message:
+      prefix: "deps(npm)"
+      include: "scope"
+    groups:
+      mcp-servers:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  - package-ecosystem: "npm"
+    directory: "/Tools/MCPServers/mangrove-server"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "npm"
+      - "automated"
+    commit-message:
+      prefix: "deps(npm)"
+      include: "scope"
+    groups:
+      mcp-servers:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  - package-ecosystem: "npm"
+    directory: "/Tools/MCPServers/overview-server"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "npm"
+      - "automated"
+    commit-message:
+      prefix: "deps(npm)"
+      include: "scope"
+    groups:
+      mcp-servers:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  - package-ecosystem: "npm"
+    directory: "/Tools/MCPServers/pulse-server"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "npm"
+      - "automated"
+    commit-message:
+      prefix: "deps(npm)"
+      include: "scope"
+    groups:
+      mcp-servers:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  - package-ecosystem: "npm"
+    directory: "/Tools/MCPServers/seeds-server"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "npm"
+      - "automated"
+    commit-message:
+      prefix: "deps(npm)"
+      include: "scope"
+    groups:
+      mcp-servers:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  - package-ecosystem: "npm"
+    directory: "/Applications/glimpse-artifact"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "npm"
+      - "automated"
+    commit-message:
+      prefix: "deps(npm)"
+      include: "scope"
+    groups:
+      glimpse-artifact:
         patterns:
           - "*"
         update-types:

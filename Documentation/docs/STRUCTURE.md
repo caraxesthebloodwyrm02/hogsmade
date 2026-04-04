@@ -43,6 +43,7 @@ This is the single map for where things live in the current CascadeProjects layo
 | `Projects/DIO/` | Control room suite | Airflow/light coordination and episode tooling |
 | `Projects/GATE/` | Operational store | Envelopes, contracts, and audit data |
 | `Projects/projects/viz/` | Workspace project | Visualization experiments |
+| `Hogwarts/` | Workspace project | Gamified workspace layer (arena, board, governors, houses, professors, students) |
 | `Components/shared-types/` | Shared package | Types and audit client |
 | `Components/shared-resilience/` | Shared package | Circuit breakers, retries, and rate limiting |
 | `Components/shared-pipeline/` | Shared package | Shared pipeline helpers |

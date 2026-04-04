@@ -25,7 +25,6 @@ This is a **multi-project workspace**. Each subdirectory is an independent proje
 | `glimpse-artifact/`    | React 18, Vite, TailwindCSS | Component library                            |
 | `glimpse-engine/`      | JavaScript (ES modules)     | Browser-only viz engine; no package.json     |
 | `GRID-main/`           | Python 3.13+, FastAPI, uv   | Nested repo — manage in its own git root     |
-| `mcp-tool-experiment/` | TypeScript, pnpm            | Nested repo — manage in its own git root     |
 
 ## Build and test commands
 
@@ -83,19 +82,6 @@ uv run python -m application.mothership.main  # API server (port 8080)
 - Package manager: `uv` only — never `pip` directly.
 - `PYTHONPATH=src`
 - Test env: `MOTHERSHIP_ENVIRONMENT=test`, `MOTHERSHIP_DATABASE_URL=sqlite:///:memory:`, `MOTHERSHIP_USE_DATABRICKS=false`
-
-### mcp-tool-experiment/typescript-sdk (pnpm — nested repo)
-
-```bash
-cd mcp-tool-experiment/typescript-sdk
-pnpm install
-pnpm build:all
-pnpm test:all
-pnpm --filter @modelcontextprotocol/core test                        # single package
-pnpm --filter @modelcontextprotocol/core test -- -t "test name"     # single test
-pnpm lint:fix:all
-pnpm sync:snippets    # sync JSDoc @example blocks from .examples.ts companion files
-```
 
 ## Architecture
 

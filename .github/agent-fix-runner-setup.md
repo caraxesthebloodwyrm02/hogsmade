@@ -29,7 +29,7 @@ Workflows expect these to be available on `PATH`:
 - Python 3.13+
 - `uv`
 - `npm`
-- `pnpm` (only needed if you run workflows that touch `mcp-tool-experiment`)
+
 
 ## 3. Run persistence with systemd (recommended)
 
