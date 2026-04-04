@@ -50,8 +50,7 @@ jobs:
           MOTHERSHIP_ENVIRONMENT=test \
           MOTHERSHIP_DATABASE_URL=sqlite:///:memory: \
           MOTHERSHIP_USE_DATABRICKS=false \
-          uv run pytest safety/tests/ boundaries/ -q --tb=short 2>&1 | tee ../test_results.txt || true
-        continue-on-error: true
+          uv run pytest safety/tests/ boundaries/ -q --tb=short 2>&1 | tee ../test_results.txt
 
       - name: Extract diff for changed boundary files
         run: |
