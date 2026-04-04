@@ -4,6 +4,7 @@ on:
   push:
     branches: ["main", "hogsmade"]
     paths:
+      - "package-lock.json"
       - "Components/shared-types/**"
       - "Components/shared-resilience/**"
       - "Components/shared-pipeline/**"
@@ -20,10 +21,6 @@ on:
       - "Tools/MCPServers/seeds-server/**"
       - "Applications/glimpse-artifact/**"
       - "Applications/glimpse-engine/**"
-      - "glimpse.master.yaml"
-      - "sample-innovations.json"
-      - "sample-scenario.json"
-      - "sample-cross-context-demo.json"
       - "Components/tests/**"
       - "Components/scripts/bootstrap_glimpse_logic.mjs"
       - "Components/scripts/run_repo_contract_checks.sh"
@@ -31,6 +28,7 @@ on:
       - ".github/workflows/root-ts-ci.yml"
   pull_request:
     paths:
+      - "package-lock.json"
       - "Components/shared-types/**"
       - "Components/shared-resilience/**"
       - "Components/shared-pipeline/**"
@@ -47,10 +45,6 @@ on:
       - "Tools/MCPServers/seeds-server/**"
       - "Applications/glimpse-artifact/**"
       - "Applications/glimpse-engine/**"
-      - "glimpse.master.yaml"
-      - "sample-innovations.json"
-      - "sample-scenario.json"
-      - "sample-cross-context-demo.json"
       - "Components/tests/**"
       - "Components/scripts/bootstrap_glimpse_logic.mjs"
       - "Components/scripts/run_repo_contract_checks.sh"
