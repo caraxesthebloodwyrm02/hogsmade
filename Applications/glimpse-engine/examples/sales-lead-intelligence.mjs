@@ -1,6 +1,8 @@
 /**
  * Diff Glimpse — Code Change Intelligence Visualizer
  *
+ * Note: npm script is still `demo:sales` for historical reasons; this file is not sales data.
+ *
  * Reads git diff output, transforms hunks into Glimpse records,
  * runs the enhanced pipeline (fuzzy matching, multi-pass inference,
  * compression, confidence calibration), and writes a JSON payload

@@ -10,7 +10,7 @@
  * - Context lens scoring and view recommendations
  * - Rule-driven insights and evidence generation
  *
- * Run: node use-case-innovation-network.mjs
+ * Run: node examples/use-case-innovation-network.mjs   — or: npm run demo:innovation
  */
 
 import { runContextPipeline } from "../core/engine.js";

@@ -16,6 +16,7 @@ import { readFile, stat, readdir } from "node:fs/promises";
 import { execFile } from "node:child_process";
 import type { IncomingMessage } from "node:http";
 import path from "node:path";
+import { randomUUID } from "node:crypto";
 // Removed eligibility-server imports to avoid build dependency
 import {
   runContextSearch,
@@ -807,6 +808,586 @@ async function buildSessionEntryPayload(): Promise<Record<string, unknown>> {
   };
 }
 
+// ── Evolution Runtime (local fallback for dev) ─────────────────────
+
+type CycleBeat = "map" | "balance" | "tighten" | "verify";
+type CycleStatus = "active" | "promotion_pending" | "promoted" | "returned" | "archived";
+type PromotionGateDecision =
+  | "allow_promotion"
+  | "hold_for_tighten"
+  | "return_to_balance"
+  | "deny_promotion";
+type EndpointStatus = "draft" | "ready" | "blocked" | "verified";
+type HandoffStatus = "submitted" | "accepted" | "rejected";
+type CycleSignalType =
+  | "endpoint_spec_changed"
+  | "integration_call_succeeded"
+  | "integration_call_failed"
+  | "handoff_submitted"
+  | "handoff_accepted"
+  | "handoff_rejected"
+  | "test_passed"
+  | "test_failed"
+  | "condition_escalated"
+  | "heartbeat_stale";
+
+interface EndpointSpecRecord {
+  id: string;
+  label: string;
+  owner?: string;
+  contract?: string;
+  status: EndpointStatus;
+  required: boolean;
+  readiness?: number;
+  notes?: string;
+  updatedAt: string;
+}
+
+interface HandoffRecord {
+  id: string;
+  caseId: string;
+  from: string;
+  to: string;
+  status: HandoffStatus;
+  summary: string;
+  beat: CycleBeat;
+  recordedAt: string;
+}
+
+interface CycleSignalRecord {
+  id: string;
+  caseId: string;
+  type: CycleSignalType;
+  weight: number;
+  beat: CycleBeat;
+  source: string;
+  note?: string;
+  recordedAt: string;
+}
+
+interface ConditionNote {
+  id: string;
+  candidateId: string;
+  dimension: string;
+  severity: "info" | "watch" | "priority";
+  message: string;
+  sourceWeightIds: string[];
+}
+
+interface ObservationNote {
+  id: string;
+  candidateId: string;
+  dimension: string;
+  message: string;
+  surfaceHint: string;
+  sourceSliceIds: string[];
+}
+
+interface ReturnRecord {
+  fromBeat: CycleBeat;
+  toBeat: CycleBeat;
+  reason?: string;
+  returnedAt: string;
+}
+
+interface MomentumFrame {
+  acceleration: number;
+  momentum: number;
+  sidewalkDrift: number;
+  endpointReadiness: number;
+  handoffCompletion: number;
+  integrationSuccessRate: number;
+  reversalRate: number;
+  staleWindowRatio: number;
+  openPriorityConditionCount: number;
+  updatedAt: string;
+}
+
+interface PromotionGateResult {
+  caseId: string;
+  decision: PromotionGateDecision;
+  passed: boolean;
+  beat: CycleBeat;
+  evaluatedAt: string;
+  reasons: string[];
+  thresholds: {
+    overallScore: number;
+    governanceScore: number;
+    integrationScore: number;
+    sidewalkDrift: number;
+  };
+  metrics: {
+    overallScore: number;
+    governanceScore: number;
+    integrationScore: number;
+    sidewalkDrift: number;
+    requiredEndpointCount: number;
+    completeEndpointCount: number;
+    openPriorityConditionCount: number;
+  };
+}
+
+interface CycleTimelineEntry {
+  id: string;
+  caseId: string;
+  event:
+    | "case_opened"
+    | "beat_advanced"
+    | "case_returned"
+    | "signal_recorded"
+    | "endpoint_upserted"
+    | "handoff_recorded"
+    | "promotion_blocked"
+    | "promotion_allowed";
+  beat: CycleBeat;
+  status: CycleStatus;
+  timestamp: string;
+  summary: string;
+  refIds: string[];
+}
+
+interface CollectionRow {
+  rowId: string;
+  rowType: "attribute" | "dimension";
+  candidateId: string;
+  dimension: string;
+  attributeId: string | null;
+  sourcePass: string;
+  sourceArtifact: string;
+  seed: string;
+  argvSignature: string;
+  weightRaw: number | null;
+  weightBand: string | null;
+  dimensionScore: number | null;
+  hierarchyRank: number | null;
+  conditionIds: string[];
+  observationIds: string[];
+  creditLabel: string;
+}
+
+interface CollectionTable {
+  columns: string[];
+  rows: CollectionRow[];
+  generatedAt: string;
+}
+
+interface EvolutionCaseRecord {
+  caseId: string;
+  label: string;
+  owner?: string;
+  candidateIds: string[];
+  currentBeat: CycleBeat;
+  status: CycleStatus;
+  endpointSpecs: EndpointSpecRecord[];
+  handoffs: HandoffRecord[];
+  signals: CycleSignalRecord[];
+  momentum: MomentumFrame;
+  latestPromotionDecision: PromotionGateResult | null;
+  conditionNotes: ConditionNote[];
+  observationNotes: ObservationNote[];
+  returnHistory: ReturnRecord[];
+  timeline: CycleTimelineEntry[];
+  openedAt: string;
+  updatedAt: string;
+  latestEligibilityResult: {
+    summary: string;
+    table: CollectionTable;
+  } | null;
+}
+
+interface BeatRailEntry {
+  beat: CycleBeat;
+  state: "complete" | "current" | "pending";
+}
+
+interface CycleSnapshot {
+  summary: string;
+  beatRail: BeatRailEntry[];
+  caseRecord: EvolutionCaseRecord;
+}
+
+interface EvolutionCaseSummary {
+  caseId: string;
+  label: string;
+  currentBeat: CycleBeat;
+  status: CycleStatus;
+  candidateIds: string[];
+  overallScore: number;
+  momentum: number;
+  sidewalkDrift: number;
+  updatedAt: string;
+}
+
+const CYCLE_BEATS: CycleBeat[] = ["map", "balance", "tighten", "verify"];
+const evolutionStore = new Map<string, EvolutionCaseRecord>();
+
+function nowIso(): string {
+  return new Date().toISOString();
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
+}
+
+function beatIndex(beat: CycleBeat): number {
+  return CYCLE_BEATS.indexOf(beat);
+}
+
+function buildBeatRail(currentBeat: CycleBeat): BeatRailEntry[] {
+  const currentIndex = beatIndex(currentBeat);
+  return CYCLE_BEATS.map((beat, index) => ({
+    beat,
+    state: index < currentIndex ? "complete" : index === currentIndex ? "current" : "pending",
+  }));
+}
+
+function buildSeedTable(caseId: string, candidateIds: string[]): CollectionTable {
+  const seed = caseId.slice(0, 12);
+  const rows: CollectionRow[] = [];
+  const dimensions = [
+    "overall",
+    "governance",
+    "usability",
+    "integration",
+    "observability",
+    "operational_fit",
+  ] as const;
+
+  for (const [index, candidateId] of candidateIds.entries()) {
+    const base = clamp(0.84 - index * 0.1, 0.35, 0.95);
+    for (const [dimIndex, dimension] of dimensions.entries()) {
+      const dimBias = dimIndex === 0 ? 0 : (dimIndex - 2) * 0.015;
+      const dimensionScore = clamp(base + dimBias, 0.05, 0.99);
+      rows.push({
+        rowId: randomUUID(),
+        rowType: "dimension",
+        candidateId,
+        dimension,
+        attributeId: null,
+        sourcePass: "project-vertical-hierarchy",
+        sourceArtifact: "in_memory_seed",
+        seed,
+        argvSignature: "fallback-runtime",
+        weightRaw: null,
+        weightBand: null,
+        dimensionScore,
+        hierarchyRank: dimension === "overall" ? index + 1 : null,
+        conditionIds: [],
+        observationIds: [],
+        creditLabel: "fallback-runtime",
+      });
+    }
+
+    rows.push({
+      rowId: randomUUID(),
+      rowType: "attribute",
+      candidateId,
+      dimension: "integration",
+      attributeId: `attr-${index + 1}`,
+      sourcePass: "derive-analog-weights",
+      sourceArtifact: "in_memory_seed",
+      seed,
+      argvSignature: "fallback-runtime",
+      weightRaw: clamp(0.78 - index * 0.12, 0.2, 0.95),
+      weightBand: index === 0 ? "dominant" : index === 1 ? "elevated" : "steady",
+      dimensionScore: null,
+      hierarchyRank: null,
+      conditionIds: [],
+      observationIds: [],
+      creditLabel: "fallback-runtime",
+    });
+  }
+
+  return {
+    columns: [
+      "rowId",
+      "rowType",
+      "candidateId",
+      "dimension",
+      "attributeId",
+      "creditLabel",
+      "dimensionScore",
+      "weightRaw",
+    ],
+    rows,
+    generatedAt: nowIso(),
+  };
+}
+
+function calcOverallScore(caseRecord: EvolutionCaseRecord): number {
+  const rows = caseRecord.latestEligibilityResult?.table.rows ?? [];
+  const topOverall = rows.find((row) => row.rowType === "dimension" && row.dimension === "overall");
+  if (topOverall?.dimensionScore !== null && topOverall?.dimensionScore !== undefined) {
+    return topOverall.dimensionScore;
+  }
+  return 0.6;
+}
+
+function createTimelineEntry(
+  caseId: string,
+  beat: CycleBeat,
+  status: CycleStatus,
+  event: CycleTimelineEntry["event"],
+  summary: string,
+  refIds: string[] = [],
+): CycleTimelineEntry {
+  return {
+    id: randomUUID(),
+    caseId,
+    event,
+    beat,
+    status,
+    timestamp: nowIso(),
+    summary,
+    refIds,
+  };
+}
+
+function recomputeMomentum(caseRecord: EvolutionCaseRecord): void {
+  const requiredEndpointCount = caseRecord.endpointSpecs.filter((spec) => spec.required).length;
+  const completeEndpointCount = caseRecord.endpointSpecs.filter(
+    (spec) => spec.required && (spec.status === "ready" || spec.status === "verified"),
+  ).length;
+  const endpointReadiness =
+    requiredEndpointCount > 0
+      ? completeEndpointCount / requiredEndpointCount
+      : caseRecord.endpointSpecs.length > 0
+        ? caseRecord.endpointSpecs.filter((spec) => spec.status !== "blocked").length /
+          caseRecord.endpointSpecs.length
+        : 0.45;
+
+  const submittedHandoffs = caseRecord.handoffs.length;
+  const acceptedHandoffs = caseRecord.handoffs.filter((handoff) => handoff.status === "accepted").length;
+  const handoffCompletion = submittedHandoffs > 0 ? acceptedHandoffs / submittedHandoffs : 0.0;
+
+  const successCalls = caseRecord.signals.filter(
+    (signal) => signal.type === "integration_call_succeeded" || signal.type === "test_passed",
+  ).length;
+  const failedCalls = caseRecord.signals.filter(
+    (signal) => signal.type === "integration_call_failed" || signal.type === "test_failed",
+  ).length;
+  const integrationSamples = successCalls + failedCalls;
+  const integrationSuccessRate = integrationSamples > 0 ? successCalls / integrationSamples : 0.6;
+
+  const staleSignals = caseRecord.signals.filter((signal) => signal.type === "heartbeat_stale").length;
+  const staleWindowRatio =
+    caseRecord.signals.length > 0 ? staleSignals / caseRecord.signals.length : 0;
+
+  const openPriorityConditionCount = caseRecord.conditionNotes.filter(
+    (note) => note.severity === "priority",
+  ).length;
+  const reversalRate = integrationSamples > 0 ? failedCalls / integrationSamples : 0.0;
+
+  const sidewalkDrift = clamp(
+    0.12 +
+      failedCalls * 0.07 +
+      staleSignals * 0.08 +
+      openPriorityConditionCount * 0.1 -
+      successCalls * 0.03,
+    0.0,
+    1.0,
+  );
+  const momentum = clamp(
+    0.42 + endpointReadiness * 0.22 + handoffCompletion * 0.12 + integrationSuccessRate * 0.24 - sidewalkDrift * 0.3,
+    0.0,
+    1.0,
+  );
+  const acceleration = clamp(momentum - 0.5 + endpointReadiness * 0.1 - reversalRate * 0.12, 0.0, 1.0);
+
+  caseRecord.momentum = {
+    acceleration,
+    momentum,
+    sidewalkDrift,
+    endpointReadiness,
+    handoffCompletion,
+    integrationSuccessRate,
+    reversalRate,
+    staleWindowRatio,
+    openPriorityConditionCount,
+    updatedAt: nowIso(),
+  };
+}
+
+function summarizeCase(caseRecord: EvolutionCaseRecord): string {
+  const momentum = caseRecord.momentum;
+  return [
+    `Beat ${caseRecord.currentBeat} with status ${caseRecord.status}.`,
+    `Momentum ${momentum.momentum.toFixed(3)}, sidewalk drift ${momentum.sidewalkDrift.toFixed(3)}.`,
+    `${caseRecord.endpointSpecs.length} endpoint specs, ${caseRecord.handoffs.length} handoffs, ${caseRecord.signals.length} signals.`,
+  ].join(" ");
+}
+
+function toCaseSummary(caseRecord: EvolutionCaseRecord): EvolutionCaseSummary {
+  return {
+    caseId: caseRecord.caseId,
+    label: caseRecord.label,
+    currentBeat: caseRecord.currentBeat,
+    status: caseRecord.status,
+    candidateIds: caseRecord.candidateIds,
+    overallScore: calcOverallScore(caseRecord),
+    momentum: caseRecord.momentum.momentum,
+    sidewalkDrift: caseRecord.momentum.sidewalkDrift,
+    updatedAt: caseRecord.updatedAt,
+  };
+}
+
+function toSnapshot(caseRecord: EvolutionCaseRecord): CycleSnapshot {
+  return {
+    summary: summarizeCase(caseRecord),
+    beatRail: buildBeatRail(caseRecord.currentBeat),
+    caseRecord,
+  };
+}
+
+function createCaseRecord(input: { fixtureId?: string; label?: string; owner?: string; caseId?: string }): EvolutionCaseRecord {
+  const fixtureId = input.fixtureId ?? "balanced-bridge";
+  const caseId = input.caseId?.trim() || `case-${randomUUID().slice(0, 12)}`;
+  const openedAt = nowIso();
+  const candidateIds = [`${fixtureId}-alpha`, `${fixtureId}-beta`, `${fixtureId}-gamma`];
+  const caseRecord: EvolutionCaseRecord = {
+    caseId,
+    label: input.label?.trim() || `Evolution case ${caseId.slice(0, 8)}`,
+    owner: input.owner,
+    candidateIds,
+    currentBeat: "map",
+    status: "active",
+    endpointSpecs: [],
+    handoffs: [],
+    signals: [],
+    momentum: {
+      acceleration: 0.25,
+      momentum: 0.58,
+      sidewalkDrift: 0.16,
+      endpointReadiness: 0.45,
+      handoffCompletion: 0.0,
+      integrationSuccessRate: 0.6,
+      reversalRate: 0.0,
+      staleWindowRatio: 0.0,
+      openPriorityConditionCount: 0,
+      updatedAt: openedAt,
+    },
+    latestPromotionDecision: null,
+    conditionNotes: [],
+    observationNotes: [],
+    returnHistory: [],
+    timeline: [],
+    openedAt,
+    updatedAt: openedAt,
+    latestEligibilityResult: {
+      summary: "Local fallback table generated from in-memory evolution runtime.",
+      table: buildSeedTable(caseId, candidateIds),
+    },
+  };
+
+  caseRecord.timeline.push(
+    createTimelineEntry(caseId, caseRecord.currentBeat, caseRecord.status, "case_opened", "Case opened"),
+  );
+  return caseRecord;
+}
+
+function getCaseOrThrow(caseId: string): EvolutionCaseRecord {
+  const caseRecord = evolutionStore.get(caseId);
+  if (!caseRecord) {
+    throw new Error(`Evolution case not found: ${caseId}`);
+  }
+  return caseRecord;
+}
+
+function ensureSeedCase(): void {
+  if (evolutionStore.size > 0) return;
+  const seedCase = createCaseRecord({ fixtureId: "balanced-bridge", label: "Seed evolution case" });
+  evolutionStore.set(seedCase.caseId, seedCase);
+}
+
+function evaluatePromotionGate(caseRecord: EvolutionCaseRecord): PromotionGateResult {
+  recomputeMomentum(caseRecord);
+  const requiredEndpointCount = caseRecord.endpointSpecs.filter((spec) => spec.required).length;
+  const completeEndpointCount = caseRecord.endpointSpecs.filter(
+    (spec) => spec.required && (spec.status === "ready" || spec.status === "verified"),
+  ).length;
+  const overallScore = calcOverallScore(caseRecord);
+  const governanceScore = clamp(1 - caseRecord.momentum.sidewalkDrift * 0.9, 0, 1);
+  const integrationScore = caseRecord.momentum.integrationSuccessRate;
+  const sidewalkDrift = caseRecord.momentum.sidewalkDrift;
+  const thresholds = {
+    overallScore: 0.72,
+    governanceScore: 0.65,
+    integrationScore: 0.65,
+    sidewalkDrift: 0.35,
+  };
+
+  const endpointReady =
+    requiredEndpointCount === 0 ? true : completeEndpointCount >= requiredEndpointCount;
+  const passed =
+    overallScore >= thresholds.overallScore &&
+    governanceScore >= thresholds.governanceScore &&
+    integrationScore >= thresholds.integrationScore &&
+    sidewalkDrift <= thresholds.sidewalkDrift &&
+    endpointReady;
+
+  let decision: PromotionGateDecision = "hold_for_tighten";
+  const reasons: string[] = [];
+  if (!endpointReady) reasons.push("Required endpoints are not ready");
+  if (overallScore < thresholds.overallScore) reasons.push("Overall score below threshold");
+  if (governanceScore < thresholds.governanceScore) reasons.push("Governance score below threshold");
+  if (integrationScore < thresholds.integrationScore) reasons.push("Integration score below threshold");
+  if (sidewalkDrift > thresholds.sidewalkDrift) reasons.push("Sidewalk drift above threshold");
+
+  if (passed) {
+    decision = "allow_promotion";
+    caseRecord.status = "promoted";
+  } else if (integrationScore < 0.4 || sidewalkDrift > 0.55) {
+    decision = "return_to_balance";
+    const fromBeat = caseRecord.currentBeat;
+    caseRecord.currentBeat = "balance";
+    caseRecord.status = "returned";
+    caseRecord.returnHistory.push({
+      fromBeat,
+      toBeat: "balance",
+      reason: "Promotion gate returned case to balance",
+      returnedAt: nowIso(),
+    });
+  } else if (requiredEndpointCount > 0 && completeEndpointCount === 0) {
+    decision = "deny_promotion";
+    caseRecord.status = "promotion_pending";
+  } else {
+    decision = "hold_for_tighten";
+    caseRecord.status = "promotion_pending";
+  }
+
+  const gate: PromotionGateResult = {
+    caseId: caseRecord.caseId,
+    decision,
+    passed,
+    beat: caseRecord.currentBeat,
+    evaluatedAt: nowIso(),
+    reasons,
+    thresholds,
+    metrics: {
+      overallScore,
+      governanceScore,
+      integrationScore,
+      sidewalkDrift,
+      requiredEndpointCount,
+      completeEndpointCount,
+      openPriorityConditionCount: caseRecord.momentum.openPriorityConditionCount,
+    },
+  };
+
+  caseRecord.latestPromotionDecision = gate;
+  caseRecord.updatedAt = gate.evaluatedAt;
+  caseRecord.timeline.push(
+    createTimelineEntry(
+      caseRecord.caseId,
+      caseRecord.currentBeat,
+      caseRecord.status,
+      passed ? "promotion_allowed" : "promotion_blocked",
+      passed ? "Promotion gate passed" : `Promotion gate blocked: ${decision}`,
+    ),
+  );
+  return gate;
+}
+
 // ── Plugin ──────────────────────────────────────────────────────────
 
 function jsonResponse(res: import("http").ServerResponse, data: unknown, status = 200) {
@@ -981,158 +1562,379 @@ export function glimpseApiPlugin(): Plugin {
           return;
         }
 
-        // Removed evolution routes - depend on eligibility-server
-        // TODO: Re-implement without direct server dependency
-        /*
         if (url.pathname === "/api/evolution/cases" && req.method === "GET") {
           try {
-            jsonResponse(res, listActiveCyclesHandler());
+            ensureSeedCase();
+            const cases = [...evolutionStore.values()]
+              .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+              .map((caseRecord) => toCaseSummary(caseRecord));
+            jsonResponse(res, { cases });
           } catch (error: unknown) {
             const message =
-              error instanceof Error
-                ? error.message
-                : "Failed to list evolution cases";
+              error instanceof Error ? error.message : "Failed to list evolution cases";
             jsonResponse(res, { error: message }, 500);
           }
           return;
         }
-        */
 
-        // Removed evolution routes - depend on eligibility-server
-        /*
         if (url.pathname === "/api/evolution/open" && req.method === "POST") {
           readJsonBody<{
-            candidate?: unknown;
             fixtureId?: string;
-            fixtureIds?: string[];
-            args?: Record<string, unknown>;
             caseId?: string;
             label?: string;
             owner?: string;
           }>(req)
-            .then((body) => openEvolutionCaseHandler(body))
-            .then((payload) => jsonResponse(res, payload))
+            .then((body) => {
+              const caseRecord = createCaseRecord({
+                fixtureId: body.fixtureId,
+                caseId: body.caseId,
+                label: body.label,
+                owner: body.owner,
+              });
+              if (evolutionStore.has(caseRecord.caseId)) {
+                throw new Error(`Evolution case already exists: ${caseRecord.caseId}`);
+              }
+              evolutionStore.set(caseRecord.caseId, caseRecord);
+              return { snapshot: toSnapshot(caseRecord) };
+            })
+            .then((payload) => jsonResponse(res, payload, 200))
             .catch((error: unknown) => {
               const message =
-                error instanceof Error
-                  ? error.message
-                  : "Failed to open evolution case";
+                error instanceof Error ? error.message : "Failed to open evolution case";
               jsonResponse(res, { error: message }, 400);
             });
           return;
         }
-        */
 
-        // Removed evolution routes - depend on eligibility-server
-        /*
-        const cycleSnapshotMatch = url.pathname.match(
-          /^\/api\/evolution\/cases\/([^/]+)$/,
-        );
+        const cycleSnapshotMatch = url.pathname.match(/^\/api\/evolution\/cases\/([^/]+)$/);
         if (cycleSnapshotMatch && req.method === "GET") {
           try {
             const caseId = decodeURIComponent(cycleSnapshotMatch[1] ?? "");
-            jsonResponse(res, getCycleSnapshotHandler({ caseId }));
+            const caseRecord = getCaseOrThrow(caseId);
+            jsonResponse(res, { snapshot: toSnapshot(caseRecord) });
           } catch (error: unknown) {
             const message =
-              error instanceof Error
-                ? error.message
-                : "Failed to load evolution snapshot";
+              error instanceof Error ? error.message : "Failed to load evolution snapshot";
             jsonResponse(res, { error: message }, 404);
           }
           return;
         }
-        */
 
-        // Removed eligibility-server dependent routes:
-        // - /api/evolution/cases/{id}/signal (recordCycleSignalHandler)
-        // - /api/evolution/cases/{id}/handoff (recordHandoffHandler)
-        // - /api/evolution/cases/{id}/endpoint (upsertEndpointSpecHandler)
-        // TODO: Re-implement these routes if needed without direct server dependency
+        const cycleSignalMatch = url.pathname.match(/^\/api\/evolution\/cases\/([^/]+)\/signal$/);
+        if (cycleSignalMatch && req.method === "POST") {
+          readJsonBody<{ type?: CycleSignalType; note?: string; weight?: number; source?: string }>(req)
+            .then((body) => {
+              const caseId = decodeURIComponent(cycleSignalMatch[1] ?? "");
+              const caseRecord = getCaseOrThrow(caseId);
+              if (!body.type) {
+                throw new Error("Signal type is required");
+              }
 
-        // Removed evolution routes - depend on eligibility-server
-        /*
-        const cycleAdvanceMatch = url.pathname.match(
-          /^\/api\/evolution\/cases\/([^/]+)\/advance$/,
-        );
-        if (cycleAdvanceMatch && req.method === "POST") {
-          readJsonBody<{ direction?: "forward" | "return"; reason?: string }>(
-            req,
-          )
-            .then((body) =>
-              advanceCycleHandler({
-                caseId: decodeURIComponent(cycleAdvanceMatch[1] ?? ""),
-                direction: body.direction,
-                reason: body.reason,
-              }),
-            )
+              const weightByType: Record<CycleSignalType, number> = {
+                endpoint_spec_changed: 0.2,
+                integration_call_succeeded: 0.35,
+                integration_call_failed: 0.55,
+                handoff_submitted: 0.15,
+                handoff_accepted: 0.25,
+                handoff_rejected: 0.4,
+                test_passed: 0.2,
+                test_failed: 0.45,
+                condition_escalated: 0.5,
+                heartbeat_stale: 0.4,
+              };
+              const signal: CycleSignalRecord = {
+                id: randomUUID(),
+                caseId,
+                type: body.type,
+                weight: body.weight ?? weightByType[body.type],
+                beat: caseRecord.currentBeat,
+                source: body.source ?? "glimpse-api",
+                note: body.note,
+                recordedAt: nowIso(),
+              };
+              caseRecord.signals.push(signal);
+
+              if (
+                body.type === "integration_call_failed" ||
+                body.type === "test_failed" ||
+                body.type === "condition_escalated"
+              ) {
+                caseRecord.conditionNotes.push({
+                  id: randomUUID(),
+                  candidateId: caseRecord.candidateIds[0] ?? "unknown",
+                  dimension: "integration",
+                  severity: "priority",
+                  message: body.note ?? "Failure signal escalated integration pressure.",
+                  sourceWeightIds: [signal.id],
+                });
+              }
+              if (body.type === "integration_call_succeeded" || body.type === "test_passed") {
+                caseRecord.observationNotes.push({
+                  id: randomUUID(),
+                  candidateId: caseRecord.candidateIds[0] ?? "unknown",
+                  dimension: "integration",
+                  message: body.note ?? "Successful integration signal recorded.",
+                  surfaceHint: "control-room",
+                  sourceSliceIds: [signal.id],
+                });
+              }
+
+              caseRecord.timeline.push(
+                createTimelineEntry(
+                  caseId,
+                  caseRecord.currentBeat,
+                  caseRecord.status,
+                  "signal_recorded",
+                  `Signal recorded: ${signal.type}`,
+                  [signal.id],
+                ),
+              );
+              caseRecord.updatedAt = signal.recordedAt;
+              recomputeMomentum(caseRecord);
+              return { snapshot: toSnapshot(caseRecord) };
+            })
             .then((payload) => jsonResponse(res, payload))
             .catch((error: unknown) => {
               const message =
-                error instanceof Error
-                  ? error.message
-                  : "Failed to advance evolution cycle";
+                error instanceof Error ? error.message : "Failed to record cycle signal";
               jsonResponse(res, { error: message }, 400);
             });
           return;
         }
-        */
 
-        // Removed evolution routes - depend on eligibility-server
-        /*
-        const shaderDataMatch = url.pathname.match(
-          /^\/api\/evolution\/cases\/([^/]+)\/shader-data$/,
-        );
+        const cycleHandoffMatch = url.pathname.match(/^\/api\/evolution\/cases\/([^/]+)\/handoff$/);
+        if (cycleHandoffMatch && req.method === "POST") {
+          readJsonBody<{ from?: string; to?: string; status?: HandoffStatus; summary?: string }>(req)
+            .then((body) => {
+              const caseId = decodeURIComponent(cycleHandoffMatch[1] ?? "");
+              const caseRecord = getCaseOrThrow(caseId);
+              if (!body.from || !body.to || !body.status || !body.summary) {
+                throw new Error("Handoff requires from, to, status, and summary");
+              }
+
+              const handoff: HandoffRecord = {
+                id: randomUUID(),
+                caseId,
+                from: body.from,
+                to: body.to,
+                status: body.status,
+                summary: body.summary,
+                beat: caseRecord.currentBeat,
+                recordedAt: nowIso(),
+              };
+              caseRecord.handoffs.push(handoff);
+
+              const signalType: Record<HandoffStatus, CycleSignalType> = {
+                submitted: "handoff_submitted",
+                accepted: "handoff_accepted",
+                rejected: "handoff_rejected",
+              };
+              caseRecord.signals.push({
+                id: randomUUID(),
+                caseId,
+                type: signalType[handoff.status],
+                weight: handoff.status === "accepted" ? 0.25 : handoff.status === "rejected" ? 0.4 : 0.15,
+                beat: caseRecord.currentBeat,
+                source: "glimpse-api",
+                note: handoff.summary,
+                recordedAt: handoff.recordedAt,
+              });
+
+              caseRecord.timeline.push(
+                createTimelineEntry(
+                  caseId,
+                  caseRecord.currentBeat,
+                  caseRecord.status,
+                  "handoff_recorded",
+                  `Handoff ${handoff.status}: ${handoff.from} -> ${handoff.to}`,
+                  [handoff.id],
+                ),
+              );
+              caseRecord.updatedAt = handoff.recordedAt;
+              recomputeMomentum(caseRecord);
+              return { snapshot: toSnapshot(caseRecord) };
+            })
+            .then((payload) => jsonResponse(res, payload))
+            .catch((error: unknown) => {
+              const message = error instanceof Error ? error.message : "Failed to record handoff";
+              jsonResponse(res, { error: message }, 400);
+            });
+          return;
+        }
+
+        const cycleEndpointMatch = url.pathname.match(/^\/api\/evolution\/cases\/([^/]+)\/endpoint$/);
+        if (cycleEndpointMatch && req.method === "POST") {
+          readJsonBody<{
+            endpointId?: string;
+            label?: string;
+            owner?: string;
+            contract?: string;
+            status?: EndpointStatus;
+            required?: boolean;
+            readiness?: number;
+            notes?: string;
+          }>(req)
+            .then((body) => {
+              const caseId = decodeURIComponent(cycleEndpointMatch[1] ?? "");
+              const caseRecord = getCaseOrThrow(caseId);
+              if (!body.endpointId || !body.label || !body.status || body.required === undefined) {
+                throw new Error("Endpoint requires endpointId, label, status, and required");
+              }
+
+              const timestamp = nowIso();
+              const existing = caseRecord.endpointSpecs.find((spec) => spec.id === body.endpointId);
+              if (existing) {
+                existing.label = body.label;
+                existing.owner = body.owner;
+                existing.contract = body.contract;
+                existing.status = body.status;
+                existing.required = body.required;
+                existing.readiness = body.readiness;
+                existing.notes = body.notes;
+                existing.updatedAt = timestamp;
+              } else {
+                caseRecord.endpointSpecs.push({
+                  id: body.endpointId,
+                  label: body.label,
+                  owner: body.owner,
+                  contract: body.contract,
+                  status: body.status,
+                  required: body.required,
+                  readiness: body.readiness,
+                  notes: body.notes,
+                  updatedAt: timestamp,
+                });
+              }
+
+              caseRecord.signals.push({
+                id: randomUUID(),
+                caseId,
+                type: "endpoint_spec_changed",
+                weight: 0.2,
+                beat: caseRecord.currentBeat,
+                source: "glimpse-api",
+                note: `Endpoint upserted: ${body.endpointId}`,
+                recordedAt: timestamp,
+              });
+
+              caseRecord.timeline.push(
+                createTimelineEntry(
+                  caseId,
+                  caseRecord.currentBeat,
+                  caseRecord.status,
+                  "endpoint_upserted",
+                  `Endpoint upserted: ${body.endpointId}`,
+                  [body.endpointId],
+                ),
+              );
+              caseRecord.updatedAt = timestamp;
+              recomputeMomentum(caseRecord);
+              return { snapshot: toSnapshot(caseRecord) };
+            })
+            .then((payload) => jsonResponse(res, payload))
+            .catch((error: unknown) => {
+              const message =
+                error instanceof Error ? error.message : "Failed to upsert endpoint spec";
+              jsonResponse(res, { error: message }, 400);
+            });
+          return;
+        }
+
+        const cycleAdvanceMatch = url.pathname.match(/^\/api\/evolution\/cases\/([^/]+)\/advance$/);
+        if (cycleAdvanceMatch && req.method === "POST") {
+          readJsonBody<{ direction?: "forward" | "return"; reason?: string }>(
+            req,
+          )
+            .then((body) => {
+              const caseId = decodeURIComponent(cycleAdvanceMatch[1] ?? "");
+              const caseRecord = getCaseOrThrow(caseId);
+              const direction = body.direction ?? "forward";
+              const currentIndex = beatIndex(caseRecord.currentBeat);
+
+              if (direction === "return") {
+                const nextBeat = CYCLE_BEATS[Math.max(0, currentIndex - 1)];
+                caseRecord.returnHistory.push({
+                  fromBeat: caseRecord.currentBeat,
+                  toBeat: nextBeat,
+                  reason: body.reason,
+                  returnedAt: nowIso(),
+                });
+                caseRecord.currentBeat = nextBeat;
+                caseRecord.status = "returned";
+                caseRecord.timeline.push(
+                  createTimelineEntry(
+                    caseId,
+                    caseRecord.currentBeat,
+                    caseRecord.status,
+                    "case_returned",
+                    body.reason ?? "Case returned to previous beat",
+                  ),
+                );
+              } else {
+                const nextBeat = CYCLE_BEATS[Math.min(CYCLE_BEATS.length - 1, currentIndex + 1)];
+                const moved = nextBeat !== caseRecord.currentBeat;
+                caseRecord.currentBeat = nextBeat;
+                caseRecord.status = nextBeat === "verify" ? "promotion_pending" : "active";
+                caseRecord.timeline.push(
+                  createTimelineEntry(
+                    caseId,
+                    caseRecord.currentBeat,
+                    caseRecord.status,
+                    "beat_advanced",
+                    moved
+                      ? `Beat advanced to ${nextBeat}`
+                      : "Beat already at terminal verify state",
+                  ),
+                );
+              }
+
+              caseRecord.updatedAt = nowIso();
+              recomputeMomentum(caseRecord);
+              return { snapshot: toSnapshot(caseRecord) };
+            })
+            .then((payload) => jsonResponse(res, payload))
+            .catch((error: unknown) => {
+              const message =
+                error instanceof Error ? error.message : "Failed to advance evolution cycle";
+              jsonResponse(res, { error: message }, 400);
+            });
+          return;
+        }
+
+        const shaderDataMatch = url.pathname.match(/^\/api\/evolution\/cases\/([^/]+)\/shader-data$/);
         if (shaderDataMatch && req.method === "GET") {
           try {
             const caseId = decodeURIComponent(shaderDataMatch[1] ?? "");
-            const snapshot = getCycleSnapshotHandler({ caseId });
-            const caseRecord = (
-              snapshot as {
-                snapshot?: {
-                  caseRecord?: {
-                    latestPromotionDecision?: unknown;
-                    momentum?: unknown;
-                  };
-                };
-              }
-            ).snapshot?.caseRecord;
+            const caseRecord = getCaseOrThrow(caseId);
+            const snapshot = toSnapshot(caseRecord);
             jsonResponse(res, {
-              snapshot: (snapshot as { snapshot?: unknown }).snapshot,
+              snapshot,
               promotionGate: caseRecord?.latestPromotionDecision ?? null,
               momentum: caseRecord?.momentum ?? null,
             });
           } catch (error: unknown) {
             const message =
-              error instanceof Error
-                ? error.message
-                : "Failed to load shader data";
+              error instanceof Error ? error.message : "Failed to load shader data";
             jsonResponse(res, { error: message }, 404);
           }
           return;
         }
-        */
 
-        // Removed evolution routes - depend on eligibility-server
-        /*
-        const cyclePromotionMatch = url.pathname.match(
-          /^\/api\/evolution\/cases\/([^/]+)\/promotion$/,
-        );
+        const cyclePromotionMatch = url.pathname.match(/^\/api\/evolution\/cases\/([^/]+)\/promotion$/);
         if (cyclePromotionMatch && req.method === "POST") {
           try {
-            const payload = evaluatePromotionGateHandler({
-              caseId: decodeURIComponent(cyclePromotionMatch[1] ?? ""),
-            });
-            jsonResponse(res, payload);
+            const caseId = decodeURIComponent(cyclePromotionMatch[1] ?? "");
+            const caseRecord = getCaseOrThrow(caseId);
+            const gate = evaluatePromotionGate(caseRecord);
+            const snapshot = toSnapshot(caseRecord);
+            jsonResponse(res, { snapshot, gate });
           } catch (error: unknown) {
             const message =
-              error instanceof Error
-                ? error.message
-                : "Failed to evaluate promotion gate";
+              error instanceof Error ? error.message : "Failed to evaluate promotion gate";
             jsonResponse(res, { error: message }, 400);
           }
           return;
         }
-        */
 
         next();
       });

@@ -1,10 +1,10 @@
 /**
  * Use Case: Basic Context Analysis
  *
- * This demonstrates the modularized Glimpse engine processing a simple dataset
- * to identify context lenses and recommend views.
+ * Minimal dataset (computing + math pioneers) to show lenses, view prefs, and
+ * relations without the heavier presets used in expedition / innovation demos.
  *
- * Run: node use-case-basic.mjs
+ * Run: node examples/use-case-basic.mjs   — or: npm run demo:basic
  */
 
 import { runContextPipeline } from "../core/engine.js";
