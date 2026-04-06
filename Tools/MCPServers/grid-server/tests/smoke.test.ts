@@ -151,6 +151,52 @@ describe("grid-server smoke", () => {
     }
   });
 
+  it("admission status tools return degraded payloads when GRID backend fetch fails", async () => {
+    process.env.GRID_API_URL = "http://127.0.0.1:8080";
+    const originalFetch = globalThis.fetch;
+    const fetchMock = vi.fn(async () => {
+      throw new TypeError("fetch failed");
+    });
+
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
+
+    try {
+      const server = buildServer();
+      const bannered = (await invokeTool(server, "admission_bannered_entities", {})) as {
+        isError?: boolean;
+        content?: Array<{ type: string; text?: string }>;
+      };
+      const stats = (await invokeTool(server, "admission_stats", {})) as {
+        isError?: boolean;
+        content?: Array<{ type: string; text?: string }>;
+      };
+
+      expect(bannered.isError).not.toBe(true);
+      expect(stats.isError).not.toBe(true);
+
+      const banneredPayload = JSON.parse(bannered.content?.[0]?.text ?? "{}");
+      const statsPayload = JSON.parse(stats.content?.[0]?.text ?? "{}");
+
+      expect(banneredPayload.degraded).toBe(true);
+      expect(banneredPayload.available).toBe(false);
+      expect(banneredPayload.reason_code).toBe("GRID_BACKEND_UNAVAILABLE");
+      expect(banneredPayload.count).toBe(0);
+      expect(banneredPayload.entities).toEqual([]);
+
+      expect(statsPayload.degraded).toBe(true);
+      expect(statsPayload.available).toBe(false);
+      expect(statsPayload.reason_code).toBe("GRID_BACKEND_UNAVAILABLE");
+      expect(statsPayload.total_admitted).toBe(0);
+      expect(statsPayload.total_rejected).toBe(0);
+      expect(statsPayload.rejection_reasons).toEqual({});
+      expect(statsPayload.tracked_entities).toBe(0);
+      expect(statsPayload.bannered_entities).toBe(0);
+      expect(fetchMock).toHaveBeenCalled();
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
   it("validate_envelope succeeds with local checks when GRID_API_URL is unset and nonce is registered", async () => {
     delete process.env.GRID_API_URL;
     delete process.env.GATE_USER_SECRET;

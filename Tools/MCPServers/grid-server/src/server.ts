@@ -12,15 +12,14 @@
  */
 
 import { ResiliencePolicy } from "@cascade/shared-resilience";
+import {
+  ActionClass,
+  createHardenedMeritGuard
+} from "@cascade/shared-types";
 import { emitAudit } from "@cascade/shared-types/audit-client";
 import { McpLogger } from "@cascade/shared-types/mcp-logger";
 import { GateSecurityPolicy } from "@cascade/shared-types/security-policy";
 import { SessionRateLimiter } from "@cascade/shared-types/session-rate-limit";
-import {
-  ActionClass,
-  createHardenedMeritGuard,
-  HardenedMcpMeritGuard,
-} from "@cascade/shared-types";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import crypto from "crypto";
@@ -945,6 +944,40 @@ export function buildServer(): McpServer {
     return result;
   }
 
+  function isAdmissionBackendUnavailable(error: unknown): boolean {
+    const message = error instanceof Error ? error.message : String(error);
+    return [
+      "fetch failed",
+      "ECONNREFUSED",
+      "ETIMEDOUT",
+      "ENOTFOUND",
+      "ECONNRESET",
+      "socket hang up",
+      "CIRCUIT_BREAKER_OPEN",
+      "Circuit breaker is OPEN",
+    ].some((needle) => message.includes(needle));
+  }
+
+  function buildAdmissionBackendUnavailablePayload(
+    admissionPath: string,
+    fallback: Record<string, unknown>,
+    error: unknown,
+  ): Record<string, unknown> {
+    const rawUrl = process.env.GRID_API_URL?.trim() || config.gridApiUrl || "";
+    const gridApiUrl = rawUrl ? validateGridApiUrl(rawUrl) : null;
+    return {
+      ...fallback,
+      available: false,
+      degraded: true,
+      backend_status: "unreachable",
+      reason_code: "GRID_BACKEND_UNAVAILABLE",
+      grid_api_url: gridApiUrl,
+      admission_path: admissionPath,
+      error: error instanceof Error ? error.message : String(error),
+      timestamp: new Date().toISOString(),
+    };
+  }
+
   function findProfitMaskSignals(
     payload: Record<string, unknown>,
     headers: Record<string, string> = {},
@@ -1378,6 +1411,24 @@ export function buildServer(): McpServer {
           content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
         };
       } catch (error) {
+        if (isAdmissionBackendUnavailable(error)) {
+          const result = buildAdmissionBackendUnavailablePayload(
+            "/admission/entities/bannered",
+            { count: 0, entities: [] },
+            error,
+          );
+
+          emitAudit({
+            source: SERVER_NAME,
+            tool: "admission_bannered_entities",
+            status: "blocked",
+            metadata: { reason_code: result["reason_code"], error: result["error"] },
+          });
+          return {
+            content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
+          };
+        }
+
         emitAudit({
           source: SERVER_NAME,
           tool: "admission_bannered_entities",
@@ -1431,6 +1482,30 @@ export function buildServer(): McpServer {
           content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
         };
       } catch (error) {
+        if (isAdmissionBackendUnavailable(error)) {
+          const result = buildAdmissionBackendUnavailablePayload(
+            "/admission/stats",
+            {
+              total_admitted: 0,
+              total_rejected: 0,
+              rejection_reasons: {},
+              tracked_entities: 0,
+              bannered_entities: 0,
+            },
+            error,
+          );
+
+          emitAudit({
+            source: SERVER_NAME,
+            tool: "admission_stats",
+            status: "blocked",
+            metadata: { reason_code: result["reason_code"], error: result["error"] },
+          });
+          return {
+            content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
+          };
+        }
+
         emitAudit({
           source: SERVER_NAME,
           tool: "admission_stats",
@@ -1472,14 +1547,14 @@ export async function startServer(): Promise<McpServer> {
         } else {
           logger.warn(
             `GRID backend at ${gridApiUrl} is NOT reachable ` +
-              `(lastEndpoint=${probe.endpoint ?? "none"}, status=${probe.status ?? "unreachable"}, error=${probe.error ?? "unknown"}). ` +
-              `Remote gate validation will fail-closed (approved=false) until backend is restored.`,
+            `(lastEndpoint=${probe.endpoint ?? "none"}, status=${probe.status ?? "unreachable"}, error=${probe.error ?? "unknown"}). ` +
+            `Remote gate validation will fail-closed (approved=false) until backend is restored.`,
           );
         }
       } catch {
         logger.warn(
           `GRID backend probe failed for ${gridApiUrl}. ` +
-            `Remote gate validation will fail-closed.`,
+          `Remote gate validation will fail-closed.`,
         );
       }
     } else {
