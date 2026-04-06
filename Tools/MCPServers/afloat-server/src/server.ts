@@ -6,11 +6,13 @@
  * - Execute workflows with rollback on failure
  * - Track workflow status and history
  * - Audit trail for all workflow operations
+ * - Safety pipeline isolation with ExecutionPolicyEngine
  *
  * Port: 3000 (per GATE/agent_schema.json)
  */
 
 import { generateId } from "@cascade/shared-types/id";
+import { ExecutionPolicyEngine } from "@cascade/shared-types/security-policy";
 import { SessionRateLimiter } from "@cascade/shared-types/session-rate-limit";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
@@ -30,6 +32,13 @@ const WORKFLOWS_DIR = config.workflowsDir;
 const HISTORY_DIR = config.historyDir;
 
 const readLimiter = new SessionRateLimiter();
+
+// Execution policy for command safety (P-MCP-001, P-MCP-003, P-MCP-005)
+const executionPolicy = new ExecutionPolicyEngine(config.allowedRoots);
+
+// Preview token for multi-step safety: execute requires a token from a prior dry-run (TTL 5 min)
+const PREVIEW_TOKEN_TTL_MS = 5 * 60 * 1000;
+let lastPreview: { token: string; expiresAt: number; workflowId: string } | null = null;
 
 // ── Types ──
 
@@ -326,9 +335,13 @@ export function buildServer(): McpServer {
           .optional()
           .default(true)
           .describe("If true (default), validate without executing commands"),
+        previewToken: z
+          .string()
+          .optional()
+          .describe("Preview token from prior dry-run (required for non-dry-run execution)"),
       }) as any,
     },
-    async (args: { workflowId: string; dryRun?: boolean }) => {
+    async (args: { workflowId: string; dryRun?: boolean; previewToken?: string }) => {
       await ensureDataDir();
       const wf = await loadWorkflow(args.workflowId);
       if (!wf) {
@@ -346,6 +359,54 @@ export function buildServer(): McpServer {
       }
 
       const dryRun = args.dryRun !== false;
+
+      // P-MCP-002: Require preview token for non-dry-run execution
+      if (!dryRun) {
+        const now = Date.now();
+        if (!lastPreview || lastPreview.expiresAt < now) {
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: JSON.stringify({
+                  error: "Multi-step safety: run dry-run first to generate preview token",
+                  policyId: "P-MCP-002",
+                }),
+              },
+            ],
+            isError: true,
+          };
+        }
+        if (args.previewToken !== lastPreview.token) {
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: JSON.stringify({
+                  error: "Invalid preview token",
+                  policyId: "P-MCP-002",
+                }),
+              },
+            ],
+            isError: true,
+          };
+        }
+        if (lastPreview.workflowId !== wf.id) {
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: JSON.stringify({
+                  error: "Preview token does not match workflow ID",
+                  policyId: "P-MCP-002",
+                }),
+              },
+            ],
+            isError: true,
+          };
+        }
+      }
+
       const exec: WorkflowExecution = {
         executionId: generateId("exec"),
         workflowId: wf.id,
@@ -359,6 +420,34 @@ export function buildServer(): McpServer {
       for (let i = 0; i < wf.steps.length; i++) {
         const step = wf.steps[i];
         exec.currentStep = i;
+
+        // Safety validation for commands
+        if (step.command) {
+          const commandValidation = executionPolicy.validateCommand(step.command);
+          if (commandValidation.verdict === "deny") {
+            exec.status = "failed";
+            exec.completedAt = new Date().toISOString();
+            exec.stepResults.push({
+              step: step.name,
+              status: "blocked",
+              error: commandValidation.reason,
+            });
+            await saveExecution(exec);
+            return {
+              content: [
+                {
+                  type: "text" as const,
+                  text: JSON.stringify({
+                    error: `Command validation failed for step "${step.name}"`,
+                    policyResult: commandValidation,
+                    execution: exec,
+                  }),
+                },
+              ],
+              isError: true,
+            };
+          }
+        }
 
         if (dryRun) {
           exec.stepResults.push({
@@ -381,8 +470,26 @@ export function buildServer(): McpServer {
       exec.completedAt = new Date().toISOString();
       await saveExecution(exec);
 
+      // Generate preview token on successful dry-run
+      if (dryRun) {
+        const token = generateId("preview");
+        lastPreview = {
+          token,
+          expiresAt: Date.now() + PREVIEW_TOKEN_TTL_MS,
+          workflowId: wf.id,
+        };
+      }
+
       return {
-        content: [{ type: "text" as const, text: JSON.stringify(exec, null, 2) }],
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify({
+              ...exec,
+              previewToken: dryRun ? lastPreview?.token : undefined,
+            }),
+          },
+        ],
       };
     },
   );

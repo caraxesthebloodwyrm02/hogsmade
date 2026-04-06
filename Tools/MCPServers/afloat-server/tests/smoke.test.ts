@@ -133,7 +133,7 @@ describe("afloat-server smoke", () => {
     );
   });
 
-  it("executes non-dry-run in simulated mode", async () => {
+  it("executes non-dry-run in simulated mode with preview token", async () => {
     const server = buildServer();
     const create = (await invokeTool(server, "workflow_create", {
       name: "simulated-flow",
@@ -148,9 +148,22 @@ describe("afloat-server smoke", () => {
     })) as { content: Array<{ text: string }> };
     const workflowId = JSON.parse(create.content[0].text).workflow.id as string;
 
+    // P-MCP-002: Require dry-run first to generate preview token
+    const dryRun = (await invokeTool(server, "workflow_execute", {
+      workflowId,
+      dryRun: true,
+    })) as { content: Array<{ text: string }>; isError?: boolean };
+
+    expect(dryRun.isError).not.toBe(true);
+    const dryRunResult = JSON.parse(dryRun.content[0].text);
+    const previewToken = dryRunResult.previewToken as string;
+    expect(previewToken).toBeDefined();
+
+    // Now execute with preview token
     const execute = (await invokeTool(server, "workflow_execute", {
       workflowId,
       dryRun: false,
+      previewToken,
     })) as { content: Array<{ text: string }>; isError?: boolean };
 
     expect(execute.isError).not.toBe(true);
@@ -159,5 +172,33 @@ describe("afloat-server smoke", () => {
     expect(execution.status).toBe("completed");
     expect(execution.stepResults[0].status).toBe("simulated");
     expect(execution.stepResults[0].output).toContain("npm run release");
+  });
+
+  it("blocks commands with dangerous shell operators (P-MCP-003)", async () => {
+    const server = buildServer();
+    const create = (await invokeTool(server, "workflow_create", {
+      name: "dangerous-flow",
+      description: "command injection test",
+      steps: [
+        {
+          name: "inject",
+          description: "should be blocked",
+          command: "npm run build && rm -rf /",
+        },
+      ],
+    })) as { content: Array<{ text: string }> };
+    const workflowId = JSON.parse(create.content[0].text).workflow.id as string;
+
+    const execute = (await invokeTool(server, "workflow_execute", {
+      workflowId,
+      dryRun: true,
+    })) as { content: Array<{ text: string }>; isError?: boolean };
+
+    expect(execute.isError).toBe(true);
+    const error = JSON.parse(execute.content[0].text);
+    expect(error.error).toContain("Command validation failed");
+    expect(error.policyResult.policyId).toBe("P-MCP-003");
+    expect(error.policyResult.verdict).toBe("deny");
+    expect(error.policyResult.reason).toContain("blocked shell operator");
   });
 });
