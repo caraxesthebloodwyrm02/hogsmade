@@ -4,6 +4,8 @@
  * Demonstrates pattern detection in academic citation networks.
  * Shows how patterns identify research communities, influence cascades,
  * and temporal clustering in scientific literature.
+ *
+ * Run: node examples/citation-network.mjs   — or: npm run demo:citation
  */
 
 import { runContextPipeline, unique } from "../core/engine.js";
@@ -444,12 +446,7 @@ result.contextLenses.forEach((lens, i) => {
 });
 console.log();
 
-// Pattern matching (simplified for demo)
-console.log("🎯 Pattern Detection Results");
-console.log("   Pattern registry system ready for integration");
-console.log(
-  "   Built-in patterns available: temporal, influence, geographic, domain-bridge, structural",
-);
+console.log("🎯 Heavier citation rules live in glimpse.master.yaml — this demo uses a slim rule slice.");
 console.log();
 
 console.log("🔗 Citation Network Analysis");

@@ -1,53 +1,20 @@
 /**
- * Startup Ecosystem Analysis - JavaScript Version
+ * Startup ecosystem — real Glimpse pipeline + small query utilities
  *
- * Demonstrates pattern detection in startup ecosystems.
- * Shows how patterns identify funding cascades, geographic clusters,
- * domain convergence, and influence networks in entrepreneurial ecosystems.
+ * Upper half: chained aggregations and optional NLP-style query patterns (educational).
+ * Lower half: the same companies as JSON records run through runContextPipeline
+ * (rules, lenses, relations, influence edges).
  *
- * REFERENCE INVOCATION GUIDE:
- * ===========================
- *
- * 1. AGGREGATION OPERATIONS
- *    - min(array, field?)     : Get minimum value, optionally by field
- *    - max(array, field?)     : Get maximum value, optionally by field
- *    - sum(array, field?)     : Sum all values, optionally by field
- *    - avg(array, field?)     : Average of values, optionally by field
- *    - count(array, predicate?): Count items, optionally with filter
- *    - unique(array, field?)  : Get distinct values
- *
- * 2. TRANSFORMATION OPERATIONS
- *    - filter(array, predicate): Filter by condition
- *    - map(array, transform)   : Transform each item
- *    - sort(array, comparator) : Sort with custom comparator
- *    - limit(array, n)         : Take first n items
- *    - groupBy(array, keyFn)   : Group items by key function
- *
- * 3. CONDITIONAL ARGUMENTS
- *    - { field: "name" }                    : Target specific field
- *    - { gt: value }                        : Greater than
- *    - { lt: value }                        : Less than
- *    - { eq: value }                        : Equal to
- *    - { between: [min, max] }              : Range inclusive
- *    - { in: [values] }                     : In set of values
- *    - { sortOrder: "asc" | "desc" }        : Sort direction
- *    - { limit: n }                         : Result limit
- *    - { groupBy: field | fn }              : Grouping key
- *
- * 4. NLP PATTERN MAPPING
- *    - "show top 5 by funding"      → filter + sort(desc) + limit(5)
- *    - "group by location"          → groupBy("location")
- *    - "average funding per domain" → groupBy("domain") + avg("funding")
- *    - "startups founded after 2000"→ filter({ founded: { gt: 2000 } })
- *    - "total exit value"           → sum("exit_value")
+ * Run: node examples/startup-ecosystem.mjs
  */
 
+import { runContextPipeline } from "../core/engine.js";
+
 // ============================================================================
-// UTILITY FUNCTIONS - Core operations for data manipulation
+// UTILITY FUNCTIONS — aggregations / filters (not the cognitive engine)
 // ============================================================================
 
 const utils = {
-  // Aggregations
   min: (arr, field) => (field ? Math.min(...arr.map((d) => d[field])) : Math.min(...arr)),
 
   max: (arr, field) => (field ? Math.max(...arr.map((d) => d[field])) : Math.max(...arr)),
@@ -60,7 +27,6 @@ const utils = {
 
   unique: (arr, field) => [...new Set(field ? arr.map((d) => d[field]) : arr)],
 
-  // Transformations
   filter: (arr, conditions) => {
     if (typeof conditions === "function") return arr.filter(conditions);
     return arr.filter((item) => {
@@ -98,7 +64,6 @@ const utils = {
     }, {});
   },
 
-  // Chained query builder
   query: (arr) => ({
     data: arr,
     filter(conditions) {
@@ -136,7 +101,7 @@ const utils = {
 };
 
 // ============================================================================
-// NLP PATTERN PARSER - Maps natural language to operations
+// Tiny pattern → handler map (illustrates how natural phrases become ops)
 // ============================================================================
 
 const nlpPatterns = {
@@ -144,7 +109,7 @@ const nlpPatterns = {
     {
       regex: /show\s+top\s+(\d+)\s+by\s+(\w+)/i,
       handler: (data, match) =>
-        utils.query(data).sort(match[2], "desc").limit(parseInt(match[1])).result(),
+        utils.query(data).sort(match[2], "desc").limit(parseInt(match[1], 10)).result(),
     },
     {
       regex: /group\s+by\s+(\w+)/i,
@@ -161,15 +126,11 @@ const nlpPatterns = {
     },
     {
       regex: /(\w+)\s+(?:founded\s+)?after\s+(\d+)/i,
-      handler: (data, match) => utils.filter(data, { founded: { gt: parseInt(match[2]) } }),
+      handler: (data, match) => utils.filter(data, { founded: { gt: parseInt(match[2], 10) } }),
     },
     {
       regex: /total\s+(\w+)/i,
       handler: (data, match) => utils.sum(data, match[1].replace("_", "")),
-    },
-    {
-      regex: /count\s+(\w+)\s+where\s+(\w+)\s*=\s*"?(\w+)"?/i,
-      handler: (data, match) => utils.count(data, (d) => d[match[2]] === match[3]),
     },
   ],
 
@@ -183,60 +144,7 @@ const nlpPatterns = {
 };
 
 // ============================================================================
-// PIPELINE FUNCTION - Simulated context analysis
-// ============================================================================
-
-const runContextPipeline = (data, formatType, config, options = {}) => {
-  const entities = data.map((d, i) => ({
-    id: i,
-    name: d.name,
-    dimensions: {
-      space: d.location,
-      time: d.founded,
-      domain: d.domain,
-    },
-  }));
-
-  const entityLensScores = {};
-  data.forEach((d, i) => {
-    entityLensScores[i] = {
-      ai: d.domain === "artificial_intelligence" ? 1.0 : 0.3,
-      fintech: d.domain === "fintech" ? 1.0 : 0.2,
-      hardware: d.domain === "hardware" || d.domain === "semiconductors" ? 0.9 : 0.1,
-    };
-  });
-
-  return {
-    profile: {
-      recordCount: data.length,
-      fields: Object.keys(data[0] || {}),
-      timeRange: { min: utils.min(data, "founded"), max: utils.max(data, "founded") },
-    },
-    contextLenses: [
-      { id: "ai", label: "Artificial Intelligence", score: 1.3, role: "primary" },
-      { id: "fintech", label: "Financial Technology", score: 1.2, role: "secondary" },
-      { id: "hardware", label: "Hardware & Semiconductors", score: 0.9, role: "tertiary" },
-    ],
-    entities,
-    facts: { entityLensScores },
-    relations: data.flatMap((d, i) =>
-      data
-        .slice(0, i)
-        .filter((prev) => prev.location === d.location || prev.domain === d.domain)
-        .map((prev, j) => ({
-          id: `rel-${i}-${j}`,
-          type: prev.location === d.location ? "co_located" : "domain_peer",
-          source: i,
-          target: j,
-        })),
-    ),
-    evidences: Array(10).fill({ type: "pattern_match", confidence: 0.85 }),
-    ruleTraces: Array(5).fill({ ruleId: "ecosystem_rule", triggered: true }),
-  };
-};
-
-// ============================================================================
-// STARTUP DATA
+// DATA — Silicon Valley lineage as an influence graph (illustrative, not exhaustive)
 // ============================================================================
 
 const startupData = [
@@ -245,166 +153,370 @@ const startupData = [
     founded: 1939,
     domain: "hardware",
     location: "Palo Alto",
-    funding: 500000,
+    funding: 500_000,
     exit_type: "IPO",
-    exit_value: 50000000000,
+    exit_value: 50_000_000_000,
+    influenced_by: "",
   },
   {
     name: "Intel",
     founded: 1968,
     domain: "semiconductors",
     location: "Santa Clara",
-    funding: 2500000,
+    funding: 2_500_000,
     exit_type: "IPO",
-    exit_value: 200000000000,
+    exit_value: 200_000_000_000,
+    influenced_by: "Hewlett-Packard",
   },
   {
     name: "Apple",
     founded: 1976,
     domain: "consumer_electronics",
     location: "Cupertino",
-    funding: 250000,
+    funding: 250_000,
     exit_type: "IPO",
-    exit_value: 3000000000000,
+    exit_value: 3_000_000_000_000,
+    influenced_by: "Intel",
   },
   {
     name: "Netscape",
     founded: 1994,
     domain: "internet",
     location: "Mountain View",
-    funding: 5000000,
+    funding: 5_000_000,
     exit_type: "IPO",
-    exit_value: 4200000000,
+    exit_value: 4_200_000_000,
+    influenced_by: "Apple",
   },
   {
     name: "Amazon",
     founded: 1994,
     domain: "e-commerce",
     location: "Seattle",
-    funding: 1000000,
+    funding: 1_000_000,
     exit_type: "IPO",
-    exit_value: 1700000000000,
+    exit_value: 1_700_000_000_000,
+    influenced_by: "",
   },
   {
     name: "Google",
     founded: 1998,
     domain: "search",
     location: "Mountain View",
-    funding: 25000000,
+    funding: 25_000_000,
     exit_type: "IPO",
-    exit_value: 2000000000000,
+    exit_value: 2_000_000_000_000,
+    influenced_by: "Netscape",
   },
   {
     name: "Facebook",
     founded: 2004,
     domain: "social_media",
     location: "Palo Alto",
-    funding: 500000,
+    funding: 500_000,
     exit_type: "IPO",
-    exit_value: 900000000000,
+    exit_value: 900_000_000_000,
+    influenced_by: "Google",
   },
   {
     name: "OpenAI",
     founded: 2015,
     domain: "artificial_intelligence",
     location: "San Francisco",
-    funding: 11000000000,
+    funding: 11_000_000_000,
     exit_type: "Private",
-    exit_value: 86000000000,
+    exit_value: 86_000_000_000,
+    influenced_by: "Google",
   },
   {
     name: "Stripe",
     founded: 2010,
     domain: "fintech",
     location: "San Francisco",
-    funding: 1400000000,
+    funding: 1_400_000_000,
     exit_type: "Private",
-    exit_value: 95000000000,
+    exit_value: 95_000_000_000,
+    influenced_by: "Amazon",
   },
   {
     name: "Theranos",
     founded: 2003,
     domain: "health_tech",
     location: "Palo Alto",
-    funding: 700000000,
+    funding: 700_000_000,
     exit_type: "Bankruptcy",
     exit_value: 0,
+    influenced_by: "",
   },
 ];
 
 const startupConfig = {
-  taxonomy: { domains: utils.unique(startupData, "domain") },
-  defaults: { active_preset: "analyst" },
-  presets: { analyst: { lens_weights: { ai: 1.5, fintech: 1.2 }, view_bias: { timeline: 0.8 } } },
+  semantic_packs: {
+    dimension_aliases: {
+      time: ["year", "founded", "date"],
+      space: ["location", "city", "region"],
+      domain: ["domain", "sector"],
+      catalyst: ["influenced_by", "inspired_by", "mentor"],
+    },
+    query_aliases: {
+      views: {
+        timeline: ["timeline", "history", "founded"],
+        constellation: ["network", "graph", "cap table"],
+        flow: ["influence", "lineage", "spillover"],
+        clusters: ["sector", "domain", "batch"],
+        map: ["geography", "bay area", "hq"],
+      },
+    },
+  },
+  taxonomy: {
+    domains: [
+      {
+        id: "hardware",
+        label: "Hardware roots",
+        keywords: ["hardware", "instrument", "oscilloscope", "packard", "garage"],
+      },
+      {
+        id: "semiconductors",
+        label: "Semiconductors",
+        keywords: ["semiconductor", "chip", "intel", "transistor", "fab"],
+      },
+      {
+        id: "consumer_electronics",
+        label: "Devices",
+        keywords: ["consumer", "iphone", "mac", "apple", "device"],
+      },
+      {
+        id: "internet",
+        label: "Web 1.0",
+        keywords: ["browser", "netscape", "internet", "http", "mosaic"],
+      },
+      {
+        id: "e-commerce",
+        label: "Commerce",
+        keywords: ["amazon", "retail", "e-commerce", "marketplace", "logistics"],
+      },
+      {
+        id: "search",
+        label: "Search & ads",
+        keywords: ["google", "search", "index", "rank", "ads"],
+      },
+      {
+        id: "social_media",
+        label: "Social graph",
+        keywords: ["facebook", "social", "feed", "graph", "sharing"],
+      },
+      {
+        id: "artificial_intelligence",
+        label: "AI wave",
+        keywords: ["openai", "model", "neural", "learning", "intelligence", "gpt"],
+      },
+      {
+        id: "fintech",
+        label: "Fintech",
+        keywords: ["stripe", "payments", "fintech", "card", "ledger"],
+      },
+      {
+        id: "health_tech",
+        label: "Health tech",
+        keywords: ["theranos", "lab", "health", "diagnostic", "blood"],
+      },
+    ],
+  },
+  defaults: {
+    active_preset: "analyst",
+    secondary_lens_threshold: 0.38,
+    top_secondary_limit: 4,
+    evidence_confidence_floor: 0.35,
+  },
+  presets: {
+    analyst: {
+      lens_weights: {
+        artificial_intelligence: 1.35,
+        fintech: 1.15,
+        semiconductors: 1.1,
+        health_tech: 0.85,
+      },
+      view_bias: {
+        flow: 1.15,
+        constellation: 1.05,
+        timeline: 1.0,
+        map: 0.95,
+      },
+    },
+  },
+  view_specs: {
+    timeline: { label: "Timeline" },
+    constellation: { label: "Constellation" },
+    clusters: { label: "Clusters" },
+    matrix: { label: "Matrix" },
+    flow: { label: "Influence flow" },
+    map: { label: "Map" },
+  },
+  function_registry: {
+    field_exists: { scope: ["dataset", "entity"], args: { path: "field_selector" } },
+    taxonomy_score: {
+      scope: ["entity"],
+      args: { path: "field_selector", domain: "lens_id", min_score: "numeric_threshold" },
+    },
+    data_shape: { scope: ["dataset"], args: { min_records: "numeric_threshold" } },
+    dimension_count: {
+      scope: ["dataset"],
+      args: { dimension: "dimension_name", min_count: "numeric_threshold" },
+    },
+    record_range: {
+      scope: ["dataset"],
+      args: { min: "numeric_threshold", max: "numeric_threshold" },
+    },
+    influence_link: { scope: ["dataset", "relation"] },
+  },
   rules: [
-    { id: "high_value_exit", condition: { exit_value: { gt: 1000000000 } }, weight: 1.5 },
-    { id: "recent_startup", condition: { founded: { gt: 2000 } }, weight: 1.2 },
+    {
+      id: "rule-ai-wave",
+      label: "AI-heavy companies",
+      applies_to: "entity",
+      priority: 92,
+      function: "taxonomy_score",
+      args: { path: "entity.domain_keyword_hits", domain: "artificial_intelligence", min_score: 1 },
+      returns: "score",
+      weight_strategy: "direct_score",
+      derive: [
+        { action: "boost_lens", lens: "artificial_intelligence", score: 1.0 },
+        { action: "prefer_view", view: "flow", score: 0.65 },
+      ],
+      affects: ["context_lens", "view"],
+    },
+    {
+      id: "rule-fintech",
+      label: "Payments / fintech",
+      applies_to: "entity",
+      priority: 88,
+      function: "taxonomy_score",
+      args: { path: "entity.domain_keyword_hits", domain: "fintech", min_score: 1 },
+      returns: "score",
+      weight_strategy: "direct_score",
+      derive: [
+        { action: "boost_lens", lens: "fintech", score: 0.95 },
+        { action: "prefer_view", view: "matrix", score: 0.45 },
+      ],
+      affects: ["context_lens", "view"],
+    },
+    {
+      id: "rule-semiconductor",
+      label: "Chip / fab lineage",
+      applies_to: "entity",
+      priority: 86,
+      function: "taxonomy_score",
+      args: { path: "entity.domain_keyword_hits", domain: "semiconductors", min_score: 1 },
+      returns: "score",
+      weight_strategy: "direct_score",
+      derive: [
+        { action: "boost_lens", lens: "semiconductors", score: 0.9 },
+        { action: "prefer_view", view: "timeline", score: 0.55 },
+      ],
+      affects: ["context_lens", "view"],
+    },
+    {
+      id: "rule-influence-network",
+      label: "Explicit influence edges",
+      applies_to: "dataset",
+      priority: 78,
+      function: "influence_link",
+      returns: "boolean",
+      derive: [
+        { action: "prefer_view", view: "flow", score: 0.85 },
+        { action: "prefer_view", view: "constellation", score: 0.7 },
+      ],
+      affects: ["view"],
+    },
+    {
+      id: "rule-time-dim",
+      label: "Founding years present",
+      applies_to: "dataset",
+      priority: 62,
+      function: "dimension_count",
+      args: { dimension: "time", min_count: 1 },
+      returns: "score",
+      weight_strategy: "direct_score",
+      derive: [{ action: "prefer_view", view: "timeline", score: 0.75 }],
+      affects: ["view"],
+    },
+    {
+      id: "rule-geo",
+      label: "HQ locations",
+      applies_to: "dataset",
+      priority: 58,
+      function: "dimension_count",
+      args: { dimension: "space", min_count: 1 },
+      returns: "score",
+      weight_strategy: "direct_score",
+      derive: [{ action: "prefer_view", view: "map", score: 0.65 }],
+      affects: ["view"],
+    },
+    {
+      id: "rule-small-batch",
+      label: "Demo-sized cohort",
+      applies_to: "dataset",
+      priority: 45,
+      function: "record_range",
+      args: { min: 5, max: 40 },
+      returns: "boolean",
+      derive: [{ action: "prefer_view", view: "constellation", score: 0.4 }],
+      affects: ["view"],
+    },
   ],
 };
 
 // ============================================================================
-// MAIN EXECUTION
+// MAIN
 // ============================================================================
 
-console.log("=== Glimpse Engine: Startup Ecosystem Pattern Analysis ===\n");
+console.log("=== Startup ecosystem — utilities + real Glimpse pipeline ===\n");
 
+console.log("— Aggregations (plain JS)");
+console.log(`   Companies: ${utils.count(startupData)}`);
+console.log(
+  `   Era: ${utils.min(startupData, "founded")}–${utils.max(startupData, "founded")}   Sectors: ${utils.unique(startupData, "domain").join(", ")}`,
+);
+console.log();
+
+const nlpTry = nlpPatterns.parse("show top 3 by funding", startupData);
+if (nlpTry.matched) {
+  console.log("— NLP pattern demo: “show top 3 by funding”");
+  nlpTry.result.forEach((s, i) => {
+    console.log(`   ${i + 1}. ${s.name} — $${(s.funding / 1_000_000).toFixed(1)}M`);
+  });
+  console.log();
+}
+
+console.log("— runContextPipeline (engine)");
 const result = runContextPipeline(startupData, "json", startupConfig);
 
-// CONDITION 1: Basic aggregations using utility functions
-console.log("📊 Startup Ecosystem Overview");
-console.log(`   Total Startups: ${utils.count(startupData)}`);
-console.log(
-  `   Time Span: ${utils.min(startupData, "founded")} - ${utils.max(startupData, "founded")}`,
-);
-console.log(`   Domains: ${utils.unique(startupData, "domain").join(", ")}\n`);
-
-// CONDITION 2: Iterate with index and filter by lens scores
-console.log("🔍 Primary Context Lenses");
+console.log(`   Primary lens: ${result.primaryLens?.label ?? "(none)"}`);
+console.log("   Lenses:");
 result.contextLenses.forEach((lens, i) => {
-  const entityCount = utils.count(
-    result.entities,
-    (e) => result.facts.entityLensScores[e.id]?.[lens.id] > 0.5,
-  );
-  console.log(
-    `   ${i + 1}. ${lens.label} (score: ${lens.score.toFixed(2)}, role: ${lens.role}, ${entityCount} startups)`,
-  );
+  const n = result.entities.filter((e) => result.facts.entityLensScores[e.id]?.[lens.id]).length;
+  console.log(`     ${i + 1}. ${lens.label} (${lens.role}, score ${lens.score}) — ${n} entities tagged`);
 });
 console.log();
 
-// CONDITION 3: Group by relation type using utility
-console.log("🔗 Startup Network Analysis");
-console.log(`   Total Relations: ${result.relations.length}`);
-const relationGroups = utils.groupBy(result.relations, "type");
-Object.entries(relationGroups).forEach(([type, rels]) => {
-  console.log(`   ${type}: ${rels.length}`);
-});
-console.log();
-
-// CONDITION 4: Group by location, sort by count descending, limit to top 5
-console.log("🌍 Geographic Distribution");
-const locationGroups = utils.groupBy(result.entities, (e) => e.dimensions.space);
-utils
-  .query(
-    Object.entries(locationGroups).map(([loc, ents]) => ({ location: loc, count: ents.length })),
-  )
-  .sort("count", "desc")
-  .limit(5)
-  .result()
-  .forEach(({ location, count }) => {
-    console.log(`   ${location}: ${count} startups`);
+const influenced = result.relations.filter((r) => r.type === "influenced");
+console.log(`   Relations: ${result.relations.length} total, ${influenced.length} explicit influence edges`);
+if (influenced.length) {
+  influenced.forEach((r) => {
+    const a = result.entities.find((e) => e.id === r.source);
+    const b = result.entities.find((e) => e.id === r.target);
+    if (a && b) console.log(`     ${a.name} → ${b.name}`);
   });
+}
 console.log();
 
-// CONDITION 5: Math operations using utility functions
-console.log("💰 Funding Analysis");
-const totalFunding = utils.sum(startupData, "funding");
-const avgFunding = utils.avg(startupData, "funding");
-console.log(`   Total Funding: $${Math.floor(totalFunding / 1000000)}M`);
-console.log(`   Average Funding: $${(avgFunding / 1000000).toFixed(1)}M`);
+console.log("   View preferences:");
+Object.entries(result.viewPreferences)
+  .sort((a, b) => b[1] - a[1])
+  .forEach(([v, s]) => console.log(`     ${v}: ${s.toFixed(2)}`));
 console.log();
 
-// CONDITION 6: Chained query - filter, sort, limit
-console.log("🚀 High-Value Startups (funding > $10M, top 5)");
+console.log("— Funding leaders (utility query, funding > $10M)");
 utils
   .query(startupData)
   .filter((s) => s.funding > 10_000_000)
@@ -415,3 +527,5 @@ utils
     console.log(`   ${i + 1}. ${s.name} — $${(s.funding / 1_000_000).toFixed(1)}M`);
   });
 console.log();
+
+console.log("=== done ===");

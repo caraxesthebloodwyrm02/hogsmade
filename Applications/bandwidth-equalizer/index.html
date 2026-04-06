@@ -1,0 +1,1193 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bandwidth Equalizer — Parametric Spectrum Analyzer</title>
+  <style>
+    :root {
+      --bg-primary: #0a0a0f;
+      --bg-secondary: #12121a;
+      --bg-panel: #1a1a26;
+      --bg-control: #22222e;
+      --border: #2a2a3a;
+      --text-primary: #e0e0e8;
+      --text-secondary: #8888a0;
+      --text-dim: #555568;
+      --clear: #00e5a0;
+      --clear-low: #66ccaa;
+      --watch: #ffaa33;
+      --act: #ff4466;
+      --urgent: #ff0033;
+      --spike: #ff2244;
+      --glow-clear: rgba(0, 229, 160, 0.25);
+      --glow-watch: rgba(255, 170, 51, 0.25);
+      --glow-act: rgba(255, 68, 102, 0.25);
+      --slider-track: #2a2a3a;
+      --slider-fill: #4466ff;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: 'SF Mono', 'Fira Code', 'JetBrains Mono', 'Cascadia Code', monospace;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--bg-secondary);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-icon {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, var(--clear), var(--slider-fill));
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+
+    .logo h1 {
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+
+    .logo span {
+      font-size: 11px;
+      color: var(--text-secondary);
+      font-weight: 400;
+    }
+
+    .header-controls {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    button {
+      background: var(--bg-control);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      letter-spacing: 0.5px;
+    }
+
+    button:hover {
+      background: var(--border);
+      border-color: var(--text-dim);
+    }
+
+    button.primary {
+      background: var(--slider-fill);
+      border-color: var(--slider-fill);
+      color: #fff;
+    }
+
+    button.primary:hover {
+      background: #5577ff;
+    }
+
+    .snapshot-indicator {
+      font-size: 10px;
+      color: var(--text-dim);
+      padding: 4px 10px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background: var(--bg-panel);
+    }
+
+    main {
+      flex: 1;
+      display: grid;
+      grid-template-rows: 1fr auto auto;
+      gap: 0;
+      overflow: hidden;
+    }
+
+    .eq-container {
+      padding: 24px 32px 16px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .eq-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 12px;
+    }
+
+    .eq-header h2 {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .eq-stats {
+      display: flex;
+      gap: 16px;
+      font-size: 11px;
+    }
+
+    .eq-stat {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .eq-stat .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    .eq-stat .dot.clear {
+      background: var(--clear);
+    }
+
+    .eq-stat .dot.watch {
+      background: var(--watch);
+    }
+
+    .eq-stat .dot.act {
+      background: var(--act);
+    }
+
+    .eq-graph {
+      flex: 1;
+      display: flex;
+      align-items: flex-end;
+      gap: 0;
+      position: relative;
+      min-height: 320px;
+    }
+
+    .threshold-line {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 1px;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .threshold-line::after {
+      content: attr(data-label);
+      position: absolute;
+      right: 0;
+      top: -16px;
+      font-size: 9px;
+      letter-spacing: 0.5px;
+      padding: 1px 6px;
+      border-radius: 3px;
+    }
+
+    .threshold-clear {
+      bottom: 65%;
+      border-top: 1px dashed rgba(0, 229, 160, 0.3);
+    }
+
+    .threshold-clear::after {
+      color: var(--clear);
+      background: rgba(0, 229, 160, 0.08);
+    }
+
+    .threshold-watch {
+      bottom: 50%;
+      border-top: 1px dashed rgba(255, 170, 51, 0.3);
+    }
+
+    .threshold-watch::after {
+      color: var(--watch);
+      background: rgba(255, 170, 51, 0.08);
+    }
+
+    .threshold-act {
+      bottom: 35%;
+      border-top: 1px dashed rgba(255, 68, 102, 0.3);
+    }
+
+    .threshold-act::after {
+      color: var(--act);
+      background: rgba(255, 68, 102, 0.08);
+    }
+
+    .y-axis {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 32px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 4px 0;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .y-label {
+      font-size: 9px;
+      color: var(--text-dim);
+      text-align: right;
+      width: 24px;
+    }
+
+    .bands-container {
+      flex: 1;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      gap: 6px;
+      padding-left: 36px;
+      height: 100%;
+    }
+
+    .band {
+      flex: 1;
+      max-width: 80px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      height: 100%;
+      justify-content: flex-end;
+      cursor: pointer;
+      transition: transform 0.1s ease;
+    }
+
+    .band:hover {
+      transform: scale(1.02);
+    }
+
+    .band:hover .bar {
+      filter: brightness(1.2);
+    }
+
+    .bar-wrapper {
+      width: 100%;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .bar {
+      width: 70%;
+      border-radius: 4px 4px 0 0;
+      transition: height 0.6s cubic-bezier(0.22, 1, 0.36, 1), background 0.3s ease;
+      position: relative;
+      min-height: 2px;
+    }
+
+    .bar.tier-clear {
+      background: linear-gradient(to top, var(--clear), rgba(0, 229, 160, 0.6));
+      box-shadow: 0 0 12px var(--glow-clear), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+
+    .bar.tier-clear-low {
+      background: linear-gradient(to top, var(--clear-low), rgba(102, 204, 170, 0.6));
+      box-shadow: 0 0 8px rgba(102, 204, 170, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+
+    .bar.tier-watch {
+      background: linear-gradient(to top, var(--watch), rgba(255, 170, 51, 0.6));
+      box-shadow: 0 0 12px var(--glow-watch), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+
+    .bar.tier-act {
+      background: linear-gradient(to top, var(--act), rgba(255, 68, 102, 0.6));
+      box-shadow: 0 0 14px var(--glow-act), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      animation: pulse-act 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse-act {
+
+      0%,
+      100% {
+        box-shadow: 0 0 14px var(--glow-act);
+      }
+
+      50% {
+        box-shadow: 0 0 24px var(--glow-act), 0 0 40px rgba(255, 68, 102, 0.1);
+      }
+    }
+
+    .bar-value {
+      position: absolute;
+      top: -20px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-primary);
+      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+      white-space: nowrap;
+    }
+
+    .spike-marker {
+      position: absolute;
+      top: -34px;
+      font-size: 9px;
+      font-weight: 700;
+      color: var(--spike);
+      text-shadow: 0 0 6px rgba(255, 34, 68, 0.6);
+      animation: spike-blink 1.5s ease-in-out infinite;
+    }
+
+    @keyframes spike-blink {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.5;
+      }
+    }
+
+    .band-label {
+      margin-top: 8px;
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      letter-spacing: 0.5px;
+      text-align: center;
+    }
+
+    .band-name {
+      font-size: 8px;
+      color: var(--text-dim);
+      margin-top: 2px;
+      text-align: center;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .detail-panel {
+      padding: 12px 32px;
+      background: var(--bg-secondary);
+      border-top: 1px solid var(--border);
+      min-height: 100px;
+      display: flex;
+      gap: 24px;
+      overflow-x: auto;
+    }
+
+    .detail-card {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      min-width: 200px;
+      flex-shrink: 0;
+    }
+
+    .detail-card h3 {
+      font-size: 11px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .detail-card .tier-badge {
+      font-size: 9px;
+      padding: 1px 6px;
+      border-radius: 3px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    .tier-badge.clear {
+      background: rgba(0, 229, 160, 0.15);
+      color: var(--clear);
+    }
+
+    .tier-badge.watch {
+      background: rgba(255, 170, 51, 0.15);
+      color: var(--watch);
+    }
+
+    .tier-badge.act {
+      background: rgba(255, 68, 102, 0.15);
+      color: var(--act);
+    }
+
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      padding: 3px 0;
+      border-bottom: 1px solid rgba(42, 42, 58, 0.5);
+    }
+
+    .detail-row:last-child {
+      border-bottom: none;
+    }
+
+    .detail-row .label {
+      color: var(--text-dim);
+    }
+
+    .detail-row .value {
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+
+    .signal-bar-container {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 2px;
+    }
+
+    .signal-bar {
+      height: 4px;
+      border-radius: 2px;
+      transition: width 0.4s ease;
+    }
+
+    .controls-panel {
+      padding: 16px 32px;
+      background: var(--bg-panel);
+      border-top: 1px solid var(--border);
+    }
+
+    .controls-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .controls-header h2 {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .weight-sum {
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+
+    .weight-sum.valid {
+      color: var(--clear);
+    }
+
+    .weight-sum.invalid {
+      color: var(--act);
+    }
+
+    .sliders {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .slider-group {
+      flex: 1;
+      min-width: 160px;
+    }
+
+    .slider-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+
+    .slider-label span {
+      font-size: 10px;
+      color: var(--text-secondary);
+      letter-spacing: 0.5px;
+    }
+
+    .slider-label .weight-value {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-primary);
+      min-width: 32px;
+      text-align: right;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      height: 4px;
+      -webkit-appearance: none;
+      appearance: none;
+      background: var(--slider-track);
+      border-radius: 2px;
+      outline: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--slider-fill);
+      cursor: pointer;
+      border: 2px solid var(--bg-primary);
+      box-shadow: 0 0 6px rgba(68, 102, 255, 0.4);
+      transition: transform 0.1s ease;
+    }
+
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--slider-fill);
+      cursor: pointer;
+      border: 2px solid var(--bg-primary);
+    }
+
+    .snapshots-drawer {
+      position: fixed;
+      top: 0;
+      right: -360px;
+      width: 360px;
+      height: 100%;
+      background: var(--bg-secondary);
+      border-left: 1px solid var(--border);
+      z-index: 100;
+      transition: right 0.3s ease;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .snapshots-drawer.open {
+      right: 0;
+    }
+
+    .drawer-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 99;
+      display: none;
+    }
+
+    .drawer-overlay.open {
+      display: block;
+    }
+
+    .drawer-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .drawer-header h3 {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    .drawer-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+    }
+
+    .snapshot-card {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px 12px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: border-color 0.15s ease;
+    }
+
+    .snapshot-card:hover {
+      border-color: var(--slider-fill);
+    }
+
+    .snapshot-card .snap-time {
+      font-size: 10px;
+      color: var(--text-dim);
+      margin-bottom: 4px;
+    }
+
+    .snapshot-card .snap-summary {
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    .snapshot-card .snap-weights {
+      font-size: 9px;
+      color: var(--text-dim);
+      margin-top: 4px;
+      font-family: inherit;
+    }
+
+    .snapshot-mini-bars {
+      display: flex;
+      gap: 2px;
+      align-items: flex-end;
+      height: 20px;
+      margin-top: 6px;
+    }
+
+    .snapshot-mini-bars .mini-bar {
+      flex: 1;
+      border-radius: 1px;
+      min-width: 3px;
+    }
+
+    .tooltip {
+      position: fixed;
+      background: var(--bg-control);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: 10px;
+      z-index: 200;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+      max-width: 220px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    }
+
+    .tooltip.visible {
+      opacity: 1;
+    }
+
+    .tooltip .tt-name {
+      font-weight: 600;
+      font-size: 11px;
+      margin-bottom: 4px;
+    }
+
+    .tooltip .tt-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 1px 0;
+      color: var(--text-secondary);
+    }
+
+    .tooltip .tt-row .tt-val {
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+
+    @media (max-width: 900px) {
+      .sliders {
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .detail-panel {
+        flex-direction: column;
+      }
+
+      .bands-container {
+        gap: 3px;
+        padding-left: 28px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <div class="logo">
+      <div class="logo-icon">~</div>
+      <div>
+        <h1>Bandwidth Equalizer</h1>
+        <span>Ecosystem Spectrum Analyzer</span>
+      </div>
+    </div>
+    <div class="header-controls">
+      <span class="snapshot-indicator" id="snapshotCount">0 snapshots</span>
+      <button onclick="takeSnapshot()">Snapshot</button>
+      <button onclick="toggleDrawer()">History</button>
+      <button onclick="resetWeights()">Reset</button>
+      <button class="primary" onclick="exportState()">Export JSON</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="eq-container">
+      <div class="eq-header">
+        <h2>Spectrum Bands</h2>
+        <div class="eq-stats">
+          <div class="eq-stat">
+            <div class="dot clear"></div><span id="clearCount">6 CLEAR</span>
+          </div>
+          <div class="eq-stat">
+            <div class="dot watch"></div><span id="watchCount">2 WATCH</span>
+          </div>
+          <div class="eq-stat">
+            <div class="dot act"></div><span id="actCount">2 ACT</span>
+          </div>
+        </div>
+      </div>
+      <div class="eq-graph">
+        <div class="threshold-line threshold-clear" data-label="CLEAR 65"></div>
+        <div class="threshold-line threshold-watch" data-label="WATCH 50"></div>
+        <div class="threshold-line threshold-act" data-label="ACT 35"></div>
+        <div class="y-axis" id="yAxis"></div>
+        <div class="bands-container" id="bandsContainer"></div>
+      </div>
+    </div>
+
+    <div class="detail-panel" id="detailPanel"></div>
+
+    <div class="controls-panel">
+      <div class="controls-header">
+        <h2>Parameter Tuning</h2>
+        <span class="weight-sum" id="weightSum">Sum: 1.00</span>
+      </div>
+      <div class="sliders" id="slidersContainer"></div>
+    </div>
+  </main>
+
+  <div class="drawer-overlay" id="drawerOverlay" onclick="toggleDrawer()"></div>
+  <div class="snapshots-drawer" id="snapshotsDrawer">
+    <div class="drawer-header">
+      <h3>Snapshot History</h3>
+      <button onclick="toggleDrawer()">Close</button>
+    </div>
+    <div class="drawer-body" id="snapshotsList"></div>
+  </div>
+
+  <div class="tooltip" id="tooltip"></div>
+
+  <script>
+    const ENTITIES = [
+      { id: "afloat", label: "AF", name: "afloat", health: 95, trust: 0.80, uncommitted: 0, failRate: 0.000, momentum: 0.50, spikes: 0, drag: "—" },
+      { id: "echoes", label: "EC", name: "echoes", health: 85, trust: 0.80, uncommitted: 3, failRate: 0.000, momentum: 0.50, spikes: 0, drag: "—" },
+      { id: "glimpse-engine", label: "GE", name: "glimpse-engine", health: 85, trust: 0.80, uncommitted: 10, failRate: 0.000, momentum: 0.50, spikes: 0, drag: "drift (10 uc)" },
+      { id: "vision", label: "Vi", name: "Vision", health: 50, trust: 0.85, uncommitted: 0, failRate: 0.000, momentum: 0.50, spikes: 0, drag: "health (no git)" },
+      { id: "apiguard", label: "Ap", name: "apiguard", health: 50, trust: 0.80, uncommitted: 1, failRate: 0.000, momentum: 0.50, spikes: 0, drag: "health (no git)" },
+      { id: "seeds-server", label: "SS", name: "seeds-server", health: 70, trust: 0.50, uncommitted: 1, failRate: 0.000, momentum: 0.50, spikes: 0, drag: "trust (0.50)" },
+      { id: "hogsmade", label: "HG", name: "hogsmade", health: 75, trust: 0.50, uncommitted: 46, failRate: 0.000, momentum: 0.50, spikes: 0, drag: "drift saturated (46 uc)" },
+      { id: "grid", label: "GR", name: "GRID", health: 90, trust: 0.30, uncommitted: 47, failRate: 0.000, momentum: 0.50, spikes: 0, drag: "drift + low trust" },
+      { id: "eligibility-server", label: "EL", name: "eligibility-server", health: 75, trust: 0.50, uncommitted: 46, failRate: 0.090, momentum: 0.125, spikes: 7, drag: "fail + drift + stalled" },
+      { id: "grid-server", label: "GS", name: "grid-server", health: 75, trust: 0.30, uncommitted: 46, failRate: 0.571, momentum: 0.50, spikes: 4, drag: "57% fail + drift" },
+    ];
+
+    const WEIGHT_DEFS = [
+      { id: "health", label: "Health", default: 0.30, color: "#44dd88" },
+      { id: "trust", label: "Trust", default: 0.25, color: "#6688ff" },
+      { id: "drift", label: "Drift", default: 0.20, color: "#ffaa33" },
+      { id: "fail", label: "Fail", default: 0.15, color: "#ff4466" },
+      { id: "momentum", label: "Momentum", default: 0.10, color: "#aa66ff" },
+    ];
+
+    let weights = {};
+    let snapshots = [];
+    let selectedBandId = null;
+
+    WEIGHT_DEFS.forEach(w => weights[w.id] = w.default);
+
+    function computePATH(entity) {
+      const driftNorm = Math.min(entity.uncommitted / 30, 1.0);
+      return 100 * (
+        (entity.health / 100) * weights.health +
+        entity.trust * weights.trust +
+        (1 - driftNorm) * weights.drift +
+        (1 - entity.failRate) * weights.fail +
+        entity.momentum * weights.momentum
+      );
+    }
+
+    function getTier(path) {
+      if (path >= 65) return "clear";
+      if (path >= 50) return "watch";
+      if (path >= 35) return "act";
+      return "urgent";
+    }
+
+    function getTierLabel(path) {
+      if (path >= 75) return "clear";
+      if (path >= 65) return "clear-low";
+      if (path >= 50) return "watch";
+      if (path >= 35) return "act";
+      return "urgent";
+    }
+
+    function tierColor(tier) {
+      const map = { clear: "var(--clear)", "clear-low": "var(--clear-low)", watch: "var(--watch)", act: "var(--act)", urgent: "var(--urgent)" };
+      return map[tier] || "var(--text-dim)";
+    }
+
+    function renderYAxis() {
+      const yAxis = document.getElementById("yAxis");
+      yAxis.innerHTML = "";
+      for (let v = 100; v >= 0; v -= 10) {
+        const label = document.createElement("div");
+        label.className = "y-label";
+        label.textContent = v;
+        yAxis.appendChild(label);
+      }
+    }
+
+    function renderBands() {
+      const container = document.getElementById("bandsContainer");
+      container.innerHTML = "";
+
+      const scored = ENTITIES.map(e => ({ ...e, path: computePATH(e) }));
+      scored.sort((a, b) => b.path - a.path);
+
+      let clearC = 0, watchC = 0, actC = 0;
+
+      scored.forEach(entity => {
+        const tier = getTierLabel(entity.path);
+        const tierBase = getTier(entity.path);
+        if (tierBase === "clear") clearC++;
+        else if (tierBase === "watch") watchC++;
+        else actC++;
+
+        const band = document.createElement("div");
+        band.className = "band";
+        band.dataset.id = entity.id;
+        band.onclick = () => selectBand(entity.id);
+
+        band.onmouseenter = (e) => showTooltip(e, entity);
+        band.onmouseleave = hideTooltip;
+
+        const barWrapper = document.createElement("div");
+        barWrapper.className = "bar-wrapper";
+
+        const bar = document.createElement("div");
+        bar.className = `bar tier-${tier}`;
+        bar.style.height = `${Math.max(entity.path, 1)}%`;
+
+        const value = document.createElement("div");
+        value.className = "bar-value";
+        value.textContent = entity.path.toFixed(1);
+
+        if (entity.spikes > 0) {
+          const spike = document.createElement("div");
+          spike.className = "spike-marker";
+          spike.textContent = `×${entity.spikes}`;
+          bar.appendChild(spike);
+        }
+
+        bar.appendChild(value);
+        barWrapper.appendChild(bar);
+
+        const label = document.createElement("div");
+        label.className = "band-label";
+        label.textContent = entity.label;
+
+        const name = document.createElement("div");
+        name.className = "band-name";
+        name.textContent = entity.name;
+
+        band.appendChild(barWrapper);
+        band.appendChild(label);
+        band.appendChild(name);
+        container.appendChild(band);
+      });
+
+      document.getElementById("clearCount").textContent = `${clearC} CLEAR`;
+      document.getElementById("watchCount").textContent = `${watchC} WATCH`;
+      document.getElementById("actCount").textContent = `${actC} ACT`;
+    }
+
+    function renderDetailPanel() {
+      const panel = document.getElementById("detailPanel");
+      const scored = ENTITIES.map(e => ({ ...e, path: computePATH(e) }));
+      scored.sort((a, b) => a.path - b.path);
+
+      const lowRatio = scored.filter(e => e.path < 65);
+      if (lowRatio.length === 0) {
+        panel.innerHTML = '<div class="detail-card" style="color:var(--clear);display:flex;align-items:center;justify-content:center;min-width:100%"><h3>All bands CLEAR — no low-ratio sweeps</h3></div>';
+        return;
+      }
+
+      panel.innerHTML = "";
+      lowRatio.forEach(entity => {
+        const tier = getTier(entity.path);
+        const card = document.createElement("div");
+        card.className = "detail-card";
+        if (selectedBandId === entity.id) card.style.borderColor = "var(--slider-fill)";
+
+        const driftNorm = Math.min(entity.uncommitted / 30, 1.0);
+
+        card.innerHTML = `
+      <h3>${entity.name} <span class="tier-badge ${tier}">${tier.toUpperCase()}</span></h3>
+      <div class="detail-row"><span class="label">PATH</span><span class="value" style="color:${tierColor(tier)}">${entity.path.toFixed(1)}</span></div>
+      <div class="detail-row"><span class="label">Health</span><span class="value">${entity.health}</span></div>
+      <div class="detail-row"><span class="label">Trust</span><span class="value">${entity.trust.toFixed(2)}</span></div>
+      <div class="detail-row"><span class="label">Drift</span><span class="value">${entity.uncommitted} uc (${(driftNorm * 100).toFixed(0)}%)</span></div>
+      <div class="detail-row"><span class="label">Fail rate</span><span class="value">${(entity.failRate * 100).toFixed(1)}%${entity.spikes > 0 ? ' ×' + entity.spikes : ''}</span></div>
+      <div class="detail-row"><span class="label">Momentum</span><span class="value">${entity.momentum.toFixed(3)}</span></div>
+      <div class="detail-row"><span class="label">Drag</span><span class="value" style="color:var(--text-secondary)">${entity.drag}</span></div>
+      <div class="signal-bar-container">
+        <div class="signal-bar" style="width:${(entity.health / 100) * 30}px;background:${WEIGHT_DEFS[0].color}"></div>
+        <div class="signal-bar" style="width:${entity.trust * 30}px;background:${WEIGHT_DEFS[1].color}"></div>
+        <div class="signal-bar" style="width:${(1 - driftNorm) * 30}px;background:${WEIGHT_DEFS[2].color}"></div>
+        <div class="signal-bar" style="width:${(1 - entity.failRate) * 30}px;background:${WEIGHT_DEFS[3].color}"></div>
+        <div class="signal-bar" style="width:${entity.momentum * 30}px;background:${WEIGHT_DEFS[4].color}"></div>
+      </div>
+    `;
+        panel.appendChild(card);
+      });
+    }
+
+    function renderSliders() {
+      const container = document.getElementById("slidersContainer");
+      container.innerHTML = "";
+
+      WEIGHT_DEFS.forEach(def => {
+        const group = document.createElement("div");
+        group.className = "slider-group";
+
+        group.innerHTML = `
+      <div class="slider-label">
+        <span style="color:${def.color}">${def.label}</span>
+        <span class="weight-value" id="val-${def.id}">${weights[def.id].toFixed(2)}</span>
+      </div>
+      <input type="range" min="0" max="60" step="1" value="${weights[def.id] * 100}"
+             id="slider-${def.id}"
+             oninput="onSliderChange('${def.id}', this.value)"
+             style="accent-color:${def.color}">
+    `;
+
+        container.appendChild(group);
+      });
+
+      updateWeightSum();
+    }
+
+    function onSliderChange(id, rawValue) {
+      weights[id] = rawValue / 100;
+      document.getElementById(`val-${id}`).textContent = weights[id].toFixed(2);
+      updateWeightSum();
+      renderBands();
+      renderDetailPanel();
+    }
+
+    function updateWeightSum() {
+      const sum = Object.values(weights).reduce((a, b) => a + b, 0);
+      const el = document.getElementById("weightSum");
+      el.textContent = `Sum: ${sum.toFixed(2)}`;
+      el.className = "weight-sum " + (Math.abs(sum - 1.0) < 0.02 ? "valid" : "invalid");
+    }
+
+    function resetWeights() {
+      WEIGHT_DEFS.forEach(def => {
+        weights[def.id] = def.default;
+        const slider = document.getElementById(`slider-${def.id}`);
+        if (slider) slider.value = def.default * 100;
+        const val = document.getElementById(`val-${def.id}`);
+        if (val) val.textContent = def.default.toFixed(2);
+      });
+      updateWeightSum();
+      renderBands();
+      renderDetailPanel();
+    }
+
+    function selectBand(id) {
+      selectedBandId = selectedBandId === id ? null : id;
+      renderDetailPanel();
+    }
+
+    function showTooltip(event, entity) {
+      const tt = document.getElementById("tooltip");
+      const driftNorm = Math.min(entity.uncommitted / 30, 1.0);
+      const tier = getTier(entity.path);
+
+      tt.innerHTML = `
+    <div class="tt-name" style="color:${tierColor(getTierLabel(entity.path))}">${entity.name}</div>
+    <div class="tt-row"><span>PATH</span><span class="tt-val">${entity.path.toFixed(1)}</span></div>
+    <div class="tt-row"><span>Tier</span><span class="tt-val">${tier.toUpperCase()}</span></div>
+    <div class="tt-row"><span>Health</span><span class="tt-val">${entity.health}</span></div>
+    <div class="tt-row"><span>Trust</span><span class="tt-val">${entity.trust.toFixed(2)}</span></div>
+    <div class="tt-row"><span>Drift</span><span class="tt-val">${(driftNorm * 100).toFixed(0)}%</span></div>
+    <div class="tt-row"><span>Fail</span><span class="tt-val">${(entity.failRate * 100).toFixed(1)}%</span></div>
+    <div class="tt-row"><span>Momentum</span><span class="tt-val">${entity.momentum.toFixed(2)}</span></div>
+    ${entity.spikes > 0 ? `<div class="tt-row" style="color:var(--spike)"><span>Spikes</span><span class="tt-val">×${entity.spikes}</span></div>` : ''}
+    <div class="tt-row" style="color:var(--text-dim);font-size:9px"><span>Drag</span><span>${entity.drag}</span></div>
+  `;
+
+      tt.style.left = Math.min(event.clientX + 12, window.innerWidth - 240) + "px";
+      tt.style.top = (event.clientY - 20) + "px";
+      tt.classList.add("visible");
+    }
+
+    function hideTooltip() {
+      document.getElementById("tooltip").classList.remove("visible");
+    }
+
+    function takeSnapshot() {
+      const scored = ENTITIES.map(e => ({ id: e.id, label: e.label, name: e.name, path: computePATH(e) }));
+      scored.sort((a, b) => b.path - a.path);
+
+      const snap = {
+        id: `snap-${Date.now()}`,
+        timestamp: new Date().toISOString(),
+        weights: { ...weights },
+        entities: scored,
+        clearCount: scored.filter(e => e.path >= 65).length,
+        watchCount: scored.filter(e => e.path >= 50 && e.path < 65).length,
+        actCount: scored.filter(e => e.path < 50).length,
+      };
+
+      snapshots.unshift(snap);
+      updateSnapshotCount();
+      renderSnapshotsList();
+    }
+
+    function updateSnapshotCount() {
+      document.getElementById("snapshotCount").textContent = `${snapshots.length} snapshot${snapshots.length !== 1 ? 's' : ''}`;
+    }
+
+    function renderSnapshotsList() {
+      const list = document.getElementById("snapshotsList");
+      list.innerHTML = "";
+
+      if (snapshots.length === 0) {
+        list.innerHTML = '<div style="text-align:center;color:var(--text-dim);padding:40px;font-size:11px">No snapshots yet.<br>Click "Snapshot" to capture current state.</div>';
+        return;
+      }
+
+      snapshots.forEach((snap, idx) => {
+        const card = document.createElement("div");
+        card.className = "snapshot-card";
+        card.onclick = () => restoreSnapshot(idx);
+
+        const time = new Date(snap.timestamp).toLocaleString();
+        const wStr = WEIGHT_DEFS.map(d => `${d.label[0]}=${snap.weights[d.id].toFixed(2)}`).join("  ");
+
+        let miniBars = '<div class="snapshot-mini-bars">';
+        snap.entities.forEach(e => {
+          const tier = getTierLabel(e.path);
+          const h = Math.max(e.path / 100 * 20, 1);
+          miniBars += `<div class="mini-bar" style="height:${h}px;background:${tierColor(tier)}"></div>`;
+        });
+        miniBars += '</div>';
+
+        card.innerHTML = `
+      <div class="snap-time">#${snapshots.length - idx} — ${time}</div>
+      <div class="snap-summary">${snap.clearCount}C ${snap.watchCount}W ${snap.actCount}A</div>
+      <div class="snap-weights">${wStr}</div>
+      ${miniBars}
+    `;
+        list.appendChild(card);
+      });
+    }
+
+    function restoreSnapshot(idx) {
+      const snap = snapshots[idx];
+      if (!snap) return;
+
+      WEIGHT_DEFS.forEach(def => {
+        weights[def.id] = snap.weights[def.id];
+        const slider = document.getElementById(`slider-${def.id}`);
+        if (slider) slider.value = snap.weights[def.id] * 100;
+        const val = document.getElementById(`val-${def.id}`);
+        if (val) val.textContent = snap.weights[def.id].toFixed(2);
+      });
+
+      updateWeightSum();
+      renderBands();
+      renderDetailPanel();
+      toggleDrawer();
+    }
+
+    function toggleDrawer() {
+      const drawer = document.getElementById("snapshotsDrawer");
+      const overlay = document.getElementById("drawerOverlay");
+      const isOpen = drawer.classList.contains("open");
+      drawer.classList.toggle("open");
+      overlay.classList.toggle("open");
+      if (!isOpen) renderSnapshotsList();
+    }
+
+    function exportState() {
+      const scored = ENTITIES.map(e => ({
+        id: e.id,
+        name: e.name,
+        path: parseFloat(computePATH(e).toFixed(2)),
+        tier: getTier(computePATH(e)).toUpperCase(),
+        signals: {
+          health: e.health,
+          trust: e.trust,
+          uncommitted: e.uncommitted,
+          failRate: e.failRate,
+          momentum: e.momentum,
+          spikes: e.spikes,
+        }
+      }));
+      scored.sort((a, b) => b.path - a.path);
+
+      const state = {
+        exportedAt: new Date().toISOString(),
+        weights: { ...weights },
+        entities: scored,
+        snapshots: snapshots.length,
+      };
+
+      const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `bandwidth-eq-${Date.now()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    renderYAxis();
+    renderSliders();
+    renderBands();
+    renderDetailPanel();
+    renderSnapshotsList();
+    updateSnapshotCount();
+  </script>
+</body>
+
+</html>

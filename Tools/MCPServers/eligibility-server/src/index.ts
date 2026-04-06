@@ -5,6 +5,7 @@ export type {
   CollectionTable,
   CompileTarget,
   ConditionNote,
+  StrugglePoint,
   ConditionSeverity,
   CycleBeat,
   CycleSignal,
@@ -109,3 +110,4 @@ export {
   onCaseStatusChanged,
   initializeHooks,
 } from "./hooks.js";
+export { weightBandToOpacity, cycleStatusToState, gateDecisionToCool, moodToToken, timestampToRecency, endpointStatusToConsent, conditionSeverityToOpacity, momentumDriftToState, resolveCoolStep, resolveTraceOpacity, resolveMemoryRecency, LAYER_LABELS, ATTENTION_HEADS, theta, radius, angularDistance, pythagoreanDistance, sortByAngle, clusterByRadius, arcsPerLayer, attentionScore, attend } from "./token-bridge.js";

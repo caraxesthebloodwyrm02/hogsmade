@@ -1,11 +1,10 @@
 /**
- * /simplify — Glimpse Engine Enhanced Pipeline Demo
+ * /simplify — full pipeline stress demo (science timeline)
  *
- * Shows the full upgraded pipeline: fuzzy matching, adaptive bucketing,
- * multi-pass inference, mode detection, insight compression, grounding,
- * and confidence calibration — all in one run.
+ * One pass through complexity/mode detection, multi-pass inference, invariant
+ * patterns, optional grounding, and confidence — using a long cross-domain timeline.
  *
- * Run: node examples/simplify-demo.mjs
+ * Run: node examples/simplify-demo.mjs   — or: npm run demo
  */
 
 import { runContextPipeline } from "../core/engine.js";

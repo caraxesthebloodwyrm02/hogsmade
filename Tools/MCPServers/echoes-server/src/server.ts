@@ -25,6 +25,7 @@ import { homedir } from "os";
 import path from "path";
 import { pathToFileURL } from "url";
 import * as z from "zod";
+import { CHARACTER_QUERY_CLUSTERS, findRelevantClusters } from "./character-clusters.js";
 import { getConfig } from "./config.js";
 
 // ── Constants ──
@@ -36,6 +37,8 @@ const config = getConfig();
 const DATA_DIR = config.dataDir;
 const AUDIT_LOG_PATH = config.auditLogPath;
 const TELEMETRY_DIR = config.telemetryDir;
+const CHARACTER_DIR = config.characterDir;
+const CHARACTER_LOG_PATH = path.join(CHARACTER_DIR, "snapshots.ndjson");
 const PRECEDENTS_DIR = config.precedentsDir;
 
 // ── Data Layer ──
@@ -56,15 +59,57 @@ interface TelemetrySnapshot {
   projects: number;
   activeServers: string[];
   metrics: Record<string, number>;
+  characterState?: CharacterState;
+}
+
+// ── Atlas Character Module Types ──
+
+interface CharacterState {
+  mood: string;
+  rulePack: string;
+  gateConfidence: number;
+  entityCount: number;
+  dominantTraits: Record<string, number>;
+  consentType?: string;
+  provenanceId?: string;
+}
+
+interface CharacterSnapshot {
+  id: string;
+  timestamp: string;
+  mood: string;
+  traits: Record<string, number>;
+  rulePack: string;
+  gateVerdict: {
+    allowed: boolean;
+    reason: string;
+    provenanceId: string;
+    confidence: number;
+  };
+  entityCount: number;
+  clusterNotes: Array<{
+    id: string;
+    phenomenonType: string;
+    spikeValue: number;
+    observation: string;
+    retrievalKeys: string[];
+  }>;
+  metadata?: Record<string, unknown>;
 }
 
 async function ensureDataDir(): Promise<void> {
   await fs.mkdir(DATA_DIR, { recursive: true, mode: 0o700 });
   await fs.mkdir(TELEMETRY_DIR, { recursive: true, mode: 0o700 });
+  await fs.mkdir(CHARACTER_DIR, { recursive: true, mode: 0o700 });
   try {
     await fs.access(AUDIT_LOG_PATH);
   } catch {
     await fs.writeFile(AUDIT_LOG_PATH, "", { mode: 0o600 });
+  }
+  try {
+    await fs.access(CHARACTER_LOG_PATH);
+  } catch {
+    await fs.writeFile(CHARACTER_LOG_PATH, "", { mode: 0o600 });
   }
 }
 
@@ -218,6 +263,69 @@ async function saveTelemetrySnapshot(snapshot: TelemetrySnapshot): Promise<strin
   const filepath = path.join(TELEMETRY_DIR, filename);
   await atomicWriteJson(filepath, snapshot);
   return filepath;
+}
+
+// ── Character State Layer ──
+
+const MAX_CHARACTER_FILE_BYTES = 50 * 1024 * 1024; // 50 MB guard
+
+async function appendCharacterSnapshot(snapshot: CharacterSnapshot): Promise<void> {
+  const sanitized = {
+    ...snapshot,
+    metadata: snapshot.metadata
+      ? (sanitizeForNdjson(snapshot.metadata) as Record<string, unknown>)
+      : undefined,
+  };
+  const line = JSON.stringify(sanitized) + "\n";
+  try {
+    JSON.parse(line);
+  } catch (err) {
+    logger.error(`REFUSING to append malformed character snapshot: ${err}`);
+    return;
+  }
+  await fs.appendFile(CHARACTER_LOG_PATH, line, "utf-8");
+}
+
+async function readCharacterLog(
+  limit: number,
+  filter?: { mood?: string; rulePack?: string; since?: string },
+): Promise<CharacterSnapshot[]> {
+  let content: string;
+  try {
+    const stat = await fs.stat(CHARACTER_LOG_PATH);
+    if (stat.size > MAX_CHARACTER_FILE_BYTES) {
+      throw new Error(
+        `Character log too large (${Math.round(stat.size / (1024 * 1024))}MB)`,
+      );
+    }
+    content = await fs.readFile(CHARACTER_LOG_PATH, "utf-8");
+  } catch {
+    return [];
+  }
+
+  const lines = content.trim().split("\n").filter(Boolean);
+  let entries: CharacterSnapshot[] = lines
+    .map((line) => {
+      try {
+        return JSON.parse(line) as CharacterSnapshot;
+      } catch {
+        return null;
+      }
+    })
+    .filter(Boolean) as CharacterSnapshot[];
+
+  if (filter?.mood) {
+    entries = entries.filter((e) => e.mood === filter.mood);
+  }
+  if (filter?.rulePack) {
+    entries = entries.filter((e) => e.rulePack === filter.rulePack);
+  }
+  if (filter?.since) {
+    const since = new Date(filter.since).getTime();
+    entries = entries.filter((e) => new Date(e.timestamp).getTime() >= since);
+  }
+
+  return entries.slice(-limit).reverse();
 }
 
 async function listTelemetrySnapshots(limit: number): Promise<TelemetrySnapshot[]> {
@@ -525,6 +633,20 @@ export function buildServer(): McpServer {
         metrics: z
           .record(z.number())
           .describe("Key-value numeric metrics (e.g. healthScore, commitCount)"),
+        characterState: z
+          .object({
+            mood: z.string().describe("Current mood from PersonalityEngine"),
+            rulePack: z.string().describe("Active rule-pack"),
+            gateConfidence: z.number().min(0).max(1).describe("Last GateVerdict confidence"),
+            entityCount: z.number().min(0).describe("Compiled entity count"),
+            dominantTraits: z
+              .record(z.number())
+              .describe("Top personality trait levels"),
+            consentType: z.string().optional().describe("Active consent type"),
+            provenanceId: z.string().optional().describe("Latest provenance chain ID"),
+          })
+          .optional()
+          .describe("Atlas character module state — mood, traits, governance, graph stats"),
         runMode: runModeSchema,
       }),
     },
@@ -537,6 +659,7 @@ export function buildServer(): McpServer {
         projects: args.projects,
         activeServers: args.activeServers,
         metrics: args.metrics,
+        characterState: args.characterState as CharacterState | undefined,
       };
       const filepath = await saveTelemetrySnapshot(snapshot);
       return {
@@ -579,6 +702,229 @@ export function buildServer(): McpServer {
           {
             type: "text" as const,
             text: JSON.stringify({ count: snapshots.length, snapshots }, null, 2),
+          },
+        ],
+      };
+    },
+  );
+
+  // ── Atlas Character State ──
+
+  registerTool(
+    "save_character_snapshot",
+    {
+      description:
+        "Persist an Atlas character module state snapshot — mood, traits, rule-pack, gate verdict, compiled entity count, and cluster notes. Appends to character NDJSON log for longitudinal tracking.",
+      inputSchema: z.object({
+        mood: z
+          .enum(["enthusiastic", "curious", "supportive", "playful", "focused", "calm", "creative"])
+          .describe("Current Mood enum value from PersonalityEngine"),
+        traits: z
+          .record(z.number().min(0).max(1))
+          .describe("PersonalityTrait levels (0.0–1.0), keyed by trait name"),
+        rulePack: z
+          .enum(["base", "exploratory", "restricted"])
+          .describe("Active rule-pack from select_rule_pack()"),
+        gateVerdict: z
+          .object({
+            allowed: z.boolean(),
+            reason: z.string(),
+            provenanceId: z.string(),
+            confidence: z.number().min(0).max(1),
+          })
+          .describe("GateVerdict from governance_gates.check()"),
+        entityCount: z.number().min(0).describe("Number of entities from graph_compiler"),
+        clusterNotes: z
+          .array(
+            z.object({
+              id: z.string(),
+              phenomenonType: z.enum(["event", "density", "sparsity"]),
+              spikeValue: z.number(),
+              observation: z.string(),
+              retrievalKeys: z.array(z.string()),
+            }),
+          )
+          .optional()
+          .default([])
+          .describe("ClusterNote observations from knowledge_graph"),
+        metadata: z.record(z.unknown()).optional().describe("Additional context"),
+        runMode: runModeSchema,
+      }),
+    },
+    async (args: any) => {
+      await ensureDataDir();
+      assertMutablePathsAllowed(args.runMode as RunMode, [CHARACTER_LOG_PATH]);
+
+      const snapshot: CharacterSnapshot = {
+        id: generateId("chr"),
+        timestamp: new Date().toISOString(),
+        mood: args.mood,
+        traits: args.traits,
+        rulePack: args.rulePack,
+        gateVerdict: args.gateVerdict,
+        entityCount: args.entityCount,
+        clusterNotes: args.clusterNotes ?? [],
+        metadata: args.metadata as Record<string, unknown> | undefined,
+      };
+      await appendCharacterSnapshot(snapshot);
+
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify({
+              saved: true,
+              id: snapshot.id,
+              mood: snapshot.mood,
+              rulePack: snapshot.rulePack,
+              gateAllowed: snapshot.gateVerdict.allowed,
+              entityCount: snapshot.entityCount,
+              clusterNoteCount: snapshot.clusterNotes.length,
+            }),
+          },
+        ],
+      };
+    },
+  );
+
+  registerTool(
+    "query_character_state",
+    {
+      description:
+        "Query character state history — mood transitions, trait drift, governance verdicts, and cluster note trends. Supports filtering by mood, rule-pack, and time range.",
+      inputSchema: z.object({
+        limit: z
+          .number()
+          .min(1)
+          .max(200)
+          .optional()
+          .default(20)
+          .describe("Max snapshots to return"),
+        mood: z
+          .enum(["enthusiastic", "curious", "supportive", "playful", "focused", "calm", "creative"])
+          .optional()
+          .describe("Filter by mood state"),
+        rulePack: z
+          .enum(["base", "exploratory", "restricted"])
+          .optional()
+          .describe("Filter by rule-pack"),
+        since: z
+          .string()
+          .optional()
+          .describe("ISO timestamp — only return snapshots after this time"),
+      }),
+    },
+    async (args: any) => {
+      const rlMsg = readLimiter.check("query_character_state");
+      if (rlMsg)
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }],
+          isError: true,
+        };
+      await ensureDataDir();
+      const snapshots = await readCharacterLog(args.limit ?? 20, {
+        mood: args.mood,
+        rulePack: args.rulePack,
+        since: args.since,
+      });
+
+      // Derive summary statistics from returned window
+      const moodCounts: Record<string, number> = {};
+      const rulePackCounts: Record<string, number> = {};
+      let gateAllowedCount = 0;
+      let gateDeniedCount = 0;
+      let totalConfidence = 0;
+      let totalEntities = 0;
+      let totalClusterNotes = 0;
+
+      for (const s of snapshots) {
+        moodCounts[s.mood] = (moodCounts[s.mood] || 0) + 1;
+        rulePackCounts[s.rulePack] = (rulePackCounts[s.rulePack] || 0) + 1;
+        if (s.gateVerdict.allowed) gateAllowedCount++;
+        else gateDeniedCount++;
+        totalConfidence += s.gateVerdict.confidence;
+        totalEntities += s.entityCount;
+        totalClusterNotes += s.clusterNotes.length;
+      }
+
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(
+              {
+                count: snapshots.length,
+                summary: {
+                  moodDistribution: moodCounts,
+                  rulePackDistribution: rulePackCounts,
+                  gateVerdicts: { allowed: gateAllowedCount, denied: gateDeniedCount },
+                  avgConfidence:
+                    snapshots.length > 0
+                      ? Math.round((totalConfidence / snapshots.length) * 1000) / 1000
+                      : 0,
+                  totalEntities,
+                  totalClusterNotes,
+                },
+                snapshots,
+              },
+              null,
+              2,
+            ),
+          },
+        ],
+      };
+    },
+  );
+
+  // ── Query Clusters ──
+
+  registerTool(
+    "query_character_clusters",
+    {
+      description:
+        "Find relevant query clusters and discussion topics for the Atlas character module. Returns matching axes, probable queries, discussion seeds, and telemetry keys to watch. Use to keep runtime telemetry focused and surface next-step investigations.",
+      inputSchema: z.object({
+        query: z
+          .string()
+          .optional()
+          .describe("Free-text query to match against cluster content. Omit to return all clusters."),
+        axis: z
+          .enum(["mood", "governance", "personality", "graph", "cluster", "coherence"])
+          .optional()
+          .describe("Filter to a specific character module axis"),
+      }),
+    },
+    async (args: any) => {
+      let clusters = CHARACTER_QUERY_CLUSTERS;
+
+      if (args.axis) {
+        clusters = clusters.filter((c) => c.axis === args.axis);
+      }
+      if (args.query) {
+        const matched = findRelevantClusters(args.query);
+        const matchedAxes = new Set(matched.map((m) => m.axis));
+        clusters = clusters.filter((c) => matchedAxes.has(c.axis));
+      }
+
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(
+              {
+                count: clusters.length,
+                clusters: clusters.map((c) => ({
+                  axis: c.axis,
+                  queryCount: c.queries.length,
+                  topicCount: c.topics.length,
+                  queries: c.queries,
+                  topics: c.topics,
+                  telemetryKeys: c.telemetryKeys,
+                })),
+              },
+              null,
+              2,
+            ),
           },
         ],
       };

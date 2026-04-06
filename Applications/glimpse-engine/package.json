@@ -17,6 +17,7 @@
     "./functions/*": "./functions/*.js"
   },
   "scripts": {
+    "build": "echo 'glimpse-engine is a library - no build step required'",
     "test": "node --test tests/*.test.js tests/**/*.test.js",
     "test:validators": "node --test tests/validators/*.test.js",
     "test:drift": "node --test tests/drift-guard/*.test.js",
@@ -30,6 +31,11 @@
     "glimpse:health": "node cli-drift-guard.mjs health",
     "glimpse:ci": "node cli-drift-guard.mjs ci",
     "demo": "node examples/simplify-demo.mjs",
+    "demo:startup": "node examples/startup-ecosystem.mjs",
+    "demo:expedition": "node examples/expedition-atlas.mjs",
+    "demo:basic": "node examples/use-case-basic.mjs",
+    "demo:innovation": "node examples/use-case-innovation-network.mjs",
+    "demo:citation": "node examples/citation-network.mjs",
     "demo:drift": "node cli-drift-guard.mjs",
     "demo:standup": "node cli.js standup",
     "demo:energy": "node cli.js energy",

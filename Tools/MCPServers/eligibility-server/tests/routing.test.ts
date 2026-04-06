@@ -10,19 +10,19 @@ vi.mock("@cascade/shared-types/audit-client", () => ({
 }));
 
 import {
-  emitEligibilityAudit,
-  emitCaseOpenedSignal,
-  emitSignalRecordedSignal,
-  emitHandoffRecordedSignal,
-  emitEndpointUpsertedSignal,
-  emitBeatAdvancedSignal,
-  emitPromotionGateEvaluatedSignal,
-  withAudit,
-  listAttributeCatalogHandler,
-  evaluateCandidateHandler,
-  compileFormsHandler,
   collectTableHandler,
+  compileFormsHandler,
+  emitBeatAdvancedSignal,
+  emitCaseOpenedSignal,
+  emitEligibilityAudit,
+  emitEndpointUpsertedSignal,
+  emitHandoffRecordedSignal,
+  emitPromotionGateEvaluatedSignal,
+  emitSignalRecordedSignal,
+  evaluateCandidateHandler,
   explainHierarchyHandler,
+  listAttributeCatalogHandler,
+  withAudit,
 } from "../src/index.js";
 
 describe("routing audit hooks", () => {
@@ -103,26 +103,26 @@ describe("read-only handler audit coverage", () => {
     expect(auditForTool.length).toBeGreaterThanOrEqual(1);
   });
 
-  it("evaluateCandidateHandler emits audit on success and failure", () => {
+  it("evaluateCandidateHandler emits audit on success and dry_run", () => {
     auditEvents.length = 0;
     const success = evaluateCandidateHandler({ fixtureId: "balanced-bridge" });
     expect(success.validation.ok).toBe(true);
 
-    const failure = evaluateCandidateHandler({});
-    expect(failure.validation.ok).toBe(false);
+    const dryRun = evaluateCandidateHandler({});
+    expect(dryRun.validation.ok).toBe(false);
 
     const successAudit = auditEvents.filter(
       (e) =>
         (e as Record<string, unknown>)["tool"] === "evaluate_candidate" &&
         (e as Record<string, unknown>)["status"] === "success",
     );
-    const failureAudit = auditEvents.filter(
+    const dryRunAudit = auditEvents.filter(
       (e) =>
         (e as Record<string, unknown>)["tool"] === "evaluate_candidate" &&
-        (e as Record<string, unknown>)["status"] === "failure",
+        (e as Record<string, unknown>)["status"] === "dry_run",
     );
     expect(successAudit.length).toBeGreaterThanOrEqual(1);
-    expect(failureAudit.length).toBeGreaterThanOrEqual(1);
+    expect(dryRunAudit.length).toBeGreaterThanOrEqual(1);
   });
 
   it("compileFormsHandler emits audit", () => {
@@ -135,6 +135,28 @@ describe("read-only handler audit coverage", () => {
       (e) => (e as Record<string, unknown>)["tool"] === "compile_forms",
     );
     expect(audit.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("empty evaluation-derived handlers emit dry_run audit status", () => {
+    auditEvents.length = 0;
+
+    const forms = compileFormsHandler({});
+    const table = collectTableHandler({});
+    const hierarchy = explainHierarchyHandler({});
+
+    expect(forms.validation.ok).toBe(false);
+    expect(table.validation.ok).toBe(false);
+    expect(hierarchy.validation.ok).toBe(false);
+
+    const dryRunTools = new Set(
+      auditEvents
+        .filter((e) => (e as Record<string, unknown>)["status"] === "dry_run")
+        .map((e) => (e as Record<string, unknown>)["tool"]),
+    );
+
+    expect(dryRunTools.has("compile_forms")).toBe(true);
+    expect(dryRunTools.has("collect_table")).toBe(true);
+    expect(dryRunTools.has("explain_hierarchy")).toBe(true);
   });
 
   it("collectTableHandler emits audit", () => {

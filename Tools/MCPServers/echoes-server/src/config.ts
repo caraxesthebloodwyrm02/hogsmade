@@ -17,5 +17,8 @@ export function getConfig() {
     precedentsDir: path.resolve(
       process.env.ECHOES_PRECEDENTS_DIR?.trim() || path.join(dataDir, "precedents"),
     ),
+    characterDir: path.resolve(
+      process.env.ECHOES_CHARACTER_DIR?.trim() || path.join(dataDir, "character"),
+    ),
   };
 }

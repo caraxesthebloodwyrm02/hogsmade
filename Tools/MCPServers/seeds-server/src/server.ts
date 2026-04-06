@@ -109,6 +109,7 @@ const REPO_SKIP_LIST = new Set([
   "scripts",
   "archive",
   "templates",
+  "assistive-agreement-contracts",
 ]);
 
 const PROJECT_MARKERS = [
@@ -500,8 +501,8 @@ export function buildServer(): McpServer {
       const overallScore =
         existingRepos.length > 0
           ? Math.round(
-              existingRepos.reduce((sum, r) => sum + r.healthScore, 0) / existingRepos.length,
-            )
+            existingRepos.reduce((sum, r) => sum + r.healthScore, 0) / existingRepos.length,
+          )
           : 0;
       const activeCount = existingRepos.filter((r) => r.healthScore >= 60).length;
       const staleCount = existingRepos.filter((r) => r.healthScore < 40 && r.exists).length;

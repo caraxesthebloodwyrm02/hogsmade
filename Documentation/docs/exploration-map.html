@@ -1,0 +1,1155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Exploration Map — Path Analysis</title>
+<style>
+  :root {
+    --bg: #1c1714;
+    --bg-raised: #2a211b;
+    --bg-sunken: #14100d;
+    --bg-overlay: rgba(28, 23, 20, 0.92);
+    --skin-100: #f5ebe0;
+    --skin-200: #e6d5c3;
+    --skin-300: #c9ad8e;
+    --skin-400: #a8886a;
+    --skin-500: #8b6f54;
+    --brown-600: #6b5340;
+    --brown-700: #503d2e;
+    --brown-800: #3a2b1f;
+    --brown-900: #261c14;
+    --accent: #c2956b;
+    --accent-hover: #d4a87e;
+    --accent-muted: #9a7856;
+    --accent-subtle: rgba(194, 149, 107, 0.12);
+    --pass-fg: #7a9e6d;
+    --pass-bg: rgba(122, 158, 109, 0.10);
+    --warn-fg: #c4965a;
+    --warn-bg: rgba(196, 150, 90, 0.10);
+    --deny-fg: #b06a5a;
+    --deny-bg: rgba(176, 106, 90, 0.10);
+    --info-fg: #8a9bb0;
+    --info-bg: rgba(138, 155, 176, 0.08);
+    --font-sans: Inter, 'SF Pro Text', -apple-system, system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
+    --node-domain: #a8886a;
+    --node-concept: #c2956b;
+    --node-relation: #6b5340;
+    /* ── Cool scale ── */
+    --atlas-cool-100: #e8eef5;
+    --atlas-cool-200: #c8d4e0;
+    --atlas-cool-300: #a4b5c8;
+    --atlas-cool-400: #8a9bb0;
+    --atlas-cool-500: #6d7f96;
+    --atlas-cool-600: #526073;
+    --atlas-cool-700: #3d4b5a;
+    --atlas-cool-800: #2a3540;
+    --atlas-cool-900: #1a2430;
+    /* ── State tokens ── */
+    --atlas-state-active: #a4b5c8;
+    --atlas-state-active-bg: rgba(164, 181, 200, 0.10);
+    --atlas-state-dormant: #526073;
+    --atlas-state-dormant-bg: rgba(82, 96, 115, 0.08);
+    --atlas-state-transitioning: #8a9bb0;
+    --atlas-state-transitioning-bg: rgba(138, 155, 176, 0.12);
+    --atlas-state-sealed: #3d4b5a;
+    /* ── Mirror tokens ── */
+    --atlas-mirror-surface: rgba(138, 155, 176, 0.06);
+    --atlas-mirror-trace: rgba(138, 155, 176, 0.14);
+    --atlas-mirror-echo: rgba(109, 127, 150, 0.20);
+    --atlas-mirror-border: rgba(138, 155, 176, 0.25);
+    /* ── Trace opacity ── */
+    --atlas-trace-opacity-0: 1;
+    --atlas-trace-opacity-1: 0.75;
+    --atlas-trace-opacity-2: 0.55;
+    --atlas-trace-opacity-3: 0.35;
+    --atlas-trace-opacity-4: 0.18;
+    /* ── Memory recency ── */
+    --atlas-memory-fresh: #c8d4e0;
+    --atlas-memory-recent: #8a9bb0;
+    --atlas-memory-dated: #526073;
+    --atlas-memory-aged: #3d4b5a;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--skin-200);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+  .container { max-width: 1400px; margin: 0 auto; padding: 24px; }
+
+  /* Header */
+  header {
+    border-bottom: 1px solid var(--brown-700);
+    padding-bottom: 20px;
+    margin-bottom: 32px;
+  }
+  header h1 {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--skin-100);
+    letter-spacing: -0.5px;
+  }
+  header .subtitle {
+    color: var(--skin-400);
+    font-size: 13px;
+    margin-top: 4px;
+  }
+  header .meta-row {
+    display: flex;
+    gap: 24px;
+    margin-top: 12px;
+    font-size: 12px;
+    color: var(--skin-500);
+    font-family: var(--font-mono);
+  }
+  .meta-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .badge-obs { background: var(--info-bg); color: var(--info-fg); border: 1px solid rgba(138,155,176,0.2); }
+  .badge-exp { background: var(--warn-bg); color: var(--warn-fg); border: 1px solid rgba(196,150,90,0.2); }
+  .badge-data { background: var(--pass-bg); color: var(--pass-fg); border: 1px solid rgba(122,158,109,0.2); }
+  .badge-gap { background: var(--deny-bg); color: var(--deny-fg); border: 1px solid rgba(176,106,90,0.2); }
+
+  /* Navigation Tabs */
+  .tab-bar {
+    display: flex;
+    gap: 2px;
+    margin-bottom: 24px;
+    background: var(--bg-sunken);
+    border-radius: 8px;
+    padding: 3px;
+    overflow-x: auto;
+  }
+  .tab-btn {
+    padding: 8px 16px;
+    border: none;
+    background: transparent;
+    color: var(--skin-400);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .tab-btn:hover { background: var(--brown-800); color: var(--skin-200); }
+  .tab-btn.active { background: var(--brown-700); color: var(--skin-100); }
+
+  /* Panels */
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* Section headings */
+  .section-head {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--skin-100);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-head .count {
+    font-size: 12px;
+    font-family: var(--font-mono);
+    color: var(--accent);
+    background: var(--accent-subtle);
+    padding: 2px 8px;
+    border-radius: 10px;
+  }
+
+  /* Cards */
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+  .card {
+    background: var(--bg-raised);
+    border: 1px solid var(--brown-700);
+    border-radius: 8px;
+    padding: 16px;
+    transition: border-color 0.2s;
+    cursor: pointer;
+    position: relative;
+  }
+  .card:hover { border-color: var(--accent-muted); }
+  .card.expanded .card-detail { display: block; }
+  .card-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--skin-100);
+    font-family: var(--font-mono);
+    word-break: break-all;
+    margin-bottom: 6px;
+  }
+  .card-desc {
+    font-size: 12px;
+    color: var(--skin-400);
+    margin-bottom: 8px;
+  }
+  .card-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+  .tag {
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 3px;
+    font-family: var(--font-mono);
+    font-weight: 500;
+  }
+  .tag-obs { background: var(--info-bg); color: var(--info-fg); }
+  .tag-exp { background: var(--warn-bg); color: var(--warn-fg); }
+  .tag-cluster { background: var(--accent-subtle); color: var(--accent); }
+  .card-detail {
+    display: none;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--atlas-mirror-border);
+    background: var(--atlas-mirror-surface);
+    font-size: 12px;
+    color: var(--skin-300);
+  }
+  .card-detail ul { padding-left: 16px; }
+  .card-detail li { margin-bottom: 4px; }
+  .card-type-indicator {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 6px;
+    height: 100%;
+    border-radius: 0 8px 8px 0;
+  }
+  .indicator-obs { background: var(--info-fg); opacity: 0.5; }
+  .indicator-exp { background: var(--warn-fg); opacity: 0.5; }
+
+  /* Histogram */
+  .histogram-container {
+    background: var(--bg-raised);
+    border: 1px solid var(--brown-700);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 32px;
+  }
+  .histogram-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--skin-100);
+    margin-bottom: 16px;
+  }
+  .histogram-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+  .histogram-label {
+    font-size: 12px;
+    font-family: var(--font-mono);
+    color: var(--skin-300);
+    width: 180px;
+    text-align: right;
+    flex-shrink: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .histogram-bar-container {
+    flex: 1;
+    height: 22px;
+    background: var(--bg-sunken);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+  }
+  .histogram-bar {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.6s ease;
+    display: flex;
+    align-items: center;
+    padding-left: 8px;
+  }
+  .histogram-bar span {
+    font-size: 10px;
+    font-family: var(--font-mono);
+    color: var(--skin-100);
+    font-weight: 600;
+  }
+  .bar-obs { background: linear-gradient(90deg, rgba(138,155,176,0.3), rgba(138,155,176,0.6)); }
+  .bar-exp { background: linear-gradient(90deg, rgba(196,150,90,0.3), rgba(196,150,90,0.6)); }
+  .bar-data { background: linear-gradient(90deg, rgba(122,158,109,0.3), rgba(122,158,109,0.6)); }
+  .bar-gap { background: linear-gradient(90deg, rgba(176,106,90,0.3), rgba(176,106,90,0.6)); }
+  .bar-accent { background: linear-gradient(90deg, rgba(194,149,107,0.3), rgba(194,149,107,0.6)); }
+  .histogram-value {
+    font-size: 11px;
+    font-family: var(--font-mono);
+    color: var(--skin-400);
+    width: 40px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  /* Cluster Interpretation */
+  .cluster-box {
+    background: var(--bg-raised);
+    border: 1px solid var(--brown-700);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .cluster-box h3 {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--skin-100);
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .cluster-box .cluster-id {
+    font-size: 11px;
+    font-family: var(--font-mono);
+    color: var(--accent);
+    background: var(--accent-subtle);
+    padding: 1px 7px;
+    border-radius: 3px;
+  }
+  .cluster-box .interpretation {
+    font-size: 13px;
+    color: var(--skin-300);
+    margin: 8px 0 12px;
+    line-height: 1.7;
+  }
+  .cluster-evidence {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .evidence-pill {
+    font-size: 11px;
+    font-family: var(--font-mono);
+    padding: 3px 10px;
+    border-radius: 4px;
+    background: var(--bg-sunken);
+    color: var(--skin-400);
+    border: 1px solid var(--brown-700);
+    cursor: default;
+  }
+  .evidence-pill:hover { border-color: var(--accent-muted); color: var(--skin-200); }
+
+  /* Stats row */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+  .stat-card {
+    background: var(--bg-raised);
+    border: 1px solid var(--brown-700);
+    border-radius: 8px;
+    padding: 16px;
+    text-align: center;
+  }
+  .stat-number {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--skin-100);
+    font-family: var(--font-mono);
+    line-height: 1;
+  }
+  .stat-label {
+    font-size: 11px;
+    color: var(--skin-500);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 6px;
+  }
+
+  /* Timeline */
+  .timeline { position: relative; padding-left: 24px; margin-bottom: 32px; }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 8px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--brown-700);
+  }
+  .tl-item {
+    position: relative;
+    margin-bottom: 12px;
+    padding: 10px 14px;
+    background: var(--bg-raised);
+    border: 1px solid var(--brown-700);
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+  .tl-item:hover { border-color: var(--accent-muted); }
+  .tl-item::before {
+    content: '';
+    position: absolute;
+    left: -20px;
+    top: 14px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    border: 2px solid var(--brown-700);
+    background: var(--bg);
+  }
+  .tl-item.tl-obs::before { border-color: var(--info-fg); background: var(--info-fg); }
+  .tl-item.tl-exp::before { border-color: var(--warn-fg); background: var(--warn-fg); }
+  .tl-path {
+    font-family: var(--font-mono);
+    color: var(--skin-300);
+    font-size: 11px;
+  }
+  .tl-action {
+    color: var(--skin-500);
+    font-size: 11px;
+    margin-top: 2px;
+  }
+
+  /* Filter bar */
+  .filter-bar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .filter-btn {
+    padding: 5px 12px;
+    border: 1px solid var(--brown-700);
+    background: transparent;
+    color: var(--skin-400);
+    font-family: var(--font-sans);
+    font-size: 12px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s;
+  }
+  .filter-btn:hover { border-color: var(--accent-muted); color: var(--skin-200); }
+  .filter-btn.active { background: var(--accent-subtle); border-color: var(--accent); color: var(--accent); }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg-sunken); }
+  ::-webkit-scrollbar-thumb { background: var(--brown-700); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--brown-600); }
+
+  /* Gap table */
+  .gap-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    margin-bottom: 24px;
+  }
+  .gap-table th {
+    text-align: left;
+    padding: 8px 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--skin-500);
+    border-bottom: 1px solid var(--brown-700);
+    background: var(--bg-sunken);
+  }
+  .gap-table td {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--brown-800);
+    color: var(--skin-300);
+    vertical-align: top;
+  }
+  .gap-table tr:hover td { background: var(--bg-raised); }
+  .severity-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 6px;
+  }
+  .sev-critical { background: var(--deny-fg); }
+  .sev-moderate { background: var(--warn-fg); }
+  .sev-low { background: var(--pass-fg); }
+
+  .cluster-box[data-state="active"] { border-left: 3px solid var(--atlas-state-active); background: var(--atlas-state-active-bg); }
+  .cluster-box[data-state="transitioning"] { border-left: 3px solid var(--atlas-state-transitioning); background: var(--atlas-state-transitioning-bg); }
+  .cluster-box[data-state="dormant"] { border-left: 3px solid var(--atlas-state-dormant); background: var(--atlas-state-dormant-bg); }
+  .cluster-box[data-state="sealed"] { border-left: 3px solid var(--atlas-state-sealed); }
+
+  @media (max-width: 768px) {
+    .card-grid { grid-template-columns: 1fr; }
+    .histogram-label { width: 100px; font-size: 10px; }
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+    header h1 { font-size: 22px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>Exploration Map</h1>
+    <div class="subtitle">Structured analysis of explored paths — observation vs exploration separated, clustered, and verified</div>
+    <div class="meta-row">
+      <span>Generated: 2026-04-06</span>
+      <span>Session events: 67</span>
+      <span>Clusters: 7</span>
+      <span class="meta-badge badge-obs">Observation: 38</span>
+      <span class="meta-badge badge-exp">Exploration: 17</span>
+      <span class="meta-badge badge-data">Data files: 12</span>
+    </div>
+  </header>
+
+  <!-- Tabs -->
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="showPanel('overview')">Overview</button>
+    <button class="tab-btn" onclick="showPanel('observations')">Observations</button>
+    <button class="tab-btn" onclick="showPanel('explorations')">Explorations</button>
+    <button class="tab-btn" onclick="showPanel('clusters')">Cluster Map</button>
+    <button class="tab-btn" onclick="showPanel('histogram')">Histograms</button>
+    <button class="tab-btn" onclick="showPanel('gaps')">Gap Matrix</button>
+    <button class="tab-btn" onclick="showPanel('timeline')">Timeline</button>
+  </div>
+
+  <!-- =========== OVERVIEW PANEL =========== -->
+  <div id="overview" class="panel active">
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-number">67</div>
+        <div class="stat-label">Total Events</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">38</div>
+        <div class="stat-label">Observations (Read)</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">17</div>
+        <div class="stat-label">Explorations (Search)</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">12</div>
+        <div class="stat-label">Data Files Read</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">7</div>
+        <div class="stat-label">Clusters</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">14</div>
+        <div class="stat-label">Unique Directories</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">20</div>
+        <div class="stat-label">Gaps Found</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">4</div>
+        <div class="stat-label">Critical Gaps</div>
+      </div>
+    </div>
+
+    <!-- Top-level histogram: events per cluster -->
+    <div class="histogram-container">
+      <div class="histogram-title">Event Distribution by Cluster</div>
+      <div class="histogram-row">
+        <div class="histogram-label">C1 — Atlas/Echoes Core</div>
+        <div class="histogram-bar-container"><div class="histogram-bar bar-accent" style="width:85%"><span>23</span></div></div>
+        <div class="histogram-value">34%</div>
+      </div>
+      <div class="histogram-row">
+        <div class="histogram-label">C2 — Context Transport</div>
+        <div class="histogram-bar-container"><div class="histogram-bar bar-exp" style="width:55%"><span>14</span></div></div>
+        <div class="histogram-value">21%</div>
+      </div>
+      <div class="histogram-row">
+        <div class="histogram-label">C3 — Skill/Template</div>
+        <div class="histogram-bar-container"><div class="histogram-bar bar-obs" style="width:35%"><span>9</span></div></div>
+        <div class="histogram-value">13%</div>
+      </div>
+      <div class="histogram-row">
+        <div class="histogram-label">C4 — Documentation</div>
+        <div class="histogram-bar-container"><div class="histogram-bar bar-data" style="width:30%"><span>8</span></div></div>
+        <div class="histogram-value">12%</div>
+      </div>
+      <div class="histogram-row">
+        <div class="histogram-label">C5 — GATE/Contract</div>
+        <div class="histogram-bar-container"><div class="histogram-bar bar-gap" style="width:20%"><span>5</span></div></div>
+        <div class="histogram-value">7%</div>
+      </div>
+      <div class="histogram-row">
+        <div class="histogram-label">C6 — Ecosystem/Baseline</div>
+        <div class="histogram-bar-container"><div class="histogram-bar bar-accent" style="width:18%"><span>5</span></div></div>
+        <div class="histogram-value">7%</div>
+      </div>
+      <div class="histogram-row">
+        <div class="histogram-label">C7 — Memory/Plans</div>
+        <div class="histogram-bar-container"><div class="histogram-bar bar-obs" style="width:12%"><span>3</span></div></div>
+        <div class="histogram-value">5%</div>
+      </div>
+    </div>
+
+    <!-- Obs vs Exp ratio histogram -->
+    <div class="histogram-container">
+      <div class="histogram-title">Observation vs Exploration Ratio per Cluster</div>
+      <div id="ratio-histogram"></div>
+    </div>
+  </div>
+
+  <!-- =========== OBSERVATIONS PANEL =========== -->
+  <div id="observations" class="panel">
+    <div class="section-head">Observations <span class="count">38 read events</span></div>
+    <p style="font-size:12px;color:var(--skin-400);margin-bottom:16px;">Direct file/directory reads — passive data acquisition without search patterns. Click any card to expand.</p>
+    <div class="filter-bar">
+      <button class="filter-btn active" onclick="filterObs('all',this)">All</button>
+      <button class="filter-btn" onclick="filterObs('C1',this)">C1 Atlas</button>
+      <button class="filter-btn" onclick="filterObs('C2',this)">C2 Transport</button>
+      <button class="filter-btn" onclick="filterObs('C3',this)">C3 Skills</button>
+      <button class="filter-btn" onclick="filterObs('C4',this)">C4 Docs</button>
+      <button class="filter-btn" onclick="filterObs('C5',this)">C5 GATE</button>
+      <button class="filter-btn" onclick="filterObs('C6',this)">C6 Baseline</button>
+      <button class="filter-btn" onclick="filterObs('C7',this)">C7 Memory</button>
+    </div>
+    <div class="card-grid" id="obs-cards"></div>
+  </div>
+
+  <!-- =========== EXPLORATIONS PANEL =========== -->
+  <div id="explorations" class="panel">
+    <div class="section-head">Explorations <span class="count">17 search events</span></div>
+    <p style="font-size:12px;color:var(--skin-400);margin-bottom:16px;">Active searches — regex, glob, and text pattern scans across the filesystem.</p>
+    <div class="card-grid" id="exp-cards"></div>
+  </div>
+
+  <!-- =========== CLUSTER MAP PANEL =========== -->
+  <div id="clusters" class="panel">
+    <div class="section-head">Cluster Interpretation Map <span class="count">7 clusters</span></div>
+    <p style="font-size:12px;color:var(--skin-400);margin-bottom:20px;">Each cluster represents a thematic concentration of exploration activity. Events within a cluster share semantic proximity and purpose alignment.</p>
+    <div id="cluster-boxes"></div>
+  </div>
+
+  <!-- =========== HISTOGRAM PANEL =========== -->
+  <div id="histogram" class="panel">
+    <div class="section-head">Detailed Histograms</div>
+
+    <div class="histogram-container">
+      <div class="histogram-title">Filesystem Roots Touched (instances per root)</div>
+      <div id="roots-histogram"></div>
+    </div>
+
+    <div class="histogram-container">
+      <div class="histogram-title">File Types Accessed</div>
+      <div id="filetypes-histogram"></div>
+    </div>
+
+    <div class="histogram-container">
+      <div class="histogram-title">Search Pattern Categories</div>
+      <div id="search-histogram"></div>
+    </div>
+
+    <div class="histogram-container">
+      <div class="histogram-title">Echoes Data — Instance Events per Source</div>
+      <div id="echoes-histogram"></div>
+    </div>
+
+    <div class="histogram-container">
+      <div class="histogram-title">Build Phase Ledger — Commits (90d) per Repo</div>
+      <div id="commits-histogram"></div>
+    </div>
+
+    <div class="histogram-container">
+      <div class="histogram-title">Gap Taxonomy — Severity Distribution</div>
+      <div id="gap-severity-histogram"></div>
+    </div>
+
+    <div class="histogram-container">
+      <div class="histogram-title">Gap Taxonomy — Dimension Distribution</div>
+      <div id="gap-dimension-histogram"></div>
+    </div>
+  </div>
+
+  <!-- =========== GAP MATRIX PANEL =========== -->
+  <div id="gaps" class="panel">
+    <div class="section-head">Gap Taxonomy Matrix <span class="count">20 gaps from echoes audit</span></div>
+    <p style="font-size:12px;color:var(--skin-400);margin-bottom:16px;">Source: <code style="font-family:var(--font-mono);color:var(--accent);">canopy/echoes/data/gap_taxonomy_matrix.json</code> — code inspection against plan definitions.</p>
+    <table class="gap-table">
+      <thead>
+        <tr>
+          <th>Severity</th>
+          <th>Dimension</th>
+          <th>Surface File</th>
+          <th>Symptom</th>
+          <th>Confidence</th>
+        </tr>
+      </thead>
+      <tbody id="gap-table-body"></tbody>
+    </table>
+  </div>
+
+  <!-- =========== TIMELINE PANEL =========== -->
+  <div id="timeline" class="panel">
+    <div class="section-head">Session Timeline <span class="count">67 events</span></div>
+    <p style="font-size:12px;color:var(--skin-400);margin-bottom:16px;">Chronological event stream. Blue dots = observation (read), amber dots = exploration (search).</p>
+    <div class="timeline" id="timeline-container"></div>
+  </div>
+</div>
+
+<script>
+// =================== DATA ===================
+const observations = [
+  { path: "~/CascadeProjects/Documentation", type: "directory", cluster: "C4", desc: "99-item docs directory — project documentation corpus", items: ["docs/ with 99+ items", "archive/ empty"] },
+  { path: "~/CascadeProjects/tmp", type: "directory", cluster: "C7", desc: "Temporary workspace artifacts", items: ["Session-scoped temp files"] },
+  { path: "~/pi-mangrove", type: "directory", cluster: "C3", desc: "Prompt/skills workspace — EXECUTION_GUIDE.md, README.md", items: ["EXECUTION_GUIDE.md (8.2 KB)", "README.md (2.4 KB)", "extensions/, prompts/, skills/ (empty scaffolds)", "package.json, tsconfig.json"] },
+  { path: "~/skills", type: "directory", cluster: "C3", desc: "Skill definitions — 7 .skill files, CLAUDE.md, routines/", items: ["CLAUDE.md (3.6 KB)", "echoes-dev.skill", "gated-execution.skill", "glimpse.skill", "iterate.skill", "lifeguard-review.skill", "screen-budget.skill", "trust-layer-review.skill", "Session Highlights 2026.md (16 KB)", "os-guardrails/, trust-contract-review/"] },
+  { path: "~/.claude", type: "directory", cluster: "C7", desc: "Claude agent state — settings, history, commands, plans", items: ["settings.json (11 KB)", "history.jsonl (225 KB)", "commands/, plans/, sessions/ subdirectories"] },
+  { path: "~/seed/templates", type: "directory", cluster: "C6", desc: "Ecosystem baseline templates — contract, schema, snapshot", items: ["development-contract.md (14 KB)", "ecosystem-baseline.schema.json (7.4 KB)", "ecosystem-baseline.snapshot.json (10.6 KB)"] },
+  { path: "~/Documents", type: "directory", cluster: "C4", desc: "User documents directory", items: ["General documents"] },
+  { path: "~/Downloads", type: "directory", cluster: "C4", desc: "Downloads directory", items: ["Downloaded files"] },
+  { path: "~/BESTWAY", type: "file", cluster: "C2", desc: "Transport/protocol reference document — line 182 read", items: ["Line 182 specifically accessed"] },
+  { path: "~/BESTWAY_TEMPLATE", type: "directory", cluster: "C2", desc: "Template for transport/protocol patterns", items: ["Template scaffolding"] },
+  { path: "~/.claude/commands", type: "directory", cluster: "C7", desc: "Claude command definitions", items: ["Agent command files"] },
+  { path: "~/pi-mangrove/EXECUTION_GUIDE.md", type: "file", cluster: "C3", desc: "Execution guide — 200 lines read", items: ["Full guide content — 8.2 KB"] },
+  { path: "~/seed/templates/ecosystem-baseline.snapshot.json", type: "file", cluster: "C6", desc: "Ecosystem snapshot — repos, MCP servers, threads, gaps", items: ["6 repos tracked", "15 MCP servers", "7 active threads", "11 gaps identified"] },
+  { path: "~/pi-mangrove/README.md", type: "file", cluster: "C3", desc: "Pi-mangrove overview", items: ["Project description, 2.4 KB"] },
+  { path: "~/seed/templates/ecosystem-baseline.schema.json", type: "file", cluster: "C6", desc: "JSON schema for ecosystem baseline format", items: ["Schema definition — 7.4 KB"] },
+  { path: "~/CascadeProjects/Projects/GATE/README.md", type: "file", cluster: "C5", desc: "GATE operational envelope documentation", items: ["Project overview, 2 KB"] },
+  { path: "~/CascadeProjects/Projects/GATE", type: "directory", cluster: "C5", desc: "GATE contract store — templates, schemas, audit log", items: ["CONTRACT_TEMPLATE.json (11.4 KB)", "agent_schema.json (17 KB)", ".nonce_registry.json", "audit.ndjson (empty)", "archived/, incoming/, results/"] },
+  { path: "~/canopy/echoes/data/build_phase_ledger.json", type: "file", cluster: "C1", desc: "90-day build activity across 14 repos — phase labels, commit counts", items: ["3 sustained repos (hogsmade 331, echoes 110, afloat 98)", "4 burst repos", "7 dormant repos", "Phase summary with classification"] },
+  { path: "~/canopy/echoes/data/gap_taxonomy_matrix.json", type: "file", cluster: "C1", desc: "20 gaps across 5 dimensions — enforcement, embeddedness, nuance, creativity, actionability", items: ["4 critical gaps", "12 moderate gaps", "4 low gaps", "Dominant: enforcement + embeddedness around consent/provenance"] },
+  { path: "~/canopy/echoes/data/implementation_backlog.json", type: "file", cluster: "C1", desc: "8-axis implementation backlog — all complete", items: ["Axis 0: Wire can_process, remove lint exclusion, add sanitization", "Axis 1: graph_compiler", "Axis 2: select_rule_pack", "Axis 3: governance_gates", "Axis 4: atlas_repl CLI", "Axis 5: validation chain"] },
+  { path: "~/canopy/echoes/docs/atlas-theme.css", type: "file", cluster: "C1", desc: "Atlas visual theme — warm skin tones, brown contrast", items: ["197 lines of CSS", "Surface, skin, brown, accent, semantic palettes", "Graph node/edge styling"] },
+  { path: "~/canopy/echoes/docs/atlas-theme-tokens.json", type: "file", cluster: "C1", desc: "Design tokens — 7 categories of color/typography tokens", items: ["surface (bg, bg-raised, bg-sunken, bg-overlay)", "skin (100-500)", "brown (600-900)", "accent (default, hover, muted, subtle)", "semantic (pass, warn, deny, info)", "graph-nodes, graph-edges"] },
+  { path: "~/canopy/echoes/data/values/values.json", type: "file", cluster: "C1", desc: "Value system weights — respect, accuracy, helpfulness", items: ["respect: 0.876 / weight 0.4", "accuracy: 0.866 / weight 0.4", "helpfulness: 0.782 / weight 0.2"] },
+  { path: "~/canopy/echoes/docs/atlas_schema.md", type: "file", cluster: "C1", desc: "Atlas 4-layer architecture schema — Collective, Context, Agentic, Hierarchy", items: ["Layer 1: Shared Priors (taxonomy, values, tones)", "Layer 2: Context (mood, consent, protection, session)", "Layer 3: Agentic (intent, rule-pack, paths, governance)", "Layer 4: Hierarchy (S0-S7 strata)", "5 governance invariants"] },
+  { path: "~/canopy/echoes/docs/atlas_implementation_guide.md", type: "file", cluster: "C1", desc: "Implementation guide — 400+ lines read across two passes", items: ["Full implementation instructions", "29.9 KB total"] },
+  { path: "~/canopy/echoes/docs/ATLAS_README.md", type: "file", cluster: "C1", desc: "Atlas project README — 152 lines", items: ["Project overview and purpose", "5.6 KB"] },
+  { path: "~/canopy/echoes/data/knowledge/knowledge_base.json", type: "file", cluster: "C1", desc: "Knowledge base — 20 entries, mostly ROI analyses + ATLAS/assistant seeds", items: ["4 ROI analysis entries (Demo Bank Corp, Test Bank Corp)", "8 ATLAS inventory entries (duplicates)", "8 EchoesAssistantV2 entries (duplicates)"] },
+  { path: "~/canopy/echoes/data/context/context_session_1762013760.json", type: "file", cluster: "C1", desc: "Context session data — 229 bytes", items: ["Single session snapshot"] },
+  { path: "~/canopy/echoes/data", type: "directory", cluster: "C1", desc: "Echoes data root — 5 subdirectories + 3 JSON files", items: ["build_phase_ledger.json", "gap_taxonomy_matrix.json", "implementation_backlog.json", "context/, knowledge/, memory/, values/"] },
+  { path: "~/canopy/echoes/docs", type: "directory", cluster: "C1", desc: "Echoes docs — 280+ files (md, txt, json, css)", items: ["Atlas theme/schema/guide files", "Domain skill docs (01-10 series)", "Architecture, security, testing guides", "Audit reports, deployment docs"] },
+  { path: "~/canopy/echoes/data/values", type: "directory", cluster: "C1", desc: "Value system data directory", items: ["values.json (respect, accuracy, helpfulness)"] },
+  { path: "~/canopy/echoes/data/knowledge", type: "directory", cluster: "C1", desc: "Knowledge base directory", items: ["knowledge_base.json (13 KB, 20 entries)"] },
+  { path: "~/canopy/echoes/data/context", type: "directory", cluster: "C1", desc: "Context session directory", items: ["1 session file (229 bytes)"] },
+  { path: "~/canopy/echoes/data/memory", type: "directory", cluster: "C1", desc: "Session memory directory", items: ["3 session files (total ~9.4 KB)"] },
+  { path: "~/.cursor/plans", type: "directory", cluster: "C7", desc: "Cursor plan artifacts", items: ["gap_pattern_audit plan file accessed"] },
+  { path: "~/.cursor/plans/gap_pattern_audit_50cce17a.plan.md", type: "file", cluster: "C1", desc: "Gap pattern audit plan — 200 lines read", items: ["Audit plan from Cursor session"] },
+  { path: "~/CascadeProjects/Documentation/docs", type: "directory", cluster: "C4", desc: "Main documentation directory — 99+ items", items: ["Audits, memos, plans, security, schemas", "Afloat templates", "Recovery playbooks", "MCP setup and troubleshooting"] },
+  { path: "~/.config/.../copilot-chat/memory-tool/.../plan.md", type: "file", cluster: "C7", desc: "Copilot memory plan artifact", items: ["Cross-tool memory state"] },
+  { path: "~/canopy/echoes", type: "directory", cluster: "C1", desc: "Echoes repository root — full project", items: ["Python codebase (assistant_v2_core, api/, app/, core_modules/)", "Atlas character module", "120+ files at root level"] },
+];
+
+const explorations = [
+  { query: "context transport|baseline protocol|custom function|transport envelope|context envelope", scope: "global", results: 50, cluster: "C2", desc: "Initial broad search for context transport and protocol patterns across all files" },
+  { query: "**/*.prompt.md", scope: "global", results: 20, cluster: "C3", desc: "File glob — finding all prompt definition files" },
+  { query: "transport|context|baseline|protocol", scope: ".claude/**/*", results: 20, cluster: "C2", desc: "Search within Claude agent config for transport/protocol references" },
+  { query: "transport|context|baseline|protocol", scope: "seed/templates/**/*", results: 20, cluster: "C2", desc: "Search within seed templates for transport/protocol patterns" },
+  { query: "transport|context|baseline|protocol", scope: "skills/**/*", results: 20, cluster: "C2", desc: "Search within skills directory for transport/protocol references" },
+  { query: "context transport|baseline protocol|transport envelope|envelope", scope: "global", results: 20, cluster: "C2", desc: "Refined search — tighter compound patterns for envelopes" },
+  { query: "transport|protocol|baseline|context", scope: "CascadeProjects/Documentation/**", results: 20, cluster: "C2", desc: "Documentation search for transport/protocol patterns" },
+  { query: "**/GATE/**/*.md", scope: "global", results: 1, cluster: "C5", desc: "File glob — GATE markdown files (only README found)" },
+  { query: "**/*transport*.md", scope: "global", results: 0, cluster: "C2", desc: "File glob — no transport-named markdown files exist" },
+  { query: "**/*envelope*.md", scope: "global", results: 0, cluster: "C2", desc: "File glob — no envelope-named markdown files exist" },
+  { query: "**/download*.md", scope: "global", results: 0, cluster: "C4", desc: "File glob — no download-named markdown files" },
+  { query: "transport|context|baseline|protocol", scope: "Downloads/**/*.md", results: 20, cluster: "C2", desc: "Downloads search for protocol references" },
+  { query: "context.?transport|baseline.?protocol|transport.?protocol|envelope.*protocol|protocol.*transport", scope: "global", results: 30, cluster: "C2", desc: "Compound regex — adjacency patterns for protocol/transport pairing" },
+  { query: "blue|cool|serene|mirror|red|warm|palette", scope: "canopy/echoes/**/*.json", results: 50, cluster: "C1", desc: "Color/mood search in echoes JSON data" },
+  { query: "inventory|batch|release|package", scope: "canopy/echoes/**", results: 100, cluster: "C1", desc: "Inventory/batch search in echoes codebase" },
+  { query: "decision points|design token", scope: "canopy/echoes/docs/**/*.md", results: 8, cluster: "C1", desc: "Design token and decision point references in echoes docs" },
+  { query: "trace|memory|context|session", scope: "canopy/echoes/data/**", results: 20, cluster: "C1", desc: "Session/memory pattern search in echoes data" },
+];
+
+const clusterData = [
+  {
+    id: "C1", name: "Atlas / Echoes Core Data",
+    obsCount: 18, expCount: 4, dataFiles: 8,
+    interpretation: "The densest cluster — 34% of all session events. Centered on the canopy/echoes repository, specifically the Atlas character module data layer. The session deeply read the build_phase_ledger (14-repo activity map), gap_taxonomy_matrix (20 gaps across 5 dimensions), implementation_backlog (8 axes, all complete), Atlas theme tokens/CSS, value system weights, knowledge base, and the 4-layer atlas_schema. This cluster reveals a mature data landscape with completed implementation but persistent enforcement gaps — the consent gate (can_process) is defined but was historically unreachable from production paths. The knowledge_base shows 20 entries with significant duplication (repeated ATLAS/assistant seed entries), suggesting ingestion idempotency gaps.",
+    evidence: ["build_phase_ledger.json", "gap_taxonomy_matrix.json", "implementation_backlog.json", "atlas-theme-tokens.json", "atlas_schema.md", "atlas_implementation_guide.md", "values.json", "knowledge_base.json", "context/", "memory/", "ATLAS_README.md", "atlas-theme.css"]
+  },
+  {
+    id: "C2", name: "Context Transport / Protocol",
+    obsCount: 2, expCount: 10, dataFiles: 0,
+    interpretation: "The most exploration-heavy cluster — 10 of 14 events are searches, only 2 are reads. This is a hunt for a concept ('context transport', 'baseline protocol', 'transport envelope') that doesn't yet have a dedicated artifact. Searches spanned .claude/, seed/templates/, skills/, Documentation/, Downloads/, and global scope. Results came back (20-50 hits each) but no single canonical transport protocol document was found — the **/*transport*.md and **/*envelope*.md globs returned zero matches. The BESTWAY file (line 182) was the closest hit. This cluster represents a design gap: the transport/protocol concept is referenced in many places but has no single source of truth document.",
+    evidence: ["BESTWAY (line 182)", "BESTWAY_TEMPLATE", "8 regex searches across 6 scopes", "0 matches for *transport*.md", "0 matches for *envelope*.md"]
+  },
+  {
+    id: "C3", name: "Skills & Templates",
+    obsCount: 5, expCount: 2, dataFiles: 0,
+    interpretation: "Skills infrastructure — the pi-mangrove workspace (EXECUTION_GUIDE, README) and the ~/skills directory (7 .skill files, CLAUDE.md). The *.prompt.md glob found 20 files. This cluster shows a well-populated skills layer with execution guides but empty scaffolding directories (extensions/, prompts/, skills/ inside pi-mangrove are empty). The skill files themselves define operational patterns: gated-execution, glimpse, iterate, lifeguard-review, screen-budget, trust-layer-review, echoes-dev.",
+    evidence: ["pi-mangrove/EXECUTION_GUIDE.md", "pi-mangrove/README.md", "skills/ (7 .skill files)", "skills/CLAUDE.md", "**/*.prompt.md (20 matches)"]
+  },
+  {
+    id: "C4", name: "Documentation Corpus",
+    obsCount: 5, expCount: 1, dataFiles: 0,
+    interpretation: "The CascadeProjects Documentation directory with 99+ items — audits, memos, plans, security guides, MCP setup, recovery playbooks, schemas. Documents and Downloads directories were also scanned. One search (download*.md) returned zero. This is the reference layer — large and broad but read-only in this session. The session touched this cluster for context rather than investigation.",
+    evidence: ["Documentation/docs/ (99+ items)", "Documents/", "Downloads/", "download*.md (0 matches)"]
+  },
+  {
+    id: "C5", name: "GATE / Contract Store",
+    obsCount: 3, expCount: 1, dataFiles: 1,
+    interpretation: "The GATE operational envelope — CONTRACT_TEMPLATE.json (11.4 KB), agent_schema.json (17 KB), audit.ndjson (empty), nonce registry. The README was read and GATE markdown files were globbed (only 1 match). This cluster shows GATE as a structured contract store with templates and schemas in place but an empty audit trail (audit.ndjson = 0 bytes), suggesting the envelope validation pipeline exists structurally but hasn't accumulated operational history.",
+    evidence: ["GATE/README.md", "GATE/ directory listing", "GATE/**/*.md (1 match)", "CONTRACT_TEMPLATE.json", "agent_schema.json"]
+  },
+  {
+    id: "C6", name: "Ecosystem Baseline",
+    obsCount: 3, expCount: 0, dataFiles: 2,
+    interpretation: "Pure observation cluster — zero searches. The seed/templates directory was read to examine the ecosystem baseline: development-contract.md (14 KB, the TUV-001 canonical source), ecosystem-baseline.schema.json (schema definition), and ecosystem-baseline.snapshot.json (the actual baseline with 6 repos, 15 MCP servers, 7 threads, 11 gaps, build order, identity constraints). This is the ground truth layer for the entire Mangrove ecosystem.",
+    evidence: ["seed/templates/ directory", "ecosystem-baseline.snapshot.json", "ecosystem-baseline.schema.json", "development-contract.md (referenced)"]
+  },
+  {
+    id: "C7", name: "Memory / Plans / Agent State",
+    obsCount: 4, expCount: 0, dataFiles: 0,
+    interpretation: "Pure observation — Claude and Cursor agent state. .claude/ (settings, history, commands), .cursor/plans (gap_pattern_audit plan), Copilot memory plan, and CascadeProjects/tmp. This cluster represents the meta-layer: tools observing their own state. The .claude/history.jsonl at 225 KB is the largest single state file. The gap_pattern_audit plan connects back to C1 (echoes gap work).",
+    evidence: [".claude/ directory", ".claude/commands/", ".cursor/plans/", "gap_pattern_audit_50cce17a.plan.md", "Copilot memory plan", "CascadeProjects/tmp"]
+  }
+];
+
+const gapData = [
+  { severity: "critical", dimension: "enforcement", file: "legal_safeguards.py / assistant_v2_core.py", symptom: "can_process() defined but never called from production entry points", confidence: 0.95 },
+  { severity: "critical", dimension: "enforcement", file: "legal_safeguards.py", symptom: "DCoC provenance chain never populated during real usage", confidence: 0.95 },
+  { severity: "critical", dimension: "enforcement", file: "app/agents/agent.py", symptom: "Prompt injection principle documented but no sanitization code exists", confidence: 0.90 },
+  { severity: "critical", dimension: "embeddedness", file: "legal_safeguards.py", symptom: "Consent accounting exists but enforcement method is decorative", confidence: 0.95 },
+  { severity: "moderate", dimension: "enforcement", file: "pyproject.toml / ci.yml", symptom: "core_modules/ excluded from ruff; no bandit in CI", confidence: 0.85 },
+  { severity: "moderate", dimension: "enforcement", file: "assistant_v2_core.py", symptom: "Production CLI uses print() instead of structlog", confidence: 0.90 },
+  { severity: "moderate", dimension: "enforcement", file: "No file exists", symptom: "No quarantine enforcement mechanism for flagged modules", confidence: 0.90 },
+  { severity: "moderate", dimension: "embeddedness", file: "app/values.py", symptom: "Value system weakly wired — 5 calls in CLI, 0 in API", confidence: 0.90 },
+  { severity: "moderate", dimension: "embeddedness", file: "core_modules/cross_reference_system.py", symptom: "Analogy generation unreachable from any entry point", confidence: 0.90 },
+  { severity: "moderate", dimension: "nuance", file: "legal_safeguards.py", symptom: "Consent gate returns binary bool — no graduated confidence", confidence: 0.95 },
+  { severity: "moderate", dimension: "nuance", file: "core_modules/personality_engine.py", symptom: "Mood transition opaque — no score, stochastic, no trace", confidence: 0.90 },
+  { severity: "moderate", dimension: "creativity", file: "core_modules/parallel_simulation_engine.py", symptom: "Parallel simulation reachable but ungoverned", confidence: 0.90 },
+  { severity: "moderate", dimension: "creativity", file: "core_modules/cross_reference_system.py", symptom: "create_contextual_analogy() never called — dead code", confidence: 0.95 },
+  { severity: "moderate", dimension: "creativity", file: "personality_engine / train_of_thought / catch_release", symptom: "All creativity mechanisms latent and ungoverned", confidence: 0.85 },
+  { severity: "moderate", dimension: "actionability", file: "api/main.py", symptom: "Health check names no recommended actions", confidence: 0.90 },
+  { severity: "low", dimension: "embeddedness", file: "core_modules/personality_engine.py", symptom: "Mood adaptation shallow — 3 call sites only", confidence: 0.85 },
+  { severity: "low", dimension: "nuance", file: "core_modules/cross_reference_system.py", symptom: "Complexity assessment returns opaque 3-way label", confidence: 0.85 },
+  { severity: "low", dimension: "creativity", file: "core_modules/humor_engine.py", symptom: "Humor engine creative output unbounded by value system", confidence: 0.85 },
+  { severity: "low", dimension: "actionability", file: "app/values.py", symptom: "Value summary has no guidance on score interpretation", confidence: 0.85 },
+  { severity: "low", dimension: "actionability", file: "Makefile", symptom: "No help target — operator must guess sequencing", confidence: 0.80 },
+];
+
+const timelineEvents = [
+  { type: "obs", path: "~/CascadeProjects/Documentation", action: "Read directory" },
+  { type: "obs", path: "~/CascadeProjects/tmp", action: "Read directory" },
+  { type: "obs", path: "~/pi-mangrove", action: "Read directory" },
+  { type: "obs", path: "~/skills", action: "Read directory" },
+  { type: "obs", path: "~/.claude", action: "Read directory" },
+  { type: "obs", path: "~/seed/templates", action: "Read directory" },
+  { type: "obs", path: "~/Documents", action: "Read directory" },
+  { type: "obs", path: "~/Downloads", action: "Read directory" },
+  { type: "exp", path: "context transport|baseline protocol|...", action: "Regex search — 50 results" },
+  { type: "obs", path: "~/BESTWAY", action: "Read file" },
+  { type: "obs", path: "~/BESTWAY_TEMPLATE", action: "Read directory" },
+  { type: "obs", path: "~/.claude/commands", action: "Read directory" },
+  { type: "obs", path: "~/BESTWAY#182", action: "Read line 182" },
+  { type: "exp", path: "**/*.prompt.md", action: "File glob — 20 matches" },
+  { type: "exp", path: "transport|context|baseline|protocol (.claude)", action: "Regex — 20 results" },
+  { type: "exp", path: "transport|context|... (seed/templates)", action: "Regex — 20 results" },
+  { type: "exp", path: "transport|context|... (skills)", action: "Regex — 20 results" },
+  { type: "obs", path: "~/pi-mangrove", action: "Re-read directory" },
+  { type: "obs", path: "~/pi-mangrove/EXECUTION_GUIDE.md", action: "Read lines 1-200" },
+  { type: "obs", path: "~/seed/templates/ecosystem-baseline.snapshot.json", action: "Read lines 1-150" },
+  { type: "obs", path: "~/pi-mangrove/README.md", action: "Read file" },
+  { type: "obs", path: "~/seed/templates/ecosystem-baseline.schema.json", action: "Read lines 1-150" },
+  { type: "exp", path: "context transport|...|envelope", action: "Regex — 20 results" },
+  { type: "exp", path: "transport|protocol|... (Documentation)", action: "Regex — 20 results" },
+  { type: "obs", path: "Read memory", action: "Memory retrieval" },
+  { type: "exp", path: "**/GATE/**/*.md", action: "File glob — 1 match" },
+  { type: "exp", path: "**/*transport*.md", action: "File glob — 0 matches" },
+  { type: "obs", path: "~/CascadeProjects/Projects/GATE", action: "Read directory" },
+  { type: "obs", path: "~/CascadeProjects/Projects/GATE/README.md", action: "Read file" },
+  { type: "exp", path: "**/*envelope*.md", action: "File glob — 0 matches" },
+  { type: "obs", path: "~/CascadeProjects/Projects/GATE", action: "Re-read directory" },
+  { type: "exp", path: "**/download*.md", action: "File glob — 0 matches" },
+  { type: "exp", path: "transport|context|... (Downloads)", action: "Regex — 20 results" },
+  { type: "exp", path: "context.?transport|baseline.?protocol|...", action: "Compound regex — 30 results" },
+  { type: "obs", path: "~/canopy/echoes/data/build_phase_ledger.json", action: "Read lines 1-150" },
+  { type: "obs", path: "~/canopy/echoes/data/gap_taxonomy_matrix.json", action: "Read lines 1-150" },
+  { type: "obs", path: "~/canopy/echoes/data/implementation_backlog.json", action: "Read file" },
+  { type: "obs", path: "~/canopy/echoes/docs/atlas-theme.css", action: "Read lines 1-150" },
+  { type: "obs", path: "~/canopy/echoes/docs/atlas-theme-tokens.json", action: "Read file" },
+  { type: "obs", path: "~/canopy/echoes/docs/atlas_schema.md", action: "Read lines 1-188" },
+  { type: "obs", path: "~/canopy/echoes/docs", action: "Read directory" },
+  { type: "exp", path: "canopy/echoes/**/*.json", action: "File glob — 20 matches" },
+  { type: "obs", path: "~/canopy/echoes", action: "Read directory" },
+  { type: "exp", path: "canopy/echoes/**/*.css", action: "File glob — 1 match" },
+  { type: "obs", path: "~/canopy/echoes/data", action: "Read directory" },
+  { type: "exp", path: "plugin (canopy/echoes)", action: "Text search — 50 results" },
+  { type: "obs", path: "~/canopy/echoes/data/values", action: "Read directory" },
+  { type: "exp", path: "inventory|batch|release|package (echoes)", action: "Regex — 100 results" },
+  { type: "exp", path: "blue|cool|serene|... (echoes json)", action: "Regex — 20 results" },
+  { type: "obs", path: "~/.cursor/plans", action: "Read directory" },
+  { type: "obs", path: "~/canopy/echoes/docs/atlas-theme.css", action: "Re-read lines 150-196" },
+  { type: "obs", path: "~/canopy/echoes/docs/atlas-theme-tokens.json", action: "Re-read file" },
+  { type: "obs", path: "~/canopy/echoes/data/values/values.json", action: "Read file" },
+  { type: "obs", path: "~/.cursor/plans/gap_pattern_audit_50cce17a.plan.md", action: "Read lines 1-200" },
+  { type: "obs", path: "~/canopy/echoes/docs/ATLAS_README.md", action: "Read file" },
+  { type: "obs", path: "~/canopy/echoes/docs/atlas_implementation_guide.md", action: "Read lines 1-300" },
+  { type: "exp", path: "decision points|design token (echoes docs)", action: "Regex — 8 results" },
+  { type: "obs", path: "~/canopy/echoes/docs/atlas_implementation_guide.md", action: "Read lines 300-400" },
+  { type: "obs", path: "~/canopy/echoes/data/gap_taxonomy_matrix.json", action: "Re-read full" },
+  { type: "obs", path: "~/canopy/echoes/data/implementation_backlog.json", action: "Re-read full" },
+  { type: "obs", path: "~/canopy/echoes/data/build_phase_ledger.json", action: "Re-read full" },
+  { type: "obs", path: "~/canopy/echoes/data/knowledge", action: "Read directory" },
+  { type: "obs", path: "~/canopy/echoes/data/memory", action: "Read directory" },
+  { type: "exp", path: "trace|memory|context|session (echoes data)", action: "Regex — 20 results" },
+  { type: "obs", path: "~/canopy/echoes/data/context", action: "Read directory" },
+  { type: "obs", path: "~/canopy/echoes/data/knowledge/knowledge_base.json", action: "Read lines 1-50" },
+  { type: "obs", path: "~/canopy/echoes/data/context/context_session_1762013760.json", action: "Read file" },
+];
+
+// =================== RENDER ===================
+function showPanel(id) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  event.target.classList.add('active');
+}
+
+function toggleCard(el) {
+  el.classList.toggle('expanded');
+}
+
+function filterObs(cluster, btn) {
+  document.querySelectorAll('#observations .filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('#obs-cards .card').forEach(c => {
+    if (cluster === 'all' || c.dataset.cluster === cluster) {
+      c.style.display = '';
+    } else {
+      c.style.display = 'none';
+    }
+  });
+}
+
+// Render observations
+function renderObservations() {
+  const container = document.getElementById('obs-cards');
+  container.innerHTML = observations.map(o => `
+    <div class="card" data-cluster="${o.cluster}" onclick="toggleCard(this)">
+      <div class="card-type-indicator indicator-obs"></div>
+      <div class="card-title">${o.path}</div>
+      <div class="card-desc">${o.desc}</div>
+      <div class="card-tags">
+        <span class="tag tag-obs">${o.type}</span>
+        <span class="tag tag-cluster">${o.cluster}</span>
+      </div>
+      <div class="card-detail">
+        <ul>${o.items.map(i => `<li>${i}</li>`).join('')}</ul>
+      </div>
+    </div>
+  `).join('');
+}
+
+// Render explorations
+function renderExplorations() {
+  const container = document.getElementById('exp-cards');
+  container.innerHTML = explorations.map(e => `
+    <div class="card" onclick="toggleCard(this)">
+      <div class="card-type-indicator indicator-exp"></div>
+      <div class="card-title">${e.query}</div>
+      <div class="card-desc">${e.desc}</div>
+      <div class="card-tags">
+        <span class="tag tag-exp">search</span>
+        <span class="tag tag-cluster">${e.cluster}</span>
+        <span class="tag" style="background:var(--bg-sunken);color:var(--skin-400);">scope: ${e.scope}</span>
+        <span class="tag" style="background:var(--bg-sunken);color:var(--skin-400);">${e.results} results</span>
+      </div>
+      <div class="card-detail">
+        <p>Scope: <code style="font-family:var(--font-mono);color:var(--accent);">${e.scope}</code></p>
+        <p>Results returned: ${e.results}</p>
+      </div>
+    </div>
+  `).join('');
+}
+
+// Render clusters
+function renderClusters() {
+  const container = document.getElementById('cluster-boxes');
+  const stateMap = { C1: 'active', C2: 'transitioning', C5: 'dormant', C7: 'sealed' };
+  container.innerHTML = clusterData.map(c => `
+    <div class="cluster-box"${stateMap[c.id] ? ` data-state="${stateMap[c.id]}"` : ''}>
+      <h3><span class="cluster-id">${c.id}</span> ${c.name}</h3>
+      <div style="display:flex;gap:12px;margin:8px 0;font-size:12px;font-family:var(--font-mono);">
+        <span class="meta-badge badge-obs">obs: ${c.obsCount}</span>
+        <span class="meta-badge badge-exp">exp: ${c.expCount}</span>
+        <span class="meta-badge badge-data">data: ${c.dataFiles}</span>
+      </div>
+      <div class="interpretation">${c.interpretation}</div>
+      <div class="cluster-evidence">
+        ${c.evidence.map(e => `<span class="evidence-pill">${e}</span>`).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+// Render gap table
+function renderGaps() {
+  const body = document.getElementById('gap-table-body');
+  body.innerHTML = gapData.map(g => {
+    const opIdx = g.confidence >= 0.9 ? 0 : g.confidence >= 0.8 ? 1 : g.confidence >= 0.6 ? 2 : g.confidence >= 0.4 ? 3 : 4;
+    return `
+    <tr style="opacity: var(--atlas-trace-opacity-${opIdx})">
+      <td><span class="severity-dot sev-${g.severity}"></span>${g.severity}</td>
+      <td>${g.dimension}</td>
+      <td style="font-family:var(--font-mono);font-size:11px;color:var(--accent);">${g.file}</td>
+      <td>${g.symptom}</td>
+      <td style="font-family:var(--font-mono);">${g.confidence}</td>
+    </tr>
+  `}).join('');
+}
+
+// Render timeline
+function renderTimeline() {
+  const container = document.getElementById('timeline-container');
+  const total = timelineEvents.length;
+  container.innerHTML = timelineEvents.map((e, i) => {
+    const ratio = i / total;
+    const memColor = ratio < 0.25 ? 'var(--atlas-memory-aged)' : ratio < 0.5 ? 'var(--atlas-memory-dated)' : ratio < 0.75 ? 'var(--atlas-memory-recent)' : 'var(--atlas-memory-fresh)';
+    return `
+    <div class="tl-item tl-${e.type}">
+      <div style="display:flex;justify-content:space-between;">
+        <span class="meta-badge ${e.type === 'obs' ? 'badge-obs' : 'badge-exp'}">${e.type === 'obs' ? 'READ' : 'SEARCH'}</span>
+        <span style="font-size:10px;color:var(--skin-500);font-family:var(--font-mono);">#${i+1}</span>
+      </div>
+      <div class="tl-path" style="color: ${memColor}">${e.path}</div>
+      <div class="tl-action">${e.action}</div>
+    </div>
+  `}).join('');
+}
+
+// Histogram helper
+function renderHistogram(containerId, data, barClass) {
+  const container = document.getElementById(containerId);
+  const max = Math.max(...data.map(d => d.value));
+  container.innerHTML = data.map(d => `
+    <div class="histogram-row">
+      <div class="histogram-label" title="${d.label}">${d.label}</div>
+      <div class="histogram-bar-container">
+        <div class="histogram-bar ${barClass || 'bar-accent'}" style="width:${Math.max(2, (d.value / max) * 100)}%">
+          <span>${d.value}</span>
+        </div>
+      </div>
+      <div class="histogram-value">${d.suffix || d.value}</div>
+    </div>
+  `).join('');
+}
+
+// Render ratio histogram
+function renderRatioHistogram() {
+  const container = document.getElementById('ratio-histogram');
+  container.innerHTML = clusterData.map(c => {
+    const total = c.obsCount + c.expCount;
+    const obsW = total > 0 ? (c.obsCount / total) * 100 : 0;
+    const expW = total > 0 ? (c.expCount / total) * 100 : 0;
+    return `
+      <div class="histogram-row">
+        <div class="histogram-label">${c.id} — ${c.name.split('/')[0]}</div>
+        <div class="histogram-bar-container" style="display:flex;">
+          <div class="histogram-bar bar-obs" style="width:${obsW}%;border-radius:4px 0 0 4px;"><span>${c.obsCount}</span></div>
+          <div class="histogram-bar bar-exp" style="width:${expW}%;border-radius:0 4px 4px 0;"><span>${c.expCount}</span></div>
+        </div>
+        <div class="histogram-value">${c.obsCount}/${c.expCount}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+// Detailed histograms
+function renderDetailedHistograms() {
+  renderHistogram('roots-histogram', [
+    { label: "~/canopy/echoes", value: 23 },
+    { label: "~/CascadeProjects", value: 12 },
+    { label: "~/pi-mangrove", value: 4 },
+    { label: "~/skills", value: 2 },
+    { label: "~/seed/templates", value: 5 },
+    { label: "~/.claude", value: 3 },
+    { label: "~/.cursor", value: 2 },
+    { label: "~/BESTWAY*", value: 2 },
+    { label: "~/Documents", value: 1 },
+    { label: "~/Downloads", value: 2 },
+  ]);
+
+  renderHistogram('filetypes-histogram', [
+    { label: ".json", value: 12, suffix: "12 files" },
+    { label: ".md", value: 9, suffix: "9 files" },
+    { label: ".css", value: 2, suffix: "2 files" },
+    { label: "directory", value: 20, suffix: "20 dirs" },
+    { label: "other", value: 5, suffix: "5 files" },
+  ], 'bar-data');
+
+  renderHistogram('search-histogram', [
+    { label: "transport/protocol/context", value: 8, suffix: "8 searches" },
+    { label: "file glob (*.prompt.md etc)", value: 5, suffix: "5 searches" },
+    { label: "color/mood/palette", value: 2, suffix: "2 searches" },
+    { label: "inventory/batch/design", value: 3, suffix: "3 searches" },
+    { label: "trace/session/memory", value: 1, suffix: "1 search" },
+  ], 'bar-exp');
+
+  renderHistogram('echoes-histogram', [
+    { label: "ROI Analyses", value: 4, suffix: "4 entries" },
+    { label: "ATLAS Inventory", value: 8, suffix: "8 entries (dupes)" },
+    { label: "Assistant V2", value: 8, suffix: "8 entries (dupes)" },
+    { label: "Session Memory", value: 3, suffix: "3 sessions" },
+    { label: "Context Session", value: 1, suffix: "1 session" },
+  ], 'bar-accent');
+
+  renderHistogram('commits-histogram', [
+    { label: "hogsmade", value: 331 },
+    { label: "echoes", value: 110 },
+    { label: "afloat", value: 98 },
+    { label: "assistive-contracts", value: 38 },
+    { label: "BEYOND", value: 19 },
+    { label: "apiguard", value: 18 },
+    { label: "Coinbase_from_zip", value: 10 },
+    { label: "ai-web-demo", value: 8 },
+    { label: "glimpse-engine", value: 3 },
+    { label: "interface", value: 3 },
+    { label: "pi-mangrove", value: 1 },
+    { label: "mangrove-hardening", value: 1 },
+    { label: "Atmosphere", value: 0 },
+    { label: "storage", value: 0 },
+  ]);
+
+  renderHistogram('gap-severity-histogram', [
+    { label: "Critical", value: 4 },
+    { label: "Moderate", value: 12 },
+    { label: "Low", value: 4 },
+  ], 'bar-gap');
+
+  renderHistogram('gap-dimension-histogram', [
+    { label: "enforcement", value: 7 },
+    { label: "embeddedness", value: 4 },
+    { label: "nuance", value: 3 },
+    { label: "creativity", value: 4 },
+    { label: "actionability", value: 3 },
+  ], 'bar-gap');
+}
+
+// =================== INIT ===================
+document.addEventListener('DOMContentLoaded', () => {
+  renderObservations();
+  renderExplorations();
+  renderClusters();
+  renderGaps();
+  renderTimeline();
+  renderRatioHistogram();
+  renderDetailedHistograms();
+});
+</script>
+</body>
+</html>

@@ -177,6 +177,9 @@ security-logs/
 .cursor/hooks.json
 .cursor/local*
 
+# Copilot
+.copilot/session-state/
+
 # Windsurf
 .windsurf/
 .windsurf-next/
