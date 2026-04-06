@@ -96,6 +96,11 @@ function checkScanRateLimit(scanType: string): string | null {
   return null;
 }
 
+// Map alternate names to KNOWN_REPOS keys (path overrides), not necessarily SEEDS_ROOT dirs.
+const KNOWN_REPO_ALIASES: Record<string, string> = {
+  "GRID-main": "GRID",
+};
+
 // Alias repo names to actual directory names under SEEDS_ROOT (e.g. "grid" -> "GRID" for health checks)
 const REPO_PATH_ALIASES: Record<string, string> = {
   grid: "GRID",
@@ -128,7 +133,8 @@ function getRepoCandidates(repoName: string): string[] {
 }
 
 async function resolveRepoPath(repoName: string): Promise<string> {
-  const knownInfo = KNOWN_REPOS[repoName];
+  const knownKey = KNOWN_REPO_ALIASES[repoName] ?? repoName;
+  const knownInfo = KNOWN_REPOS[knownKey];
   if (knownInfo?.path) {
     return knownInfo.path;
   }
@@ -240,7 +246,8 @@ async function findGitRoot(repoPath: string): Promise<string | null> {
 }
 
 async function checkRepoHealth(repoName: string): Promise<RepoHealth> {
-  const knownInfo = KNOWN_REPOS[repoName];
+  const knownKey = KNOWN_REPO_ALIASES[repoName] ?? repoName;
+  const knownInfo = KNOWN_REPOS[knownKey];
   const repoPath = await resolveRepoPath(repoName);
   const health: RepoHealth = {
     name: repoName,
@@ -591,7 +598,8 @@ export function buildServer(): McpServer {
           isError: true,
         };
       const health = await checkRepoHealth(args.repoName);
-      const knownInfo = KNOWN_REPOS[args.repoName];
+      const knownKey = KNOWN_REPO_ALIASES[args.repoName] ?? args.repoName;
+      const knownInfo = KNOWN_REPOS[knownKey];
 
       emitAudit({
         source: SERVER_NAME,
