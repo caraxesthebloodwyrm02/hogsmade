@@ -85,17 +85,21 @@ def main() -> int:
         return 0
 
     on_disk = {p.name for p in mcp_setup_server.glob("*_mcp_server.py")}
-    manifest_scripts: set[str] = set()
+    # Only entries whose gridPythonScript lives under mcp-setup/ must match
+    # mcp-setup/server/*_mcp_server.py. Src-layout servers (e.g. src/grid/mcp/*.py)
+    # are validated by path existence below.
+    manifest_mcp_setup_scripts: set[str] = set()
     for s in servers:
         gps = s.get("gridPythonScript")
-        if gps:
-            manifest_scripts.add(Path(gps).name)
+        if gps and str(gps).replace("\\", "/").startswith("mcp-setup/"):
+            manifest_mcp_setup_scripts.add(Path(gps).name)
 
-    if on_disk != manifest_scripts:
-        only_disk = sorted(on_disk - manifest_scripts)
-        only_manifest_f = sorted(manifest_scripts - on_disk)
+    if on_disk != manifest_mcp_setup_scripts:
+        only_disk = sorted(on_disk - manifest_mcp_setup_scripts)
+        only_manifest_f = sorted(manifest_mcp_setup_scripts - on_disk)
         print(
-            "verify_mcp_inventory: mcp-setup/server/*_mcp_server.py != manifest gridPythonScript basenames",
+            "verify_mcp_inventory: mcp-setup/server/*_mcp_server.py != "
+            "manifest gridPythonScript basenames (mcp-setup/* only)",
             file=sys.stderr,
         )
         if only_disk:
@@ -124,7 +128,8 @@ def main() -> int:
 
     print(
         f"verify_mcp_inventory: OK ({len(canonical_keys)} editor-canonical servers, "
-        f"{len(on_disk)} mcp-setup Python artifacts)",
+        f"{len(on_disk)} mcp-setup Python artifacts, "
+        f"{sum(1 for s in servers if s.get('gridPythonScript'))} gridPythonScript paths)",
     )
     return 0
 
