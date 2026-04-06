@@ -23,6 +23,7 @@ import type {
   RoutineArgs,
   RoutineResult,
   SafeRoutineEvaluation,
+  StrugglePoint,
   WeightBand,
 } from "./types.js";
 
@@ -423,6 +424,91 @@ function summarizeResult(candidates: EligibilityCandidate[], hierarchy: Hierarch
   return `${candidate.label} leads the current hierarchy with overall score ${top.score.toFixed(3)}. The dominant vertical dimension is ${dominant?.dimension ?? "unknown"}.`;
 }
 
+// ── Struggle point derivation ──
+
+const STRUGGLE_THRESHOLDS: Record<IntegrationDimension, number> = {
+  governance: 0.58,
+  usability: 0.58,
+  integration: 0.65,
+  observability: 0.6,
+  operational_fit: 0.6,
+};
+
+const PROXIMITY_MAP: Record<IntegrationDimension, IntegrationDimension[]> = {
+  governance: ["observability", "operational_fit"],
+  usability: ["integration", "observability"],
+  integration: ["usability", "governance"],
+  observability: ["governance", "integration"],
+  operational_fit: ["governance", "usability"],
+};
+
+function deriveStrugglePoints(
+  hierarchy: HierarchySlice[],
+  conditions: ConditionNote[],
+  seed: string,
+): StrugglePoint[] {
+  const points: StrugglePoint[] = [];
+  const candidateIds = [...new Set(hierarchy.map((s) => s.candidateId))];
+
+  for (const candidateId of candidateIds) {
+    for (const dim of DIMENSIONS) {
+      const slice = hierarchy.find(
+        (s) => s.candidateId === candidateId && s.dimension === dim,
+      );
+      if (!slice) continue;
+
+      const threshold = STRUGGLE_THRESHOLDS[dim];
+      const distance = slice.score - threshold;
+
+      // Struggle fires when score is below or near threshold
+      if (distance >= 0.1) continue;
+
+      const condition = conditions.find(
+        (c) => c.candidateId === candidateId && c.dimension === dim,
+      );
+
+      // G: grounding score based on how directly measured the struggle is
+      const g = condition
+        ? (condition.severity === "priority" ? 1.0 : condition.severity === "watch" ? 0.8 : 0.6)
+        : (distance < 0 ? 0.7 : 0.5);
+
+      // Trace opacity from G
+      const traceOpacity = g >= 0.9 ? 0 : g >= 0.7 ? 1 : g >= 0.5 ? 2 : g >= 0.3 ? 3 : 4;
+
+      // State from distance to threshold
+      const state = distance < -0.15 ? "sealed" as const
+        : distance < 0 ? "active" as const
+        : distance < 0.05 ? "transitioning" as const
+        : "dormant" as const;
+
+      // Cool step from G (high G = well-attested struggle = warm/open, low G = speculative = deep/closed)
+      const coolStep = g >= 0.9 ? 100 : g >= 0.7 ? 300 : g >= 0.5 ? 500 : g >= 0.3 ? 700 : 900;
+
+      points.push({
+        id: `${candidateId}:${dim}:struggle`,
+        candidateId,
+        dimension: dim,
+        severity: condition?.severity ?? "info",
+        message: condition?.message
+          ?? `${dim} score ${slice.score.toFixed(3)} is within struggle range of threshold ${threshold}.`,
+        seed,
+        g,
+        score: slice.score,
+        threshold,
+        proximity: PROXIMITY_MAP[dim],
+        sourceIds: slice.leadingAttributeIds,
+        tokens: {
+          traceOpacity: traceOpacity as 0 | 1 | 2 | 3 | 4,
+          state,
+          coolStep: coolStep as 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900,
+        },
+      });
+    }
+  }
+
+  return points;
+}
+
 function initialState(
   candidates: EligibilityCandidate[],
   args: RoutineArgs,
@@ -439,6 +525,7 @@ function initialState(
     hierarchy: [],
     conditions: [],
     observations: [],
+    strugglePoints: [],
     forms: [],
     table: {
       columns: [],
@@ -558,6 +645,31 @@ function observationPass(): Pass<EligibilityState> {
   };
 }
 
+function strugglePass(): Pass<EligibilityState> {
+  return {
+    id: "derive-struggle-points",
+    description:
+      "Derive struggle points as first-class connective nodes with G, seed, and proximity",
+    execute(input: PassInput<EligibilityState>) {
+      const strugglePoints = deriveStrugglePoints(
+        input.state.hierarchy,
+        input.state.conditions,
+        input.state.seed,
+      );
+      return {
+        state: { ...input.state, strugglePoints },
+        deposit: {
+          struggleCount: strugglePoints.length,
+          dimensions: [...new Set(strugglePoints.map((p) => p.dimension))],
+          proximityPairs: strugglePoints.flatMap((p) =>
+            p.proximity.map((prox) => `${p.dimension}→${prox}`),
+          ),
+        },
+      };
+    },
+  };
+}
+
 function formsPass(): Pass<EligibilityState> {
   return {
     id: "compile-reusable-forms",
@@ -657,6 +769,7 @@ export function buildRoutinePipeline(): ReturnType<typeof createPipeline<Eligibi
     hierarchyPass(),
     conditionPass(),
     observationPass(),
+    strugglePass(),
     formsPass(),
     tablePass(),
   ]);
@@ -709,6 +822,7 @@ export function evaluateRoutine(
     hierarchy: pipelineResult.state.hierarchy,
     conditions: pipelineResult.state.conditions,
     observations: pipelineResult.state.observations,
+    strugglePoints: pipelineResult.state.strugglePoints,
     forms: pipelineResult.state.forms,
     table: pipelineResult.state.table,
     residue: pipelineResult.residue,

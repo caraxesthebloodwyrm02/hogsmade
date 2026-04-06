@@ -83,6 +83,50 @@ export interface ObservationNote {
   sourceSliceIds: string[];
 }
 
+/**
+ * StrugglePoint — first-class connective node in the hierarchy.
+ *
+ * Extends ConditionNote with grounding (G), seed provenance, and
+ * cross-dimension proximity. Struggle points are not defects — they are
+ * the joints where different domains connect. Without them, the hierarchy
+ * has no integration surface.
+ *
+ * G = grounding score (0.0–1.0): how directly attested this struggle is.
+ *   1.0 = threshold breach measured from pipeline output
+ *   0.7–0.8 = inferred from momentum drift or signal pattern
+ *   0.4–0.6 = projected from cross-candidate comparison
+ *   <0.4 = speculative (e.g., drift extrapolation)
+ *
+ * proximity = which other dimensions this struggle touches.
+ *   A governance struggle with usability proximity means the governance
+ *   gap creates an integration opening with the usability surface.
+ */
+export interface StrugglePoint {
+  id: string;
+  candidateId: string;
+  dimension: IntegrationDimension | "overall";
+  severity: ConditionSeverity;
+  message: string;
+  /** Pipeline seed that produced this struggle */
+  seed: string;
+  /** Grounding score: how directly measured vs inferred */
+  g: number;
+  /** Score at the point of struggle (the raw measurement) */
+  score: number;
+  /** Threshold that was crossed or approached */
+  threshold: number;
+  /** Dimensions this struggle is proximate to (creates integration surface) */
+  proximity: IntegrationDimension[];
+  /** Source weight/slice IDs that evidence this struggle */
+  sourceIds: string[];
+  /** Token annotation: which atlas tokens apply to this struggle */
+  tokens: {
+    traceOpacity: 0 | 1 | 2 | 3 | 4;
+    state: "active" | "dormant" | "transitioning" | "sealed";
+    coolStep: 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900;
+  };
+}
+
 export interface RoutineArgs {
   governance: number;
   usability: number;
@@ -152,6 +196,7 @@ export interface EligibilityState {
   hierarchy: HierarchySlice[];
   conditions: ConditionNote[];
   observations: ObservationNote[];
+  strugglePoints: StrugglePoint[];
   forms: FormArtifact[];
   table: CollectionTable;
   summary: string;
@@ -170,6 +215,7 @@ export interface RoutineResult {
   hierarchy: HierarchySlice[];
   conditions: ConditionNote[];
   observations: ObservationNote[];
+  strugglePoints: StrugglePoint[];
   forms: FormArtifact[];
   table: CollectionTable;
   residue: ResidueStack;

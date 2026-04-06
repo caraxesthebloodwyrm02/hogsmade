@@ -119,6 +119,19 @@ function ensureCandidates(input: {
   });
 }
 
+function getEvaluationAuditStatus(validation: {
+  ok: boolean;
+  candidateCount: number;
+}): "success" | "dry_run" | "failure" {
+  if (validation.ok) {
+    return "success";
+  }
+  if (validation.candidateCount === 0) {
+    return "dry_run";
+  }
+  return "failure";
+}
+
 export function listAttributeCatalogHandler() {
   const attributes = getDefaultAttributeCatalog();
   const fixtures = getFixtureCandidates().map((candidate) => ({
@@ -140,11 +153,13 @@ export function evaluateCandidateHandler(input: {
 }) {
   const candidates = ensureCandidates(input);
   const evaluation = safeEvaluateRoutine(candidates, shapeArgs(input.args));
+  const auditStatus = getEvaluationAuditStatus(evaluation.validation);
   void emitEligibilityAudit(
     "evaluate_candidate",
-    evaluation.validation.ok ? "success" : "failure",
+    auditStatus,
     {
       candidateCount: candidates.length,
+      reason: auditStatus === "dry_run" ? "no_candidates_provided" : undefined,
     } as Record<string, unknown>,
   );
   return evaluation;
@@ -158,8 +173,10 @@ export function compileFormsHandler(input: {
 }) {
   const evaluation = evaluateCandidateHandler(input);
   const forms = evaluation.result?.forms ?? [];
-  void emitEligibilityAudit("compile_forms", evaluation.validation.ok ? "success" : "failure", {
+  const auditStatus = getEvaluationAuditStatus(evaluation.validation);
+  void emitEligibilityAudit("compile_forms", auditStatus, {
     candidateCount: evaluation.validation.candidateCount,
+    reason: auditStatus === "dry_run" ? "no_candidates_provided" : undefined,
   } as Record<string, unknown>);
   return { validation: evaluation.validation, forms };
 }
@@ -171,8 +188,10 @@ export function collectTableHandler(input: {
   args?: Partial<RoutineArgs>;
 }) {
   const evaluation = evaluateCandidateHandler(input);
-  void emitEligibilityAudit("collect_table", evaluation.validation.ok ? "success" : "failure", {
+  const auditStatus = getEvaluationAuditStatus(evaluation.validation);
+  void emitEligibilityAudit("collect_table", auditStatus, {
     candidateCount: evaluation.validation.candidateCount,
+    reason: auditStatus === "dry_run" ? "no_candidates_provided" : undefined,
   } as Record<string, unknown>);
   return {
     validation: evaluation.validation,
@@ -187,8 +206,10 @@ export function explainHierarchyHandler(input: {
   args?: Partial<RoutineArgs>;
 }) {
   const evaluation = evaluateCandidateHandler(input);
-  void emitEligibilityAudit("explain_hierarchy", evaluation.validation.ok ? "success" : "failure", {
+  const auditStatus = getEvaluationAuditStatus(evaluation.validation);
+  void emitEligibilityAudit("explain_hierarchy", auditStatus, {
     candidateCount: evaluation.validation.candidateCount,
+    reason: auditStatus === "dry_run" ? "no_candidates_provided" : undefined,
   } as Record<string, unknown>);
   return {
     validation: evaluation.validation,
@@ -432,8 +453,9 @@ export function buildServer(): McpServer {
     "Record a weighted runtime signal against an evolution case.",
     {
       caseId: z.string().describe("Case id to record signal against."),
-      kind: z.enum(SIGNAL_KIND_VALUES).describe("Signal kind."),
+      type: z.enum(SIGNAL_KIND_VALUES).describe("Signal type (maps to CycleSignalKind)."),
       weight: z.number().min(0).max(1).describe("Signal weight 0-1."),
+      source: z.string().optional().describe("Signal source identifier."),
       note: z.string().optional().describe("Optional human note."),
     },
     async (input: any) => toJsonText(recordCycleSignalHandler(input)),
@@ -447,6 +469,7 @@ export function buildServer(): McpServer {
       from: z.string().describe("Source actor or surface."),
       to: z.string().describe("Target actor or surface."),
       status: z.enum(HANDOFF_STATUS_VALUES).describe("Handoff status."),
+      summary: z.string().describe("Summary of the handoff."),
     },
     async (input: any) => toJsonText(recordHandoffHandler(input)),
   );
@@ -455,10 +478,15 @@ export function buildServer(): McpServer {
     "upsert_endpoint_spec",
     "Insert or update an endpoint spec used by the promotion gate.",
     {
+      caseId: z.string().describe("Case id owning this endpoint."),
       endpointId: z.string().describe("Endpoint identifier."),
+      label: z.string().describe("Human-readable endpoint label."),
+      owner: z.string().optional().describe("Owner of the endpoint."),
+      contract: z.string().optional().describe("Contract reference."),
       status: z.enum(ENDPOINT_STATUS_VALUES).describe("Endpoint status."),
-      url: z.string().optional().describe("Optional URL."),
-      lastVerified: z.string().optional().describe("Optional last verified timestamp."),
+      required: z.boolean().optional().describe("Whether this endpoint is required for promotion."),
+      readiness: z.number().min(0).max(1).optional().describe("Readiness score 0-1."),
+      notes: z.string().optional().describe("Additional notes."),
     },
     async (input: any) => toJsonText(upsertEndpointSpecHandler(input)),
   );
@@ -468,7 +496,8 @@ export function buildServer(): McpServer {
     "Advance the cycle one beat forward or return it one beat backward.",
     {
       caseId: z.string().describe("Case id to advance."),
-      direction: z.enum(["forward", "backward"]).describe("Direction to move."),
+      direction: z.enum(["forward", "return"]).describe("Direction to move: 'forward' or 'return'."),
+      reason: z.string().optional().describe("Optional reason for the advance."),
     },
     async (input: any) => toJsonText(advanceCycleHandler(input)),
   );

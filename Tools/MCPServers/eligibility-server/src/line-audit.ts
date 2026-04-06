@@ -452,7 +452,15 @@ function checkOrphanedExports(modules: ModuleInfo[]): InternalFinding[] {
 // ── Public API ──
 
 function resolveDirs(): { srcDir: string; testDir: string } {
-  // Walk up from this file's directory to find the project root
+  const envSrc = process.env.ELIGIBILITY_LINE_AUDIT_SRC_DIR;
+  const envTest = process.env.ELIGIBILITY_LINE_AUDIT_TEST_DIR;
+  if (envSrc && envTest) {
+    return {
+      srcDir: path.resolve(envSrc),
+      testDir: path.resolve(envTest),
+    };
+  }
+  // Package-local sweep only: this directory's package (eligibility-server), not CascadeProjects or workspace root.
   const thisDir = path.dirname(new URL(import.meta.url).pathname);
   const projectRoot = path.resolve(thisDir, "..");
   return {
