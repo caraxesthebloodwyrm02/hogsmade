@@ -63,12 +63,11 @@ Each table lists **workflow names** from that repo’s `.github/workflows/auto-l
 
 **Ruleset recommendations (UI):** require pull request before merge, block force pushes, require at least one approving review on `main`/`hogsmade` if desired, and add the JSON contexts above as **required status checks** once each has appeared on a real PR.
 
-**After enabling root CodeQL and Knip:** open a PR that touches `Components/**` or `.github/workflows` and confirm these check names in the PR **Checks** tab, then add any you want enforced:
+**After enabling root CodeQL:** open a PR that touches `Components/**` or `.github/workflows` and confirm these check names in the PR **Checks** tab, then add any you want enforced:
 
 | Workflow file                                                                          | Typical check name (verify in UI)    |
 | -------------------------------------------------------------------------------------- | ------------------------------------ |
 | [`.github/workflows/codeql.yml`](.github/workflows/codeql.yml)                         | `Analyze JavaScript/TypeScript`      |
-| [`.github/workflows/knip.yml`](.github/workflows/knip.yml)                             | `Unused files & dependencies (knip)` |
 | [`.github/workflows/root-typescript-ci.yml`](.github/workflows/root-typescript-ci.yml) | `Shared packages test + coverage`    |
 
 Suggested expanded contexts (hogsmade branch), **after** each job has run at least once:
@@ -80,8 +79,7 @@ Suggested expanded contexts (hogsmade branch), **after** each job has run at lea
   "Boundary Invariant Review",
   "Test & Lint (Python 3.13)",
   "Analyze JavaScript/TypeScript",
-  "Shared packages test + coverage",
-  "Unused files & dependencies (knip)"
+  "Shared packages test + coverage"
 ]
 ```
 

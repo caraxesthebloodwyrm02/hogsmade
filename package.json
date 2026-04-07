@@ -26,7 +26,6 @@
   "scripts": {
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "knip": "node Components/scripts/run-knip-workspaces.mjs",
     "lint:all": "npm run --workspaces lint",
     "build:all": "npm run --workspaces build",
     "test:all": "npm run --workspaces test",
