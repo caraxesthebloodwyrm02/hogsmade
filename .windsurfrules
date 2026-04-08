@@ -17,7 +17,7 @@ This file is the Windsurf adapter for the shared Mangrove development rules. If 
 This is a namespaced multi-project monorepo. Key areas:
 - `Components/shared-types/` — build first (`npm install && npm run build`)
 - `Components/shared-resilience/` — build after shared-types
-- `Tools/MCPServers/` — 11 TypeScript MCP servers (afloat, echoes, eligibility, glimpse, grid, lots, maintain, mangrove, overview, pulse, seeds)
+- `Tools/MCPServers/` — 12 TypeScript MCP servers (afloat, echoes, eligibility, glimpse, grid, lots, maintain, mangrove, ori, overview, pulse, seeds)
 - `Projects/GRID-main/` — git submodule → GRID-INTELLIGENCE/GRID (Python, `uv sync`)
 - `Applications/glimpse-artifact/` — React component library
 - `Applications/glimpse-engine/` — Browser visualization engine
@@ -34,7 +34,7 @@ This is a namespaced multi-project monorepo. Key areas:
 
 ## MCP Servers
 
-18 servers defined in `mcp_config.json` (11 TypeScript + 7 Python GRID servers). Python servers use GRID venv at `/home/caraxes/CascadeProjects/Projects/GRID-main/.venv/bin/python`.
+19 servers defined in `mcp_config.json` (12 TypeScript + 7 Python GRID servers). Python servers use GRID venv at `/home/caraxes/CascadeProjects/Projects/GRID-main/.venv/bin/python`.
 
 ## OS Guardrails Adapter
 
