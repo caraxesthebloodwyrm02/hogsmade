@@ -68,12 +68,37 @@ function normalizeTableScope(
   return value === "attributes" || value === "dimensions" || value === "all" ? value : "all";
 }
 
+const MAX_SEED_LENGTH = 256;
+const SEED_PATTERN = /^[a-zA-Z0-9_\-:.\/]+$/;
+
 function sanitizeSeed(value: string | undefined): string | undefined {
   const trimmed = value?.trim();
-  return trimmed ? trimmed : undefined;
+  if (!trimmed) return undefined;
+  if (trimmed.length > MAX_SEED_LENGTH) return trimmed.slice(0, MAX_SEED_LENGTH);
+  if (!SEED_PATTERN.test(trimmed)) {
+    // Return base64-alike encoding of invalid chars to preserve determinism without injection risk
+    return trimmed
+      .split("")
+      .map((c) => (SEED_PATTERN.test(c) ? c : `_`))
+      .join("")
+      .slice(0, MAX_SEED_LENGTH);
+  }
+  return trimmed;
 }
 
+const VALID_DIMENSIONS: readonly IntegrationDimension[] = [
+  "governance",
+  "usability",
+  "integration",
+  "observability",
+  "operational_fit",
+] as const;
+
 function getArgValue(args: RoutineArgs, dimension: IntegrationDimension): number {
+  // Runtime validation: dimension must be in known set
+  if (!VALID_DIMENSIONS.includes(dimension)) {
+    throw new Error(`Invalid dimension: ${dimension}`);
+  }
   if (dimension === "operational_fit") return args.operationalFit;
   return args[dimension];
 }
@@ -478,8 +503,8 @@ function deriveStrugglePoints(
       // State from distance to threshold
       const state = distance < -0.15 ? "sealed" as const
         : distance < 0 ? "active" as const
-        : distance < 0.05 ? "transitioning" as const
-        : "dormant" as const;
+          : distance < 0.05 ? "transitioning" as const
+            : "dormant" as const;
 
       // Cool step from G (high G = well-attested struggle = warm/open, low G = speculative = deep/closed)
       const coolStep = g >= 0.9 ? 100 : g >= 0.7 ? 300 : g >= 0.5 ? 500 : g >= 0.3 ? 700 : 900;
@@ -876,4 +901,5 @@ export function latestDeposit(
   return findResidue(residue, passId)?.data as Record<string, unknown> | undefined;
 }
 
-export { ROUTINE_PIPELINE_ID, buildArgvSignature, buildDeterministicTimestamp };
+export { buildArgvSignature, buildDeterministicTimestamp, ROUTINE_PIPELINE_ID };
+

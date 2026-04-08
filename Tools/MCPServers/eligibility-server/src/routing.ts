@@ -9,8 +9,9 @@
  * Follows the same patterns as grid-server, lots-server, maintain-server.
  */
 
-import { emitAudit } from "@cascade/shared-types/audit-client";
 import type { AuditEvent } from "@cascade/shared-types";
+import { emitAudit } from "@cascade/shared-types/audit-client";
+import { MAX_METADATA_VALUE_LENGTH, sanitizeAuditMetadata } from "./sanitize.js";
 
 // ── Constants ──
 
@@ -75,7 +76,8 @@ export function withAudit(
     try {
       const result = await handler(...args);
       const durationMs = Date.now() - startTime;
-      const metadata = args[0] as Record<string, unknown> | undefined;
+      const rawMetadata = args[0] as Record<string, unknown> | undefined;
+      const metadata = sanitizeAuditMetadata(rawMetadata);
       await emitEligibilityAudit(toolName, "success", {
         ...(metadata ?? {}),
         durationMs,
@@ -83,11 +85,12 @@ export function withAudit(
       return result;
     } catch (error) {
       const durationMs = Date.now() - startTime;
-      const metadata = args[0] as Record<string, unknown> | undefined;
+      const rawMetadata = args[0] as Record<string, unknown> | undefined;
+      const metadata = sanitizeAuditMetadata(rawMetadata);
       await emitEligibilityAudit(toolName, "failure", {
         ...(metadata ?? {}),
         durationMs,
-        error: error instanceof Error ? error.message : String(error),
+        error: error instanceof Error ? error.message : String(error).slice(0, MAX_METADATA_VALUE_LENGTH),
       });
       throw error;
     }

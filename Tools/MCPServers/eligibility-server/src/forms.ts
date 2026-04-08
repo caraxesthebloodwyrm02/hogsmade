@@ -201,5 +201,13 @@ export function compileFormArtifacts(input: CompileArtifactsInput): FormArtifact
     reference: () => buildReferenceArtifact(input),
   };
 
-  return requestedTargets.map((target) => builders[target]());
+  // Validate all targets before accessing builders to prevent prototype traversal
+  const validTargets = requestedTargets.filter((target): target is FormArtifact["kind"] =>
+    ALL_FORM_TARGETS.includes(target as FormArtifact["kind"]),
+  );
+  if (validTargets.length !== requestedTargets.length) {
+    throw new Error(`Invalid form target(s): ${requestedTargets.filter((t) => !ALL_FORM_TARGETS.includes(t as FormArtifact["kind"])).join(", ")}`);
+  }
+
+  return validTargets.map((target) => builders[target]());
 }

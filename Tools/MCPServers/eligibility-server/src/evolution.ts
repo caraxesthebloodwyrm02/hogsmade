@@ -106,7 +106,16 @@ function clone<T>(value: T): T {
   if (value === undefined) {
     return value;
   }
-  return JSON.parse(JSON.stringify(value)) as T;
+  // Use structuredClone when available for prototype-pollution-safe deep cloning
+  if (typeof structuredClone === "function") {
+    return structuredClone(value);
+  }
+  // Fallback: JSON round-trip with prototype pollution guard
+  const json = JSON.stringify(value);
+  if (json.includes("__proto__") || json.includes("constructor")) {
+    throw new Error("clone: rejected input containing prototype pollution patterns");
+  }
+  return JSON.parse(json) as T;
 }
 
 function hashString(input: string): string {
@@ -187,13 +196,13 @@ function endpointReadinessScore(spec: EndpointSpec): number {
   if (spec.status === "ready" || spec.status === "verified") score += 0.25;
   const readiness = clamp(
     spec.readiness ??
-      (spec.status === "verified"
-        ? 1
-        : spec.status === "ready"
-          ? 0.8
-          : spec.status === "blocked"
-            ? 0.2
-            : 0.45),
+    (spec.status === "verified"
+      ? 1
+      : spec.status === "ready"
+        ? 0.8
+        : spec.status === "blocked"
+          ? 0.2
+          : 0.45),
     0,
     1,
   );
@@ -216,7 +225,7 @@ function computeEndpointStats(endpointSpecs: EndpointSpec[]) {
 
   const endpointReadiness = round(
     endpointSpecs.reduce((sum, spec) => sum + endpointReadinessScore(spec), 0) /
-      endpointSpecs.length,
+    endpointSpecs.length,
   );
 
   return {
@@ -423,12 +432,12 @@ function buildMomentum(
   const previousSnapshot = caseRecord.snapshotHistory[caseRecord.snapshotHistory.length - 1];
   const acceleration = previousSnapshot
     ? clamp(
-        endpointReadiness -
-          previousSnapshot.endpointReadiness +
-          (integrationSuccessRate - previousSnapshot.integrationSuccessRate),
-        0,
-        1,
-      )
+      endpointReadiness -
+      previousSnapshot.endpointReadiness +
+      (integrationSuccessRate - previousSnapshot.integrationSuccessRate),
+      0,
+      1,
+    )
     : 0;
   const reversalRate = computeReversalRate(caseRecord);
   const staleWindowRatio = computeStaleWindowRatio(caseRecord.signals);
@@ -584,7 +593,7 @@ function emitCycleAudit(
 export class EvolutionCycleStore {
   private cache: EvolutionStoreData | null = null;
 
-  constructor(private readonly filePath = defaultStorePath()) {}
+  constructor(private readonly filePath = defaultStorePath()) { }
 
   private ensureLoaded(): EvolutionStoreData {
     if (this.cache) return this.cache;

@@ -10,6 +10,7 @@
 import { emitAudit } from "@cascade/shared-types/audit-client";
 import os from "os";
 import path from "path";
+import { sanitizeAuditMetadata, sanitizeLogValue } from "./sanitize.js";
 import type { CycleSignal, EvolutionCase, PromotionGateResult } from "./types.js";
 
 const ELIGIBILITY_DATA_DIR =
@@ -22,19 +23,20 @@ export async function onEvolutionCaseOpened(caseRecord: EvolutionCase): Promise<
   const timestamp = new Date().toISOString();
 
   // Echoes audit
+  const auditMetadata = sanitizeAuditMetadata({
+    caseId: caseRecord.caseId,
+    label: caseRecord.label,
+    owner: caseRecord.owner,
+    candidateCount: caseRecord.candidates.length,
+    currentBeat: caseRecord.currentBeat,
+    timestamp,
+  });
   const ok = await emitAudit({
     source: "eligibility-server",
     tool: "openEvolutionCase",
     status: "success",
     durationMs: 0,
-    metadata: {
-      caseId: caseRecord.caseId,
-      label: caseRecord.label,
-      owner: caseRecord.owner,
-      candidateCount: caseRecord.candidates.length,
-      currentBeat: caseRecord.currentBeat,
-      timestamp,
-    },
+    metadata: auditMetadata,
   });
   if (!ok) {
     console.error(`[eligibility-server] audit write failed for tool=openEvolutionCase`);
@@ -42,8 +44,9 @@ export async function onEvolutionCaseOpened(caseRecord: EvolutionCase): Promise<
 
   // Seeds bookmark for tracking
   // Note: In real implementation, this would call seeds-server MCP tool
+  const safeCaseId1 = sanitizeLogValue(caseRecord.caseId);
   console.error(
-    `[SEEDS_HOOK] Would bookmark evolution case ${caseRecord.caseId} in repo: eligibility-server`,
+    `[SEEDS_HOOK] Would bookmark evolution case ${safeCaseId1} in repo: eligibility-server`,
   );
 }
 
@@ -54,17 +57,18 @@ export async function onCycleSignalRecorded(caseId: string, signal: CycleSignal)
   const timestamp = new Date().toISOString();
 
   // Echoes audit
+  const signalMetadata = sanitizeAuditMetadata({
+    caseId,
+    signalType: signal.type,
+    signalSource: signal.source,
+    timestamp,
+  });
   const ok = await emitAudit({
     source: "eligibility-server",
     tool: "recordCycleSignal",
     status: "success",
     durationMs: 0,
-    metadata: {
-      caseId,
-      signalType: signal.type,
-      signalSource: signal.source,
-      timestamp,
-    },
+    metadata: signalMetadata,
   });
   if (!ok) {
     console.error(`[eligibility-server] audit write failed for tool=recordCycleSignal`);
@@ -73,8 +77,10 @@ export async function onCycleSignalRecorded(caseId: string, signal: CycleSignal)
   // Pulse journal for significant signals
   if (signal.type === "condition_escalated" || signal.type === "integration_call_failed") {
     // Note: In real implementation, this would call pulse-server MCP tool
+    const safeNote = sanitizeLogValue(signal.note);
+    const safeCaseId = sanitizeLogValue(caseId);
     console.error(
-      `[PULSE_HOOK] Would journal ${signal.type} signal for case ${caseId}: ${signal.note}`,
+      `[PULSE_HOOK] Would journal ${signal.type} signal for case ${safeCaseId}: ${safeNote}`,
     );
   }
 }
@@ -90,20 +96,21 @@ export async function onPromotionGateEvaluated(
   const decision = gate.decision;
 
   // Echoes audit (already emitted in evolution.ts, but we add context)
+  const gateMetadata = sanitizeAuditMetadata({
+    caseId: caseRecord.caseId,
+    decision,
+    passed: gate.passed,
+    reasons: gate.reasons,
+    metrics: gate.metrics,
+    thresholds: gate.thresholds,
+    timestamp,
+  });
   const ok = await emitAudit({
     source: "eligibility-server",
     tool: "promotionGateHook",
     status: "success",
     durationMs: 0,
-    metadata: {
-      caseId: caseRecord.caseId,
-      decision,
-      passed: gate.passed,
-      reasons: gate.reasons,
-      metrics: gate.metrics,
-      thresholds: gate.thresholds,
-      timestamp,
-    },
+    metadata: gateMetadata,
   });
   if (!ok) {
     console.error(`[eligibility-server] audit write failed for tool=promotionGateHook`);
@@ -112,16 +119,18 @@ export async function onPromotionGateEvaluated(
   // Pulse focus session tracking for blocked promotions
   if (decision === "hold_for_tighten" || decision === "return_to_balance") {
     // Note: In real implementation, this would call pulse-server MCP tool
+    const safeCaseId2 = sanitizeLogValue(caseRecord.caseId);
     console.error(
-      `[PULSE_HOOK] Would start focus session for blocked promotion case ${caseRecord.caseId}`,
+      `[PULSE_HOOK] Would start focus session for blocked promotion case ${safeCaseId2}`,
     );
   }
 
   // Seeds ecosystem scan trigger for major decisions
   if (decision === "allow_promotion") {
     // Note: In real implementation, this would call seeds-server MCP tool
+    const safeCaseId3 = sanitizeLogValue(caseRecord.caseId);
     console.error(
-      `[SEEDS_HOOK] Would trigger ecosystem scan after promotion of case ${caseRecord.caseId}`,
+      `[SEEDS_HOOK] Would trigger ecosystem scan after promotion of case ${safeCaseId3}`,
     );
   }
 }
@@ -136,18 +145,19 @@ export async function onCaseStatusChanged(
   const timestamp = new Date().toISOString();
 
   // Echoes audit
+  const statusMetadata = sanitizeAuditMetadata({
+    caseId: caseRecord.caseId,
+    previousStatus,
+    currentStatus: caseRecord.status,
+    currentBeat: caseRecord.currentBeat,
+    timestamp,
+  });
   const ok = await emitAudit({
     source: "eligibility-server",
     tool: "caseStatusChanged",
     status: "success",
     durationMs: 0,
-    metadata: {
-      caseId: caseRecord.caseId,
-      previousStatus,
-      currentStatus: caseRecord.status,
-      currentBeat: caseRecord.currentBeat,
-      timestamp,
-    },
+    metadata: statusMetadata,
   });
   if (!ok) {
     console.error(`[eligibility-server] audit write failed for tool=caseStatusChanged`);
@@ -156,8 +166,9 @@ export async function onCaseStatusChanged(
   // Seeds snapshot for major transitions
   if (caseRecord.status === "promoted") {
     // Note: In real implementation, this would call seeds-server MCP tool
+    const safeCaseId4 = sanitizeLogValue(caseRecord.caseId);
     console.error(
-      `[SEEDS_HOOK] Would create ecosystem snapshot for promoted case ${caseRecord.caseId}`,
+      `[SEEDS_HOOK] Would create ecosystem snapshot for promoted case ${safeCaseId4}`,
     );
   }
 }
