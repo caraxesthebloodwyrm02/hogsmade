@@ -18,6 +18,7 @@
     "Tools/MCPServers/seeds-server",
     "Tools/MCPServers/glimpse-server",
     "Tools/MCPServers/mangrove-server",
+    "Tools/MCPServers/ori-server",
     "Tools/MCPServers/eligibility-server",
     "Applications/pi-mangrove",
     "Applications/glimpse-artifact",
