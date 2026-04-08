@@ -26,7 +26,7 @@ export function getConfig() {
       process.env.ORI_PREFERENCES_PATH?.trim() || path.join(oriDataDir, "preferences.json"),
     ),
     cascadeRoot: path.resolve(
-      process.env.CASCADE_WORKSPACE_ROOT?.trim() || "/home/caraxes/CascadeProjects",
+      process.env.CASCADE_WORKSPACE_ROOT?.trim() || path.join(os.homedir(), "CascadeProjects"),
     ),
   };
 }

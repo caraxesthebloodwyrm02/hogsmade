@@ -39,44 +39,48 @@ const DATA_DIR = config.dataDir;
 const BOOKMARKS_PATH = path.join(DATA_DIR, "bookmarks.json");
 const SNAPSHOTS_DIR = path.join(DATA_DIR, "snapshots");
 
+// Derive workspace paths from config — never hardcode user home
+const CASCADE = config.seedsRoots?.[0] || config.seedsRoot;
+const HOME = path.resolve(CASCADE, "..");
+
 // Known repos in Seeds ecosystem — path overrides SEEDS_ROOT join when present
 const KNOWN_REPOS: Record<string, { description: string; stack: string; path?: string }> = {
   GRID: {
     description: "Full-stack AI framework",
     stack: "Python 3.13+, FastAPI, ChromaDB",
-    path: "/home/caraxes/CascadeProjects/Projects/GRID-main",
+    path: `${CASCADE}/Projects/GRID-main`,
   },
   afloat: {
     description: "Next.js workflow app",
     stack: "TypeScript, Next.js, Stripe",
-    path: "/home/caraxes/CascadeProjects/Tools/MCPServers/afloat-server",
+    path: `${CASCADE}/Tools/MCPServers/afloat-server`,
   },
   echoes: {
     description: "Audit & observability platform",
     stack: "Python 3.12+, FastAPI",
-    path: "/home/caraxes/CascadeProjects/Tools/MCPServers/echoes-server",
+    path: `${CASCADE}/Tools/MCPServers/echoes-server`,
   },
   "glimpse-engine": {
     description: "Cognitive rendering engine",
     stack: "JavaScript",
-    path: "/home/caraxes/CascadeProjects/Applications/glimpse-engine",
+    path: `${CASCADE}/Applications/glimpse-engine`,
   },
   apiguard: {
     description: "API security gateway",
     stack: "Python 3.13+",
     // Legacy external repo: retained until a canonical in-workspace path exists.
-    path: "/home/caraxes/roots/apiguard",
+    path: path.join(HOME, "roots", "apiguard"),
   },
   Vision: {
     description: "AI vision project",
     stack: "Python",
     // Legacy external repo: retained until a canonical in-workspace path exists.
-    path: "/home/caraxes/grove/Vision",
+    path: path.join(HOME, "grove", "Vision"),
   },
   hogsmade: {
     description: "MCP server monorepo",
     stack: "TypeScript, Node.js",
-    path: "/home/caraxes/CascadeProjects",
+    path: CASCADE,
   },
 };
 

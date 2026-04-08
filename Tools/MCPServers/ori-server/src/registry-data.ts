@@ -5,12 +5,16 @@
  * and updated after each test run or discovery pass.
  */
 
+import path from "path";
+import { getConfig } from "./config.js";
 import type { ProjectEntry } from "./types.js";
 
-const CASCADE = "/home/caraxes/CascadeProjects";
-const CANOPY = "/home/caraxes/canopy";
-const ROOTS = "/home/caraxes/roots";
-const GROVE = "/home/caraxes/grove";
+const config = getConfig();
+const CASCADE = config.cascadeRoot;
+const HOME = path.resolve(CASCADE, "..");
+const CANOPY = process.env.ORI_CANOPY_ROOT?.trim() || path.join(HOME, "canopy");
+const ROOTS = process.env.ORI_ROOTS_ROOT?.trim() || path.join(HOME, "roots");
+const GROVE = process.env.ORI_GROVE_ROOT?.trim() || path.join(HOME, "grove");
 const MCP = `${CASCADE}/Tools/MCPServers`;
 
 export const DEFAULT_PROJECTS: ProjectEntry[] = [

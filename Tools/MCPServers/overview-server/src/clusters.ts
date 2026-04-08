@@ -4,14 +4,20 @@
  * Adding a new project means adding it here.
  */
 
+import path from "path";
+import { getConfig } from "./config.js";
 import type {
+  AggregatedData,
+  AuditEventParsed,
   ClusterDef,
   ClusterInsight,
   EntityStatus,
-  AggregatedData,
   SeedsRepoData,
-  AuditEventParsed,
 } from "./types.js";
+
+const cfg = getConfig();
+const CASCADE = cfg.workspaceRoot;
+const HOME = path.resolve(CASCADE, "..");
 
 // ── Static Cluster Definitions ──
 
@@ -21,7 +27,7 @@ export const CLUSTER_DEFINITIONS: ClusterDef[] = [
     label: "GRID Family",
     description: "Core AI framework and its dependent servers",
     entities: [
-      { name: "GRID", type: "repo", path: "/home/caraxes/CascadeProjects/Projects/GRID-main" },
+      { name: "GRID", type: "repo", path: `${CASCADE}/Projects/GRID-main` },
       { name: "grid-server", type: "mcp-server", auditSource: "grid-server" },
       { name: "grid-rag", type: "mcp-server", auditSource: null },
       { name: "grid-rag-enhanced", type: "mcp-server", auditSource: null },
@@ -41,12 +47,12 @@ export const CLUSTER_DEFINITIONS: ClusterDef[] = [
     label: "MCP Infrastructure",
     description: "Shared libraries and observability servers",
     entities: [
-      { name: "hogsmade", type: "repo", path: "/home/caraxes/CascadeProjects" },
-      { name: "shared-types", type: "repo", path: "/home/caraxes/CascadeProjects/Components/shared-types" },
+      { name: "hogsmade", type: "repo", path: CASCADE },
+      { name: "shared-types", type: "repo", path: `${CASCADE}/Components/shared-types` },
       {
         name: "shared-resilience",
         type: "repo",
-        path: "/home/caraxes/CascadeProjects/Components/shared-resilience",
+        path: `${CASCADE}/Components/shared-resilience`,
       },
       { name: "echoes-server", type: "mcp-server", auditSource: "echoes-server" },
       { name: "seeds-server", type: "mcp-server", auditSource: "seeds-server" },
@@ -68,8 +74,8 @@ export const CLUSTER_DEFINITIONS: ClusterDef[] = [
     label: "Canopy Applications",
     description: "Standalone applications",
     entities: [
-      { name: "afloat", type: "repo", path: "/home/caraxes/CascadeProjects/Tools/MCPServers/afloat-server" },
-      { name: "echoes", type: "repo", path: "/home/caraxes/CascadeProjects/Tools/MCPServers/echoes-server" },
+      { name: "afloat", type: "repo", path: `${CASCADE}/Tools/MCPServers/afloat-server` },
+      { name: "echoes", type: "repo", path: `${CASCADE}/Tools/MCPServers/echoes-server` },
       { name: "afloat-server", type: "mcp-server", auditSource: "afloat-server" },
     ],
     dependencyEdges: [
@@ -81,11 +87,11 @@ export const CLUSTER_DEFINITIONS: ClusterDef[] = [
     label: "Glimpse Family",
     description: "Cognitive rendering engine and artifacts",
     entities: [
-      { name: "glimpse-engine", type: "repo", path: "/home/caraxes/CascadeProjects/Applications/glimpse-engine" },
+      { name: "glimpse-engine", type: "repo", path: `${CASCADE}/Applications/glimpse-engine` },
       {
         name: "glimpse-artifact",
         type: "repo",
-        path: "/home/caraxes/CascadeProjects/Applications/glimpse-artifact",
+        path: `${CASCADE}/Applications/glimpse-artifact`,
       },
       { name: "glimpse-server", type: "mcp-server", auditSource: null },
     ],
@@ -99,8 +105,8 @@ export const CLUSTER_DEFINITIONS: ClusterDef[] = [
     label: "Deployment Pipeline",
     description: "GATE verification, CI/CD, governance",
     entities: [
-      { name: "GATE", type: "data-store", path: "/home/caraxes/CascadeProjects/Projects/GATE" },
-      { name: "apiguard", type: "repo", path: "/home/caraxes/roots/apiguard" }, // legacy external root
+      { name: "GATE", type: "data-store", path: `${CASCADE}/Projects/GATE` },
+      { name: "apiguard", type: "repo", path: path.join(HOME, "roots", "apiguard") }, // legacy external root
     ],
     dependencyEdges: [],
   },
@@ -109,8 +115,8 @@ export const CLUSTER_DEFINITIONS: ClusterDef[] = [
     label: "Seed & Archive",
     description: "Templates, archive, and secondary repos",
     entities: [
-      { name: "seed", type: "repo", path: "/home/caraxes/seed" }, // legacy external root
-      { name: "Vision", type: "repo", path: "/home/caraxes/grove/Vision" }, // legacy external root
+      { name: "seed", type: "repo", path: path.join(HOME, "seed") }, // legacy external root
+      { name: "Vision", type: "repo", path: path.join(HOME, "grove", "Vision") }, // legacy external root
     ],
     dependencyEdges: [],
   },
@@ -160,9 +166,9 @@ function buildClusterInsight(
   const clusterHealth =
     scoredEntities.length > 0
       ? Math.round(
-          scoredEntities.reduce((sum, e) => sum + (e.healthScore ?? 0), 0) /
-            scoredEntities.length,
-        )
+        scoredEntities.reduce((sum, e) => sum + (e.healthScore ?? 0), 0) /
+        scoredEntities.length,
+      )
       : 0;
 
   const issueCount = entities.reduce((sum, e) => sum + e.issues.length, 0);

@@ -25,7 +25,7 @@ const config = getConfig();
 // Allow execution within CascadeProjects, canopy, roots, grove
 const executionPolicy = new ExecutionPolicyEngine([
   config.cascadeRoot,
-  path.resolve(config.cascadeRoot, ".."), // /home/caraxes — covers canopy/, roots/, grove/
+  path.resolve(config.cascadeRoot, ".."), // parent of CASCADE_WORKSPACE_ROOT — covers canopy/, roots/, grove/
 ]);
 
 const DEFAULT_TIMEOUT_MS = 120_000;

@@ -8,10 +8,12 @@
  */
 
 import { emitAudit } from "@cascade/shared-types/audit-client";
+import os from "os";
+import path from "path";
 import type { CycleSignal, EvolutionCase, PromotionGateResult } from "./types.js";
 
 const ELIGIBILITY_DATA_DIR =
-  process.env.ELIGIBILITY_DATA_DIR || "/home/caraxes/.eligibility-server";
+  process.env.ELIGIBILITY_DATA_DIR || path.join(os.homedir(), ".eligibility-server");
 
 /**
  * Hook: when an evolution case is opened
