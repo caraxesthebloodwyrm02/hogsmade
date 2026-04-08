@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-This file provides guidance to Claude when working in `/home/caraxes/CascadeProjects`.
+This file provides guidance to Claude when working in the CascadeProjects workspace.
 
 ---
 
@@ -28,7 +28,7 @@ This file provides guidance to Claude when working in `/home/caraxes/CascadeProj
 | MCP ecosystem | `Tools/MCPServers/*` plus the GRID Python MCPs |
 | DIO | `Projects/DIO` - control room suite + episode tool |
 | GATE | `Projects/GATE` - envelopes, contracts, and runtime data |
-| CascadeProjects | `/home/caraxes/CascadeProjects` |
+| CascadeProjects | `$CASCADE_WORKSPACE_ROOT` (default: `~/CascadeProjects`) |
 | Components | `Components/` - current shared package location |
 | Hogwarts | `Hogwarts/` - governance simulation and board UI |
 
@@ -176,7 +176,7 @@ uv run python combined_space.py
 
 Structured 7-step prompt system for evaluating AI models across tools. Use it for warmups, model evaluation, onboarding, and budget planning.
 
-**Full docs**: `Documentation/docs/GLIMPSE_BENCH.md`  
+**Full docs**: `Documentation/docs/GLIMPSE_BENCH.md`
 **Script**: `python scripts/glimpse-bench.py`
 
 ```bash
@@ -184,3 +184,12 @@ python scripts/glimpse-bench.py list
 python scripts/glimpse-bench.py run B1-read-only --tool claude-code --model sonnet
 python scripts/glimpse-bench.py leaderboard
 ```
+
+## Git hygiene and source protection
+
+- Respect **`.gitignore`** and **`core.excludesfile`** when set (`~/.config/git/ignore` — see `~/scripts/global-git-excludes-README.md`). Do not stage generated output (`dist/`, `build/`, `.next/`, coverage, `.venv/`, `node_modules/`, `*.tsbuildinfo`), caches, local `.env*`, or IDE-only dirs unless the operator explicitly requests it.
+- Prefer **`git status`** and **`git diff`** before **`git add`**. Avoid repository-wide **`git add .`**. Do not **force-push** or rewrite **history** without explicit instruction.
+- Change **generators and source**, not hand-edited **`dist/`** or lockfiles, unless the task is explicitly to update those files.
+- **Secrets:** Never commit credentials. If found tracked or staged, stop and escalate: **`.gitignore`**, **`git rm --cached`**, and rotation / history scrub are **human-gated** when pushes occurred.
+- **New repos:** `~/seed/templates/gitignore-node-strict.template` or `gitignore-python-uv.template`. **Audit:** `~/scripts/gitignore-audit.sh`.
+

@@ -135,9 +135,13 @@ jwt.key
 **/serviceaccount*.json
 **/*credentials*.json
 
-# MCP-specific secrets
+# MCP-specific secrets and machine-local configs
 .mcp.json
 **/mcp-config*.json
+mcp_config.json
+claude_code_config.json
+!mcp_config.example.json
+!claude_code_config.example.json
 
 # ==========================
 # LOGS
