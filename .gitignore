@@ -275,6 +275,10 @@ demo-*.md
 /GLIMPSE_BENCH.md
 /UPWORK_*.md
 
+# Session-generated dated reports in Documentation/
+Documentation/docs/*2026*.md
+Documentation/docs/*2027*.md
+
 # ==========================
 # PROJECTS SCRATCH AREA
 # ==========================
@@ -305,6 +309,11 @@ resume.pdf
 resume.docx
 memory.md
 .personal/
+**/pokemon-go-*.md
+Documentation/docs/windsurf-contacts-and-followups.md
+git-usage.md
+git-usage-tag.md
+Projects/DIO/.windsurf/rules/
 
 # ==========================
 # EXPERIMENTS
