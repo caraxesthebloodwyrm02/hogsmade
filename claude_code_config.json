@@ -154,6 +154,19 @@
         "ELIGIBILITY_DATA_DIR": "/home/caraxes/.eligibility-server"
       }
     },
+    "ori-server": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "tsx",
+        "/home/caraxes/CascadeProjects/Tools/MCPServers/ori-server/src/server.ts"
+      ],
+      "env": {
+        "CASCADE_WORKSPACE_ROOT": "/home/caraxes/CascadeProjects",
+        "ECHOES_AUDIT_PATH": "/home/caraxes/.echoes/audit.ndjson",
+        "GRID_API_URL": "http://localhost:8080"
+      }
+    },
     "grid-enhanced-tools": {
       "command": "/home/caraxes/CascadeProjects/Projects/GRID-main/.venv/bin/python",
       "args": ["mcp-setup/server/enhanced_tools_mcp_server.py"],
