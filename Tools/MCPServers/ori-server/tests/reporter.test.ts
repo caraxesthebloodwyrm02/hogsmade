@@ -86,88 +86,95 @@ describe("report generator", () => {
     },
   ];
 
-  // ── renderReport tests ──
+  // ── Structure tests ──
 
-  it("renders report with all sections present", () => {
-    const data: ReportData = {
-      projects: baseProjects,
-      runs: baseRuns,
-    };
-
+  it("renders report with expected sections", () => {
+    const data: ReportData = { projects: baseProjects, runs: baseRuns };
     const md = renderReport(data);
 
-    expect(md).toContain("# Research Report");
+    expect(md).toContain("# CascadeProjects Research Report");
     expect(md).toContain("## Executive Summary");
     expect(md).toContain("## Test Suite Health");
     expect(md).toContain("## Risk Signal Analysis");
   });
 
-  it("renders header with correct metadata", () => {
-    const data: ReportData = {
-      projects: baseProjects,
-      runs: baseRuns,
-    };
-
+  it("header names projects by name, not count", () => {
+    const data: ReportData = { projects: baseProjects, runs: baseRuns };
     const md = renderReport(data);
 
-    expect(md).toContain("**Projects Analyzed**: 2");
-    expect(md).toContain("**Test Runs**: 2");
-    expect(md).toContain("**Confidence Level**: High");
+    expect(md).toContain("**Scope**: Alpha, Beta");
+    expect(md).toContain("**Runs included**: 2");
   });
 
-  it("executive summary includes pass rate", () => {
-    const data: ReportData = {
-      projects: baseProjects,
-      runs: baseRuns,
-    };
-
+  it("header truncates when >3 projects", () => {
+    const manyProjects = [
+      ...baseProjects,
+      { ...baseProjects[0], id: "p3", name: "Gamma" },
+      { ...baseProjects[0], id: "p4", name: "Delta" },
+    ];
+    const data: ReportData = { projects: manyProjects, runs: [] };
     const md = renderReport(data);
 
-    // 28 passed / (28 passed + 3 failed) = 90.3%
-    expect(md).toContain("90.3%");
-    expect(md).toContain("28 passed");
-    expect(md).toContain("3 failed");
+    expect(md).toContain("Alpha, Beta, Gamma +1 more");
   });
 
-  it("executive summary flags failing projects", () => {
-    const data: ReportData = {
-      projects: baseProjects,
-      runs: baseRuns,
-    };
+  // ── Bullet executive summary ──
 
+  it("executive summary uses bullet format with named projects", () => {
+    const data: ReportData = { projects: baseProjects, runs: baseRuns };
     const md = renderReport(data);
-    expect(md).toContain("**Failing projects**");
-    expect(md).toContain("`proj-beta`");
+
+    // Bullet format: ✓/✗ **Name**: count passed/failed (duration)
+    expect(md).toContain("✓ **Alpha**: 20 passed (1.5s)");
+    expect(md).toContain("✗ **Beta**: 3 failed / 8 passed (4.5s)");
+    expect(md).toContain("3 tests failed in test_api module");
   });
 
-  it("test suite health table includes all projects", () => {
+  it("executive summary shows threat gaps when present", () => {
     const data: ReportData = {
       projects: baseProjects,
       runs: baseRuns,
+      coverageReport: {
+        mappings: [
+          { threatId: "TM-001", priority: "High", coveredByProjects: [], uncoveredGaps: ["no project mapping"] },
+          { threatId: "TM-002", priority: "Low", coveredByProjects: ["proj-alpha"], uncoveredGaps: [] },
+        ],
+        totalThreats: 2,
+        threatsWithCoverage: 1,
+        threatsWithoutCoverage: 1,
+        generatedAt: "2026-04-08T10:00:00.000Z",
+      },
     };
-
     const md = renderReport(data);
 
-    expect(md).toContain("| Alpha |");
-    expect(md).toContain("| Beta |");
+    expect(md).toContain("⚠ **Threat gap**: TM-001");
+  });
+
+  // ── Test suite health table ──
+
+  it("test suite health table includes project names and status icons", () => {
+    const data: ReportData = { projects: baseProjects, runs: baseRuns };
+    const md = renderReport(data);
+
+    expect(md).toContain("| Alpha | ✓ passed |");
+    expect(md).toContain("| Beta | ✗ failed |");
     expect(md).toContain("| Project | Status |");
   });
 
-  it("renders risk signal analysis with failure details", () => {
-    const data: ReportData = {
-      projects: baseProjects,
-      runs: baseRuns,
-    };
+  // ── Risk signal analysis ──
 
+  it("risk signal analysis names failing projects with error excerpts", () => {
+    const data: ReportData = { projects: baseProjects, runs: baseRuns };
     const md = renderReport(data);
 
-    expect(md).toContain("**Total risk signals captured**: 17");
-    expect(md).toContain("**Runs with failures**: 1");
-    expect(md).toContain("proj-beta");
-    expect(md).toContain("3 tests failed");
+    expect(md).toContain("**`Beta`** — 3 failed, 1 errors");
+    expect(md).toContain("> 3 tests failed in test_api module");
+    expect(md).toContain("**Signals captured**: 17 log entries");
   });
 
-  it("renders recommendations when provided", () => {
+  // ── Recommendations (threshold: only critical/warning) ──
+
+  it("renders critical/warning recommendations as numbered actions", () => {
     const data: ReportData = {
       projects: baseProjects,
       runs: baseRuns,
@@ -181,50 +188,90 @@ describe("report generator", () => {
         },
       ],
     };
-
     const md = renderReport(data);
 
     expect(md).toContain("## Recommendations");
-    expect(md).toContain("### Fix flaky test in Beta");
-    expect(md).toContain("**Severity**: critical");
-    expect(md).toContain("**Read**: Detected 3 failures");
-    expect(md).toContain("**Reason**: Indicates unstable");
-    expect(md).toContain("**Action**: Isolate and fix");
+    expect(md).toContain("**1. 🔴 Fix flaky test in Beta**");
+    expect(md).toContain("> Detected 3 failures");
+    expect(md).toContain("**Why**: Indicates unstable");
+    expect(md).toContain("**Do**: Isolate and fix");
   });
 
-  it("renders threat coverage when provided", () => {
+  it("omits recommendations section when only info-severity present", () => {
+    const data: ReportData = {
+      projects: baseProjects,
+      runs: baseRuns,
+      recommendations: [
+        {
+          title: "Review skipped tests",
+          severity: "info",
+          read: "2 tests skipped",
+          reason: "May indicate dead code",
+          action: "Review test skip reasons",
+        },
+      ],
+    };
+    const md = renderReport(data);
+
+    expect(md).not.toContain("## Recommendations");
+  });
+
+  // ── Threat coverage (threshold: only if gaps exist) ──
+
+  it("renders threat coverage only when gaps exist", () => {
     const data: ReportData = {
       projects: baseProjects,
       runs: baseRuns,
       threatModel: {
         threats: [
-          {
-            id: "TM-001",
-            source: "External",
-            prerequisites: "None",
-            action: "Exploit",
-            impact: "Data loss",
-            impactedAssets: "API",
-            existingControls: "Auth",
-            gaps: "None",
-            mitigations: "Rate limit",
-            detectionIdeas: "Logs",
-            likelihood: "High",
-            impactSeverity: "Critical",
-            priority: "High",
-          },
+          { id: "TM-001", source: "Ext", prerequisites: "", action: "Exploit", impact: "Loss",
+            impactedAssets: "API", existingControls: "Auth", gaps: "lag", mitigations: "Rate limit",
+            detectionIdeas: "Logs", likelihood: "High", impactSeverity: "Critical", priority: "High" },
+          { id: "TM-002", source: "Int", prerequisites: "", action: "Config", impact: "Outage",
+            impactedAssets: "Config", existingControls: "RBAC", gaps: "", mitigations: "Review",
+            detectionIdeas: "Alert", likelihood: "Medium", impactSeverity: "High", priority: "Medium" },
         ],
         focusPaths: [],
         parsedAt: "2026-04-08T10:00:00.000Z",
       },
       coverageReport: {
         mappings: [
-          {
-            threatId: "TM-001",
-            priority: "High",
-            coveredByProjects: ["proj-alpha"],
-            uncoveredGaps: [],
-          },
+          { threatId: "TM-001", priority: "High", coveredByProjects: ["proj-alpha"], uncoveredGaps: ["proj-alpha failing"] },
+          { threatId: "TM-002", priority: "Medium", coveredByProjects: ["proj-alpha"], uncoveredGaps: [] },
+        ],
+        totalThreats: 2,
+        threatsWithCoverage: 2,
+        threatsWithoutCoverage: 0,
+        generatedAt: "2026-04-08T10:00:00.000Z",
+      },
+    };
+    const md = renderReport(data);
+
+    expect(md).toContain("## Threat Coverage");
+    expect(md).toContain("| TM-001 |");
+    // TM-002 has no gaps — should NOT appear in the gap table
+    expect(md).not.toContain("| TM-002 | Medium | proj-alpha | covered |");
+    // But should appear in covered footnote
+    expect(md).toContain("*Covered: TM-002*");
+    expect(md).toContain("1/2 threats covered");
+  });
+
+  it("omits threat coverage when all threats are covered", () => {
+    const data: ReportData = {
+      projects: baseProjects,
+      runs: baseRuns,
+      threatModel: {
+        threats: [
+          { id: "TM-001", source: "Ext", prerequisites: "", action: "Exploit", impact: "Loss",
+            impactedAssets: "API", existingControls: "Auth", gaps: "", mitigations: "Rate limit",
+            detectionIdeas: "Logs", likelihood: "High", impactSeverity: "Critical", priority: "High" },
+        ],
+        focusPaths: [],
+        parsedAt: "2026-04-08T10:00:00.000Z",
+      },
+      coverageReport: {
+        mappings: [
+          { threatId: "TM-001", priority: "High", coveredByProjects: ["proj-alpha"], uncoveredGaps: [] },
         ],
         totalThreats: 1,
         threatsWithCoverage: 1,
@@ -232,61 +279,107 @@ describe("report generator", () => {
         generatedAt: "2026-04-08T10:00:00.000Z",
       },
     };
-
     const md = renderReport(data);
 
-    expect(md).toContain("## Threat Coverage");
-    expect(md).toContain("| TM-001 |");
-    expect(md).toContain("**Coverage**: 1/1");
+    expect(md).not.toContain("## Threat Coverage");
   });
 
-  it("renders key insights section", () => {
+  // ── Key insights (threshold: ≥2 insights) ──
+
+  it("renders key insights only when ≥2 cross-signal patterns", () => {
+    // Low pass rate + timeout → 2 insights
     const data: ReportData = {
       projects: baseProjects,
-      runs: baseRuns,
+      runs: [
+        { ...baseRuns[1], summary: { ...baseRuns[1].summary, passed: 2, failed: 8 }, status: "failed" as const },
+        { ...baseRuns[0], status: "timeout" as const },
+      ],
     };
-
     const md = renderReport(data);
 
     expect(md).toContain("## Key Insights");
-    expect(md).toContain("total test cases executed");
+    expect(md).toContain("below the 90% stability threshold");
+    expect(md).toContain("timed out");
   });
 
-  it("omits empty sections gracefully", () => {
-    const data: ReportData = {
-      projects: [],
-      runs: [],
-    };
-
+  it("omits key insights when only 1 signal present", () => {
+    // Only passing runs with good pass rate — no insights
+    const data: ReportData = { projects: baseProjects, runs: [baseRuns[0]] };
     const md = renderReport(data);
 
-    expect(md).toContain("# Research Report");
-    expect(md).toContain("## Executive Summary");
-    // No health table, risk analysis, recommendations, or key insights
+    expect(md).not.toContain("## Key Insights");
+  });
+
+  // ── Empty / no-data handling ──
+
+  it("omits all optional sections when no data", () => {
+    const data: ReportData = { projects: [], runs: [] };
+    const md = renderReport(data);
+
+    expect(md).toContain("# CascadeProjects Research Report");
+    expect(md).not.toContain("## Executive Summary");
     expect(md).not.toContain("## Test Suite Health");
     expect(md).not.toContain("## Risk Signal Analysis");
     expect(md).not.toContain("## Recommendations");
     expect(md).not.toContain("## Key Insights");
+    expect(md).not.toContain("## Threat Coverage");
+    expect(md).not.toContain("## Ecosystem Context");
   });
 
-  it("includes medium confidence when no runs", () => {
+  it("no padding prose in empty reports", () => {
+    const data: ReportData = { projects: [], runs: [] };
+    const md = renderReport(data);
+
+    expect(md).not.toContain("no test runs");
+    expect(md).not.toContain("nothing to report");
+    expect(md).not.toContain("N/A");
+  });
+
+  // ── Fact-anchored language ──
+
+  it("uses project names, not just counts", () => {
+    const data: ReportData = { projects: baseProjects, runs: baseRuns };
+    const md = renderReport(data);
+
+    // Should name Alpha and Beta, not just "2 projects"
+    expect(md).toContain("Alpha");
+    expect(md).toContain("Beta");
+    // Pass rate should not appear as a standalone prose sentence
+    expect(md).not.toContain("Overall pass rate:");
+  });
+
+  // ── Section independence ──
+
+  it("sections do not reference other sections by name", () => {
     const data: ReportData = {
       projects: baseProjects,
-      runs: [],
+      runs: baseRuns,
+      recommendations: [
+        { title: "Fix Beta", severity: "critical", read: "Beta failing", reason: "API broken", action: "Fix it" },
+      ],
     };
-
     const md = renderReport(data);
-    expect(md).toContain("**Confidence Level**: Medium");
+
+    // No cross-section references like "as shown in Test Suite Health above"
+    expect(md).not.toMatch(/as shown in|based on the .* section|see above|mentioned above/i);
+  });
+
+  // ── Timeout in executive summary ──
+
+  it("shows timeout in executive summary bullets", () => {
+    const data: ReportData = {
+      projects: baseProjects,
+      runs: [{ ...baseRuns[0], status: "timeout" as const }],
+    };
+    const md = renderReport(data);
+
+    expect(md).toContain("⏱ **Alpha**: timed out after 1.5s");
   });
 
   // ── generateReport (file output) ──
 
   it("saves report to disk and returns metadata", async () => {
-    const data: ReportData = {
-      projects: baseProjects,
-      runs: baseRuns,
-    };
-
+    const data: ReportData = { projects: baseProjects, runs: baseRuns };
     const result = await generateReport(data);
 
     expect(result.reportPath).toContain(".ori/reports/");
@@ -294,37 +387,17 @@ describe("report generator", () => {
     expect(result.sections).toBeGreaterThan(0);
     expect(result.totalLines).toBeGreaterThan(0);
 
-    // Verify file actually exists and has content
     const content = readFileSync(result.reportPath, "utf-8");
-    expect(content).toContain("# Research Report");
+    expect(content).toContain("# CascadeProjects Research Report");
     expect(content.length).toBeGreaterThan(100);
   });
 
   it("uses custom output path", async () => {
-    const data: ReportData = {
-      projects: baseProjects,
-      runs: baseRuns,
-    };
-
+    const data: ReportData = { projects: baseProjects, runs: baseRuns };
     const result = await generateReport(data, { outputPath: "custom-report.md" });
     expect(result.reportPath).toContain("custom-report.md");
 
     const content = readFileSync(result.reportPath, "utf-8");
-    expect(content).toContain("# Research Report");
-  });
-
-  it("handles timeout runs in key insights", () => {
-    const data: ReportData = {
-      projects: baseProjects,
-      runs: [
-        {
-          ...baseRuns[0],
-          status: "timeout" as const,
-        },
-      ],
-    };
-
-    const md = renderReport(data);
-    expect(md).toContain("timed out");
+    expect(content).toContain("# CascadeProjects Research Report");
   });
 });

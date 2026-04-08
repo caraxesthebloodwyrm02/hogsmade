@@ -1,6 +1,11 @@
 /**
  * Report generator — produces markdown research reports
  * following the CASCADEPROJECTS_RESEARCH_REPORT format.
+ *
+ * Design principle: conditional data transfer.
+ * Each section is a self-contained glimpse context — independently readable,
+ * fact-anchored, and only rendered when its data crosses a significance threshold.
+ * No padding prose. No cross-section prose dependencies.
  */
 
 import { promises as fs } from "fs";
@@ -42,143 +47,278 @@ function todayDate(): string {
 // ── Section generators ──
 
 function renderHeader(data: ReportData): string {
-  const projectCount = data.projects.length;
-  const runCount = data.runs.length;
   const threatCount = data.threatModel?.threats.length ?? 0;
-  const confidence = runCount > 0 ? "High (based on live test execution)" : "Medium (no recent test runs)";
+  const projectNames = data.projects.map((p) => p.name);
+  const projectsStr =
+    projectNames.length === 0
+      ? "no projects"
+      : projectNames.length <= 3
+        ? projectNames.join(", ")
+        : `${projectNames.slice(0, 3).join(", ")} +${projectNames.length - 3} more`;
 
-  return `# Research Report: CascadeProjects Test Suite Analysis
+  return `# CascadeProjects Research Report — ${todayDate()}
 
-**Date**: ${todayDate()}
-**Projects Analyzed**: ${projectCount}
-**Test Runs**: ${runCount}
-**Threats Mapped**: ${threatCount}
-**Confidence Level**: ${confidence}
+**Scope**: ${projectsStr}
+**Runs included**: ${data.runs.length}${threatCount > 0 ? `  \n**Threats mapped**: ${threatCount}` : ""}
 
 ---`;
 }
 
+/**
+ * Bullet executive summary — factual claims, each self-contained.
+ * No prose. No filler. Only renders if there is signal to report.
+ */
 function renderExecutiveSummary(data: ReportData): string {
-  const totalPassed = data.runs.reduce((s, r) => s + r.summary.passed, 0);
-  const totalFailed = data.runs.reduce((s, r) => s + r.summary.failed, 0);
-  const totalSkipped = data.runs.reduce((s, r) => s + r.summary.skipped, 0);
-  const passRate = totalPassed + totalFailed > 0
-    ? ((totalPassed / (totalPassed + totalFailed)) * 100).toFixed(1)
-    : "N/A";
-  const failingProjects = data.runs.filter((r) => r.status !== "passed");
-  const healthyProjects = data.runs.filter((r) => r.status === "passed");
+  const bullets: string[] = [];
 
-  let summary = `## Executive Summary\n\n`;
-  summary += `Across ${data.projects.length} registered projects, `;
+  for (const run of data.runs) {
+    const proj = data.projects.find((p) => p.id === run.projectId);
+    const name = proj?.name ?? run.projectId;
+    const dur =
+      run.summary.durationMs >= 1000
+        ? `${(run.summary.durationMs / 1000).toFixed(1)}s`
+        : `${run.summary.durationMs}ms`;
 
-  if (data.runs.length > 0) {
-    summary += `${data.runs.length} test suite(s) were executed. `;
-    summary += `**${healthyProjects.length}** passed, **${failingProjects.length}** failed or errored. `;
-    summary += `Overall pass rate: **${passRate}%** (${totalPassed} passed, ${totalFailed} failed, ${totalSkipped} skipped).`;
-  } else {
-    summary += `no test runs were included in this report cycle.`;
-  }
-
-  if (data.coverageReport) {
-    const gaps = data.coverageReport.threatsWithoutCoverage;
-    if (gaps > 0) {
-      summary += `\n\n**Threat coverage gap**: ${gaps} of ${data.coverageReport.totalThreats} threats have no project mapping.`;
+    if (run.status === "passed") {
+      bullets.push(`✓ **${name}**: ${run.summary.passed} passed (${dur})`);
+    } else if (run.status === "timeout") {
+      bullets.push(`⏱ **${name}**: timed out after ${dur}`);
+    } else {
+      const detail = run.errorMessage ? ` — ${run.errorMessage.slice(0, 120)}` : "";
+      bullets.push(
+        `✗ **${name}**: ${run.summary.failed} failed / ${run.summary.passed} passed (${dur})${detail}`,
+      );
     }
   }
 
-  if (failingProjects.length > 0) {
-    summary += `\n\n**Failing projects**: ${failingProjects.map((r) => `\`${r.projectId}\``).join(", ")}`;
+  for (const proj of data.projects) {
+    const hasRun = data.runs.some((r) => r.projectId === proj.id);
+    if (!hasRun && proj.healthStatus && proj.healthStatus !== "unknown") {
+      const icon =
+        proj.healthStatus === "healthy" ? "✓" : proj.healthStatus === "degraded" ? "⚠" : "✗";
+      bullets.push(`${icon} **${proj.name}**: ${proj.healthStatus} (no run in this cycle)`);
+    }
   }
 
-  return summary;
+  if (data.coverageReport) {
+    const gaps = data.coverageReport.mappings.filter((m) => m.uncoveredGaps.length > 0);
+    if (gaps.length > 0) {
+      const highGaps = gaps.filter((g) => g.priority?.toLowerCase() === "high");
+      const gapIds = (highGaps.length > 0 ? highGaps : gaps)
+        .slice(0, 3)
+        .map((g) => g.threatId)
+        .join(", ");
+      bullets.push(`⚠ **Threat gap**: ${gapIds} — no healthy coverage`);
+    }
+  }
+
+  if (data.ecosystemContext?.seeds.latestSnapshot) {
+    const score = data.ecosystemContext.seeds.latestSnapshot.overallScore;
+    if (score < 70) {
+      bullets.push(`↓ **Ecosystem score**: ${score} (below 70 threshold)`);
+    }
+  }
+
+  if (bullets.length === 0) return "";
+
+  return `## Executive Summary\n\n${bullets.map((b) => `- ${b}`).join("\n")}`;
 }
 
+/**
+ * Test suite health table.
+ * Reader profile: "What's passing / failing right now?"
+ * Threshold: only if ≥1 project has a run result or non-healthy state.
+ */
 function renderTestSuiteHealth(data: ReportData): string {
-  if (data.runs.length === 0 && data.projects.length === 0) return "";
+  const hasRunResults = data.runs.length > 0;
+  const hasNonHealthy = data.projects.some(
+    (p) => p.healthStatus && p.healthStatus !== "unknown" && p.healthStatus !== "healthy",
+  );
+
+  if (!hasRunResults && !hasNonHealthy) return "";
 
   let section = `## Test Suite Health\n\n`;
-  section += `| Project | Status | Passed | Failed | Skipped | Duration | Last Run |\n`;
-  section += `|---------|--------|--------|--------|---------|----------|----------|\n`;
+  section += `| Project | Status | Passed | Failed | Skipped | Duration | Timestamp |\n`;
+  section += `|---------|--------|-------:|-------:|--------:|----------|-----------|\n`;
 
   for (const project of data.projects) {
     const run = data.runs.find((r) => r.projectId === project.id);
     if (run) {
-      const durStr = run.summary.durationMs > 1000
-        ? `${(run.summary.durationMs / 1000).toFixed(1)}s`
-        : `${run.summary.durationMs}ms`;
-      section += `| ${project.name} | ${run.status} | ${run.summary.passed} | ${run.summary.failed} | ${run.summary.skipped} | ${durStr} | ${run.timestamp.slice(0, 16)} |\n`;
-    } else {
-      const status = project.healthStatus ?? "unknown";
-      const lastRun = project.lastRunTimestamp ? project.lastRunTimestamp.slice(0, 16) : "never";
-      section += `| ${project.name} | ${status} | - | - | - | - | ${lastRun} |\n`;
+      const dur =
+        run.summary.durationMs >= 1000
+          ? `${(run.summary.durationMs / 1000).toFixed(1)}s`
+          : `${run.summary.durationMs}ms`;
+      const statusIcon =
+        run.status === "passed" ? "✓ passed" : run.status === "timeout" ? "⏱ timeout" : "✗ failed";
+      section += `| ${project.name} | ${statusIcon} | ${run.summary.passed} | ${run.summary.failed} | ${run.summary.skipped} | ${dur} | ${run.timestamp.slice(0, 16)} |\n`;
+    } else if (project.healthStatus && project.healthStatus !== "unknown") {
+      const icon =
+        project.healthStatus === "healthy"
+          ? "✓"
+          : project.healthStatus === "degraded"
+            ? "⚠"
+            : "✗";
+      const lastRun = project.lastRunTimestamp
+        ? project.lastRunTimestamp.slice(0, 16)
+        : "never";
+      section += `| ${project.name} | ${icon} ${project.healthStatus} | — | — | — | — | ${lastRun} |\n`;
     }
   }
 
   return section;
 }
 
+/**
+ * Risk signal analysis — named failures with specific excerpts.
+ * Reader profile: "What signals should I investigate?"
+ * Threshold: only if ≥1 failed run with errorMessage, or risk signals > 0.
+ */
 function renderRiskSignalAnalysis(data: ReportData): string {
-  if (data.runs.length === 0) return "";
-
-  const totalSignals = data.runs.reduce((s, r) => s + r.logEntriesCreated, 0);
   const failedRuns = data.runs.filter((r) => r.status === "failed" || r.status === "error");
+  const totalSignals = data.runs.reduce((s, r) => s + r.logEntriesCreated, 0);
+
+  if (failedRuns.length === 0 && totalSignals === 0) return "";
 
   let section = `## Risk Signal Analysis\n\n`;
-  section += `- **Total risk signals captured**: ${totalSignals} across ${data.runs.length} run(s)\n`;
-  section += `- **Runs with failures**: ${failedRuns.length}\n`;
 
   if (failedRuns.length > 0) {
-    section += `\n### Failing Runs\n\n`;
+    section += `### Failing Suites\n\n`;
     for (const run of failedRuns) {
-      section += `- **${run.projectId}**: ${run.summary.failed} failed, ${run.summary.errors} errors`;
-      if (run.errorMessage) section += ` — ${run.errorMessage.slice(0, 200)}`;
-      section += `\n`;
+      const proj = data.projects.find((p) => p.id === run.projectId);
+      const name = proj?.name ?? run.projectId;
+      section += `**\`${name}\`** — ${run.summary.failed} failed, ${run.summary.errors} errors`;
+      if (run.errorMessage) {
+        section += `\n> ${run.errorMessage.slice(0, 300)}`;
+      }
+      section += `\n\n`;
     }
+  }
+
+  if (totalSignals > 0) {
+    const timeoutRuns = data.runs.filter((r) => r.status === "timeout");
+    section += `**Signals captured**: ${totalSignals} log entries across ${data.runs.length} run(s)`;
+    if (timeoutRuns.length > 0) {
+      const names = timeoutRuns
+        .map((r) => data.projects.find((p) => p.id === r.projectId)?.name ?? r.projectId)
+        .join(", ");
+      section += `  \n**Timed out**: ${names}`;
+    }
+    section += `\n`;
   }
 
   return section;
 }
 
+/**
+ * Threat coverage — gap table showing only threats with actual gaps.
+ * Reader profile: "Is the system covered before release?"
+ * Threshold: only if ≥1 threat has an uncovered gap.
+ */
 function renderThreatCoverage(data: ReportData): string {
   if (!data.coverageReport || !data.threatModel) return "";
 
-  let section = `## Threat Coverage\n\n`;
-  section += `| Threat | Priority | Covered By | Gaps |\n`;
-  section += `|--------|----------|-----------|------|\n`;
+  const gaps = data.coverageReport.mappings.filter((m) => m.uncoveredGaps.length > 0);
+  const covered = data.coverageReport.mappings.filter((m) => m.uncoveredGaps.length === 0);
 
-  for (const mapping of data.coverageReport.mappings) {
-    const threat = data.threatModel.threats.find((t) => t.id === mapping.threatId);
-    const coveredStr = mapping.coveredByProjects.length > 0
-      ? mapping.coveredByProjects.join(", ")
-      : "none";
-    const gapStr = mapping.uncoveredGaps.length > 0
-      ? mapping.uncoveredGaps.join("; ")
-      : "covered";
-    section += `| ${mapping.threatId} | ${mapping.priority} | ${coveredStr} | ${gapStr} |\n`;
+  if (gaps.length === 0) return "";
+
+  let section = `## Threat Coverage\n\n`;
+  section += `**${covered.length}/${data.coverageReport.totalThreats} threats covered** — ${gaps.length} gap(s) require attention.\n\n`;
+
+  section += `| Threat | Priority | Covered By | Gap |\n`;
+  section += `|--------|----------|------------|-----|\n`;
+
+  for (const gap of gaps) {
+    const coverStr =
+      gap.coveredByProjects.length > 0 ? gap.coveredByProjects.join(", ") : "unmapped";
+    section += `| ${gap.threatId} | ${gap.priority} | ${coverStr} | ${gap.uncoveredGaps[0].slice(0, 80)} |\n`;
   }
 
-  section += `\n**Coverage**: ${data.coverageReport.threatsWithCoverage}/${data.coverageReport.totalThreats} threats have project mappings.\n`;
+  if (covered.length > 0) {
+    const coveredIds = covered.map((m) => m.threatId).join(", ");
+    section += `\n*Covered: ${coveredIds}*\n`;
+  }
 
   return section;
 }
 
+/**
+ * Recommendations — numbered action list with severity prefix.
+ * Reader profile: "What should I do?"
+ * Threshold: only if ≥1 recommendation with severity "critical" or "warning".
+ */
 function renderRecommendations(data: ReportData): string {
   if (!data.recommendations || data.recommendations.length === 0) return "";
 
+  const actionable = data.recommendations.filter(
+    (r) => r.severity === "critical" || r.severity === "warning",
+  );
+
+  if (actionable.length === 0) return "";
+
   let section = `## Recommendations\n\n`;
 
-  for (const rec of data.recommendations.slice(0, 10)) {
-    section += `### ${rec.title}\n\n`;
-    section += `**Severity**: ${rec.severity}\n\n`;
-    section += `**Read**: ${rec.read}\n\n`;
-    section += `**Reason**: ${rec.reason}\n\n`;
-    section += `**Action**: ${rec.action}\n\n`;
-    section += `---\n\n`;
-  }
+  actionable.slice(0, 5).forEach((rec, i) => {
+    const prefix = rec.severity === "critical" ? "🔴" : "🟡";
+    section += `**${i + 1}. ${prefix} ${rec.title}**\n\n`;
+    section += `> ${rec.read}\n\n`;
+    section += `**Why**: ${rec.reason}  \n`;
+    section += `**Do**: ${rec.action}\n\n`;
+  });
 
   return section;
 }
 
+/**
+ * Ecosystem context — Seeds score + notable Echoes activity.
+ * Reader profile: "How is the broader system doing?"
+ * Threshold: only if seeds score < 70, OR echoes events from analyzed projects exist.
+ */
+function renderEcosystemContext(data: ReportData): string {
+  if (!data.ecosystemContext) return "";
+
+  const ctx = data.ecosystemContext;
+  const snap = ctx.seeds.latestSnapshot;
+  const seedsBelowThreshold = snap && snap.overallScore < 70;
+  const analyzedIds = new Set(data.projects.map((p) => p.id));
+  const relevantEvents = ctx.echoes.recentEvents.filter((e) => analyzedIds.has(e.source));
+
+  if (!seedsBelowThreshold && relevantEvents.length === 0) return "";
+
+  let section = `## Ecosystem Context\n\n`;
+
+  if (snap) {
+    const unhealthy = snap.repos.filter((r) => r.healthScore < 50);
+    section += `**Seeds score**: ${snap.overallScore}${snap.overallScore < 70 ? " ⚠ below threshold" : ""}`;
+    if (unhealthy.length > 0) {
+      section += `  \n**Repos below 50**: ${unhealthy.map((r) => `${r.name} (${r.healthScore})`).join(", ")}`;
+    }
+    section += `\n`;
+  }
+
+  if (relevantEvents.length > 0) {
+    const byTool = new Map<string, number>();
+    for (const e of relevantEvents) {
+      byTool.set(e.tool, (byTool.get(e.tool) ?? 0) + 1);
+    }
+    const top = [...byTool.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(([t, n]) => `${t} (${n})`)
+      .join(", ");
+    section += `**Audit activity**: ${top}\n`;
+  }
+
+  section += `\n*Collected at ${ctx.collectedAt.slice(0, 16)}*\n`;
+
+  return section;
+}
+
+/**
+ * Key insights — only if ≥2 cross-signal patterns synthesize.
+ * Reader profile: "What non-obvious pattern matters?"
+ * Threshold: only renders with ≥2 distinct insights.
+ */
 function renderKeyInsights(data: ReportData): string {
   const insights: string[] = [];
 
@@ -186,83 +326,52 @@ function renderKeyInsights(data: ReportData): string {
     (s, r) => s + r.summary.passed + r.summary.failed + r.summary.skipped,
     0,
   );
-  if (totalTests > 0) {
-    insights.push(`${totalTests} total test cases executed across ${data.runs.length} project(s).`);
-  }
+  const failedRuns = data.runs.filter((r) => r.status !== "passed" && r.status !== "timeout");
+  const timeoutRuns = data.runs.filter((r) => r.status === "timeout");
 
-  const healthy = data.projects.filter((p) => p.healthStatus === "healthy").length;
-  const total = data.projects.length;
-  if (total > 0) {
-    insights.push(`${healthy}/${total} projects in healthy state.`);
-  }
-
-  if (data.coverageReport) {
-    const highPriority = data.coverageReport.mappings.filter(
-      (m) => m.priority === "high" && m.uncoveredGaps.length > 0,
-    );
-    if (highPriority.length > 0) {
+  if (totalTests > 0 && data.runs.length > 1) {
+    const totalPassed = data.runs.reduce((s, r) => s + r.summary.passed, 0);
+    const totalAll = data.runs.reduce((s, r) => s + r.summary.passed + r.summary.failed, 0);
+    const passRate = totalAll > 0 ? totalPassed / totalAll : 1;
+    if (passRate < 0.9) {
       insights.push(
-        `${highPriority.length} high-priority threat(s) have coverage gaps requiring attention.`,
+        `Suite-wide pass rate ${(passRate * 100).toFixed(0)}% — below the 90% stability threshold across ${data.runs.length} projects.`,
       );
     }
   }
 
-  const timeoutRuns = data.runs.filter((r) => r.status === "timeout");
   if (timeoutRuns.length > 0) {
     insights.push(
-      `${timeoutRuns.length} test suite(s) timed out — may need timeout adjustment or investigation.`,
+      `${timeoutRuns.length} suite(s) timed out — consider raising timeout limits or profiling test setup cost.`,
     );
   }
 
-  if (insights.length === 0) return "";
-
-  let section = `## Key Insights\n\n`;
-  for (const insight of insights) {
-    section += `- ${insight}\n`;
-  }
-  return section;
-}
-
-function renderEcosystemContext(data: ReportData): string {
-  if (!data.ecosystemContext) return "";
-
-  const ctx = data.ecosystemContext;
-  let section = `## Ecosystem Context\n\n`;
-
-  // Echoes audit summary
-  section += `### Audit Trail (Echoes)\n\n`;
-  if (ctx.echoes.totalEvents > 0) {
-    section += `- **Recent events scanned**: ${ctx.echoes.totalEvents}\n`;
-    const sources = Object.entries(ctx.echoes.sourceBreakdown)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 5);
-    if (sources.length > 0) {
-      section += `- **Top sources**: ${sources.map(([s, c]) => `${s} (${c})`).join(", ")}\n`;
+  if (data.coverageReport) {
+    const criticalGaps = data.coverageReport.mappings.filter(
+      (m) =>
+        m.uncoveredGaps.length > 0 &&
+        (m.priority?.toLowerCase() === "high" || m.priority?.toLowerCase() === "critical"),
+    );
+    if (criticalGaps.length > 0) {
+      insights.push(
+        `${criticalGaps.length} high-priority threat(s) (${criticalGaps.map((g) => g.threatId).join(", ")}) have no healthy test coverage.`,
+      );
     }
-  } else {
-    section += `- No recent audit events found.\n`;
   }
 
-  // Seeds health snapshot
-  section += `\n### Ecosystem Health (Seeds)\n\n`;
-  if (ctx.seeds.latestSnapshot) {
-    const snap = ctx.seeds.latestSnapshot;
-    section += `- **Overall score**: ${snap.overallScore}\n`;
-    section += `- **Snapshots available**: ${ctx.seeds.snapshotCount}\n`;
-    if (snap.repos.length > 0) {
-      section += `- **Repos tracked**: ${snap.repos.length}\n`;
-      const unhealthy = snap.repos.filter((r) => r.healthScore < 50);
-      if (unhealthy.length > 0) {
-        section += `- **Repos below 50 health**: ${unhealthy.map((r) => `${r.name} (${r.healthScore})`).join(", ")}\n`;
-      }
-    }
-  } else {
-    section += `- No Seeds snapshots available.\n`;
+  if (
+    data.ecosystemContext?.seeds.latestSnapshot &&
+    data.ecosystemContext.seeds.latestSnapshot.overallScore < 70 &&
+    failedRuns.length > 0
+  ) {
+    insights.push(
+      `Ecosystem score (${data.ecosystemContext.seeds.latestSnapshot.overallScore}) and test failures are co-occurring — indicates systemic stress rather than isolated regressions.`,
+    );
   }
 
-  section += `\n*Collected at ${ctx.collectedAt}*\n`;
+  if (insights.length < 2) return "";
 
-  return section;
+  return `## Key Insights\n\n${insights.map((i) => `- ${i}`).join("\n")}`;
 }
 
 // ── Main generator ──
@@ -293,13 +402,11 @@ export async function generateReport(
   const lines = markdown.split("\n").length;
   const sections = (markdown.match(/^## /gm) ?? []).length;
 
-  // Save to ~/.ori/reports/
   await fs.mkdir(config.reportsDir, { recursive: true });
   const filename = options?.outputPath ?? `${todayDate()}-report.md`;
   const reportPath = path.join(config.reportsDir, filename);
   await fs.writeFile(reportPath, markdown, "utf-8");
 
-  // Optionally publish to Documentation/docs/
   if (options?.publish) {
     const docsDir = path.join(config.cascadeRoot, "Documentation/docs");
     try {
