@@ -185,7 +185,8 @@ security-logs/
 .copilot/session-state/
 
 # Windsurf
-.windsurf/
+.windsurf/*
+!.windsurf/workflows/
 .windsurf-next/
 .windsurf/local*
 
@@ -345,7 +346,8 @@ E:/*
 # Cursor hooks and local hook config (project-level hooks disabled; do not track)
 .cursor/hooks/
 .cursor/hooks.json
-.windsurf/
+.windsurf/*
+!.windsurf/workflows/
 .windsurf-next/
 .antigravity/
 .opencode/
