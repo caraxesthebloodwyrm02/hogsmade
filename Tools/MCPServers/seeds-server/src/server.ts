@@ -68,14 +68,12 @@ const KNOWN_REPOS: Record<string, { description: string; stack: string; path?: s
   apiguard: {
     description: "API security gateway",
     stack: "Python 3.13+",
-    // Legacy external repo: retained until a canonical in-workspace path exists.
-    path: path.join(HOME, "roots", "apiguard"),
+    path: path.join(CASCADE, "Projects", "apiguard"),
   },
   Vision: {
     description: "AI vision project",
     stack: "Python",
-    // Legacy external repo: retained until a canonical in-workspace path exists.
-    path: path.join(HOME, "grove", "Vision"),
+    path: path.join(CASCADE, "Projects", "Vision"),
   },
   hogsmade: {
     description: "MCP server monorepo",

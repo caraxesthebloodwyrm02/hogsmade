@@ -340,12 +340,12 @@ export const DEFAULT_PROJECTS: ProjectEntry[] = [
   {
     id: "apiguard",
     name: "apiguard",
-    location: `${ROOTS}/apiguard`,
+    location: `${CASCADE}/Projects/apiguard`,
     runner: {
       type: "pytest",
       command: "uv",
       args: ["run", "pytest", "tests/"],
-      cwd: `${ROOTS}/apiguard`,
+      cwd: `${CASCADE}/Projects/apiguard`,
       timeoutMs: 60000,
     },
     approxTestFiles: 9,
@@ -354,12 +354,12 @@ export const DEFAULT_PROJECTS: ProjectEntry[] = [
   {
     id: "vision",
     name: "Vision",
-    location: `${GROVE}/Vision`,
+    location: `${CASCADE}/Projects/Vision`,
     runner: {
       type: "pytest",
       command: "uv",
       args: ["run", "pytest"],
-      cwd: `${GROVE}/Vision`,
+      cwd: `${CASCADE}/Projects/Vision`,
       timeoutMs: 60000,
     },
     approxTestFiles: 7,
