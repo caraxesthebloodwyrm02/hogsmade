@@ -249,13 +249,19 @@ $RECYCLE.BIN/
 *.local.yaml
 
 # ==========================
-# SUBMODULE WORKSPACE
+# SUBMODULE & NESTED REPO WORKSPACE
 # ==========================
 # GRID-main is a submodule - ignore its local artifacts
 GRID-main/.env
 GRID-main/data/
 GRID-main/logs/
 GRID-main/*.log
+
+# Nested independent repos (own .git, own remotes, own CI)
+# Vision: irfankabir02/Vision.git (github-irfan)
+# apiguard: caraxesthebloodwyrm02/apiguard.git (github-caraxes)
+Projects/Vision/
+Projects/apiguard/
 
 # ==========================
 # SESSION & PROGRESS FILES
