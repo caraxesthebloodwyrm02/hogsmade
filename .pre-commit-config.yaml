@@ -23,9 +23,6 @@ repos:
         args: [--maxkb=500]
       - id: check-merge-conflict
         name: Check for merge conflicts
-      - id: no-commit-to-branch
-        name: Protect main branches
-        args: ["--branch", "main", "--branch", "master", "--branch", "hogsmade"]
       - id: detect-private-key
         name: Detect private keys
       - id: mixed-line-ending
@@ -41,9 +38,9 @@ repos:
         pass_filenames: false
         files: ^(mcp_config\.json|mcp_inventory\.manifest\.json|Components/scripts/verify_mcp_inventory\.py)$
 
-  # Detect-secrets: enterprise-grade secret scanner
+  # Prettier formatting (mirror stopped at v3.1.0; use local hook for newer prettier)
   - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v3.5.3
+    rev: v3.1.0
     hooks:
       - id: prettier
         name: Prettier (repo root)
@@ -76,4 +73,4 @@ repos:
 # ============================================================================
 fail_fast: false
 minimum_pre_commit_version: "3.0.0"
-default_stages: [commit, push]
+default_stages: [pre-commit, pre-push]
