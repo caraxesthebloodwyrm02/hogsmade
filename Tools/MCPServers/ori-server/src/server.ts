@@ -23,6 +23,7 @@ import { RISK_PATTERNS, classifyLine, extractTestFile } from "./patterns.js";
 import { runProbe, saveProbe } from "./probe.js";
 import { generateRecommendations, generateThreatAwareRecommendations, saveRecommendations } from "./recommend.js";
 import { parseThreatModel, loadThreatModel, buildCoverageMap, routeThreatToTests } from "./threat-model.js";
+import { buildThreatProjectHeatmap } from "./heatmap.js";
 import { generateReport, renderReport } from "./reporter.js";
 import type { ReportData } from "./reporter.js";
 import { appendNote, queryNotes, getNotebookSummary } from "./notebook.js";
@@ -1115,6 +1116,77 @@ export function buildServer(): McpServer {
           {
             type: "text" as const,
             text: JSON.stringify(coverageReport, null, 2),
+          },
+        ],
+      };
+    },
+  );
+
+  registerTool(
+    "get_threat_coverage_heatmap",
+    {
+      description:
+        "Return a JSON heatmap grid: threats (rows) × projects (columns) with scores " +
+        "for registry health and threat mapping (1 healthy, 0.5 stale/degraded/unknown, 0 failing, null unmapped). " +
+        "Rows with coverage gaps sort first. Caps limit payload size.",
+      inputSchema: z.object({
+        threatIdPrefix: z
+          .string()
+          .optional()
+          .describe("Only include threat IDs starting with this prefix (e.g. 'TM-')"),
+        projectIds: z
+          .array(z.string())
+          .optional()
+          .describe("Restrict columns to these registry project IDs (preserves request order)"),
+        maxThreats: z
+          .number()
+          .int()
+          .positive()
+          .max(500)
+          .optional()
+          .describe("Max threat rows (default 80)"),
+        maxProjects: z
+          .number()
+          .int()
+          .positive()
+          .max(200)
+          .optional()
+          .describe("Max project columns (default 40)"),
+      }),
+    },
+    async (args: {
+      threatIdPrefix?: string;
+      projectIds?: string[];
+      maxThreats?: number;
+      maxProjects?: number;
+    }) => {
+      await ensureDataDirs();
+      const threatModel = await loadThreatModel();
+      const projects = await listProjects();
+      const coverageReport = buildCoverageMap(projects, threatModel);
+      const heatmap = buildThreatProjectHeatmap(threatModel, projects, coverageReport, {
+        threatIdPrefix: args.threatIdPrefix,
+        projectIds: args.projectIds,
+        maxThreats: args.maxThreats,
+        maxProjects: args.maxProjects,
+      });
+
+      emitAudit({
+        source: SERVER_NAME,
+        tool: "get_threat_coverage_heatmap",
+        status: "success",
+        metadata: {
+          rows: heatmap.axes.rowIds.length,
+          cols: heatmap.axes.colIds.length,
+          cells: heatmap.cells.length,
+        },
+      });
+
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(heatmap, null, 2),
           },
         ],
       };

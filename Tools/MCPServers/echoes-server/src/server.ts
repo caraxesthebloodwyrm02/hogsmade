@@ -470,7 +470,7 @@ export function buildServer(): McpServer {
           .enum(["success", "failure", "blocked", "dry_run", "error"])
           .describe("Execution result status"),
         durationMs: z.number().optional().describe("Execution duration in milliseconds"),
-        metadata: z.record(z.unknown()).optional().describe("Additional context"),
+        metadata: z.record(z.string(), z.unknown()).optional().describe("Additional context"),
         runMode: runModeSchema,
       }),
     },
@@ -631,7 +631,7 @@ export function buildServer(): McpServer {
         projects: z.number().describe("Number of projects scanned"),
         activeServers: z.array(z.string()).describe("List of active MCP server names"),
         metrics: z
-          .record(z.number())
+          .record(z.string(), z.number())
           .describe("Key-value numeric metrics (e.g. healthScore, commitCount)"),
         characterState: z
           .object({
@@ -640,7 +640,7 @@ export function buildServer(): McpServer {
             gateConfidence: z.number().min(0).max(1).describe("Last GateVerdict confidence"),
             entityCount: z.number().min(0).describe("Compiled entity count"),
             dominantTraits: z
-              .record(z.number())
+              .record(z.string(), z.number())
               .describe("Top personality trait levels"),
             consentType: z.string().optional().describe("Active consent type"),
             provenanceId: z.string().optional().describe("Latest provenance chain ID"),
@@ -720,7 +720,7 @@ export function buildServer(): McpServer {
           .enum(["enthusiastic", "curious", "supportive", "playful", "focused", "calm", "creative"])
           .describe("Current Mood enum value from PersonalityEngine"),
         traits: z
-          .record(z.number().min(0).max(1))
+          .record(z.string(), z.number().min(0).max(1))
           .describe("PersonalityTrait levels (0.0–1.0), keyed by trait name"),
         rulePack: z
           .enum(["base", "exploratory", "restricted"])
@@ -747,7 +747,7 @@ export function buildServer(): McpServer {
           .optional()
           .default([])
           .describe("ClusterNote observations from knowledge_graph"),
-        metadata: z.record(z.unknown()).optional().describe("Additional context"),
+        metadata: z.record(z.string(), z.unknown()).optional().describe("Additional context"),
         runMode: runModeSchema,
       }),
     },
@@ -944,7 +944,7 @@ export function buildServer(): McpServer {
         status: z
           .enum(["success", "failure", "blocked", "dry_run", "error"])
           .describe("Status to check"),
-        metadata: z.record(z.unknown()).optional().describe("Metadata for fingerprint matching"),
+        metadata: z.record(z.string(), z.unknown()).optional().describe("Metadata for fingerprint matching"),
         isMutating: z
           .boolean()
           .optional()

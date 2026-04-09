@@ -1185,9 +1185,9 @@ export function buildServer(): McpServer {
         "the pipeline. Reports profit-mask signals, context token estimate, structural " +
         "conformance, and entity penalty context. Use before submission to pre-validate.",
       inputSchema: z.object({
-        payload: z.record(z.unknown()).describe("Request payload body to check"),
+        payload: z.record(z.string(), z.unknown()).describe("Request payload body to check"),
         headers: z
-          .record(z.string())
+          .record(z.string(), z.string())
           .optional()
           .describe("Request headers to scan for profit-mask signals"),
         entity_id: z.string().optional().describe("Entity ID for penalty context lookup"),
@@ -1310,7 +1310,7 @@ export function buildServer(): McpServer {
           .optional()
           .default("mcp_enforcement")
           .describe("Human-readable reason for the penalty"),
-        metadata: z.record(z.unknown()).optional().describe("Additional context metadata"),
+        metadata: z.record(z.string(), z.unknown()).optional().describe("Additional context metadata"),
       }),
     },
     async (args: {

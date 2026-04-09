@@ -6,7 +6,7 @@ Edge-sanding MCP server — test suite research and reporting system for Cascade
 
 Ori operates alongside your test suite, collecting console output in real-time, classifying each line against known risk patterns, and producing **read-reason-actionable** recommendations. It maps the CascadeProjects threat model to test coverage, generates research reports, and maintains a persistent notebook for cross-run context. The philosophy is subtlety: a large test collection is a mix of various signals — sort + filter = good note material.
 
-## Tools (22)
+## Tools (23)
 
 ### Collection & Analysis
 
@@ -38,6 +38,7 @@ Ori operates alongside your test suite, collecting console output in real-time, 
 | --------------------- | ------------------------------------------------------- |
 | `parse_threat_model`  | Parse/refresh the CascadeProjects threat model          |
 | `map_threats`         | Map threats to test coverage by project or threat ID    |
+| `get_threat_coverage_heatmap` | JSON grid: threats × projects with health/mapping scores |
 | `generate_report`     | Full research report (health, threats, recommendations) |
 | `get_coverage_gaps`   | Identify threats without adequate test coverage         |
 

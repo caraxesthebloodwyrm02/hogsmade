@@ -315,11 +315,31 @@ describe("threat model tools", () => {
       expect.arrayContaining([
         "parse_threat_model",
         "map_threats",
+        "get_threat_coverage_heatmap",
         "generate_report",
         "get_coverage_gaps",
       ]),
     );
-    expect(tools.length).toBe(22);
+    expect(tools.length).toBe(23);
+  });
+
+  it("get_threat_coverage_heatmap returns grid payload", async () => {
+    const server = buildServer() as TestServer;
+    const result = (await invokeTool(server, "get_threat_coverage_heatmap", {
+      maxThreats: 20,
+      maxProjects: 15,
+    })) as { content: Array<{ text: string }> };
+
+    const payload = parseToolJson(result);
+    expect(payload.kind).toBe("threat_project_coverage");
+    expect(payload.axes?.rowKind).toBe("threat");
+    expect(payload.axes?.colKind).toBe("project");
+    expect(Array.isArray(payload.axes?.rowIds)).toBe(true);
+    expect(Array.isArray(payload.axes?.colIds)).toBe(true);
+    expect(Array.isArray(payload.cells)).toBe(true);
+    expect(payload.cells.length).toBe(payload.axes.rowIds.length * payload.axes.colIds.length);
+    expect(Array.isArray(payload.legend)).toBe(true);
+    expect(payload.truncated).toBeDefined();
   });
 
   it("map_threats returns coverage map via tool", async () => {

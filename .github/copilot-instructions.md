@@ -120,7 +120,7 @@ Follow shadcn-style conventions: CVA + clsx + tailwind-merge for variants. Icons
 - **Package managers**: `npm` for first-party TS servers, `pnpm` for `mcp-tool-experiment/typescript-sdk`, `uv` for `GRID-main`. Never mix.
 - **Commit scope**: Messages are scoped to the project changed, e.g. `pulse-server: add health check`, `docs: update data contracts`, `afloat-server: fix task registration`.
 - **Nested repos**: `GRID-main/` and `mcp-tool-experiment/` are git submodules. Commit changes inside their own git roots; only update the submodule ref in the root repo when intentionally recording a new commit.
-- **shared-types exports**: Three export paths — `.` (types), `./audit-client` (emitAudit), `./security-policy`. Build with `npm run build` before any dependent server.
+- **shared-types exports**: Seven export paths — `.` (types), `./audit-client` (emitAudit), `./security-policy`, `./session-rate-limit`, `./id`, `./mcp-logger`, `./precedent`. Build with `npm run build` before any dependent server.
 - **mcp-tool-experiment JSDoc examples**: Live in companion `.examples.ts` files, not inline. Middleware packages (`express`, `hono`, `node`) are thin adapters — MCP logic goes in core packages only.
 - **`prompt.md`** at workspace root is a scratch/notes file — not configuration.
 - **Secrets**: Never commit `.env*` files. Use `.env.example` as template. `mcp_config.json` and `claude_code_config.json` at root must not contain secrets.

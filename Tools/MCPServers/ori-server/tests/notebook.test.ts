@@ -227,7 +227,7 @@ describe("notebook tools", () => {
         "ecosystem_context",
       ]),
     );
-    expect(tools.length).toBe(22);
+    expect(tools.length).toBe(23);
   });
 
   it("notebook_add creates a note via tool", async () => {
