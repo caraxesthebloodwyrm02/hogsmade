@@ -11,6 +11,7 @@ import {
   openEvolutionCase,
   recordCycleSignal,
   recordHandoff,
+  updateCaseArgs,
   upsertEndpointSpec,
 } from "./evolution.js";
 import { getFixtureCandidates } from "./examples.js";
@@ -317,6 +318,18 @@ export function upsertEndpointSpecHandler(input: {
   return result;
 }
 
+export function updateCaseArgsHandler(input: {
+  caseId: string;
+  args: Partial<RoutineArgs>;
+}) {
+  const result = updateCaseArgs(input);
+  void emitEligibilityAudit("update_case_args", "success", {
+    caseId: input.caseId,
+    args: input.args,
+  } as Record<string, unknown>);
+  return result;
+}
+
 export function advanceCycleHandler(input: {
   caseId: string;
   direction?: "forward" | "return";
@@ -489,6 +502,16 @@ export function buildServer(): McpServer {
       notes: z.string().optional().describe("Additional notes."),
     },
     async (input: any) => toJsonText(upsertEndpointSpecHandler(input)),
+  );
+
+  tool(
+    "update_case_args",
+    "Update the stored RoutineArgs for an evolution case, then refresh scores and conditions in memory.",
+    {
+      caseId: z.string().describe("Case id to update."),
+      args: argsSchema.describe("New argument values to merge into the stored case args."),
+    },
+    async (input: any) => toJsonText(updateCaseArgsHandler(input)),
   );
 
   tool(

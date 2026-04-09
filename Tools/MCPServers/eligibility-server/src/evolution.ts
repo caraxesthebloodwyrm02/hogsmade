@@ -1115,3 +1115,19 @@ export function hydrateExistingCases(
 ): EvolutionCase[] {
   return store.listCases();
 }
+
+export function updateCaseArgs(
+  input: { caseId: string; args: Partial<RoutineArgs> },
+  store: EvolutionCycleStore = getEvolutionCycleStore(),
+): { updated: boolean; snapshot: CycleSnapshot } {
+  const caseRecord = validateCaseLookup(store.getCase(input.caseId), input.caseId);
+  const mergedArgs = normalizeRoutineArgs({ ...caseRecord.args, ...input.args });
+  caseRecord.args = mergedArgs;
+  const timestamp = new Date().toISOString();
+  refreshCaseRecord(caseRecord, timestamp);
+  const stored = store.upsertCase(caseRecord);
+  emitCycleAudit(caseRecord, "beat_advanced", "args_updated", {
+    updatedArgs: input.args,
+  });
+  return { updated: true, snapshot: buildSnapshot(stored) };
+}
