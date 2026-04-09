@@ -12,10 +12,7 @@
  */
 
 import { ResiliencePolicy } from "@cascade/shared-resilience";
-import {
-  ActionClass,
-  createHardenedMeritGuard
-} from "@cascade/shared-types";
+import { ActionClass, createHardenedMeritGuard } from "@cascade/shared-types";
 import { emitAudit } from "@cascade/shared-types/audit-client";
 import { McpLogger } from "@cascade/shared-types/mcp-logger";
 import { GateSecurityPolicy } from "@cascade/shared-types/security-policy";
@@ -298,7 +295,9 @@ export async function probeGridBackend(
 async function getEnhancedValidation(
   envelope: Record<string, unknown>,
 ): Promise<Record<string, unknown> | null> {
-  const rawUrl = process.env.GRID_API_URL?.trim() || config.gridApiUrl || "";
+  // Read GRID_API_URL from live environment only — config.gridApiUrl is frozen
+  // at module-load time and may not reflect runtime env changes (e.g. in tests).
+  const rawUrl = process.env.GRID_API_URL?.trim() || "";
   if (!rawUrl) {
     return null;
   }
@@ -1310,7 +1309,10 @@ export function buildServer(): McpServer {
           .optional()
           .default("mcp_enforcement")
           .describe("Human-readable reason for the penalty"),
-        metadata: z.record(z.string(), z.unknown()).optional().describe("Additional context metadata"),
+        metadata: z
+          .record(z.string(), z.unknown())
+          .optional()
+          .describe("Additional context metadata"),
       }),
     },
     async (args: {
@@ -1547,14 +1549,14 @@ export async function startServer(): Promise<McpServer> {
         } else {
           logger.warn(
             `GRID backend at ${gridApiUrl} is NOT reachable ` +
-            `(lastEndpoint=${probe.endpoint ?? "none"}, status=${probe.status ?? "unreachable"}, error=${probe.error ?? "unknown"}). ` +
-            `Remote gate validation will fail-closed (approved=false) until backend is restored.`,
+              `(lastEndpoint=${probe.endpoint ?? "none"}, status=${probe.status ?? "unreachable"}, error=${probe.error ?? "unknown"}). ` +
+              `Remote gate validation will fail-closed (approved=false) until backend is restored.`,
           );
         }
       } catch {
         logger.warn(
           `GRID backend probe failed for ${gridApiUrl}. ` +
-          `Remote gate validation will fail-closed.`,
+            `Remote gate validation will fail-closed.`,
         );
       }
     } else {
