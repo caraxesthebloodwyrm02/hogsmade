@@ -19,12 +19,7 @@ vi.mock("@cascade/shared-types/audit-client", () => ({
 vi.mock("@cascade/shared-types", () => ({
   ActionClass: { PUBLIC_BASIC: "PUBLIC_BASIC" },
   createHardenedMeritGuard: () => ({
-    registerGuardedTool: (
-      server: any,
-      name: string,
-      opts: any,
-      handler: any,
-    ) => {
+    registerGuardedTool: (server: any, name: string, opts: any, handler: any) => {
       server.registerTool(name, { description: opts.description, inputSchema: {} }, handler);
     },
     getCircuitState: () => "closed",
