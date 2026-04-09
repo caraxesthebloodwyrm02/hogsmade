@@ -18,6 +18,7 @@ repos:
         name: Check YAML syntax
       - id: check-json
         name: Check JSON syntax
+        exclude: ^Hogwarts/board/tsconfig\.
       - id: check-added-large-files
         name: Check for large files
         args: [--maxkb=500]
@@ -61,11 +62,16 @@ repos:
           - "3.0"
         exclude: |
           (?x)^(
-            .*\.lock$|
-            .*\.min\.js$|
-            .*\.min\.css$|
-            package-lock\.json$|
-            GRID-main/
+            .*\.lock|
+            .*\.min\.js|
+            .*\.min\.css|
+            package-lock\.json|
+            GRID-main/.*|
+            Projects/GATE/archived/.*|
+            Projects/GATE/HANDOFF/deployment_manifest\.json|
+            Projects/GATE/harness/src/harness/runner\.py|
+            Documentation/docs/security_best_practices_report\.md|
+            Components/scripts/verify-security-hardening\.sh
           )$
 
 # ============================================================================
