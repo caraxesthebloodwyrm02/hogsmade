@@ -151,6 +151,12 @@
       "runtime": "typescript",
       "bootstrapType": "mcp_sdk_stdio_ts",
       "entryRelative": "eligibility-server/src/server.ts"
+    },
+    {
+      "mcpServerKey": "harness-server",
+      "runtime": "typescript",
+      "bootstrapType": "mcp_sdk_stdio_ts",
+      "entryRelative": "harness-server/src/server.ts"
     }
   ]
 }

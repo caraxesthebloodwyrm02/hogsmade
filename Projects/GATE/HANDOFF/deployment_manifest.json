@@ -1,0 +1,102 @@
+{
+  "version": "0.1.0",
+  "handoff_id": "harness-pokego-great-league-2026-04",
+  "created_at": "2026-04-09T00:00:00Z",
+  "description": "Pokemon GO 1500 CP Great League team used as architectural harness example. Three members each map to a domain-function constraint layer and serve as the long-running reference for custom asset batches.",
+  "team": {
+    "name": "Great League Anchor Stack",
+    "cp_cap": 1500,
+    "format": "Great League",
+    "game": "Pokemon GO"
+  },
+  "members": [
+    {
+      "id": "bastiodon",
+      "species": "Bastiodon",
+      "types": ["Steel", "Rock"],
+      "role": "Lead / Anchor",
+      "layer": "Foundation",
+      "fast_move": "Smack Down",
+      "charged_moves": ["Stone Edge", "Flamethrower"],
+      "domain_function": "long-running stability, bulk, persistence, fail-closed anchor",
+      "quantization_zone": "buildup",
+      "transistor_role": "arms — holds signal state across the full buildup window",
+      "struggle_scenario": "energy generation lag — Bastiodon's slow Smack Down accumulates energy across the full buildup window before the drop is viable"
+    },
+    {
+      "id": "talonflame",
+      "species": "Talonflame",
+      "types": ["Fire", "Flying"],
+      "role": "Safe Switch / Probe",
+      "layer": "Probe",
+      "fast_move": "Incinerate",
+      "charged_moves": ["Brave Bird", "Flame Charge"],
+      "domain_function": "fast signal emission, high-throughput scanning, energy accumulation before drop",
+      "quantization_zone": "buildup",
+      "transistor_role": "emits — fires probe signals during the buildup window; primes the drop",
+      "struggle_scenario": "Incinerate's channel window — 5-turn fast move creates timing vulnerability; probes must be designed around the fixed emission cadence"
+    },
+    {
+      "id": "exeggutor-a",
+      "species": "Alolan Exeggutor",
+      "types": ["Grass", "Dragon"],
+      "role": "Coverage / Closer",
+      "layer": "Integration",
+      "fast_move": "Dragon Tail",
+      "charged_moves": ["Dragon Pulse", "Seed Bomb"],
+      "domain_function": "cross-domain calls, multi-type coverage, collaboration scenarios",
+      "quantization_zone": "drop",
+      "transistor_role": "fires — executes the drop zone burst after transistor gates are armed by Bastiodon and Talonflame",
+      "struggle_scenario": "type overlap — Grass and Dragon share vulnerability to Ice; integration calls must route around the double-weakness window"
+    }
+  ],
+  "pipeline": {
+    "cycles": 2,
+    "steps_per_cycle": 68,
+    "total_steps": 136,
+    "grid": "8x8 (quadrants A=Setup, B=Execute, C=Instrument, D=Complete)",
+    "quantization_zones": {
+      "buildup": "steps 0-43 per cycle (44 steps, gradual ramp 0.1->0.7)",
+      "silence": "steps 44-47 per cycle (4 steps, deliberate pause)",
+      "drop": "steps 48-67 per cycle (20 steps, full intensity 1.0)"
+    },
+    "transistor_pattern": "10 (binary: arm on 1, fire on 0)"
+  },
+  "deliverables": [
+    {
+      "id": "handoff-dir",
+      "path": "CascadeProjects/Projects/GATE/HANDOFF/",
+      "status": "complete",
+      "description": "Deployment manifest, harness team spec, scenario docs"
+    },
+    {
+      "id": "plugin-skills",
+      "path": "plugins/caraxes/skills/harness/",
+      "status": "complete",
+      "description": "SKILL.md + references for personalization, cross-reference, and team contract"
+    },
+    {
+      "id": "agent-skill",
+      "path": ".agents/skills/harness/",
+      "status": "complete",
+      "description": "Agent-facing SKILL.md for harness autonomous operation"
+    },
+    {
+      "id": "harness-server",
+      "path": "CascadeProjects/Tools/MCPServers/harness-server/",
+      "status": "complete",
+      "description": "TypeScript MCP server — agentic autonomous loop, 13 tools, wraps Python harness pipeline"
+    }
+  ],
+  "gate": {
+    "envelope_id": "envelope_commit-wave-2026-04",
+    "nonce": "f5495a0942654d67925a2cfc911cb354",
+    "promotion_result": "allow_promotion",
+    "promotion_beat": "verify",
+    "overall_score": 0.805,
+    "governance_score": 0.822,
+    "integration_score": 0.779
+  },
+  "harness_python_root": "CascadeProjects/Projects/GATE/harness/src/harness/",
+  "manifest_output_dir": "CascadeProjects/Projects/GATE/harness/manifests/"
+}
