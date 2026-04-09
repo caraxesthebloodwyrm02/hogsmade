@@ -21,8 +21,17 @@ import { getConfig } from "./config.js";
 import { filterLogs } from "./filter.js";
 import { RISK_PATTERNS, classifyLine, extractTestFile } from "./patterns.js";
 import { runProbe, saveProbe } from "./probe.js";
-import { generateRecommendations, generateThreatAwareRecommendations, saveRecommendations } from "./recommend.js";
-import { parseThreatModel, loadThreatModel, buildCoverageMap, routeThreatToTests } from "./threat-model.js";
+import {
+  generateRecommendations,
+  generateThreatAwareRecommendations,
+  saveRecommendations,
+} from "./recommend.js";
+import {
+  parseThreatModel,
+  loadThreatModel,
+  buildCoverageMap,
+  routeThreatToTests,
+} from "./threat-model.js";
 import { buildThreatProjectHeatmap } from "./heatmap.js";
 import { generateReport, renderReport } from "./reporter.js";
 import type { ReportData } from "./reporter.js";
@@ -37,14 +46,16 @@ import {
   clearAllLogs,
 } from "./storage.js";
 import { loadRegistry, getProject, listProjects, discoverTestSuites } from "./registry.js";
+import { runTestSuite, runAllTests, getRunResult, getRunStdout, listRuns } from "./executor.js";
+import { evaluateSignals, getRouterState, resetRouterState } from "./router.js";
 import {
-  runTestSuite,
-  runAllTests,
-  getRunResult,
-  getRunStdout,
-  listRuns,
-} from "./executor.js";
-import type { LogEntry } from "./types.js";
+  loadRouterConfig,
+  updateRoute,
+  addRoute,
+  removeRoute,
+  resetRoutes,
+} from "./router-config.js";
+import type { LogEntry, RouteFiring } from "./types.js";
 
 const SERVER_NAME = "ori-server";
 const VERSION = "1.0.0";
@@ -132,7 +143,22 @@ export function buildServer(): McpServer {
 
       await appendLogEntries(entries);
 
-      const signalCount = entries.filter((e) => e.matchedPatterns.length > 0).length;
+      const signalEntries = entries.filter((e) => e.matchedPatterns.length > 0);
+      const signalCount = signalEntries.length;
+
+      // Evaluate signal-bearing entries against router
+      let routeFirings: RouteFiring[] = [];
+      if (signalCount > 0) {
+        try {
+          routeFirings = await evaluateSignals(signalEntries);
+        } catch (err) {
+          process.stderr.write(
+            `[ori-server] router evaluation failed: ${
+              err instanceof Error ? err.message : String(err)
+            }\n`,
+          );
+        }
+      }
 
       emitAudit({
         source: SERVER_NAME,
@@ -142,6 +168,7 @@ export function buildServer(): McpServer {
           linesIngested: entries.length,
           signalsDetected: signalCount,
           source,
+          routeFirings: routeFirings.length,
         },
       });
 
@@ -158,6 +185,15 @@ export function buildServer(): McpServer {
                 warningCount: entries.filter((e) => e.severity === "warning").length,
                 infoCount: entries.filter((e) => e.severity === "info").length,
                 source,
+                routeFirings:
+                  routeFirings.length > 0
+                    ? routeFirings.map((f) => ({
+                        routeId: f.routeId,
+                        routeName: f.routeName,
+                        matchedCount: f.matchedCount,
+                        actionsExecuted: f.actionsExecuted,
+                      }))
+                    : undefined,
               },
               null,
               2,
@@ -526,7 +562,10 @@ export function buildServer(): McpServer {
         "Browse the project registry with health summaries. " +
         "Optionally filter by tags or health status.",
       inputSchema: z.object({
-        tags: z.array(z.string()).optional().describe("Filter by tags (e.g. 'python', 'mcp', 'security')"),
+        tags: z
+          .array(z.string())
+          .optional()
+          .describe("Filter by tags (e.g. 'python', 'mcp', 'security')"),
         healthStatus: z
           .enum(["healthy", "degraded", "failing", "unknown"])
           .optional()
@@ -544,7 +583,10 @@ export function buildServer(): McpServer {
         source: SERVER_NAME,
         tool: "list_projects",
         status: "success",
-        metadata: { projectCount: projects.length, filter: { tags: args.tags, healthStatus: args.healthStatus } },
+        metadata: {
+          projectCount: projects.length,
+          filter: { tags: args.tags, healthStatus: args.healthStatus },
+        },
       });
 
       return {
@@ -596,7 +638,11 @@ export function buildServer(): McpServer {
           content: [
             {
               type: "text" as const,
-              text: JSON.stringify({ error: `Project "${args.projectId}" not found in registry` }, null, 2),
+              text: JSON.stringify(
+                { error: `Project "${args.projectId}" not found in registry` },
+                null,
+                2,
+              ),
             },
           ],
           isError: true,
@@ -684,6 +730,32 @@ export function buildServer(): McpServer {
           filter: args.filter,
         });
 
+        // Evaluate router on entries created by this run
+        let routeFirings: RouteFiring[] = [];
+        if (result.logEntriesCreated > 0) {
+          try {
+            const allLogs = await readAllLogs();
+            // Get entries matching this project from recent logs
+            const recentEntries = allLogs
+              .filter(
+                (e) =>
+                  e.source === args.projectId &&
+                  e.timestamp >= result.timestamp &&
+                  e.matchedPatterns.length > 0,
+              )
+              .slice(-200);
+            if (recentEntries.length > 0) {
+              routeFirings = await evaluateSignals(recentEntries);
+            }
+          } catch (err) {
+            process.stderr.write(
+              `[ori-server] router evaluation failed: ${
+                err instanceof Error ? err.message : String(err)
+              }\n`,
+            );
+          }
+        }
+
         emitAudit({
           source: SERVER_NAME,
           tool: "run_tests",
@@ -697,6 +769,7 @@ export function buildServer(): McpServer {
             skipped: result.summary.skipped,
             runStatus: result.status,
             logEntriesCreated: result.logEntriesCreated,
+            routeFirings: routeFirings.length,
           },
         });
 
@@ -712,6 +785,15 @@ export function buildServer(): McpServer {
                   summary: result.summary,
                   logEntriesCreated: result.logEntriesCreated,
                   errorMessage: result.errorMessage,
+                  routeFirings:
+                    routeFirings.length > 0
+                      ? routeFirings.map((f) => ({
+                          routeId: f.routeId,
+                          routeName: f.routeName,
+                          matchedCount: f.matchedCount,
+                          actionsExecuted: f.actionsExecuted,
+                        }))
+                      : undefined,
                 },
                 null,
                 2,
@@ -769,12 +851,9 @@ export function buildServer(): McpServer {
           .describe("Per-project timeout in seconds"),
       }),
     },
-    async (args: {
-      projectIds?: string[];
-      stopOnFailure?: boolean;
-      timeoutSeconds?: number;
-    }) => {
+    async (args: { projectIds?: string[]; stopOnFailure?: boolean; timeoutSeconds?: number }) => {
       await ensureDataDirs();
+      const runStartedAt = new Date().toISOString();
 
       const results = await runAllTests(args.projectIds, {
         stopOnFailure: args.stopOnFailure,
@@ -783,6 +862,27 @@ export function buildServer(): McpServer {
 
       const passed = results.filter((r) => r.status === "passed").length;
       const failed = results.filter((r) => r.status !== "passed").length;
+      const totalLogEntries = results.reduce((sum, r) => sum + r.logEntriesCreated, 0);
+
+      // Evaluate router on all entries created during this batch
+      let routeFirings: RouteFiring[] = [];
+      if (totalLogEntries > 0) {
+        try {
+          const allLogs = await readAllLogs();
+          const recentEntries = allLogs
+            .filter((e) => e.timestamp >= runStartedAt && e.matchedPatterns.length > 0)
+            .slice(-500);
+          if (recentEntries.length > 0) {
+            routeFirings = await evaluateSignals(recentEntries);
+          }
+        } catch (err) {
+          process.stderr.write(
+            `[ori-server] router evaluation failed: ${
+              err instanceof Error ? err.message : String(err)
+            }\n`,
+          );
+        }
+      }
 
       emitAudit({
         source: SERVER_NAME,
@@ -793,6 +893,7 @@ export function buildServer(): McpServer {
           passed,
           failed,
           projectIds: args.projectIds ?? "all",
+          routeFirings: routeFirings.length,
         },
       });
 
@@ -815,6 +916,15 @@ export function buildServer(): McpServer {
                   durationMs: r.summary.durationMs,
                   errorMessage: r.errorMessage,
                 })),
+                routeFirings:
+                  routeFirings.length > 0
+                    ? routeFirings.map((f) => ({
+                        routeId: f.routeId,
+                        routeName: f.routeName,
+                        matchedCount: f.matchedCount,
+                        actionsExecuted: f.actionsExecuted,
+                      }))
+                    : undefined,
               },
               null,
               2,
@@ -905,12 +1015,7 @@ export function buildServer(): McpServer {
         offset: z.number().min(0).optional().default(0).describe("Skip first N results"),
       }),
     },
-    async (args: {
-      projectId?: string;
-      status?: string;
-      limit?: number;
-      offset?: number;
-    }) => {
+    async (args: { projectId?: string; status?: string; limit?: number; offset?: number }) => {
       const rlMsg = readLimiter.check("list_runs");
       if (rlMsg)
         return {
@@ -970,9 +1075,7 @@ export function buildServer(): McpServer {
     async (args: { refresh?: boolean }) => {
       await ensureDataDirs();
 
-      const threatModel = args.refresh
-        ? await parseThreatModel()
-        : await loadThreatModel();
+      const threatModel = args.refresh ? await parseThreatModel() : await loadThreatModel();
       const projects = await listProjects();
       const coverageReport = buildCoverageMap(projects, threatModel);
 
@@ -1206,11 +1309,7 @@ export function buildServer(): McpServer {
           .array(z.string())
           .optional()
           .describe("Scope to specific projects (default: all)"),
-        publish: z
-          .boolean()
-          .optional()
-          .default(false)
-          .describe("Also save to Documentation/docs/"),
+        publish: z.boolean().optional().default(false).describe("Also save to Documentation/docs/"),
         includeEcosystemContext: z
           .boolean()
           .optional()
@@ -1218,7 +1317,11 @@ export function buildServer(): McpServer {
           .describe("Include cross-server ecosystem context (Echoes, Seeds)"),
       }),
     },
-    async (args: { projectIds?: string[]; publish?: boolean; includeEcosystemContext?: boolean }) => {
+    async (args: {
+      projectIds?: string[];
+      publish?: boolean;
+      includeEcosystemContext?: boolean;
+    }) => {
       await ensureDataDirs();
 
       const allProjects = await listProjects();
@@ -1332,9 +1435,7 @@ export function buildServer(): McpServer {
       const projects = await listProjects();
       const coverageReport = buildCoverageMap(projects, threatModel);
 
-      const gaps = coverageReport.mappings.filter(
-        (m) => m.uncoveredGaps.length > 0,
-      );
+      const gaps = coverageReport.mappings.filter((m) => m.uncoveredGaps.length > 0);
 
       emitAudit({
         source: SERVER_NAME,
@@ -1547,9 +1648,7 @@ export function buildServer(): McpServer {
         echoes: {
           totalEvents: context.echoes.totalEvents,
           sourceBreakdown: context.echoes.sourceBreakdown,
-          ...(args.includeRecentEvents
-            ? { recentEvents: context.echoes.recentEvents }
-            : {}),
+          ...(args.includeRecentEvents ? { recentEvents: context.echoes.recentEvents } : {}),
         },
         seeds: {
           snapshotCount: context.seeds.snapshotCount,
@@ -1578,6 +1677,316 @@ export function buildServer(): McpServer {
           {
             type: "text" as const,
             text: JSON.stringify(payload, null, 2),
+          },
+        ],
+      };
+    },
+  );
+
+  // ── Configure Routes ──
+
+  registerTool(
+    "configure_routes",
+    {
+      description:
+        "View, update, add, remove, or reset signal router routes. " +
+        "The router automatically evaluates incoming log signals against configured routes " +
+        "and fires actions (probe, note, recommend, audit) when thresholds cross.",
+      inputSchema: z.object({
+        action: z
+          .enum(["list", "get", "enable", "disable", "update", "add", "remove", "reset"])
+          .describe("Operation to perform"),
+        routeId: z
+          .string()
+          .optional()
+          .describe("Route ID (required for get/enable/disable/update/remove)"),
+        route: z
+          .object({
+            id: z.string(),
+            name: z.string(),
+            enabled: z.boolean(),
+            trigger: z.object({
+              patternIds: z.array(z.string()),
+              severities: z.array(z.enum(["critical", "warning", "info", "unknown"])).optional(),
+              sources: z.array(z.string()).optional(),
+              threshold: z.number().min(1),
+              windowMinutes: z.number().min(1),
+              cooldownMinutes: z.number().min(1),
+            }),
+            actions: z.array(z.any()),
+          })
+          .optional()
+          .describe("Full route definition (required for add)"),
+        trigger: z
+          .object({
+            patternIds: z.array(z.string()).optional(),
+            severities: z.array(z.enum(["critical", "warning", "info", "unknown"])).optional(),
+            sources: z.array(z.string()).optional(),
+            threshold: z.number().min(1).optional(),
+            windowMinutes: z.number().min(1).optional(),
+            cooldownMinutes: z.number().min(1).optional(),
+          })
+          .optional()
+          .describe("Partial trigger update (for update action)"),
+      }),
+    },
+    async (args: { action: string; routeId?: string; route?: any; trigger?: any }) => {
+      await ensureDataDirs();
+
+      try {
+        switch (args.action) {
+          case "list": {
+            const config = await loadRouterConfig();
+            return {
+              content: [
+                {
+                  type: "text" as const,
+                  text: JSON.stringify(
+                    {
+                      schemaVersion: config.schemaVersion,
+                      updatedAt: config.updatedAt,
+                      routeCount: config.routes.length,
+                      routes: config.routes.map((r) => ({
+                        id: r.id,
+                        name: r.name,
+                        enabled: r.enabled,
+                        threshold: r.trigger.threshold,
+                        windowMinutes: r.trigger.windowMinutes,
+                        cooldownMinutes: r.trigger.cooldownMinutes,
+                        actionCount: r.actions.length,
+                      })),
+                    },
+                    null,
+                    2,
+                  ),
+                },
+              ],
+            };
+          }
+
+          case "get": {
+            if (!args.routeId)
+              return {
+                content: [{ type: "text" as const, text: '{"error": "routeId required"}' }],
+                isError: true,
+              };
+            const config = await loadRouterConfig();
+            const route = config.routes.find((r) => r.id === args.routeId);
+            if (!route)
+              return {
+                content: [
+                  {
+                    type: "text" as const,
+                    text: JSON.stringify({ error: `Route '${args.routeId}' not found` }),
+                  },
+                ],
+                isError: true,
+              };
+            return {
+              content: [{ type: "text" as const, text: JSON.stringify(route, null, 2) }],
+            };
+          }
+
+          case "enable":
+          case "disable": {
+            if (!args.routeId)
+              return {
+                content: [{ type: "text" as const, text: '{"error": "routeId required"}' }],
+                isError: true,
+              };
+            const result = await updateRoute(args.routeId, {
+              enabled: args.action === "enable",
+            });
+            if (!result)
+              return {
+                content: [
+                  {
+                    type: "text" as const,
+                    text: JSON.stringify({ error: `Route '${args.routeId}' not found` }),
+                  },
+                ],
+                isError: true,
+              };
+            return {
+              content: [
+                {
+                  type: "text" as const,
+                  text: JSON.stringify(
+                    { updated: true, routeId: args.routeId, enabled: args.action === "enable" },
+                    null,
+                    2,
+                  ),
+                },
+              ],
+            };
+          }
+
+          case "update": {
+            if (!args.routeId)
+              return {
+                content: [{ type: "text" as const, text: '{"error": "routeId required"}' }],
+                isError: true,
+              };
+            const patch: any = {};
+            if (args.trigger) patch.trigger = args.trigger;
+            const result = await updateRoute(args.routeId, patch);
+            if (!result)
+              return {
+                content: [
+                  {
+                    type: "text" as const,
+                    text: JSON.stringify({ error: `Route '${args.routeId}' not found` }),
+                  },
+                ],
+                isError: true,
+              };
+            return {
+              content: [
+                {
+                  type: "text" as const,
+                  text: JSON.stringify({ updated: true, routeId: args.routeId }, null, 2),
+                },
+              ],
+            };
+          }
+
+          case "add": {
+            if (!args.route)
+              return {
+                content: [
+                  { type: "text" as const, text: '{"error": "route definition required"}' },
+                ],
+                isError: true,
+              };
+            const config = await addRoute(args.route);
+            return {
+              content: [
+                {
+                  type: "text" as const,
+                  text: JSON.stringify(
+                    { added: true, routeId: args.route.id, totalRoutes: config.routes.length },
+                    null,
+                    2,
+                  ),
+                },
+              ],
+            };
+          }
+
+          case "remove": {
+            if (!args.routeId)
+              return {
+                content: [{ type: "text" as const, text: '{"error": "routeId required"}' }],
+                isError: true,
+              };
+            const config = await removeRoute(args.routeId);
+            return {
+              content: [
+                {
+                  type: "text" as const,
+                  text: JSON.stringify(
+                    { removed: true, routeId: args.routeId, totalRoutes: config.routes.length },
+                    null,
+                    2,
+                  ),
+                },
+              ],
+            };
+          }
+
+          case "reset": {
+            const config = await resetRoutes();
+            resetRouterState();
+            return {
+              content: [
+                {
+                  type: "text" as const,
+                  text: JSON.stringify({ reset: true, routeCount: config.routes.length }, null, 2),
+                },
+              ],
+            };
+          }
+
+          default:
+            return {
+              content: [
+                {
+                  type: "text" as const,
+                  text: JSON.stringify({ error: `Unknown action: ${args.action}` }),
+                },
+              ],
+              isError: true,
+            };
+        }
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({ error: msg }) }],
+          isError: true,
+        };
+      }
+    },
+  );
+
+  // ── Router Status ──
+
+  registerTool(
+    "router_status",
+    {
+      description:
+        "Get the current signal router state — configured routes, runtime hit counts, " +
+        "cooldown status, and last-fired timestamps. Diagnostic tool for monitoring " +
+        "the automatic signal routing system.",
+      inputSchema: z.object({}),
+    },
+    async () => {
+      await ensureDataDirs();
+
+      const config = await loadRouterConfig();
+      const runtimeState = getRouterState();
+
+      const routes = config.routes.map((route) => {
+        const state = runtimeState[route.id];
+        return {
+          id: route.id,
+          name: route.name,
+          enabled: route.enabled,
+          trigger: {
+            threshold: route.trigger.threshold,
+            windowMinutes: route.trigger.windowMinutes,
+            cooldownMinutes: route.trigger.cooldownMinutes,
+            severities: route.trigger.severities,
+            patternIds: route.trigger.patternIds.length > 0 ? route.trigger.patternIds : "any",
+          },
+          actionTypes: route.actions.map((a) => a.type),
+          runtime: state
+            ? {
+                hitsInWindow: state.hits.length,
+                lastFiredAt: state.lastFiredAt ?? null,
+                inCooldown: state.lastFiredAt
+                  ? Date.now() - new Date(state.lastFiredAt).getTime() <
+                    route.trigger.cooldownMinutes * 60_000
+                  : false,
+              }
+            : { hitsInWindow: 0, lastFiredAt: null, inCooldown: false },
+        };
+      });
+
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(
+              {
+                schemaVersion: config.schemaVersion,
+                configUpdatedAt: config.updatedAt,
+                totalRoutes: config.routes.length,
+                enabledRoutes: config.routes.filter((r) => r.enabled).length,
+                routes,
+              },
+              null,
+              2,
+            ),
           },
         ],
       };

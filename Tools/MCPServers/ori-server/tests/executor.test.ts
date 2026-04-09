@@ -214,7 +214,7 @@ describe("executor tools", () => {
     expect(tools).toEqual(
       expect.arrayContaining(["run_tests", "run_all_tests", "get_run_result", "list_runs"]),
     );
-    expect(tools.length).toBe(23);
+    expect(tools.length).toBe(25);
   });
 
   it("run_tests executes ori-server smoke tests (filtered to avoid recursion)", async () => {

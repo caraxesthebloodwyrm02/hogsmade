@@ -42,8 +42,14 @@ describe("notebook module", () => {
     process.env.ORI_DATA_DIR = path.join(tempRoot, ".ori");
     mkdirSync(process.env.ORI_DATA_DIR, { recursive: true });
 
-    ({ appendNote, queryNotes, getRecentNotes, getNotesByTag, getNotesByProject, getNotebookSummary } =
-      await import("../src/notebook.ts"));
+    ({
+      appendNote,
+      queryNotes,
+      getRecentNotes,
+      getNotesByTag,
+      getNotesByProject,
+      getNotebookSummary,
+    } = await import("../src/notebook.ts"));
   });
 
   afterAll(() => {
@@ -227,7 +233,7 @@ describe("notebook tools", () => {
         "ecosystem_context",
       ]),
     );
-    expect(tools.length).toBe(23);
+    expect(tools.length).toBe(25);
   });
 
   it("notebook_add creates a note via tool", async () => {

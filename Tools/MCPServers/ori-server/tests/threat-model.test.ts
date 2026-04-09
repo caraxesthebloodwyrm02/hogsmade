@@ -320,7 +320,7 @@ describe("threat model tools", () => {
         "get_coverage_gaps",
       ]),
     );
-    expect(tools.length).toBe(23);
+    expect(tools.length).toBe(25);
   });
 
   it("get_threat_coverage_heatmap returns grid payload", async () => {

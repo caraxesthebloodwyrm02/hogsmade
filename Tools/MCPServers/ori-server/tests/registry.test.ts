@@ -84,8 +84,9 @@ describe("ori-server registry", () => {
       buildServer: () => unknown;
     });
 
-    ({ loadRegistry, saveRegistry, getProject, listProjects, discoverTestSuites } =
-      await import("../src/registry.ts"));
+    ({ loadRegistry, saveRegistry, getProject, listProjects, discoverTestSuites } = await import(
+      "../src/registry.ts"
+    ));
   });
 
   afterAll(() => {
@@ -103,7 +104,7 @@ describe("ori-server registry", () => {
     expect(tools).toEqual(
       expect.arrayContaining(["list_projects", "get_project", "discover_tests"]),
     );
-    expect(tools.length).toBe(23);
+    expect(tools.length).toBe(25);
   });
 
   // ── Registry module unit tests ──
