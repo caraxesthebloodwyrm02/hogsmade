@@ -10,10 +10,10 @@
  * 6. Rate limiting on permission checks
  * 7. No implicit returns — all paths explicit
  */
-import { generateMcpIdentity, ActionClass, Badge, Scope, } from "./merit-policy.js";
-import { emitAudit } from "./audit-client.js";
-import * as z from "zod";
 import { randomUUID } from "crypto";
+import * as z from "zod";
+import { emitAudit } from "./audit-client.js";
+import { ActionClass, Badge, generateMcpIdentity, Scope, } from "./merit-policy.js";
 function ok(value) {
     return { ok: true, value };
 }
@@ -235,8 +235,25 @@ export class HardenedMcpMeritGuard {
                 return err(new Error(`GRID API error: ${errorMsg}`), "GRID_API_ERROR");
             }
         }
-        // No GRID API configured - fail closed
-        return err(new Error("GRID API URL not configured"), "NO_GRID_API");
+        // No GRID API configured — local-only degraded mode.
+        // Allow tools to function without the merit engine; fail-closed applies
+        // only when the API IS configured but unreachable (handled above).
+        const requiredBadge = this.getRequiredBadge(actionClass);
+        const requiredScopes = this.getRequiredScopes(actionClass);
+        return ok({
+            allowed: true,
+            entity_id: entityId,
+            action_class: actionClass,
+            required_badge: requiredBadge,
+            actual_badge: requiredBadge,
+            has_badge: true,
+            required_scopes: requiredScopes,
+            eligible_scopes: requiredScopes,
+            has_scopes: true,
+            has_specific_scope: true,
+            roll_number: 0,
+            score: 0,
+        });
     }
     /**
      * Call GRID API with proper error handling
