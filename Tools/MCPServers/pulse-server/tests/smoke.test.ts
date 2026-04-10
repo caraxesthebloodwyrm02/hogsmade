@@ -385,7 +385,7 @@ describe("pulse-server smoke", () => {
     const auditPath = process.env.ECHOES_AUDIT_PATH!;
     const now = new Date().toISOString();
 
-    // Inject a mix of noise + real failures
+    // Inject a mix of noise (7 entries) + real failure (1 entry)
     const entries = [
       // Noise: synth- prefix
       JSON.stringify({
@@ -405,9 +405,9 @@ describe("pulse-server smoke", () => {
         status: "failure",
         durationMs: 200,
       }),
-      // Noise: GRID_BACKEND_UNAVAILABLE
+      // Noise: GRID_BACKEND_UNAVAILABLE (reason_code variant)
       JSON.stringify({
-        id: "synth-unavail-1",
+        id: "aud-unavail-1",
         timestamp: now,
         source: "grid-server",
         tool: "admission_stats",
@@ -416,13 +416,40 @@ describe("pulse-server smoke", () => {
       }),
       // Noise: instant mock scan
       JSON.stringify({
-        id: "synth-scan-1",
+        id: "aud-scan-1",
         timestamp: now,
         source: "seeds-server",
         tool: "ecosystem_scan",
         status: "failure",
         durationMs: 0,
         metadata: { overallScore: 35 },
+      }),
+      // Noise: error message variant (no reason_code, older format)
+      JSON.stringify({
+        id: "aud-fetchfail-1",
+        timestamp: now,
+        source: "grid-server",
+        tool: "admission_bannered_entities",
+        status: "blocked",
+        metadata: { error: "TypeError: fetch failed" },
+      }),
+      // Noise: merit_check pre-fix NO_GRID_API (score=0, verdict=denied)
+      JSON.stringify({
+        id: "aud-merit-stale-1",
+        timestamp: now,
+        source: "grid-server-merit-guard",
+        tool: "merit_check",
+        status: "blocked",
+        metadata: { score: 0, verdict: "denied", actual_badge: "B0_RESTRICTED" },
+      }),
+      // Noise: evolution_promotion_blocked (cycle management, not defect)
+      JSON.stringify({
+        id: "aud-evo-1",
+        timestamp: now,
+        source: "eligibility-server",
+        tool: "evolution_promotion_blocked",
+        status: "blocked",
+        metadata: { caseId: "test-cycle", beat: "balance" },
       }),
       // REAL: actual failure without noise markers
       JSON.stringify({
@@ -443,7 +470,7 @@ describe("pulse-server smoke", () => {
       content: Array<{ text: string }>;
     };
     const pPayload = parseToolJson(priorities);
-    expect(pPayload.noiseFiltered).toBe(4);
+    expect(pPayload.noiseFiltered).toBe(7);
     // The 1 real failure should appear in items
     expect(pPayload.items.length).toBeGreaterThan(0);
     const realItem = pPayload.items.find(
@@ -462,6 +489,6 @@ describe("pulse-server smoke", () => {
       (w: string) => typeof w === "string" && w.includes("noise"),
     );
     expect(noiseWarning).toBeDefined();
-    expect(noiseWarning).toContain("4");
+    expect(noiseWarning).toContain("7");
   });
 });

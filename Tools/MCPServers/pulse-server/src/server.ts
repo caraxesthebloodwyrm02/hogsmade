@@ -354,13 +354,15 @@ const SYNTHETIC_TOOL_NAMES = new Set([
  * Heuristic noise classifier for audit entries.
  * Returns a noise tag if the entry is synthetic/test-fixture, or null if actionable.
  *
- * Provenance markers checked:
- * - ID starts with 'synth-' (test harness injected)
- * - Tool name in SYNTHETIC_TOOL_NAMES (named test probes)
- * - Metadata paths under /tmp/ (vitest tmpdir)
- * - durationMs === 0 with failure status (mock execution)
- * - reason_code 'GRID_BACKEND_UNAVAILABLE' during test (infra offline)
- * - metadata.noise already tagged by the emitter
+ * Provenance markers (ordered from most to least specific):
+ * 1. metadata.noise — explicit emitter tag
+ * 2. synth- ID prefix — test harness injected
+ * 3. SYNTHETIC_TOOL_NAMES — named test probes
+ * 4. /tmp/ envelopePath — vitest tmpdir fixture
+ * 5. durationMs ≤ 1 + overallScore — mock scan execution
+ * 6. GRID_BACKEND_UNAVAILABLE / "not configured" — API offline
+ * 7. merit_check with score=0, verdict=denied — pre-fix NO_GRID_API bug
+ * 8. eligibility-server gate blocks — cycle management, not defects
  */
 function classifyNoise(entry: Record<string, any>): string | null {
   // Explicit emitter tag takes precedence
@@ -386,8 +388,36 @@ function classifyNoise(entry: Record<string, any>): string | null {
     return "synthetic";
   }
 
-  // GRID_BACKEND_UNAVAILABLE during tests (API intentionally offline)
+  // GRID_BACKEND_UNAVAILABLE — both reason_code and error message variants
   if (entry.metadata?.reason_code === "GRID_BACKEND_UNAVAILABLE") return "synthetic";
+  const errMsg = entry.metadata?.error;
+  if (
+    typeof errMsg === "string" &&
+    (errMsg.includes("GRID_API_URL not configured") || errMsg.includes("fetch failed"))
+  ) {
+    return "synthetic";
+  }
+
+  // Merit-check blocks with score=0 and verdict=denied are the pre-fix
+  // NO_GRID_API bug pattern — historical noise, not real access denials
+  if (
+    entry.tool === "merit_check" &&
+    entry.status === "blocked" &&
+    entry.metadata?.score === 0 &&
+    entry.metadata?.verdict === "denied"
+  ) {
+    return "stale";
+  }
+
+  // Eligibility-server gate blocks are cycle management signals, not defects.
+  // They indicate a case didn't meet promotion criteria — expected behavior.
+  if (
+    typeof entry.source === "string" &&
+    entry.source === "eligibility-server" &&
+    entry.tool === "evolution_promotion_blocked"
+  ) {
+    return "cascading";
+  }
 
   return null;
 }
