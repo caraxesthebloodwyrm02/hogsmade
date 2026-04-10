@@ -535,7 +535,7 @@ export function buildServer(): McpServer {
     {},
     async () => {
       const result = checkTheLine();
-      void emitEligibilityAudit("check_the_line", result.clean ? "success" : "failure", {
+      void emitEligibilityAudit("check_the_line", result.errorCount === 0 ? "success" : "failure", {
         errorCount: result.errorCount,
         warningCount: result.warningCount,
         fixableCount: result.fixableCount,
@@ -550,7 +550,7 @@ export function buildServer(): McpServer {
     {},
     async () => {
       const result = holdTheLine();
-      void emitEligibilityAudit("hold_the_line", result.clean ? "success" : "failure", {
+      void emitEligibilityAudit("hold_the_line", result.errorCount === 0 ? "success" : "failure", {
         errorCount: result.errorCount,
         warningCount: result.warningCount,
         fixedCount: result.fixedCount,
