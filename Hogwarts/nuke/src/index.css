@@ -1,0 +1,168 @@
+@import "tailwindcss";
+
+/* ── Nuke Dark Mode Design System ────────────────────────────────── */
+
+:root {
+  /* surfaces */
+  --nuke-bg: #0a0a0f;
+  --nuke-surface: #12121a;
+  --nuke-surface-alt: #1a1a26;
+  --nuke-border: #2a2a3a;
+  --nuke-border-dim: #1e1e2e;
+
+  /* text */
+  --nuke-text: #e0e0ec;
+  --nuke-text-dim: #8888a0;
+  --nuke-text-muted: #555570;
+
+  /* row accents */
+  --scan-accent: #4fc3f7; /* cyan — quick scans */
+  --analysis-accent: #ffb74d; /* amber — analysis */
+  --zap-accent: #ef5350; /* red — remediation */
+
+  /* status LEDs */
+  --led-idle: #555570;
+  --led-running: #ffb74d;
+  --led-success: #66bb6a;
+  --led-error: #ef5350;
+
+  /* key hardware */
+  --key-bg: #1a1a26;
+  --key-bg-hover: #222236;
+  --key-bg-active: #2a2a42;
+  --key-shadow: 0 2px 0 0 #0a0a0f;
+  --key-radius: 8px;
+
+  /* macro rail */
+  --rail-bg: #0e0e16;
+  --rail-step: #2a2a3a;
+  --rail-active: #4fc3f7;
+
+  /* timing */
+  --transition-fast: 120ms ease-out;
+  --transition-base: 200ms ease-out;
+}
+
+/* ── base ────────────────────────────────────────────────────────── */
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--nuke-bg);
+  color: var(--nuke-text);
+  font-family: "JetBrains Mono", "Fira Code", "SF Mono", "Cascadia Code", monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── scrollbar ───────────────────────────────────────────────────── */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--nuke-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--nuke-border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--nuke-text-muted);
+}
+
+/* ── key animations ──────────────────────────────────────────────── */
+
+@keyframes key-press {
+  0% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(2px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+@keyframes led-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes rail-progress {
+  from {
+    width: 0;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+.key-press-anim {
+  animation: key-press 150ms ease-out;
+}
+
+.led-pulse {
+  animation: led-pulse 1.2s ease-in-out infinite;
+}
+
+.fade-in {
+  animation: fade-in 200ms ease-out;
+}
+
+/* ── utility ─────────────────────────────────────────────────────── */
+
+.row-scan {
+  --row-accent: var(--scan-accent);
+}
+.row-analysis {
+  --row-accent: var(--analysis-accent);
+}
+.row-zap {
+  --row-accent: var(--zap-accent);
+}
+
+/* ── reduced motion ──────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
