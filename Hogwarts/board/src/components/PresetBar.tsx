@@ -162,7 +162,9 @@ export function PresetBar({
             </span>
             <ChevronDown
               size={12}
-              className={`text-text-muted transition-transform duration-200 ${showSnapshots ? "" : "-rotate-90"}`}
+              className={`text-text-muted transition-transform duration-200 ${
+                showSnapshots ? "" : "-rotate-90"
+              }`}
             />
           </button>
           <button

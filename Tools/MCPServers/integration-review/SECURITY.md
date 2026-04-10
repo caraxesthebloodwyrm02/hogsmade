@@ -19,22 +19,24 @@ These are the two primary attack surfaces.
 
 ### Controls
 
-| Control | Implementation | Location |
-|---------|---------------|----------|
-| **Path restriction** | `ExecutionPolicyEngine` — validates target cwd is within allowed roots | `executor.ts:26-29` |
-| **Allowed roots** | `config.cascadeRoot` + parent directory | `executor.ts:26-29` |
-| **Command restriction** | Only registered runner commands (`uv`, `npx`, `node`) | `registry-data.ts` per project |
-| **Timeout enforcement** | Per-project timeout, default 120s, max from runner config | `executor.ts:31` |
-| **Buffer limit** | 5 MB max stdout/stderr capture | `executor.ts:32` |
-| **Environment isolation** | `envOverrides` per project, not inherited shell env | `registry-data.ts` per project |
+| Control                   | Implementation                                                         | Location                       |
+| ------------------------- | ---------------------------------------------------------------------- | ------------------------------ |
+| **Path restriction**      | `ExecutionPolicyEngine` — validates target cwd is within allowed roots | `executor.ts:26-29`            |
+| **Allowed roots**         | `config.cascadeRoot` + parent directory                                | `executor.ts:26-29`            |
+| **Command restriction**   | Only registered runner commands (`uv`, `npx`, `node`)                  | `registry-data.ts` per project |
+| **Timeout enforcement**   | Per-project timeout, default 120s, max from runner config              | `executor.ts:31`               |
+| **Buffer limit**          | 5 MB max stdout/stderr capture                                         | `executor.ts:32`               |
+| **Environment isolation** | `envOverrides` per project, not inherited shell env                    | `registry-data.ts` per project |
 
 ### What to probe
 
 - Can a malicious `projectId` escape the sandbox?
+
   - Trace: `run_tests` → `loadRegistry()` → project lookup → `executionPolicy.validate(cwd)`
   - The policy checks the resolved absolute path starts with an allowed root.
 
 - Can `envOverrides` inject dangerous values?
+
   - Trace: `registry-data.ts` defines static overrides per project.
   - Dynamic override is not exposed — env comes from seed data only.
 
@@ -57,16 +59,17 @@ layout. In a narrower deployment, this should be tightened to explicit roots.
 
 ### Controls
 
-| Control | Implementation | Location |
-|---------|---------------|----------|
-| **Data directory** | `~/.ori/` or `$ORI_DATA_DIR` | `config.ts:5-6` |
-| **File format** | NDJSON (append-only) for logs/notebook, JSON for registry | `storage.ts`, `notebook.ts` |
-| **No user PII** | Logs contain test output only, no user identity data | All storage modules |
-| **No secrets in data** | Test output may contain env leaks — captured as-is | See "What to flag" below |
+| Control                | Implementation                                            | Location                    |
+| ---------------------- | --------------------------------------------------------- | --------------------------- |
+| **Data directory**     | `~/.ori/` or `$ORI_DATA_DIR`                              | `config.ts:5-6`             |
+| **File format**        | NDJSON (append-only) for logs/notebook, JSON for registry | `storage.ts`, `notebook.ts` |
+| **No user PII**        | Logs contain test output only, no user identity data      | All storage modules         |
+| **No secrets in data** | Test output may contain env leaks — captured as-is        | See "What to flag" below    |
 
 ### What to probe
 
 - Does `storage.ts` validate write paths or could path traversal reach outside `~/.ori/`?
+
   - Trace: All paths are constructed from `config.*Dir` + filename. No user-supplied path components.
 
 - Could test stdout contain leaked secrets that get persisted?
@@ -92,16 +95,17 @@ RECOMMENDATION: Consider a post-capture scrub pass or document that ~/.ori/ is s
 
 ### Controls
 
-| Control | Implementation | Location |
-|---------|---------------|----------|
-| **Session rate limiter** | Per-tool call rate limiting | `server.ts:56` |
-| **Merit guard** | GRID API validation for guarded tools | `server.ts:59` |
-| **Circuit breaker** | If GRID is unreachable, guarded tools fail closed | Merit guard internals |
-| **Graceful degradation** | Unguarded tools work normally when GRID is offline | By design |
+| Control                  | Implementation                                     | Location              |
+| ------------------------ | -------------------------------------------------- | --------------------- |
+| **Session rate limiter** | Per-tool call rate limiting                        | `server.ts:56`        |
+| **Merit guard**          | GRID API validation for guarded tools              | `server.ts:59`        |
+| **Circuit breaker**      | If GRID is unreachable, guarded tools fail closed  | Merit guard internals |
+| **Graceful degradation** | Unguarded tools work normally when GRID is offline | By design             |
 
 ### What to probe
 
 - Which tools are guarded vs unguarded? Is the split correct?
+
   - See SURFACE.md "Guarded vs unguarded tools" section.
   - Guarded: `run_tests`, `run_all_tests`, `generate_report`, `clear_logs`, `discover_tests`
 
@@ -125,11 +129,11 @@ and analysis operations should not require the gate.
 
 ### Controls
 
-| Control | Implementation | Location |
-|---------|---------------|----------|
-| **Read-only** | Only reads files, never writes to external data stores | `interop.ts` |
-| **Graceful absence** | Returns empty/null if files don't exist | `interop.ts` all functions |
-| **Path configuration** | `$ECHOES_AUDIT_PATH`, seeds snapshot dir from config | `config.ts` |
+| Control                | Implementation                                         | Location                   |
+| ---------------------- | ------------------------------------------------------ | -------------------------- |
+| **Read-only**          | Only reads files, never writes to external data stores | `interop.ts`               |
+| **Graceful absence**   | Returns empty/null if files don't exist                | `interop.ts` all functions |
+| **Path configuration** | `$ECHOES_AUDIT_PATH`, seeds snapshot dir from config   | `config.ts`                |
 
 ### What to probe
 

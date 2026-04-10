@@ -59,12 +59,26 @@ export function generateRecommendations(probe: ProbeResult, entries: LogEntry[])
       id: generateId("rec"),
       timestamp: new Date().toISOString(),
       title: `Sand edge: ${pattern.label} (${hits.length} occurrence${hits.length > 1 ? "s" : ""})`,
-      read: `Detected ${hits.length} ${pattern.label} signal${hits.length > 1 ? "s" : ""} across test output${uniqueFiles.length > 0 ? ` in ${uniqueFiles.join(", ")}` : ""}${timeSpan > 0 ? ` over ${timeSpan}s window` : ""}.`,
-      reason: `${pattern.label} indicates a sharp edge that could surface as a production failure. ${hits.length > 3 ? "High frequency suggests systemic issue, not isolated flake." : "Low frequency may indicate an edge case worth documenting."}`,
+      read: `Detected ${hits.length} ${pattern.label} signal${
+        hits.length > 1 ? "s" : ""
+      } across test output${uniqueFiles.length > 0 ? ` in ${uniqueFiles.join(", ")}` : ""}${
+        timeSpan > 0 ? ` over ${timeSpan}s window` : ""
+      }.`,
+      reason: `${
+        pattern.label
+      } indicates a sharp edge that could surface as a production failure. ${
+        hits.length > 3
+          ? "High frequency suggests systemic issue, not isolated flake."
+          : "Low frequency may indicate an edge case worth documenting."
+      }`,
       action:
         hits.length > 1
-          ? `Investigate root cause in ${uniqueFiles.length > 0 ? uniqueFiles.slice(0, 3).join(", ") : "affected test files"}. Add explicit assertion or error boundary to prevent silent failure.`
-          : `Review the single occurrence at ${hits[0]?.timestamp ?? "unknown time"}. Determine if it's a false positive or a genuine edge case.`,
+          ? `Investigate root cause in ${
+              uniqueFiles.length > 0 ? uniqueFiles.slice(0, 3).join(", ") : "affected test files"
+            }. Add explicit assertion or error boundary to prevent silent failure.`
+          : `Review the single occurrence at ${
+              hits[0]?.timestamp ?? "unknown time"
+            }. Determine if it's a false positive or a genuine edge case.`,
       severity: "critical",
       relatedPatterns: [pattern.id],
       reproducibility: `Re-run test suite with same seed. Filter logs for pattern "${pattern.id}" using filter_logs tool. Compare counts across runs to determine determinism.`,
@@ -82,9 +96,19 @@ export function generateRecommendations(probe: ProbeResult, entries: LogEntry[])
       id: generateId("rec"),
       timestamp: new Date().toISOString(),
       title: `Monitor: ${pattern.label} (${hits.length} occurrence${hits.length > 1 ? "s" : ""})`,
-      read: `Found ${hits.length} ${pattern.label} signal${hits.length > 1 ? "s" : ""}${uniqueFiles.length > 0 ? ` in ${uniqueFiles.join(", ")}` : ""}.`,
-      reason: `${pattern.label} is not blocking but indicates degradation risk. ${hits.length > 5 ? "Accumulating — consider addressing before it escalates." : "Within acceptable range but worth tracking."}`,
-      action: `Document this pattern in test notes. ${hits.length > 5 ? "Set up automated alert if count increases in next run." : "No immediate action required — re-evaluate on next probe."}`,
+      read: `Found ${hits.length} ${pattern.label} signal${hits.length > 1 ? "s" : ""}${
+        uniqueFiles.length > 0 ? ` in ${uniqueFiles.join(", ")}` : ""
+      }.`,
+      reason: `${pattern.label} is not blocking but indicates degradation risk. ${
+        hits.length > 5
+          ? "Accumulating — consider addressing before it escalates."
+          : "Within acceptable range but worth tracking."
+      }`,
+      action: `Document this pattern in test notes. ${
+        hits.length > 5
+          ? "Set up automated alert if count increases in next run."
+          : "No immediate action required — re-evaluate on next probe."
+      }`,
       severity: "warning",
       relatedPatterns: [pattern.id],
       reproducibility: `Filter logs for "${pattern.id}" across the last 3 test runs. If count is stable, mark as known-warn. If increasing, escalate to critical.`,
@@ -143,10 +167,12 @@ export function generateThreatAwareRecommendations(
         .filter(Boolean) as ThreatEntry[];
 
       if (threatDetails.length > 0) {
-        const highestPriority = threatDetails.find((t) => t.priority === "high")
-          ?? threatDetails[0];
+        const highestPriority =
+          threatDetails.find((t) => t.priority === "high") ?? threatDetails[0];
 
-        rec.reason += ` Related to ${uniqueThreats.join(", ")} (${highestPriority.priority} priority). Mitigation: ${highestPriority.mitigations.slice(0, 200)}`;
+        rec.reason += ` Related to ${uniqueThreats.join(", ")} (${
+          highestPriority.priority
+        } priority). Mitigation: ${highestPriority.mitigations.slice(0, 200)}`;
         rec.relatedPatterns.push(...uniqueThreats);
       }
     }

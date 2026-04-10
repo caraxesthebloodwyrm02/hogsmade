@@ -1,9 +1,9 @@
 # Scenario 02 — Talonflame: Probe Layer Emitter
 
-**Scenario ID**: `talonflame`  
-**Pokemon**: Talonflame (Fire/Flying)  
-**Role**: Safe Switch / Probe  
-**Layer**: Probe  
+**Scenario ID**: `talonflame`
+**Pokemon**: Talonflame (Fire/Flying)
+**Role**: Safe Switch / Probe
+**Layer**: Probe
 **Quantization Zone**: Buildup (steps 0–43), transition through Silence (44–47)
 
 ## Scenario Contract
@@ -66,19 +66,19 @@ harness_probe(scenario_id="talonflame-<id>", signal_type="decorated_var")
 
 ## Expected Signals
 
-| Step | Signal | Value |
-|------|--------|-------|
-| 15 | HARNESS_PROBE_EMIT_PROBE | 0 (armed) |
-| 28 | HARNESS_PROBE_EMIT_PROBE | 1 (fired) |
-| 28 | HARNESS_PROBE_CADENCE | 5 |
-| 33 | HARNESS_PROBE_EMIT_PROBE | 1 (re-armed and fired) |
-| 44–47 | (silence) | No emissions |
+| Step  | Signal                   | Value                  |
+| ----- | ------------------------ | ---------------------- |
+| 15    | HARNESS_PROBE_EMIT_PROBE | 0 (armed)              |
+| 28    | HARNESS_PROBE_EMIT_PROBE | 1 (fired)              |
+| 28    | HARNESS_PROBE_CADENCE    | 5                      |
+| 33    | HARNESS_PROBE_EMIT_PROBE | 1 (re-armed and fired) |
+| 44–47 | (silence)                | No emissions           |
 
 ## Failure Modes
 
-| Failure | Cause | Recovery |
-|---------|-------|----------|
-| Probe fires before ARM_FOUNDATION | Talonflame entered before Bastiodon armed | Run scenarios in order: bastiodon → talonflame |
-| Probe emits in silence zone | `fires_at_step` set to 44+ | Cap `fires_at_step` to ≤43 |
-| No PROBE_CADENCE in environment | Decorated var trigger_step misconfigured | Verify trigger_step=28 in scenario definition |
-| Stale probe data on consumer | Consumer polling faster than 5-step cadence | Design consumers to tolerate 5-step staleness window |
+| Failure                           | Cause                                       | Recovery                                             |
+| --------------------------------- | ------------------------------------------- | ---------------------------------------------------- |
+| Probe fires before ARM_FOUNDATION | Talonflame entered before Bastiodon armed   | Run scenarios in order: bastiodon → talonflame       |
+| Probe emits in silence zone       | `fires_at_step` set to 44+                  | Cap `fires_at_step` to ≤43                           |
+| No PROBE_CADENCE in environment   | Decorated var trigger_step misconfigured    | Verify trigger_step=28 in scenario definition        |
+| Stale probe data on consumer      | Consumer polling faster than 5-step cadence | Design consumers to tolerate 5-step staleness window |

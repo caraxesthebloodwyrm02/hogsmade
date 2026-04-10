@@ -642,7 +642,9 @@ export function createCalibrationEngine(policyName = "adaptive") {
 
           recordGap(frame, {
             type: GAP_TYPES.LOW_COVERAGE,
-            description: `Coverage ${(ratio * 100).toFixed(1)}% below threshold ${(threshold * 100).toFixed(0)}% for ${dim}`,
+            description: `Coverage ${(ratio * 100).toFixed(1)}% below threshold ${(
+              threshold * 100
+            ).toFixed(0)}% for ${dim}`,
             severity: Math.min(1, severity),
             affectedIds: entities.filter((e) => e.dimensions?.[dim] == null).map((e) => e.id),
           });

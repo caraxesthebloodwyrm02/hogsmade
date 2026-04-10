@@ -136,8 +136,18 @@ describe("report generator", () => {
       runs: baseRuns,
       coverageReport: {
         mappings: [
-          { threatId: "TM-001", priority: "High", coveredByProjects: [], uncoveredGaps: ["no project mapping"] },
-          { threatId: "TM-002", priority: "Low", coveredByProjects: ["proj-alpha"], uncoveredGaps: [] },
+          {
+            threatId: "TM-001",
+            priority: "High",
+            coveredByProjects: [],
+            uncoveredGaps: ["no project mapping"],
+          },
+          {
+            threatId: "TM-002",
+            priority: "Low",
+            coveredByProjects: ["proj-alpha"],
+            uncoveredGaps: [],
+          },
         ],
         totalThreats: 2,
         threatsWithCoverage: 1,
@@ -224,20 +234,54 @@ describe("report generator", () => {
       runs: baseRuns,
       threatModel: {
         threats: [
-          { id: "TM-001", source: "Ext", prerequisites: "", action: "Exploit", impact: "Loss",
-            impactedAssets: "API", existingControls: "Auth", gaps: "lag", mitigations: "Rate limit",
-            detectionIdeas: "Logs", likelihood: "High", impactSeverity: "Critical", priority: "High" },
-          { id: "TM-002", source: "Int", prerequisites: "", action: "Config", impact: "Outage",
-            impactedAssets: "Config", existingControls: "RBAC", gaps: "", mitigations: "Review",
-            detectionIdeas: "Alert", likelihood: "Medium", impactSeverity: "High", priority: "Medium" },
+          {
+            id: "TM-001",
+            source: "Ext",
+            prerequisites: "",
+            action: "Exploit",
+            impact: "Loss",
+            impactedAssets: "API",
+            existingControls: "Auth",
+            gaps: "lag",
+            mitigations: "Rate limit",
+            detectionIdeas: "Logs",
+            likelihood: "High",
+            impactSeverity: "Critical",
+            priority: "High",
+          },
+          {
+            id: "TM-002",
+            source: "Int",
+            prerequisites: "",
+            action: "Config",
+            impact: "Outage",
+            impactedAssets: "Config",
+            existingControls: "RBAC",
+            gaps: "",
+            mitigations: "Review",
+            detectionIdeas: "Alert",
+            likelihood: "Medium",
+            impactSeverity: "High",
+            priority: "Medium",
+          },
         ],
         focusPaths: [],
         parsedAt: "2026-04-08T10:00:00.000Z",
       },
       coverageReport: {
         mappings: [
-          { threatId: "TM-001", priority: "High", coveredByProjects: ["proj-alpha"], uncoveredGaps: ["proj-alpha failing"] },
-          { threatId: "TM-002", priority: "Medium", coveredByProjects: ["proj-alpha"], uncoveredGaps: [] },
+          {
+            threatId: "TM-001",
+            priority: "High",
+            coveredByProjects: ["proj-alpha"],
+            uncoveredGaps: ["proj-alpha failing"],
+          },
+          {
+            threatId: "TM-002",
+            priority: "Medium",
+            coveredByProjects: ["proj-alpha"],
+            uncoveredGaps: [],
+          },
         ],
         totalThreats: 2,
         threatsWithCoverage: 2,
@@ -262,16 +306,33 @@ describe("report generator", () => {
       runs: baseRuns,
       threatModel: {
         threats: [
-          { id: "TM-001", source: "Ext", prerequisites: "", action: "Exploit", impact: "Loss",
-            impactedAssets: "API", existingControls: "Auth", gaps: "", mitigations: "Rate limit",
-            detectionIdeas: "Logs", likelihood: "High", impactSeverity: "Critical", priority: "High" },
+          {
+            id: "TM-001",
+            source: "Ext",
+            prerequisites: "",
+            action: "Exploit",
+            impact: "Loss",
+            impactedAssets: "API",
+            existingControls: "Auth",
+            gaps: "",
+            mitigations: "Rate limit",
+            detectionIdeas: "Logs",
+            likelihood: "High",
+            impactSeverity: "Critical",
+            priority: "High",
+          },
         ],
         focusPaths: [],
         parsedAt: "2026-04-08T10:00:00.000Z",
       },
       coverageReport: {
         mappings: [
-          { threatId: "TM-001", priority: "High", coveredByProjects: ["proj-alpha"], uncoveredGaps: [] },
+          {
+            threatId: "TM-001",
+            priority: "High",
+            coveredByProjects: ["proj-alpha"],
+            uncoveredGaps: [],
+          },
         ],
         totalThreats: 1,
         threatsWithCoverage: 1,
@@ -291,7 +352,11 @@ describe("report generator", () => {
     const data: ReportData = {
       projects: baseProjects,
       runs: [
-        { ...baseRuns[1], summary: { ...baseRuns[1].summary, passed: 2, failed: 8 }, status: "failed" as const },
+        {
+          ...baseRuns[1],
+          summary: { ...baseRuns[1].summary, passed: 2, failed: 8 },
+          status: "failed" as const,
+        },
         { ...baseRuns[0], status: "timeout" as const },
       ],
     };
@@ -355,7 +420,13 @@ describe("report generator", () => {
       projects: baseProjects,
       runs: baseRuns,
       recommendations: [
-        { title: "Fix Beta", severity: "critical", read: "Beta failing", reason: "API broken", action: "Fix it" },
+        {
+          title: "Fix Beta",
+          severity: "critical",
+          read: "Beta failing",
+          reason: "API broken",
+          action: "Fix it",
+        },
       ],
     };
     const md = renderReport(data);

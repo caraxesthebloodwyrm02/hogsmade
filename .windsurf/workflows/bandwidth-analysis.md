@@ -24,6 +24,7 @@ as an equalizer, and runs a concluding sweep to finalize the session state.
 Collect all entities below the CLEAR tier (PATH < 65) from the most recent LUMOS run.
 
 // turbo
+
 1. Gather the 4 low-ratio signals in parallel:
 
 ```
@@ -48,10 +49,12 @@ For each low-ratio entity:
 ## Phase B — Render Equalizer Interface
 
 **Interactive visualizers** in `Applications/bandwidth-equalizer/`:
+
 - `index.html` — basic bar equalizer (v1)
 - `parametric.html` — full parametric spectrum analyzer with HPF/LPF, sweep, bench, boost (v2)
 
 Serve with `python3 -m http.server 8089` from that directory, then open:
+
 - Basic: `http://localhost:8089`
 - Parametric: `http://localhost:8089/parametric.html`
 
@@ -92,34 +95,34 @@ SPIKE OVERLAY (audit failures in 24h):
 
 ### Band Legend
 
-| Band | Entity | PATH | Width | Spikes | Dominant Drag |
-|------|--------|------|-------|--------|---------------|
-| AF | afloat | 88.5 | narrow | 0 | — |
-| EC | echoes | 83.5 | narrow | 0 | — |
-| Vi | Vision | 76.3 | narrow | 0 | health (no git) |
-| Ap | apiguard | 74.3 | narrow | 0 | health (no git) |
-| GE | glimpse-engine | 78.8 | narrow | 0 | drift (10 uc) |
-| SS | seeds-server | 72.8 | narrow | 0 | trust (0.50) |
-| HG | hogsmade | 55.0 | wide | 0 | drift saturated (46 uc) |
-| GR | GRID | 54.5 | wide | 0 | drift saturated (47 uc) + low trust |
-| EL | eligibility-server | 49.9 | wide | 7 | fail + drift + stalled momentum |
-| GS | grid-server | 41.4 | wide | 4 | 57% fail rate + drift + low trust |
+| Band | Entity             | PATH | Width  | Spikes | Dominant Drag                       |
+| ---- | ------------------ | ---- | ------ | ------ | ----------------------------------- |
+| AF   | afloat             | 88.5 | narrow | 0      | —                                   |
+| EC   | echoes             | 83.5 | narrow | 0      | —                                   |
+| Vi   | Vision             | 76.3 | narrow | 0      | health (no git)                     |
+| Ap   | apiguard           | 74.3 | narrow | 0      | health (no git)                     |
+| GE   | glimpse-engine     | 78.8 | narrow | 0      | drift (10 uc)                       |
+| SS   | seeds-server       | 72.8 | narrow | 0      | trust (0.50)                        |
+| HG   | hogsmade           | 55.0 | wide   | 0      | drift saturated (46 uc)             |
+| GR   | GRID               | 54.5 | wide   | 0      | drift saturated (47 uc) + low trust |
+| EL   | eligibility-server | 49.9 | wide   | 7      | fail + drift + stalled momentum     |
+| GS   | grid-server        | 41.4 | wide   | 4      | 57% fail rate + drift + low trust   |
 
 ### Frequency Spike Detail
 
-| Entity | Failures | Tools Hit | Root Cause |
-|--------|----------|-----------|------------|
-| eligibility-server | 7 | explain_hierarchy, evaluate_candidate, collect_table, check_the_line | `candidateCount: 0` — no fixture or inline candidate provided |
-| grid-server | 4 | admission_bannered_entities, admission_stats | `TypeError: fetch failed` — GRID API at localhost:8080 unreachable |
+| Entity             | Failures | Tools Hit                                                            | Root Cause                                                         |
+| ------------------ | -------- | -------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| eligibility-server | 7        | explain_hierarchy, evaluate_candidate, collect_table, check_the_line | `candidateCount: 0` — no fixture or inline candidate provided      |
+| grid-server        | 4        | admission_bannered_entities, admission_stats                         | `TypeError: fetch failed` — GRID API at localhost:8080 unreachable |
 
 ### Bandwidth Classification
 
-| Category | Entities | Bandwidth | Signal |
-|----------|----------|-----------|--------|
-| **Flat spectrum** (CLEAR, no spikes) | afloat, echoes, glimpse-engine, seeds-server | Narrow, stable | Reference baseline |
-| **Low-health plateau** (CLEAR, structural) | Vision, apiguard | Narrow, static | No git repos — cosmetic drag only |
-| **Drift-saturated** (WATCH) | hogsmade, GRID | Wide, no spikes | 93 uncommitted files total — commit sweep clears both |
-| **Spike + drift** (ACT) | eligibility-server, grid-server | Wide, active spikes | Audit failures + saturated drift — needs targeted fix |
+| Category                                   | Entities                                     | Bandwidth           | Signal                                                |
+| ------------------------------------------ | -------------------------------------------- | ------------------- | ----------------------------------------------------- |
+| **Flat spectrum** (CLEAR, no spikes)       | afloat, echoes, glimpse-engine, seeds-server | Narrow, stable      | Reference baseline                                    |
+| **Low-health plateau** (CLEAR, structural) | Vision, apiguard                             | Narrow, static      | No git repos — cosmetic drag only                     |
+| **Drift-saturated** (WATCH)                | hogsmade, GRID                               | Wide, no spikes     | 93 uncommitted files total — commit sweep clears both |
+| **Spike + drift** (ACT)                    | eligibility-server, grid-server              | Wide, active spikes | Audit failures + saturated drift — needs targeted fix |
 
 ---
 
@@ -147,11 +150,13 @@ Decision point: batch-commit or defer.
 ### Step 2: Spike Resolution (ACT → WATCH)
 
 **grid-server (4 failures — fetch failed)**:
+
 - Root cause: GRID API at `localhost:8080` not running
 - Fix: start GRID API server, or accept the failures as expected when API is down
 - Verify: `mcp9_health_check()` after API start
 
 **eligibility-server (7 failures — candidateCount: 0)**:
+
 - Root cause: tools called without fixture or inline candidate
 - Fix: these are likely test/exploration artifacts, not bugs
 - Verify: `mcp3_check_the_line()` should remain clean
@@ -172,6 +177,7 @@ Key blocker: `admit-integration` property at 0.40 (admission gate fetch failures
 This resolves when GRID API is running — same root cause as grid-server spikes.
 
 Decision point:
+
 - If GRID API will be started → record integration_call_succeeded signal, advance to tighten
 - If GRID API stays down → leave at balance, accept current state
 
@@ -219,17 +225,17 @@ PATH = 100 × [ (health/100 × 0.30)
               + (momentum     × 0.10) ]
 ```
 
-| Signal | Weight | Source | Normalization |
-|--------|--------|--------|---------------|
-| health | 0.30 | ecosystem_scan healthScore | 0–100 → /100 |
-| trust | 0.25 | checkpoint cluster confidence | 0.0–1.0 |
-| drift | 0.20 | uncommitted / 30, capped 1.0, inverted | 1 − drift |
-| fail | 0.15 | failures / events in 24h window, inverted | 1 − fail |
-| momentum | 0.10 | evolution cycle momentum, default 0.5 | 0.0–1.0 |
+| Signal   | Weight | Source                                    | Normalization |
+| -------- | ------ | ----------------------------------------- | ------------- |
+| health   | 0.30   | ecosystem_scan healthScore                | 0–100 → /100  |
+| trust    | 0.25   | checkpoint cluster confidence             | 0.0–1.0       |
+| drift    | 0.20   | uncommitted / 30, capped 1.0, inverted    | 1 − drift     |
+| fail     | 0.15   | failures / events in 24h window, inverted | 1 − fail      |
+| momentum | 0.10   | evolution cycle momentum, default 0.5     | 0.0–1.0       |
 
-| Tier | PATH Range | Action |
-|------|------------|--------|
-| CLEAR | 65–100 | Reference baseline |
-| WATCH | 50–64 | Monitor, batch-fix if convenient |
-| ACT | 35–49 | Fix this session |
-| URGENT | 0–34 | Stop everything, fix immediately |
+| Tier   | PATH Range | Action                           |
+| ------ | ---------- | -------------------------------- |
+| CLEAR  | 65–100     | Reference baseline               |
+| WATCH  | 50–64      | Monitor, batch-fix if convenient |
+| ACT    | 35–49      | Fix this session                 |
+| URGENT | 0–34       | Stop everything, fix immediately |

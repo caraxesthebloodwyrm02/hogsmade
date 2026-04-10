@@ -1,9 +1,9 @@
 # Scenario 03 — Alolan Exeggutor: Integration Layer Coverage
 
-**Scenario ID**: `exeggutor-a`  
-**Pokemon**: Alolan Exeggutor (Grass/Dragon)  
-**Role**: Coverage / Closer  
-**Layer**: Integration  
+**Scenario ID**: `exeggutor-a`
+**Pokemon**: Alolan Exeggutor (Grass/Dragon)
+**Role**: Coverage / Closer
+**Layer**: Integration
 **Quantization Zone**: Drop (steps 48–67 per cycle)
 
 ## Scenario Contract
@@ -56,25 +56,26 @@ harness_manifest()
 
 ## Expected Signals
 
-| Step | Signal | Value |
-|------|--------|-------|
-| 48 | (drop zone entry) | intensity=1.0 |
-| 50 | HARNESS_TRANSISTOR_FIRE_INTEGRATION | 0 (armed) |
-| 65 | HARNESS_TRANSISTOR_FIRE_INTEGRATION | 1 (fired) |
-| 67 | HARNESS_MANIFEST_WRITTEN | path to manifest file |
+| Step | Signal                              | Value                 |
+| ---- | ----------------------------------- | --------------------- |
+| 48   | (drop zone entry)                   | intensity=1.0         |
+| 50   | HARNESS_TRANSISTOR_FIRE_INTEGRATION | 0 (armed)             |
+| 65   | HARNESS_TRANSISTOR_FIRE_INTEGRATION | 1 (fired)             |
+| 67   | HARNESS_MANIFEST_WRITTEN            | path to manifest file |
 
 ## Failure Modes
 
-| Failure | Cause | Recovery |
-|---------|-------|----------|
-| Manifest not written | `FIRE_INTEGRATION` gate stuck (ARM never reached step 50) | Verify Foundation and Probe ran first |
-| Double-weakness triggered | Two signal paths share a cold dependency | Redesign integration call to use shared init path |
-| Integration fires in buildup | Scenario registered in wrong zone | Check `scenario.quantization_zone == "drop"` |
-| Cycle 1 manifest missing | Exeggutor only ran in cycle 0 | The full run requires both cycles; check `agent_status()` cycle count |
+| Failure                      | Cause                                                     | Recovery                                                              |
+| ---------------------------- | --------------------------------------------------------- | --------------------------------------------------------------------- |
+| Manifest not written         | `FIRE_INTEGRATION` gate stuck (ARM never reached step 50) | Verify Foundation and Probe ran first                                 |
+| Double-weakness triggered    | Two signal paths share a cold dependency                  | Redesign integration call to use shared init path                     |
+| Integration fires in buildup | Scenario registered in wrong zone                         | Check `scenario.quantization_zone == "drop"`                          |
+| Cycle 1 manifest missing     | Exeggutor only ran in cycle 0                             | The full run requires both cycles; check `agent_status()` cycle count |
 
 ## Manifest Output
 
 After `FIRE_INTEGRATION` fires, the manifest is written to:
+
 ```
 CascadeProjects/Projects/GATE/harness/manifests/harness-manifest-<timestamp>.md
 CascadeProjects/Projects/GATE/harness/manifests/harness-manifest-<timestamp>.json

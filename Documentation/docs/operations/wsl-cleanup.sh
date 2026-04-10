@@ -144,7 +144,7 @@ update_packages() {
     log "Updating package lists..."
     apt update -qq || warning "Package list update had issues"
     success "Package lists updated"
-    
+
     log "Upgrading packages..."
     apt upgrade -y -qq || warning "Some packages failed to upgrade"
     success "Packages upgraded"
@@ -155,7 +155,7 @@ remove_unused_packages() {
     apt autoremove -y -qq || true
     apt autopurge -y -qq || true
     success "Unused packages removed"
-    
+
     log "Removing configuration files from uninstalled packages..."
     dpkg --list | grep "^rc" | awk '{print $2}' | xargs apt purge -y -qq 2>/dev/null || true
     success "Configuration files cleaned"
@@ -165,12 +165,12 @@ clean_package_cache() {
     log "Cleaning apt package cache..."
     apt clean || warning "apt clean had issues"
     apt autoclean || warning "apt autoclean had issues"
-    
+
     log "Removing apt lists..."
     rm -rf /var/lib/apt/lists/* 2>/dev/null || true
     mkdir -p /var/lib/apt/lists/partial
     success "Package cache cleaned"
-    
+
     log "Clearing apt cache directory..."
     rm -rf /var/cache/apt/archives/* 2>/dev/null || true
     success "Apt archive cache cleared"
@@ -180,7 +180,7 @@ clean_temp_files() {
     log "Clearing /tmp directory..."
     rm -rf /tmp/* 2>/dev/null || warning "Could not fully clear /tmp"
     success "/tmp cleared"
-    
+
     log "Clearing /var/tmp directory..."
     rm -rf /var/tmp/* 2>/dev/null || warning "Could not fully clear /var/tmp"
     success "/var/tmp cleared"
@@ -190,11 +190,11 @@ clean_logs() {
     log "Vacuuming systemd journal (keeping ${JOURNAL_SIZE})..."
     journalctl --vacuum=size:${JOURNAL_SIZE} 2>/dev/null || warning "Journal vacuum had issues"
     success "Journal vacuumed"
-    
+
     log "Truncating log files..."
     find /var/log -type f -name "*.log" -exec truncate -s 0 {} \; 2>/dev/null || true
     success "Log files truncated"
-    
+
     log "Removing compressed/rotated logs..."
     find /var/log -name "*.gz" -delete 2>/dev/null || true
     find /var/log -name "*.1" -delete 2>/dev/null || true
@@ -204,22 +204,22 @@ clean_logs() {
 
 clean_user_caches() {
     log "Cleaning user package manager caches..."
-    
+
     if [[ -d ~/.cache/pip ]]; then
         rm -rf ~/.cache/pip
         success "pip cache cleared"
     fi
-    
+
     if [[ -d ~/.cache/npm ]]; then
         rm -rf ~/.cache/npm
         success "npm cache cleared"
     fi
-    
+
     if [[ -d ~/.npm ]]; then
         rm -rf ~/.npm
         success "npm local cache cleared"
     fi
-    
+
     if [[ -d ~/.yarn/cache ]]; then
         rm -rf ~/.yarn/cache
         success "yarn cache cleared"
@@ -231,15 +231,15 @@ release_memory() {
         log "Skipping memory release (disabled)"
         return
     fi
-    
+
     log "Syncing filesystem..."
     sync
-    
+
     # WARNING: drop_caches=3 frees pagecache+dentries+inodes; may cause I/O
     # stalls or OOM-killer activity if the system is under memory pressure.
     log "Releasing page cache, dentries, and inodes..."
     echo 3 > /proc/sys/vm/drop_caches 2>/dev/null || warning "Could not drop caches"
-    
+
     success "Memory caches released"
 }
 
@@ -276,11 +276,11 @@ optimize_swappiness() {
     section "OPTIMIZING SWAPPINESS"
     local current=$(cat /proc/sys/vm/swappiness)
     log "Current swappiness: $current"
-    
+
     if [[ $current -gt 10 ]]; then
         log "Reducing swappiness to 10 (prefers RAM)..."
         sysctl -w vm.swappiness=10 -q || warning "Could not set swappiness"
-        
+
         # Make permanent
         if ! grep -q "vm.swappiness=10" /etc/sysctl.conf; then
             echo "vm.swappiness=10" >> /etc/sysctl.conf
@@ -299,39 +299,39 @@ main() {
     section "WSL CLEANUP & OPTIMIZATION"
     log "Started at: $(date)"
     log "Log file: $SCRIPT_LOG"
-    
+
     # Pre-flight checks
     check_sudo
     check_wsl
     check_distro
     confirm_destructive
-    
+
     show_before_stats
-    
+
     # Core cleanup operations
     section "PHASE 1: PACKAGE MANAGEMENT"
     update_packages
     remove_unused_packages
     clean_package_cache
-    
+
     section "PHASE 2: TEMPORARY FILES & LOGS"
     clean_temp_files
     clean_logs
     clean_user_caches
-    
+
     section "PHASE 3: MEMORY OPTIMIZATION"
     release_memory
     optimize_swappiness
-    
+
     show_after_stats
-    
+
     # Diagnostic output
     if [[ "${SHOW_DIAGNOSTICS:-true}" == "true" ]]; then
         show_large_directories
         show_large_files
         show_process_memory
     fi
-    
+
     section "CLEANUP COMPLETE ✓"
     log "Completed at: $(date)"
     log "Total duration: $(( $(date +%s) - START_TIME )) seconds"

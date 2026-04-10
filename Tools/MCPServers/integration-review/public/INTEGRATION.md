@@ -14,6 +14,7 @@ npx @modelcontextprotocol/inspector
 ```
 
 Add ori-server as a stdio transport. You'll need:
+
 - **Command**: `npx tsx <path-to-ori-server>/src/server.ts`
 - **Env**: `CASCADE_WORKSPACE_ROOT=<your workspace path>`
 
@@ -35,11 +36,11 @@ Add to your editor's MCP server configuration:
 
 ## Environment Variables
 
-| Variable | Required | Purpose |
-|----------|----------|---------|
-| `CASCADE_WORKSPACE_ROOT` | Yes | Absolute path to the workspace root |
-| `ECHOES_AUDIT_PATH` | No | Path to audit log file (for cross-server reads) |
-| `ORI_DATA_DIR` | No | Override data storage directory (default: `~/.ori`) |
+| Variable                 | Required | Purpose                                             |
+| ------------------------ | -------- | --------------------------------------------------- |
+| `CASCADE_WORKSPACE_ROOT` | Yes      | Absolute path to the workspace root                 |
+| `ECHOES_AUDIT_PATH`      | No       | Path to audit log file (for cross-server reads)     |
+| `ORI_DATA_DIR`           | No       | Override data storage directory (default: `~/.ori`) |
 
 A `.env.example` is provided in the ori-server directory with all accepted variables.
 
@@ -129,10 +130,10 @@ Sections with insufficient data are omitted automatically.
 
 All tools return structured errors. Common patterns:
 
-| Error | Meaning | Response |
-|-------|---------|----------|
-| Circuit breaker OPEN | Gate API unreachable | Use unguarded tools only |
-| Rate limit exceeded | Too many calls in window | Wait and retry |
-| Project not found | Invalid projectId | Call `list_projects` to see valid IDs |
-| Confirmation required | Destructive operation without phrase | Pass the required confirm string |
-| Execution policy denied | Project path outside sandbox | Check workspace root configuration |
+| Error                   | Meaning                              | Response                              |
+| ----------------------- | ------------------------------------ | ------------------------------------- |
+| Circuit breaker OPEN    | Gate API unreachable                 | Use unguarded tools only              |
+| Rate limit exceeded     | Too many calls in window             | Wait and retry                        |
+| Project not found       | Invalid projectId                    | Call `list_projects` to see valid IDs |
+| Confirmation required   | Destructive operation without phrase | Pass the required confirm string      |
+| Execution policy denied | Project path outside sandbox         | Check workspace root configuration    |

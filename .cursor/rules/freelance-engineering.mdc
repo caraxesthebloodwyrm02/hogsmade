@@ -1,6 +1,6 @@
 ---
 description: Rate protection, estimation, delivery, architecture, session hygiene for freelance work
-globs: 
+globs:
 alwaysApply: false
 ---
 

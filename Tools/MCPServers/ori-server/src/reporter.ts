@@ -59,7 +59,9 @@ function renderHeader(data: ReportData): string {
   return `# CascadeProjects Research Report — ${todayDate()}
 
 **Scope**: ${projectsStr}
-**Runs included**: ${data.runs.length}${threatCount > 0 ? `  \n**Threats mapped**: ${threatCount}` : ""}
+**Runs included**: ${data.runs.length}${
+    threatCount > 0 ? `  \n**Threats mapped**: ${threatCount}` : ""
+  }
 
 ---`;
 }
@@ -150,17 +152,13 @@ function renderTestSuiteHealth(data: ReportData): string {
           : `${run.summary.durationMs}ms`;
       const statusIcon =
         run.status === "passed" ? "✓ passed" : run.status === "timeout" ? "⏱ timeout" : "✗ failed";
-      section += `| ${project.name} | ${statusIcon} | ${run.summary.passed} | ${run.summary.failed} | ${run.summary.skipped} | ${dur} | ${run.timestamp.slice(0, 16)} |\n`;
+      section += `| ${project.name} | ${statusIcon} | ${run.summary.passed} | ${
+        run.summary.failed
+      } | ${run.summary.skipped} | ${dur} | ${run.timestamp.slice(0, 16)} |\n`;
     } else if (project.healthStatus && project.healthStatus !== "unknown") {
       const icon =
-        project.healthStatus === "healthy"
-          ? "✓"
-          : project.healthStatus === "degraded"
-            ? "⚠"
-            : "✗";
-      const lastRun = project.lastRunTimestamp
-        ? project.lastRunTimestamp.slice(0, 16)
-        : "never";
+        project.healthStatus === "healthy" ? "✓" : project.healthStatus === "degraded" ? "⚠" : "✗";
+      const lastRun = project.lastRunTimestamp ? project.lastRunTimestamp.slice(0, 16) : "never";
       section += `| ${project.name} | ${icon} ${project.healthStatus} | — | — | — | — | ${lastRun} |\n`;
     }
   }
@@ -231,7 +229,10 @@ function renderThreatCoverage(data: ReportData): string {
   for (const gap of gaps) {
     const coverStr =
       gap.coveredByProjects.length > 0 ? gap.coveredByProjects.join(", ") : "unmapped";
-    section += `| ${gap.threatId} | ${gap.priority} | ${coverStr} | ${gap.uncoveredGaps[0].slice(0, 80)} |\n`;
+    section += `| ${gap.threatId} | ${gap.priority} | ${coverStr} | ${gap.uncoveredGaps[0].slice(
+      0,
+      80,
+    )} |\n`;
   }
 
   if (covered.length > 0) {
@@ -289,9 +290,13 @@ function renderEcosystemContext(data: ReportData): string {
 
   if (snap) {
     const unhealthy = snap.repos.filter((r) => r.healthScore < 50);
-    section += `**Seeds score**: ${snap.overallScore}${snap.overallScore < 70 ? " ⚠ below threshold" : ""}`;
+    section += `**Seeds score**: ${snap.overallScore}${
+      snap.overallScore < 70 ? " ⚠ below threshold" : ""
+    }`;
     if (unhealthy.length > 0) {
-      section += `  \n**Repos below 50**: ${unhealthy.map((r) => `${r.name} (${r.healthScore})`).join(", ")}`;
+      section += `  \n**Repos below 50**: ${unhealthy
+        .map((r) => `${r.name} (${r.healthScore})`)
+        .join(", ")}`;
     }
     section += `\n`;
   }
@@ -335,7 +340,9 @@ function renderKeyInsights(data: ReportData): string {
     const passRate = totalAll > 0 ? totalPassed / totalAll : 1;
     if (passRate < 0.9) {
       insights.push(
-        `Suite-wide pass rate ${(passRate * 100).toFixed(0)}% — below the 90% stability threshold across ${data.runs.length} projects.`,
+        `Suite-wide pass rate ${(passRate * 100).toFixed(
+          0,
+        )}% — below the 90% stability threshold across ${data.runs.length} projects.`,
       );
     }
   }
@@ -354,7 +361,9 @@ function renderKeyInsights(data: ReportData): string {
     );
     if (criticalGaps.length > 0) {
       insights.push(
-        `${criticalGaps.length} high-priority threat(s) (${criticalGaps.map((g) => g.threatId).join(", ")}) have no healthy test coverage.`,
+        `${criticalGaps.length} high-priority threat(s) (${criticalGaps
+          .map((g) => g.threatId)
+          .join(", ")}) have no healthy test coverage.`,
       );
     }
   }

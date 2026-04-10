@@ -265,9 +265,11 @@ visualFeedback.renderCurrentView();
 ### Common Issues
 
 1. **"getHour is not a function"**
+
    - Fixed: Use `getHours()` instead of `getHour()`
 
 2. **"entries is not a function"**
+
    - Fixed: Ensure Map objects are properly deserialized from JSON
 
 3. **Empty dashboard**
@@ -351,6 +353,6 @@ Same as Glimpse engine project.
 
 ---
 
-**Created**: 2026-03-15  
-**Version**: 1.0.0  
+**Created**: 2026-03-15
+**Version**: 1.0.0
 **Compatibility**: Glimpse Engine v2.6+

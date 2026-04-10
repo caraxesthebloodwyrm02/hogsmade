@@ -1,9 +1,9 @@
 # Afterhours Debug Sprint Report
 
-**Date**: 2026-03-08  
-**Timezone**: Asia/Dhaka (UTC+06:00)  
-**Duration**: 90 minutes  
-**Severity**: RED (mismatches, errors, and performance issues)  
+**Date**: 2026-03-08
+**Timezone**: Asia/Dhaka (UTC+06:00)
+**Duration**: 90 minutes
+**Severity**: RED (mismatches, errors, and performance issues)
 **Platform**: Cursor, DEBUG mode
 
 ## Executive Summary
@@ -169,6 +169,6 @@ All fixes have been tested, verified, and documented. Ready for production deplo
 
 ---
 
-**Total Sprint Time**: 90 minutes  
-**Issues Resolved**: 6/6 (100%)  
+**Total Sprint Time**: 90 minutes
+**Issues Resolved**: 6/6 (100%)
 **Success Rate**: ✅ Complete

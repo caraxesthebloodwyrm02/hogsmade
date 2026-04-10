@@ -71,7 +71,9 @@ export async function readAuditEvents(
 
     if (stat.size > MAX_AUDIT_FILE_BYTES) {
       console.error(
-        `[overview-server] Audit log too large (${Math.round(stat.size / (1024 * 1024))}MB) — skipping`,
+        `[overview-server] Audit log too large (${Math.round(
+          stat.size / (1024 * 1024),
+        )}MB) — skipping`,
       );
       return { events: [], source };
     }

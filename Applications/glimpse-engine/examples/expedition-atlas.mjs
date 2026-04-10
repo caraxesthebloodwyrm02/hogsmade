@@ -38,7 +38,8 @@ const expeditionLog = [
   {
     name: "Vessel Calypso Drift",
     year: 2034,
-    contribution: "Crew psychology loops mapped to navigation uncertainty; compassion as stabilizer",
+    contribution:
+      "Crew psychology loops mapped to navigation uncertainty; compassion as stabilizer",
     domain: "biosphere",
     location: "Indian Ocean",
     influenced_by: "Echo-7 Arctic Shelf",
@@ -290,7 +291,11 @@ console.log("=== Expedition Atlas — fictional mission log through Glimpse ===\
 
 const result = runContextPipeline(expeditionLog, "json", atlasConfig, { grounding: false });
 
-console.log(`Narrative spine: ${expeditionLog.length} waypoints, ${result.relations.filter((r) => r.type === "influenced").length} influence edges`);
+console.log(
+  `Narrative spine: ${expeditionLog.length} waypoints, ${
+    result.relations.filter((r) => r.type === "influenced").length
+  } influence edges`,
+);
 console.log(`Primary lens: ${result.primaryLens?.label}`);
 console.log("Lenses:");
 result.contextLenses.forEach((l, i) => console.log(`  ${i + 1}. ${l.label} (${l.role})`));
@@ -310,4 +315,6 @@ result.relations
   });
 console.log();
 console.log("Mode:", result.modeSettings?.mode, "| complexity:", result.complexity?.level);
-console.log("=== chart your own expedition: copy expeditionLog + atlasConfig into glimpse-engine ===");
+console.log(
+  "=== chart your own expedition: copy expeditionLog + atlasConfig into glimpse-engine ===",
+);

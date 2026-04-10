@@ -205,22 +205,32 @@ function buildRuntimeHighlights(report: {
     },
     {
       step: "Hierarchy",
-      detail: `${leader?.candidateId ?? "unknown"} leads the hierarchy with score ${leader?.score?.toFixed(3) ?? "0.000"}.`,
+      detail: `${leader?.candidateId ?? "unknown"} leads the hierarchy with score ${
+        leader?.score?.toFixed(3) ?? "0.000"
+      }.`,
       reference: JSON.stringify(hierarchyDeposit?.["topCandidateIds"] ?? []),
     },
     {
       step: "Forms",
-      detail: `The routine emitted ${report.routine.forms.length} forms: ${formatForms(report.routine.forms)}.`,
+      detail: `The routine emitted ${report.routine.forms.length} forms: ${formatForms(
+        report.routine.forms,
+      )}.`,
       reference: "compile-reusable-forms",
     },
     {
       step: "Runtime update",
-      detail: `Cycle reached ${report.cycleSnapshots.beats[2]?.caseRecord.currentBeat ?? "verify"} and promotion decision is ${report.cycleSnapshots.promotion.gate.decision}.`,
+      detail: `Cycle reached ${
+        report.cycleSnapshots.beats[2]?.caseRecord.currentBeat ?? "verify"
+      } and promotion decision is ${report.cycleSnapshots.promotion.gate.decision}.`,
       reference: report.cycleSnapshots.promotion.gate.caseId,
     },
     {
       step: "Support-balance assist",
-      detail: `Support ${report.supportBalanceAssist.supportScore.toFixed(3)} | Balance ${report.supportBalanceAssist.balanceScore.toFixed(3)} | Lead ${report.supportBalanceAssist.leadingDimension}.`,
+      detail: `Support ${report.supportBalanceAssist.supportScore.toFixed(
+        3,
+      )} | Balance ${report.supportBalanceAssist.balanceScore.toFixed(3)} | Lead ${
+        report.supportBalanceAssist.leadingDimension
+      }.`,
       reference: report.supportBalanceAssist.guidance,
     },
   ];
@@ -266,7 +276,9 @@ function buildTopologyArtifact(report: {
         id: "hierarchy",
         label: "project-vertical-hierarchy",
         tier: "runtime",
-        highlight: `${leader?.candidateId ?? "unknown"} rank ${leader?.rank ?? 0} @ ${leader?.score?.toFixed(3) ?? "0.000"}`,
+        highlight: `${leader?.candidateId ?? "unknown"} rank ${leader?.rank ?? 0} @ ${
+          leader?.score?.toFixed(3) ?? "0.000"
+        }`,
         reference: "project-vertical-hierarchy",
       },
       {
@@ -294,7 +306,9 @@ function buildTopologyArtifact(report: {
         id: "support-balance-assist",
         label: "support-balance-assist",
         tier: "assist",
-        highlight: `Support ${report.supportBalanceAssist.supportScore.toFixed(3)} | Balance ${report.supportBalanceAssist.balanceScore.toFixed(3)}`,
+        highlight: `Support ${report.supportBalanceAssist.supportScore.toFixed(
+          3,
+        )} | Balance ${report.supportBalanceAssist.balanceScore.toFixed(3)}`,
         reference: report.supportBalanceAssist.guidance,
       },
     ],

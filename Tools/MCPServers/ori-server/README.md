@@ -22,34 +22,34 @@ Ori operates alongside your test suite, collecting console output in real-time, 
 
 ### Registry & Execution
 
-| Tool                  | Description                                             |
-| --------------------- | ------------------------------------------------------- |
-| `list_projects`       | List registered projects with optional tag/health filter |
-| `get_project`         | Get detailed info for a specific project                |
-| `discover_tests`      | Validate project on disk and count test files           |
-| `run_tests`           | Execute a project's test suite via subprocess sandbox   |
-| `run_all_tests`       | Run test suites for multiple projects sequentially      |
-| `get_run_result`      | Retrieve a completed test run with optional stdout      |
-| `list_runs`           | Browse test run history with filters                    |
+| Tool             | Description                                              |
+| ---------------- | -------------------------------------------------------- |
+| `list_projects`  | List registered projects with optional tag/health filter |
+| `get_project`    | Get detailed info for a specific project                 |
+| `discover_tests` | Validate project on disk and count test files            |
+| `run_tests`      | Execute a project's test suite via subprocess sandbox    |
+| `run_all_tests`  | Run test suites for multiple projects sequentially       |
+| `get_run_result` | Retrieve a completed test run with optional stdout       |
+| `list_runs`      | Browse test run history with filters                     |
 
 ### Intelligence & Reporting
 
-| Tool                  | Description                                             |
-| --------------------- | ------------------------------------------------------- |
-| `parse_threat_model`  | Parse/refresh the CascadeProjects threat model          |
-| `map_threats`         | Map threats to test coverage by project or threat ID    |
+| Tool                          | Description                                              |
+| ----------------------------- | -------------------------------------------------------- |
+| `parse_threat_model`          | Parse/refresh the CascadeProjects threat model           |
+| `map_threats`                 | Map threats to test coverage by project or threat ID     |
 | `get_threat_coverage_heatmap` | JSON grid: threats × projects with health/mapping scores |
-| `generate_report`     | Full research report (health, threats, recommendations) |
-| `get_coverage_gaps`   | Identify threats without adequate test coverage         |
+| `generate_report`             | Full research report (health, threats, recommendations)  |
+| `get_coverage_gaps`           | Identify threats without adequate test coverage          |
 
 ### Memory & Integration
 
-| Tool                  | Description                                             |
-| --------------------- | ------------------------------------------------------- |
-| `notebook_add`        | Add an observation, decision, or anomaly note           |
-| `notebook_query`      | Query notebook by category, tags, project, or time      |
-| `notebook_summary`    | Overview of notebook state and aggregations             |
-| `ecosystem_context`   | Cross-server context (Echoes audit, Seeds health)       |
+| Tool                | Description                                        |
+| ------------------- | -------------------------------------------------- |
+| `notebook_add`      | Add an observation, decision, or anomaly note      |
+| `notebook_query`    | Query notebook by category, tags, project, or time |
+| `notebook_summary`  | Overview of notebook state and aggregations        |
+| `ecosystem_context` | Cross-server context (Echoes audit, Seeds health)  |
 
 ## Risk Patterns
 

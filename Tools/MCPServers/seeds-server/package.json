@@ -1,7 +1,7 @@
 {
   "name": "seeds-server",
   "version": "1.0.0",
-  "description": "Cross-repository health monitor MCP server \u2014 tracks project status, dependency drift, and activity across the Seeds ecosystem",
+  "description": "Cross-repository health monitor MCP server — tracks project status, dependency drift, and activity across the Seeds ecosystem",
   "type": "module",
   "main": "src/server.ts",
   "scripts": {

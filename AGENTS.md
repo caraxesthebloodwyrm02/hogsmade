@@ -1,6 +1,7 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
+
 This repository is a Node workspaces monorepo for Mangrove/Cascade projects.
 
 - `Tools/MCPServers/`: first-party MCP servers (`afloat-server`, `grid-server`, `echoes-server`, etc.).
@@ -12,6 +13,7 @@ This repository is a Node workspaces monorepo for Mangrove/Cascade projects.
 Keep changes scoped to the relevant workspace; avoid unrelated edits across directories.
 
 ## Build, Test, and Development Commands
+
 Run from repo root unless noted.
 
 - `npm run format` / `npm run format:check`: apply or verify Prettier formatting.
@@ -22,18 +24,21 @@ Run from repo root unless noted.
 - `pre-commit run --all-files`: run repo hooks (format, secret scan, manifest checks).
 
 ## Coding Style & Naming Conventions
+
 - Formatting is enforced by Prettier (`.prettierrc.json`): 2-space indent, semicolons, double quotes, trailing commas, LF endings.
 - Use ESM (`"type": "module"`) and explicit, descriptive names.
 - Naming: `kebab-case` for folders/files, `camelCase` for functions/variables, `PascalCase` for React components/types.
 - Keep server-specific logic inside its workspace; share common code via `Components/*`.
 
 ## Testing Guidelines
+
 - Primary framework: Vitest across TS/JS workspaces.
 - Test files use `*.test.ts`, `*.test.js`, or `*.test.mjs` (example: `tests/smoke.test.ts`).
 - Add or update tests with every behavior change; include smoke coverage for MCP server endpoints/tools.
 - Before opening a PR, run tests for changed workspaces at minimum, then `npm run test:all` when feasible.
 
 ## Commit & Pull Request Guidelines
+
 - Follow Conventional Commits with scope, matching repo history:
   - `fix(ci): ...`
   - `docs(workspace): ...`
@@ -43,6 +48,7 @@ Run from repo root unless noted.
 - For UI changes, attach screenshots or short recordings.
 
 ## Security & Configuration Tips
+
 - Never commit secrets or tokens; pre-commit `detect-secrets` is enabled but not a substitute for review.
 - Start from `.env.example`; keep machine-specific overrides out of git.
 - Treat submodules/nested repos (for example `Projects/GRID-main`) as independent histories when contributing.
@@ -54,4 +60,3 @@ Run from repo root unless noted.
 - **Source vs generated:** Edit source trees and generators; do not hand-edit `dist/` or lockfiles without clear intent.
 - **Secrets:** Never commit API keys, tokens, or `.env` secrets. If something sensitive is tracked or staged, stop, flag it, add ignore rules, and involve the human for **`git rm --cached`** or history cleanup / rotation.
 - **Templates / audit:** `~/seed/templates/gitignore-*.template`, `~/scripts/gitignore-audit.sh`.
-

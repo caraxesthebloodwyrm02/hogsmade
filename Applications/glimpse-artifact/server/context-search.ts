@@ -1178,7 +1178,9 @@ export function buildInterviewSession(
       id: "turn-2",
       speakerId: "retriever",
       text: topHit
-        ? `The strongest evidence node is ${topHit.path}, with matched terms ${topHit.matchedTerms.join(", ")} and excerpt: "${topHit.excerpt}".`
+        ? `The strongest evidence node is ${
+            topHit.path
+          }, with matched terms ${topHit.matchedTerms.join(", ")} and excerpt: "${topHit.excerpt}".`
         : "No dominant evidence node was found.",
       evidenceRefs: topHit ? [topHit.id] : [],
       artifactRefs: ["artifact-paragraph"],
@@ -1199,8 +1201,13 @@ export function buildInterviewSession(
       speakerId: "skeptic",
       text:
         keywords.unknownTerms.length > 0
-          ? `Unknown terms remain visible: ${keywords.unknownTerms.slice(0, 4).join(", ")}. These were not allowed to distort ranking.`
-          : `Unknown-term pressure is low; the main risk is over-reading the top ${Math.min(2, hits.length)} hits.`,
+          ? `Unknown terms remain visible: ${keywords.unknownTerms
+              .slice(0, 4)
+              .join(", ")}. These were not allowed to distort ranking.`
+          : `Unknown-term pressure is low; the main risk is over-reading the top ${Math.min(
+              2,
+              hits.length,
+            )} hits.`,
       evidenceRefs: secondHit ? [secondHit.id] : [],
       artifactRefs: ["artifact-checklist"],
       confidence: 0.78,
@@ -1266,7 +1273,9 @@ export function buildObservation(
     topHit: topHit?.path ?? null,
     confidenceSummary,
     warnings: [...validation.warnings, ...(summary ? [] : ["No final summary was produced."])],
-    finalOutput: `stage=${args.stage}; provider=${args.provider}; summary=${summary ? "present" : "absent"}`,
+    finalOutput: `stage=${args.stage}; provider=${args.provider}; summary=${
+      summary ? "present" : "absent"
+    }`,
   };
 }
 

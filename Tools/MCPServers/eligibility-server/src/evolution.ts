@@ -186,7 +186,11 @@ function summarizeCase(caseRecord: EvolutionCase): string {
     leaderId ??
     caseRecord.label;
   const overallScore = result ? sliceScore(result, leaderId, "overall").toFixed(3) : "0.000";
-  return `${leaderLabel} is in ${caseRecord.currentBeat} with momentum ${caseRecord.momentum.momentum.toFixed(3)}, drift ${caseRecord.momentum.sidewalkDrift.toFixed(3)}, and overall score ${overallScore}.`;
+  return `${leaderLabel} is in ${
+    caseRecord.currentBeat
+  } with momentum ${caseRecord.momentum.momentum.toFixed(
+    3,
+  )}, drift ${caseRecord.momentum.sidewalkDrift.toFixed(3)}, and overall score ${overallScore}.`;
 }
 
 function endpointReadinessScore(spec: EndpointSpec): number {
@@ -196,13 +200,13 @@ function endpointReadinessScore(spec: EndpointSpec): number {
   if (spec.status === "ready" || spec.status === "verified") score += 0.25;
   const readiness = clamp(
     spec.readiness ??
-    (spec.status === "verified"
-      ? 1
-      : spec.status === "ready"
-        ? 0.8
-        : spec.status === "blocked"
-          ? 0.2
-          : 0.45),
+      (spec.status === "verified"
+        ? 1
+        : spec.status === "ready"
+          ? 0.8
+          : spec.status === "blocked"
+            ? 0.2
+            : 0.45),
     0,
     1,
   );
@@ -225,7 +229,7 @@ function computeEndpointStats(endpointSpecs: EndpointSpec[]) {
 
   const endpointReadiness = round(
     endpointSpecs.reduce((sum, spec) => sum + endpointReadinessScore(spec), 0) /
-    endpointSpecs.length,
+      endpointSpecs.length,
   );
 
   return {
@@ -412,7 +416,9 @@ function buildObservations(
     id: `${caseRecord.caseId}:momentum:${timestamp}`,
     candidateId: caseRecord.candidateIds[0] ?? caseRecord.caseId,
     dimension: "overall",
-    message: `Momentum ${momentum.momentum.toFixed(3)} and drift ${momentum.sidewalkDrift.toFixed(3)} define the current transport tension.`,
+    message: `Momentum ${momentum.momentum.toFixed(3)} and drift ${momentum.sidewalkDrift.toFixed(
+      3,
+    )} define the current transport tension.`,
     surfaceHint:
       "Read momentum and drift together before deciding whether the next handoff is safe.",
     sourceSliceIds: ["momentum", "sidewalk-drift"],
@@ -432,12 +438,12 @@ function buildMomentum(
   const previousSnapshot = caseRecord.snapshotHistory[caseRecord.snapshotHistory.length - 1];
   const acceleration = previousSnapshot
     ? clamp(
-      endpointReadiness -
-      previousSnapshot.endpointReadiness +
-      (integrationSuccessRate - previousSnapshot.integrationSuccessRate),
-      0,
-      1,
-    )
+        endpointReadiness -
+          previousSnapshot.endpointReadiness +
+          (integrationSuccessRate - previousSnapshot.integrationSuccessRate),
+        0,
+        1,
+      )
     : 0;
   const reversalRate = computeReversalRate(caseRecord);
   const staleWindowRatio = computeStaleWindowRatio(caseRecord.signals);
@@ -593,7 +599,7 @@ function emitCycleAudit(
 export class EvolutionCycleStore {
   private cache: EvolutionStoreData | null = null;
 
-  constructor(private readonly filePath = defaultStorePath()) { }
+  constructor(private readonly filePath = defaultStorePath()) {}
 
   private ensureLoaded(): EvolutionStoreData {
     if (this.cache) return this.cache;

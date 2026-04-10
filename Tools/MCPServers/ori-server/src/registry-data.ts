@@ -26,7 +26,16 @@ export const DEFAULT_PROJECTS: ProjectEntry[] = [
     runner: {
       type: "pytest",
       command: "uv",
-      args: ["run", "pytest", "tests/unit", "tests/integration", "tests/security", "tests/api", "-q", "--tb=short"],
+      args: [
+        "run",
+        "pytest",
+        "tests/unit",
+        "tests/integration",
+        "tests/security",
+        "tests/api",
+        "-q",
+        "--tb=short",
+      ],
       cwd: `${CASCADE}/Projects/GRID-main`,
       envOverrides: {
         PYTHONPATH: "src",

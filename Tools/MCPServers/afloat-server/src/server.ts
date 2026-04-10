@@ -461,7 +461,9 @@ export function buildServer(): McpServer {
           exec.stepResults.push({
             step: step.name,
             status: "simulated",
-            output: `Step "${step.name}" ready for execution. Command: ${step.command ?? "(manual)"}`,
+            output: `Step "${step.name}" ready for execution. Command: ${
+              step.command ?? "(manual)"
+            }`,
           });
         }
       }

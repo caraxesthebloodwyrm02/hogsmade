@@ -1,7 +1,7 @@
 {
   "name": "echoes-server",
   "version": "1.0.0",
-  "description": "Persistent audit & analytics MCP server \u2014 stores execution logs, provides historical queries and workspace telemetry",
+  "description": "Persistent audit & analytics MCP server — stores execution logs, provides historical queries and workspace telemetry",
   "type": "module",
   "main": "src/server.ts",
   "scripts": {

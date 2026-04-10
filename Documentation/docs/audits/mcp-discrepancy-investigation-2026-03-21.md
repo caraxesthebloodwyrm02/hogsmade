@@ -2,9 +2,7 @@
 
 > **Scope**: All non-`glimpse-server` MCP alignment issues discovered during inventory mapping.
 > **Contract**: TUV-001 v1.0.0 (`seed/templates/development-contract.md`)
-> **Canonical config**: `CascadeProjects/mcp_config.json`
-> **GRID-internal config**: `GRID-main/mcp-setup/mcp_config.json`
-> **Status**: Open — requires developer decisions before resolution
+> **Canonical config**: `CascadeProjects/mcp_config.json` > **GRID-internal config**: `GRID-main/mcp-setup/mcp_config.json` > **Status**: Open — requires developer decisions before resolution
 
 ---
 

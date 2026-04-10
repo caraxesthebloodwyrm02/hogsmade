@@ -92,7 +92,9 @@ function checkScanRateLimit(scanType: string): string | null {
   const last = lastScanTimes.get(scanType);
   if (last && now - last < SCAN_COOLDOWN_MS) {
     const waitSec = Math.ceil((SCAN_COOLDOWN_MS - (now - last)) / 1000);
-    return `Rate limited: ${scanType} was run ${Math.round((now - last) / 1000)}s ago. Wait ${waitSec}s.`;
+    return `Rate limited: ${scanType} was run ${Math.round(
+      (now - last) / 1000,
+    )}s ago. Wait ${waitSec}s.`;
   }
   lastScanTimes.set(scanType, now);
   return null;
@@ -158,7 +160,11 @@ async function getDiscoveredRepoNames(): Promise<string[]> {
       const entries = await fs.readdir(root, { withFileTypes: true });
       for (const entry of entries as { isDirectory(): boolean; name: string }[]) {
         if (!entry.isDirectory()) continue;
-        if (KNOWN_REPOS[entry.name] || entry.name.startsWith(".") || REPO_SKIP_LIST.has(entry.name)) {
+        if (
+          KNOWN_REPOS[entry.name] ||
+          entry.name.startsWith(".") ||
+          REPO_SKIP_LIST.has(entry.name)
+        ) {
           continue;
         }
 
@@ -510,8 +516,8 @@ export function buildServer(): McpServer {
       const overallScore =
         existingRepos.length > 0
           ? Math.round(
-            existingRepos.reduce((sum, r) => sum + r.healthScore, 0) / existingRepos.length,
-          )
+              existingRepos.reduce((sum, r) => sum + r.healthScore, 0) / existingRepos.length,
+            )
           : 0;
       const activeCount = existingRepos.filter((r) => r.healthScore >= 60).length;
       const staleCount = existingRepos.filter((r) => r.healthScore < 40 && r.exists).length;

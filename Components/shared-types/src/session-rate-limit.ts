@@ -35,7 +35,11 @@ export class SessionRateLimiter {
     if (this.timestamps.length >= this.config.maxCalls) {
       const oldest = this.timestamps[0];
       const retrySec = Math.ceil((this.config.windowMs - (now - oldest)) / 1000);
-      return `Rate limited: ${operationName} — ${this.timestamps.length} read operations in the last ${Math.round(this.config.windowMs / 1000)}s (max ${this.config.maxCalls}). Retry in ${retrySec}s.`;
+      return `Rate limited: ${operationName} — ${
+        this.timestamps.length
+      } read operations in the last ${Math.round(this.config.windowMs / 1000)}s (max ${
+        this.config.maxCalls
+      }). Retry in ${retrySec}s.`;
     }
 
     this.timestamps.push(now);

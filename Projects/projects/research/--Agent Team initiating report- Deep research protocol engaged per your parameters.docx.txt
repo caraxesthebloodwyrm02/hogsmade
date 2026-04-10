@@ -8,10 +8,10 @@ Strict adherence applied: **only** National Geographic and Discovery qualified a
 More than half the workforce in most Southeast Asian countries is informal. Cambodia: 94%. Myanmar: ~80%. Thailand: 64%. Gig platforms (superapps like Grab) let informal workers join as drivers or delivery partners using only a smartphone—no traditional barriers. Pandemic lockdowns made steady informal jobs harder; gig delivery became essential for goods to homebound people.
 
 
-**Pure experiential elements**:  
-- Safety toolkit in-app (report incidents, emergency call, notify loved ones) + personal accident insurance during trips.  
-- Training programs (digital literacy, technical upskilling, financial literacy) via app or in-person, partnered with governments—improves earnings, money management, job prospects.  
-- Healthcare costs have pushed up to 65 million in the region into poverty; gig access counters this for informal workers.  
+**Pure experiential elements**:
+- Safety toolkit in-app (report incidents, emergency call, notify loved ones) + personal accident insurance during trips.
+- Training programs (digital literacy, technical upskilling, financial literacy) via app or in-person, partnered with governments—improves earnings, money management, job prospects.
+- Healthcare costs have pushed up to 65 million in the region into poverty; gig access counters this for informal workers.
 
 
 No named worker quotes, but data frames gig work as direct livelihood upgrade for the exact demographic often demeaned in traditional labor (your cultural note on “worker” as negative for physical/low-level factory roles in BD-like contexts). It shifts from vulnerable informal labor to protected, flexible earning with built-in safeguards—pure data showing empowerment without traditional demeaning structures.
@@ -24,28 +24,28 @@ No named worker quotes, but data frames gig work as direct livelihood upgrade fo
 Pre-pandemic baseline: 7.3 million Americans self-identified as digital nomads; over one-third of jobs could be fully remote. Post-pandemic: 82% of company leaders plan to keep remote options for at least part of the workforce. Half of U.S. adults with jobs worked from home during peak pandemic (more than double pre-pandemic levels). 20% of CFOs planned permanent remote for ≥20% of staff. 54% expect to continue some remote post-pandemic.
 
 
-**Real lived experiences (direct quotes & stories)**:  
-- Arthur Deane (Google senior manager): Worked remotely from D.C. apartment for months, then tested Aruba trip. “I don’t see returning to an office full-time being the way of the future. The pandemic has taught us that we can be productive without being in the office, Monday to Friday, nine to five.” Plans longer returns.  
-- Kiwan Michael Anderson (PR manager, New York): Extended Bermuda family visit from 2 weeks to 9 weeks. Better Wi-Fi than Brooklyn apartment + 1-hour time-zone edge for productivity. Integrated jet-skiing, water aerobics, paddleboarding. “It’s not about where you are anymore, but how hard you work and how productive you are.” Escape from U.S. racism recharged him: “It’s given me hope and energy.”  
-- Dr. Rae-Wynn Grant & family: Moved cross-country for more space and peace after remote work enabled relocation.  
-- Natalie Serianni (Seattle English professor): Second-grader sneaked into Zoom meeting unnoticed (headphones + tall chair); colleagues laughed at the surprise kid appearance.  
+**Real lived experiences (direct quotes & stories)**:
+- Arthur Deane (Google senior manager): Worked remotely from D.C. apartment for months, then tested Aruba trip. “I don’t see returning to an office full-time being the way of the future. The pandemic has taught us that we can be productive without being in the office, Monday to Friday, nine to five.” Plans longer returns.
+- Kiwan Michael Anderson (PR manager, New York): Extended Bermuda family visit from 2 weeks to 9 weeks. Better Wi-Fi than Brooklyn apartment + 1-hour time-zone edge for productivity. Integrated jet-skiing, water aerobics, paddleboarding. “It’s not about where you are anymore, but how hard you work and how productive you are.” Escape from U.S. racism recharged him: “It’s given me hope and energy.”
+- Dr. Rae-Wynn Grant & family: Moved cross-country for more space and peace after remote work enabled relocation.
+- Natalie Serianni (Seattle English professor): Second-grader sneaked into Zoom meeting unnoticed (headphones + tall chair); colleagues laughed at the surprise kid appearance.
 
 
-**Family & home culture shift** (pure data):  
-- 43% of employed parents had WFH option (Oct 2020 Pew); ~70% of them used it most/all the time.  
-- 50% of telecommuting parents with kids under 18 struggled with interruptions (vs. 20% without kids).  
-- Bonds strengthened: Katie Hurley (psychotherapist) — “Those little connections [lunch breaks, shooting hoops between calls] are really meaning a lot to kids right now.”  
-- Alyssa Westring (DePaul professor): Kids see the job and feel “part of the team.”  
-- Janine Domingues (Child Mind Institute psychologist): Children now view parents as “whole person,” not just parenting mode → more empathy.  
-- Ellen Ernst Kossek (Purdue work-life researcher): Teach kids “we love you… but you’re not the only thing in our lives.”  
+**Family & home culture shift** (pure data):
+- 43% of employed parents had WFH option (Oct 2020 Pew); ~70% of them used it most/all the time.
+- 50% of telecommuting parents with kids under 18 struggled with interruptions (vs. 20% without kids).
+- Bonds strengthened: Katie Hurley (psychotherapist) — “Those little connections [lunch breaks, shooting hoops between calls] are really meaning a lot to kids right now.”
+- Alyssa Westring (DePaul professor): Kids see the job and feel “part of the team.”
+- Janine Domingues (Child Mind Institute psychologist): Children now view parents as “whole person,” not just parenting mode → more empathy.
+- Ellen Ernst Kossek (Purdue work-life researcher): Teach kids “we love you… but you’re not the only thing in our lives.”
 - Ongoing surveys confirm parent-child bonds stayed strong despite extra conflict.
 
 
-**Living spaces & commuting culture** (National Geographic):  
-- 70% of Americans WFH at peak (from 20% pre-pandemic).  
-- 50% now want dedicated office/den; hallways became classrooms, mudrooms became offices/gyms, nooks turned into workstations.  
-- 20%+ U.S. adults moved (or know someone who did) due to remote work + desire for space; hot markets shifted to suburbs/rural/small cities.  
-- Multigenerational households at historic high; demand for attics, basements, garage conversions.  
+**Living spaces & commuting culture** (National Geographic):
+- 70% of Americans WFH at peak (from 20% pre-pandemic).
+- 50% now want dedicated office/den; hallways became classrooms, mudrooms became offices/gyms, nooks turned into workstations.
+- 20%+ U.S. adults moved (or know someone who did) due to remote work + desire for space; hot markets shifted to suburbs/rural/small cities.
+- Multigenerational households at historic high; demand for attics, basements, garage conversions.
 - Future commuting: less packed transit, more biking/walking, staying home when sick → permanent cultural norm possible.
 
 

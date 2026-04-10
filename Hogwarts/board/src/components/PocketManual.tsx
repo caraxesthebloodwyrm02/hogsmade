@@ -100,7 +100,11 @@ export function PocketManual({ knobs, visibleHouses }: PocketManualProps) {
             <span className="text-[11px] uppercase tracking-wider font-medium">Governance</span>
           </div>
           <div
-            className={`rounded-xl p-3 ${totalIssues === 0 ? "bg-led-green/5 border border-led-green/20" : "bg-led-yellow/5 border border-led-yellow/20"}`}
+            className={`rounded-xl p-3 ${
+              totalIssues === 0
+                ? "bg-led-green/5 border border-led-green/20"
+                : "bg-led-yellow/5 border border-led-yellow/20"
+            }`}
           >
             {totalIssues === 0 ? (
               <span className="text-led-green text-xs font-medium">All checks passing</span>

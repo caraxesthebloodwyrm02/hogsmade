@@ -16,22 +16,14 @@
   "mcpServers": {
     "echoes-server": {
       "command": "npx",
-      "args": [
-        "-y",
-        "tsx",
-        "$HOME/CascadeProjects/Tools/MCPServers/echoes-server/src/server.ts"
-      ],
+      "args": ["-y", "tsx", "$HOME/CascadeProjects/Tools/MCPServers/echoes-server/src/server.ts"],
       "env": {
         "ECHOES_AUDIT_PATH": "$HOME/.echoes/audit.ndjson"
       }
     },
     "grid-server": {
       "command": "npx",
-      "args": [
-        "-y",
-        "tsx",
-        "$HOME/CascadeProjects/Tools/MCPServers/grid-server/src/server.ts"
-      ],
+      "args": ["-y", "tsx", "$HOME/CascadeProjects/Tools/MCPServers/grid-server/src/server.ts"],
       "env": {
         "CASCADE_WORKSPACE_ROOT": "$HOME/CascadeProjects",
         "GATE_DIR": "$HOME/CascadeProjects/Projects/GATE",
@@ -40,20 +32,12 @@
     },
     "afloat-server": {
       "command": "npx",
-      "args": [
-        "-y",
-        "tsx",
-        "$HOME/CascadeProjects/Tools/MCPServers/afloat-server/src/server.ts"
-      ],
+      "args": ["-y", "tsx", "$HOME/CascadeProjects/Tools/MCPServers/afloat-server/src/server.ts"],
       "env": {}
     },
     "lots-server": {
       "command": "npx",
-      "args": [
-        "-y",
-        "tsx",
-        "$HOME/CascadeProjects/Tools/MCPServers/lots-server/src/server.ts"
-      ],
+      "args": ["-y", "tsx", "$HOME/CascadeProjects/Tools/MCPServers/lots-server/src/server.ts"],
       "env": {
         "LOTS_EXPERIMENTS_DIR": "$HOME/CascadeProjects/experiments",
         "ECHOES_AUDIT_PATH": "$HOME/.echoes/audit.ndjson"
@@ -61,11 +45,7 @@
     },
     "seeds-server": {
       "command": "npx",
-      "args": [
-        "-y",
-        "tsx",
-        "$HOME/CascadeProjects/Tools/MCPServers/seeds-server/src/server.ts"
-      ],
+      "args": ["-y", "tsx", "$HOME/CascadeProjects/Tools/MCPServers/seeds-server/src/server.ts"],
       "env": {
         "SEEDS_ROOT": "$HOME/CascadeProjects",
         "SEEDS_ROOTS": "$HOME/CascadeProjects,$HOME/canopy,$HOME/grove"
@@ -73,20 +53,14 @@
     },
     "pulse-server": {
       "command": "npx",
-      "args": [
-        "-y",
-        "tsx",
-        "$HOME/CascadeProjects/Tools/MCPServers/pulse-server/src/server.ts"
-      ],
+      "args": ["-y", "tsx", "$HOME/CascadeProjects/Tools/MCPServers/pulse-server/src/server.ts"],
       "env": {
         "GRID_API_URL": "http://localhost:8080"
       }
     },
     "grid-rag": {
       "command": "$HOME/CascadeProjects/Projects/GRID-main/.venv/bin/python",
-      "args": [
-        "mcp-setup/server/rag_mcp_server.py"
-      ],
+      "args": ["mcp-setup/server/rag_mcp_server.py"],
       "env": {
         "PYTHONPATH": "$HOME/CascadeProjects/Projects/GRID-main/src:$HOME/CascadeProjects/Projects/GRID-main",
         "RAG_EMBEDDING_PROVIDER": "ollama",
@@ -100,11 +74,7 @@
     },
     "ori-server": {
       "command": "npx",
-      "args": [
-        "-y",
-        "tsx",
-        "$HOME/CascadeProjects/Tools/MCPServers/ori-server/src/server.ts"
-      ],
+      "args": ["-y", "tsx", "$HOME/CascadeProjects/Tools/MCPServers/ori-server/src/server.ts"],
       "env": {
         "CASCADE_WORKSPACE_ROOT": "$HOME/CascadeProjects",
         "ECHOES_AUDIT_PATH": "$HOME/.echoes/audit.ndjson",
@@ -113,27 +83,21 @@
     },
     "grid-enhanced-tools": {
       "command": "$HOME/CascadeProjects/Projects/GRID-main/.venv/bin/python",
-      "args": [
-        "mcp-setup/server/enhanced_tools_mcp_server.py"
-      ],
+      "args": ["mcp-setup/server/enhanced_tools_mcp_server.py"],
       "env": {
         "PYTHONPATH": "$HOME/CascadeProjects/Projects/GRID-main/src:$HOME/CascadeProjects/Projects/GRID-main"
       }
     },
     "portfolio-safety-lens": {
       "command": "$HOME/CascadeProjects/Projects/GRID-main/.venv/bin/python",
-      "args": [
-        "mcp-setup/server/portfolio_safety_mcp_server.py"
-      ],
+      "args": ["mcp-setup/server/portfolio_safety_mcp_server.py"],
       "env": {
         "PYTHONPATH": "$HOME/CascadeProjects/Projects/GRID-main/src:$HOME/CascadeProjects/Projects/GRID-main:$HOME/seed/archive/Coinbase_from_zip"
       }
     },
     "code-analysis": {
       "command": "$HOME/CascadeProjects/Projects/GRID-main/.venv/bin/python",
-      "args": [
-        "mcp-setup/server/code_analysis_mcp_server.py"
-      ],
+      "args": ["mcp-setup/server/code_analysis_mcp_server.py"],
       "env": {
         "PYTHONPATH": "$HOME/CascadeProjects/Projects/GRID-main/src:$HOME/CascadeProjects/Projects/GRID-main",
         "EXTRA_ALLOWED_ROOTS": "$HOME/CascadeProjects"
@@ -141,9 +105,7 @@
     },
     "test-runner": {
       "command": "$HOME/CascadeProjects/Projects/GRID-main/.venv/bin/python",
-      "args": [
-        "mcp-setup/server/test_runner_mcp_server.py"
-      ],
+      "args": ["mcp-setup/server/test_runner_mcp_server.py"],
       "env": {
         "PYTHONPATH": "$HOME/CascadeProjects/Projects/GRID-main/src:$HOME/CascadeProjects/Projects/GRID-main",
         "EXTRA_ALLOWED_ROOTS": "$HOME/CascadeProjects"
@@ -151,11 +113,7 @@
     },
     "maintain-server": {
       "command": "npx",
-      "args": [
-        "-y",
-        "tsx",
-        "$HOME/CascadeProjects/Tools/MCPServers/maintain-server/src/server.ts"
-      ],
+      "args": ["-y", "tsx", "$HOME/CascadeProjects/Tools/MCPServers/maintain-server/src/server.ts"],
       "env": {
         "CASCADE_WORKSPACE_ROOT": "$HOME/CascadeProjects",
         "SEEDS_ROOT": "$HOME/CascadeProjects",
@@ -164,11 +122,7 @@
     },
     "overview-server": {
       "command": "npx",
-      "args": [
-        "-y",
-        "tsx",
-        "$HOME/CascadeProjects/Tools/MCPServers/overview-server/src/server.ts"
-      ],
+      "args": ["-y", "tsx", "$HOME/CascadeProjects/Tools/MCPServers/overview-server/src/server.ts"],
       "env": {
         "CASCADE_WORKSPACE_ROOT": "$HOME/CascadeProjects",
         "SEEDS_ROOT": "$HOME/CascadeProjects",
@@ -178,40 +132,26 @@
     },
     "mangrove-server": {
       "command": "npx",
-      "args": [
-        "-y",
-        "tsx",
-        "$HOME/CascadeProjects/Tools/MCPServers/mangrove-server/src/server.ts"
-      ],
+      "args": ["-y", "tsx", "$HOME/CascadeProjects/Tools/MCPServers/mangrove-server/src/server.ts"],
       "env": {
         "MANGROVE_DIO_ROOT": "$HOME/CascadeProjects/DIO"
       }
     },
     "glimpse-server": {
       "command": "npx",
-      "args": [
-        "-y",
-        "tsx",
-        "$HOME/CascadeProjects/Tools/MCPServers/glimpse-server/src/server.ts"
-      ],
+      "args": ["-y", "tsx", "$HOME/CascadeProjects/Tools/MCPServers/glimpse-server/src/server.ts"],
       "env": {}
     },
     "grid-intelligence": {
       "command": "$HOME/CascadeProjects/Projects/GRID-main/.venv/bin/python",
-      "args": [
-        "-m",
-        "grid.mcp.intelligence_server"
-      ],
+      "args": ["-m", "grid.mcp.intelligence_server"],
       "env": {
         "PYTHONPATH": "$HOME/CascadeProjects/Projects/GRID-main/src:$HOME/CascadeProjects/Projects/GRID-main"
       }
     },
     "grid-rag-enhanced": {
       "command": "$HOME/CascadeProjects/Projects/GRID-main/.venv/bin/python",
-      "args": [
-        "-m",
-        "grid.mcp.enhanced_rag_server"
-      ],
+      "args": ["-m", "grid.mcp.enhanced_rag_server"],
       "env": {
         "PYTHONPATH": "$HOME/CascadeProjects/Projects/GRID-main/src:$HOME/CascadeProjects/Projects/GRID-main",
         "RAG_EMBEDDING_PROVIDER": "ollama",

@@ -1549,7 +1549,9 @@ export async function startServer(): Promise<McpServer> {
         } else {
           logger.warn(
             `GRID backend at ${gridApiUrl} is NOT reachable ` +
-              `(lastEndpoint=${probe.endpoint ?? "none"}, status=${probe.status ?? "unreachable"}, error=${probe.error ?? "unknown"}). ` +
+              `(lastEndpoint=${probe.endpoint ?? "none"}, status=${
+                probe.status ?? "unreachable"
+              }, error=${probe.error ?? "unknown"}). ` +
               `Remote gate validation will fail-closed (approved=false) until backend is restored.`,
           );
         }

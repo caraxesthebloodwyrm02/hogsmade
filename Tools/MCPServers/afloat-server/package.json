@@ -1,7 +1,7 @@
 {
   "name": "afloat-server",
   "version": "1.0.0",
-  "description": "Workflow orchestration MCP server \u2014 create, execute, track, and rollback multi-step workflows with audit trails",
+  "description": "Workflow orchestration MCP server — create, execute, track, and rollback multi-step workflows with audit trails",
   "type": "module",
   "main": "src/server.ts",
   "scripts": {

@@ -182,14 +182,20 @@ function render() {
 }
 
 function renderHeader() {
-  return `<div class="header"><div><h1><span>Glimpse</span> Dynamic Context Engine</h1><span class="header-badge">${G.version}</span></div><div class="header-meta">${G.fileName ? `${esc(G.fileName)} &middot; ${G.fileType.toUpperCase()}` : "No data loaded"}</div></div>`;
+  return `<div class="header"><div><h1><span>Glimpse</span> Dynamic Context Engine</h1><span class="header-badge">${
+    G.version
+  }</span></div><div class="header-meta">${
+    G.fileName ? `${esc(G.fileName)} &middot; ${G.fileType.toUpperCase()}` : "No data loaded"
+  }</div></div>`;
 }
 
 function renderPhaseBar() {
   const phaseNum = G.phase === 0 ? 0 : G.phase >= 4 ? 5 : G.phase;
   return `<div class="phase-bar">${PHASES.map((phase) => {
     const cls = phaseNum >= phase.num ? (phaseNum > phase.num ? "done" : "active") : "";
-    return `<div class="phase-step ${cls}"><span class="step-num">${phaseNum > phase.num ? "&#10003;" : phase.num}</span>${phase.label}</div>`;
+    return `<div class="phase-step ${cls}"><span class="step-num">${
+      phaseNum > phase.num ? "&#10003;" : phase.num
+    }</span>${phase.label}</div>`;
   }).join("")}</div>`;
 }
 
@@ -197,7 +203,9 @@ function renderMasterPanel() {
   const presetOptions = Object.entries(G.masterConfig?.presets || {})
     .map(
       ([id, preset]) =>
-        `<option value="${id}"${G.activePreset === id ? " selected" : ""}>${esc(preset.label || id)}</option>`,
+        `<option value="${id}"${G.activePreset === id ? " selected" : ""}>${esc(
+          preset.label || id,
+        )}</option>`,
     )
     .join("");
   const configLabel =
@@ -208,7 +216,9 @@ function renderMasterPanel() {
         : "Loading...";
   const functionCount = Object.keys(G.masterConfig?.function_registry || {}).length;
   const diagnostics = G.masterConfig?.diagnostics || {};
-  return `<div class="context-panel fade-in"><div class="context-header"><h3>Master Config</h3><span class="config-status">${esc(configLabel)}</span></div><div class="context-body"><div class="master-grid"><div class="master-card"><div class="master-kicker">Preset</div><select class="cluster-select" id="presetSelect">${presetOptions}</select><div class="master-help">Presets change lens and view weighting without changing the raw evidence.</div></div><div class="master-card"><div class="master-kicker">Semantic Hints</div><div class="hint-list">${buildSemanticHints(
+  return `<div class="context-panel fade-in"><div class="context-header"><h3>Master Config</h3><span class="config-status">${esc(
+    configLabel,
+  )}</span></div><div class="context-body"><div class="master-grid"><div class="master-card"><div class="master-kicker">Preset</div><select class="cluster-select" id="presetSelect">${presetOptions}</select><div class="master-help">Presets change lens and view weighting without changing the raw evidence.</div></div><div class="master-card"><div class="master-kicker">Semantic Hints</div><div class="hint-list">${buildSemanticHints(
     G.masterConfig || { taxonomy: { domains: [] } },
   )
     .slice(0, 5)
@@ -218,7 +228,14 @@ function renderMasterPanel() {
     )
     .join(
       "",
-    )}</div></div><div class="master-card"><div class="master-kicker">Logic Surface</div><div class="master-help">${functionCount} safe functions exposed. Trace ${diagnostics.trace_output === false ? "off" : "on"}. Fail-closed ${diagnostics.fail_closed === false ? "off" : "on"}.</div></div><div class="master-card"><div class="master-kicker">Control</div><div class="button-row"><button class="btn btn-ghost btn-sm" data-action="loadMaster" aria-label="Load master YAML configuration">Load master YAML</button><button class="btn btn-ghost btn-sm" data-action="saveMaster" aria-label="Save master YAML configuration">Save master YAML</button></div><div class="master-help">${esc(G.saveStatus || "Rules, function metadata, and semantic packs persist through the master YAML file.")}</div></div></div></div></div>`;
+    )}</div></div><div class="master-card"><div class="master-kicker">Logic Surface</div><div class="master-help">${functionCount} safe functions exposed. Trace ${
+    diagnostics.trace_output === false ? "off" : "on"
+  }. Fail-closed ${
+    diagnostics.fail_closed === false ? "off" : "on"
+  }.</div></div><div class="master-card"><div class="master-kicker">Control</div><div class="button-row"><button class="btn btn-ghost btn-sm" data-action="loadMaster" aria-label="Load master YAML configuration">Load master YAML</button><button class="btn btn-ghost btn-sm" data-action="saveMaster" aria-label="Save master YAML configuration">Save master YAML</button></div><div class="master-help">${esc(
+    G.saveStatus ||
+      "Rules, function metadata, and semantic packs persist through the master YAML file.",
+  )}</div></div></div></div></div>`;
 }
 
 function renderUpload() {
@@ -226,7 +243,9 @@ function renderUpload() {
 }
 
 function renderProcessing() {
-  return `<div class="context-panel fade-in"><div class="context-header"><h3>Processing ${esc(G.fileName)}...</h3></div><div class="context-body"><div class="empty-state pulse">Building profile, extracting facts, firing rules, and ranking visual syntaxes...</div></div></div>`;
+  return `<div class="context-panel fade-in"><div class="context-header"><h3>Processing ${esc(
+    G.fileName,
+  )}...</h3></div><div class="context-body"><div class="empty-state pulse">Building profile, extracting facts, firing rules, and ranking visual syntaxes...</div></div></div>`;
 }
 
 function renderResults() {
@@ -249,7 +268,9 @@ function renderLensPills() {
   return G.ctx.contextLenses
     .map(
       (lens) =>
-        `<span class="lens-pill ${lens.role}">${esc(lens.label)} <strong>${Math.round(lens.score * 100)}%</strong></span>`,
+        `<span class="lens-pill ${lens.role}">${esc(lens.label)} <strong>${Math.round(
+          lens.score * 100,
+        )}%</strong></span>`,
     )
     .join("");
 }
@@ -261,13 +282,37 @@ function renderContextSummary() {
     .filter((descriptor) => descriptor.dimension)
     .map(
       (descriptor) =>
-        `<span class="dim-tag"><strong>${esc(descriptor.dimension)}:</strong> ${esc(descriptor.name)}</span>`,
+        `<span class="dim-tag"><strong>${esc(descriptor.dimension)}:</strong> ${esc(
+          descriptor.name,
+        )}</span>`,
     )
     .join("");
   const diagnosticsCount =
     (ctx.validationReport?.invalidArgs?.length || 0) +
     (ctx.validationReport?.diagnostics?.length || 0);
-  return `<div class="context-panel fade-in"><div class="context-header"><h3>Context Lenses</h3><span style="font-size:0.75rem;color:var(--ink-muted)">${ctx.profile.recordCount} records &middot; ${ctx.entities.length} entities &middot; ${ctx.relations.length} relations</span></div><div class="context-body"><div class="lens-row">${renderLensPills()}</div><div class="dim-tags" style="margin-top:0.75rem">${descriptors}</div><div class="summary-grid"><div class="summary-card"><div class="master-kicker">Primary Lens</div><strong>${esc(ctx.primaryLens?.label || "General")}</strong><p>${generateLensReason(ctx.primaryLens)}</p></div><div class="summary-card"><div class="master-kicker">View Recommendation</div><strong>${esc(topView?.label || "Explorer")}</strong><p>${topView ? `Ranked first with a score of ${topView.score.toFixed(2)} based on your data structure and active preset.` : "No preferred view yet."}</p></div><div class="summary-card"><div class="master-kicker">Logic Audit</div><strong>${ctx.ruleTraces?.length || 0} traces</strong><p>${diagnosticsCount ? `${diagnosticsCount} validation or diagnostic notes detected.` : "No validation issues detected in the active rule pass."}</p></div></div></div></div>`;
+  return `<div class="context-panel fade-in"><div class="context-header"><h3>Context Lenses</h3><span style="font-size:0.75rem;color:var(--ink-muted)">${
+    ctx.profile.recordCount
+  } records &middot; ${ctx.entities.length} entities &middot; ${
+    ctx.relations.length
+  } relations</span></div><div class="context-body"><div class="lens-row">${renderLensPills()}</div><div class="dim-tags" style="margin-top:0.75rem">${descriptors}</div><div class="summary-grid"><div class="summary-card"><div class="master-kicker">Primary Lens</div><strong>${esc(
+    ctx.primaryLens?.label || "General",
+  )}</strong><p>${generateLensReason(
+    ctx.primaryLens,
+  )}</p></div><div class="summary-card"><div class="master-kicker">View Recommendation</div><strong>${esc(
+    topView?.label || "Explorer",
+  )}</strong><p>${
+    topView
+      ? `Ranked first with a score of ${topView.score.toFixed(
+          2,
+        )} based on your data structure and active preset.`
+      : "No preferred view yet."
+  }</p></div><div class="summary-card"><div class="master-kicker">Logic Audit</div><strong>${
+    ctx.ruleTraces?.length || 0
+  } traces</strong><p>${
+    diagnosticsCount
+      ? `${diagnosticsCount} validation or diagnostic notes detected.`
+      : "No validation issues detected in the active rule pass."
+  }</p></div></div></div></div>`;
 }
 
 function generateLensReason(lens) {
@@ -283,7 +328,9 @@ function generateLensReason(lens) {
 }
 
 function renderQueryBar() {
-  return `<div class="query-bar fade-in"><input class="query-input" id="queryInput" placeholder="Ask about the data... e.g. 'best views', 'cluster by region', 'show map', 'explain relation between Telegraph and Telephone'" value="${esc(G.query)}"><button class="btn btn-primary" data-action="query" aria-label="Run query">Query</button><button class="btn btn-ghost" data-action="reset" title="Start over" aria-label="Reset application" style="padding:0.75rem">Reset</button></div>`;
+  return `<div class="query-bar fade-in"><input class="query-input" id="queryInput" placeholder="Ask about the data... e.g. 'best views', 'cluster by region', 'show map', 'explain relation between Telegraph and Telephone'" value="${esc(
+    G.query,
+  )}"><button class="btn btn-primary" data-action="query" aria-label="Run query">Query</button><button class="btn btn-ghost" data-action="reset" title="Start over" aria-label="Reset application" style="padding:0.75rem">Reset</button></div>`;
 }
 
 function renderStats() {
@@ -294,7 +341,14 @@ function renderStats() {
     { value: ctx.evidences.length, label: "Evidence" },
     { value: G.viewRankings.length, label: "Views" },
   ];
-  return `<div class="stats-grid fade-in">${stats.map((stat) => `<div class="stat-card"><div class="stat-value">${stat.value}</div><div class="stat-label">${esc(stat.label)}</div></div>`).join("")}</div>`;
+  return `<div class="stats-grid fade-in">${stats
+    .map(
+      (stat) =>
+        `<div class="stat-card"><div class="stat-value">${
+          stat.value
+        }</div><div class="stat-label">${esc(stat.label)}</div></div>`,
+    )
+    .join("")}</div>`;
 }
 
 function renderModeBar() {
@@ -306,13 +360,23 @@ function renderModeBar() {
       const spec = VIEW_SPECS.find((item) => item.id === viewId);
       const ranking = G.viewRankings.find((item) => item.id === viewId);
       if (!spec) return "";
-      return `<button class="mode-btn${G.mode === viewId ? " active" : ""}" data-mode="${viewId}">${esc(spec.label)}${ranking ? ` <span class="mode-score">${ranking.score.toFixed(2)}</span>` : ""}</button>`;
+      return `<button class="mode-btn${
+        G.mode === viewId ? " active" : ""
+      }" data-mode="${viewId}">${esc(spec.label)}${
+        ranking ? ` <span class="mode-score">${ranking.score.toFixed(2)}</span>` : ""
+      }</button>`;
     })
     .join("")}</div>`;
 }
 
 function renderVisualization() {
-  return `<div class="viz-container fade-in"><div class="viz-header"><h4>${esc(VIEW_SPECS.find((item) => item.id === G.mode)?.label || G.mode)}</h4><div>${renderClusterSelect()}</div></div><div class="viz-body" id="vizBody">${renderView(G.mode, G.ctx, G)}</div>${renderLegend()}</div>`;
+  return `<div class="viz-container fade-in"><div class="viz-header"><h4>${esc(
+    VIEW_SPECS.find((item) => item.id === G.mode)?.label || G.mode,
+  )}</h4><div>${renderClusterSelect()}</div></div><div class="viz-body" id="vizBody">${renderView(
+    G.mode,
+    G.ctx,
+    G,
+  )}</div>${renderLegend()}</div>`;
 }
 
 function renderClusterSelect() {
@@ -332,7 +396,16 @@ function renderInsightGrid() {
 
 function renderEvidenceTrail() {
   const evidences = [...G.ctx.evidences].sort((a, b) => b.confidence - a.confidence).slice(0, 10);
-  return `<div class="evidence-list">${evidences.map((evidence) => `<div class="evidence-item"><div class="evidence-top"><strong>${esc(evidence.sourceRuleId)}</strong><span>${Math.round(evidence.confidence * 100)}%</span></div><p>${esc(evidence.reason)}</p></div>`).join("")}</div>`;
+  return `<div class="evidence-list">${evidences
+    .map(
+      (evidence) =>
+        `<div class="evidence-item"><div class="evidence-top"><strong>${esc(
+          evidence.sourceRuleId,
+        )}</strong><span>${Math.round(evidence.confidence * 100)}%</span></div><p>${esc(
+          evidence.reason,
+        )}</p></div>`,
+    )
+    .join("")}</div>`;
 }
 
 function renderLogicAudit() {
@@ -351,11 +424,59 @@ function renderLogicAudit() {
     .slice(0, 12);
   const report = G.ctx?.validationReport || {};
   const inventory = (G.ctx?.functionInventory || []).slice(0, 8);
-  return `<div class="output-grid"><div class="output-card fade-in"><div class="output-card-header"><h4>Rule Trace</h4></div><div class="output-card-body"><div class="evidence-list">${traces.map((trace) => `<div class="evidence-item"><div class="evidence-top"><strong>${esc(trace.ruleId)}</strong><span>${esc(trace.status)}</span></div><p>${trace.mode === "function" ? `Function: ${esc(trace.functionName || "n/a")} &middot; Args: ${esc(JSON.stringify(trace.args || {}))}` : "Legacy fact rule."}</p><p>${trace.guardResult && trace.guardResult !== "none" ? `Guards: ${esc(trace.guardResult)}. ` : ""}${trace.validationErrors?.length ? esc(trace.validationErrors.join(" ")) : trace.output?.reason ? esc(trace.output.reason) : "No extra trace text."}</p></div>`).join("") || '<div class="empty-state">No trace output available.</div>'}</div></div></div><div class="output-card fade-in"><div class="output-card-header"><h4>Validation Surface</h4></div><div class="output-card-body"><p><strong>Missing functions:</strong> ${report.missingFunctions?.length || 0}</p><p><strong>Invalid args:</strong> ${report.invalidArgs?.length || 0}</p><p><strong>Skipped rules:</strong> ${report.skippedRules?.length || 0}</p><p><strong>Diagnostics:</strong> ${report.diagnostics?.length || 0}</p><div class="hint-list" style="margin-top:0.75rem">${inventory.map((item) => `<span class="hint-chip">${esc(item.name)} → ${esc(item.returns)}</span>`).join("")}</div></div></div></div>`;
+  return `<div class="output-grid"><div class="output-card fade-in"><div class="output-card-header"><h4>Rule Trace</h4></div><div class="output-card-body"><div class="evidence-list">${
+    traces
+      .map(
+        (trace) =>
+          `<div class="evidence-item"><div class="evidence-top"><strong>${esc(
+            trace.ruleId,
+          )}</strong><span>${esc(trace.status)}</span></div><p>${
+            trace.mode === "function"
+              ? `Function: ${esc(trace.functionName || "n/a")} &middot; Args: ${esc(
+                  JSON.stringify(trace.args || {}),
+                )}`
+              : "Legacy fact rule."
+          }</p><p>${
+            trace.guardResult && trace.guardResult !== "none"
+              ? `Guards: ${esc(trace.guardResult)}. `
+              : ""
+          }${
+            trace.validationErrors?.length
+              ? esc(trace.validationErrors.join(" "))
+              : trace.output?.reason
+                ? esc(trace.output.reason)
+                : "No extra trace text."
+          }</p></div>`,
+      )
+      .join("") || '<div class="empty-state">No trace output available.</div>'
+  }</div></div></div><div class="output-card fade-in"><div class="output-card-header"><h4>Validation Surface</h4></div><div class="output-card-body"><p><strong>Missing functions:</strong> ${
+    report.missingFunctions?.length || 0
+  }</p><p><strong>Invalid args:</strong> ${
+    report.invalidArgs?.length || 0
+  }</p><p><strong>Skipped rules:</strong> ${
+    report.skippedRules?.length || 0
+  }</p><p><strong>Diagnostics:</strong> ${
+    report.diagnostics?.length || 0
+  }</p><div class="hint-list" style="margin-top:0.75rem">${inventory
+    .map((item) => `<span class="hint-chip">${esc(item.name)} → ${esc(item.returns)}</span>`)
+    .join("")}</div></div></div></div>`;
 }
 
 function renderChartPanel() {
-  return `<div class="output-card fade-in"><div class="output-card-header"><h4>Distribution</h4><div style="display:flex;gap:0.375rem">${["bar", "doughnut", "radar"].map((type) => `<button class="btn btn-ghost btn-sm chart-type-btn" data-type="${type}">${type === "doughnut" ? "Ring" : type[0].toUpperCase() + type.slice(1)}</button>`).join("")}</div></div><div class="output-card-body"><div class="chart-container"><canvas id="mainChart"></canvas></div></div></div>`;
+  return `<div class="output-card fade-in"><div class="output-card-header"><h4>Distribution</h4><div style="display:flex;gap:0.375rem">${[
+    "bar",
+    "doughnut",
+    "radar",
+  ]
+    .map(
+      (type) =>
+        `<button class="btn btn-ghost btn-sm chart-type-btn" data-type="${type}">${
+          type === "doughnut" ? "Ring" : type[0].toUpperCase() + type.slice(1)
+        }</button>`,
+    )
+    .join(
+      "",
+    )}</div></div><div class="output-card-body"><div class="chart-container"><canvas id="mainChart"></canvas></div></div></div>`;
 }
 
 function renderExportBar() {
@@ -365,18 +486,60 @@ function renderExportBar() {
 function renderRuleAuthoring() {
   const preview = G.ruleDraftResult?.preview;
   const canSave = G.ruleDraftResult && !G.ruleDraftResult.ambiguous;
-  return `<div class="context-panel fade-in"><div class="context-header"><h3>Rule Authoring</h3><span class="config-status">Describe a law in natural language; the engine compiles it into YAML.</span></div><div class="context-body"><div class="author-grid"><div><textarea class="rule-textarea" id="ruleDraftInput" placeholder="Example: When records share the same country, favor the map view and treat geography as a supporting context.">${esc(G.ruleDraft)}</textarea><div class="button-row" style="margin-top:0.75rem"><select class="cluster-select" id="rulePromotionSelect"><option value="experimental"${G.rulePromotion === "experimental" ? " selected" : ""}>Experimental</option><option value="active"${G.rulePromotion === "active" ? " selected" : ""}>Active</option></select><button class="btn btn-primary btn-sm" data-action="compileRule">Compile rule</button><button class="btn btn-ghost btn-sm" data-action="saveRule"${canSave ? "" : " disabled"}>Save to master YAML</button></div></div><div class="rule-preview">${preview ? `<div class="master-kicker">Preview</div><strong>${esc(preview.title)}</strong><p><strong>Rule type:</strong> ${esc(preview.ruleType)}</p><p><strong>Checks:</strong> ${esc(preview.checks.join("; "))}</p><p><strong>Guards:</strong> ${esc((preview.guardChecks || ["none"]).join("; "))}</p><p><strong>Changes:</strong> ${esc(preview.changes.join("; "))}</p><p><strong>Scope:</strong> ${esc(preview.scope)}</p><p><strong>Function:</strong> ${esc(preview.functionName || "n/a")}</p><p><strong>Args:</strong> ${esc(JSON.stringify(preview.args || {}))}</p><p><strong>Returns:</strong> ${esc(preview.returns || "n/a")} &middot; <strong>Weight:</strong> ${esc(preview.weightStrategy || "priority")}</p><p><strong>Promotion:</strong> ${esc(preview.promotion || "active")}</p><p><strong>Why:</strong> ${esc(preview.because)}</p><p><strong>Validation:</strong> ${G.ruleDraftResult?.validationErrors?.length ? esc(G.ruleDraftResult.validationErrors.join(" ")) : "No validation issues in preview."}</p>` : '<div class="empty-state">Compile a rule draft to preview what the engine understood before it is saved.</div>'}</div></div></div></div>`;
+  return `<div class="context-panel fade-in"><div class="context-header"><h3>Rule Authoring</h3><span class="config-status">Describe a law in natural language; the engine compiles it into YAML.</span></div><div class="context-body"><div class="author-grid"><div><textarea class="rule-textarea" id="ruleDraftInput" placeholder="Example: When records share the same country, favor the map view and treat geography as a supporting context.">${esc(
+    G.ruleDraft,
+  )}</textarea><div class="button-row" style="margin-top:0.75rem"><select class="cluster-select" id="rulePromotionSelect"><option value="experimental"${
+    G.rulePromotion === "experimental" ? " selected" : ""
+  }>Experimental</option><option value="active"${
+    G.rulePromotion === "active" ? " selected" : ""
+  }>Active</option></select><button class="btn btn-primary btn-sm" data-action="compileRule">Compile rule</button><button class="btn btn-ghost btn-sm" data-action="saveRule"${
+    canSave ? "" : " disabled"
+  }>Save to master YAML</button></div></div><div class="rule-preview">${
+    preview
+      ? `<div class="master-kicker">Preview</div><strong>${esc(
+          preview.title,
+        )}</strong><p><strong>Rule type:</strong> ${esc(
+          preview.ruleType,
+        )}</p><p><strong>Checks:</strong> ${esc(
+          preview.checks.join("; "),
+        )}</p><p><strong>Guards:</strong> ${esc(
+          (preview.guardChecks || ["none"]).join("; "),
+        )}</p><p><strong>Changes:</strong> ${esc(
+          preview.changes.join("; "),
+        )}</p><p><strong>Scope:</strong> ${esc(
+          preview.scope,
+        )}</p><p><strong>Function:</strong> ${esc(
+          preview.functionName || "n/a",
+        )}</p><p><strong>Args:</strong> ${esc(
+          JSON.stringify(preview.args || {}),
+        )}</p><p><strong>Returns:</strong> ${esc(
+          preview.returns || "n/a",
+        )} &middot; <strong>Weight:</strong> ${esc(
+          preview.weightStrategy || "priority",
+        )}</p><p><strong>Promotion:</strong> ${esc(
+          preview.promotion || "active",
+        )}</p><p><strong>Why:</strong> ${esc(preview.because)}</p><p><strong>Validation:</strong> ${
+          G.ruleDraftResult?.validationErrors?.length
+            ? esc(G.ruleDraftResult.validationErrors.join(" "))
+            : "No validation issues in preview."
+        }</p>`
+      : '<div class="empty-state">Compile a rule draft to preview what the engine understood before it is saved.</div>'
+  }</div></div></div></div>`;
 }
 
 function generateNarrative() {
   const ctx = G.ctx;
   const query = G.query.trim().toLowerCase();
   const lead = [
-    `<p>The dataset reads primarily as <strong>${esc(ctx.primaryLens?.label || "General")}</strong>`,
+    `<p>The dataset reads primarily as <strong>${esc(
+      ctx.primaryLens?.label || "General",
+    )}</strong>`,
   ];
   if (ctx.secondaryLenses.length) {
     lead.push(
-      ` with supporting lenses in ${ctx.secondaryLenses.map((lens) => `<span class="hl">${esc(lens.label)}</span>`).join(", ")}`,
+      ` with supporting lenses in ${ctx.secondaryLenses
+        .map((lens) => `<span class="hl">${esc(lens.label)}</span>`)
+        .join(", ")}`,
     );
   }
   lead.push(
@@ -387,14 +550,22 @@ function generateNarrative() {
   const topView = G.viewRankings[0];
   if (topView) {
     parts.push(
-      `<p>The engine recommends <strong>${esc(topView.label)}</strong> first because its ranking score reached <span class="hl">${topView.score.toFixed(2)}</span> under the active <strong>${esc(G.masterConfig.presets[G.activePreset]?.label || G.activePreset)}</strong> preset.</p>`,
+      `<p>The engine recommends <strong>${esc(
+        topView.label,
+      )}</strong> first because its ranking score reached <span class="hl">${topView.score.toFixed(
+        2,
+      )}</span> under the active <strong>${esc(
+        G.masterConfig.presets[G.activePreset]?.label || G.activePreset,
+      )}</strong> preset.</p>`,
     );
   }
 
   const topEvidence = [...ctx.evidences].sort((a, b) => b.confidence - a.confidence)[0];
   if (topEvidence) {
     parts.push(
-      `<p>Top evidence: <strong>${esc(topEvidence.sourceRuleId)}</strong> at ${Math.round(topEvidence.confidence * 100)}% confidence. ${esc(topEvidence.reason)}</p>`,
+      `<p>Top evidence: <strong>${esc(topEvidence.sourceRuleId)}</strong> at ${Math.round(
+        topEvidence.confidence * 100,
+      )}% confidence. ${esc(topEvidence.reason)}</p>`,
     );
   }
 
@@ -403,7 +574,11 @@ function generateNarrative() {
   );
   if (firedFunctionTrace) {
     parts.push(
-      `<p>Most visible function-backed rule: <strong>${esc(firedFunctionTrace.ruleId)}</strong> used <span class="hl">${esc(firedFunctionTrace.functionName)}</span> with validated arguments.</p>`,
+      `<p>Most visible function-backed rule: <strong>${esc(
+        firedFunctionTrace.ruleId,
+      )}</strong> used <span class="hl">${esc(
+        firedFunctionTrace.functionName,
+      )}</span> with validated arguments.</p>`,
     );
   }
 
@@ -418,7 +593,9 @@ function generateNarrative() {
       );
     } else if (intent.kind === "compare_contexts") {
       parts.push(
-        `<p>Context comparison: the primary lens is <strong>${esc(ctx.primaryLens?.label)}</strong>, while secondary lenses keep adjacent meaning visible instead of collapsing it into one bucket.</p>`,
+        `<p>Context comparison: the primary lens is <strong>${esc(
+          ctx.primaryLens?.label,
+        )}</strong>, while secondary lenses keep adjacent meaning visible instead of collapsing it into one bucket.</p>`,
       );
     } else if (intent.kind === "explain_relation" && intent.names.length === 2) {
       const left = ctx.entities.find((entity) =>
@@ -441,14 +618,18 @@ function generateNarrative() {
           .filter(Boolean)
           .join(" ");
         parts.push(
-          `<p>${esc(left.name)} and ${esc(right.name)} are connected through <strong>${esc(relation.type)}</strong>. ${esc(evidence || "The relation is supported by structural evidence.")}</p>`,
+          `<p>${esc(left.name)} and ${esc(right.name)} are connected through <strong>${esc(
+            relation.type,
+          )}</strong>. ${esc(evidence || "The relation is supported by structural evidence.")}</p>`,
         );
       }
     } else if (intent.kind === "show_trace") {
       const trace = (ctx.ruleTraces || []).find((item) => item.status === "fired");
       if (trace) {
         parts.push(
-          `<p>Trace view: <strong>${esc(trace.ruleId)}</strong> fired as a ${esc(trace.mode)} rule on ${esc(trace.targetId)}.</p>`,
+          `<p>Trace view: <strong>${esc(trace.ruleId)}</strong> fired as a ${esc(
+            trace.mode,
+          )} rule on ${esc(trace.targetId)}.</p>`,
         );
       }
     }
@@ -594,7 +775,9 @@ function bindDelegatedEvents() {
     }
     if (target.id === "presetSelect") {
       G.activePreset = target.value;
-      G.saveStatus = `Preset switched to ${G.masterConfig.presets[G.activePreset]?.label || G.activePreset}.`;
+      G.saveStatus = `Preset switched to ${
+        G.masterConfig.presets[G.activePreset]?.label || G.activePreset
+      }.`;
       if (G.rawData) runPipeline();
       else render();
       return;

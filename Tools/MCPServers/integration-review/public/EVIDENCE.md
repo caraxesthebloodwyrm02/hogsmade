@@ -16,6 +16,7 @@
 ```
 
 Test areas covered:
+
 - Server initialization and tool registration
 - Project registry CRUD and persistence
 - Test execution sandbox and output capture
@@ -64,6 +65,7 @@ Returns a run summary with pass/fail counts and classified log entries.
 ### probe_test_suite (no arguments or time filter)
 
 Scans all collected logs and returns a structured breakdown:
+
 - Total entries analyzed
 - Patterns matched (by pattern ID and count)
 - Severity distribution (critical, warning, info)
@@ -86,6 +88,7 @@ After a clean run with no risk signals: 0 recommendations is correct.
 ### generate_report (no arguments)
 
 Produces a full markdown research report. Sections include:
+
 - Executive summary
 - Test suite health table
 - Risk signal analysis
@@ -101,15 +104,15 @@ This is intentional — an empty report section means no findings in that area.
 
 When the gate API is unreachable:
 
-| Category | Tools | Behavior |
-|----------|-------|----------|
-| Analysis | collect, filter, probe, recommend | **Work normally** |
-| Memory | notebook_add, notebook_query, notebook_summary | **Work normally** |
-| Integration | ecosystem_context | **Works normally** |
-| Status | health_check | **Works** — reports degraded state |
-| Execution | run_tests, run_all_tests, discover_tests | **Blocked** |
-| Reporting | generate_report | **Blocked** |
-| Destructive | clear_logs | **Blocked** |
+| Category    | Tools                                          | Behavior                           |
+| ----------- | ---------------------------------------------- | ---------------------------------- |
+| Analysis    | collect, filter, probe, recommend              | **Work normally**                  |
+| Memory      | notebook_add, notebook_query, notebook_summary | **Work normally**                  |
+| Integration | ecosystem_context                              | **Works normally**                 |
+| Status      | health_check                                   | **Works** — reports degraded state |
+| Execution   | run_tests, run_all_tests, discover_tests       | **Blocked**                        |
+| Reporting   | generate_report                                | **Blocked**                        |
+| Destructive | clear_logs                                     | **Blocked**                        |
 
 This split is by design: reading and thinking should never be gated
 behind the availability of an external service.

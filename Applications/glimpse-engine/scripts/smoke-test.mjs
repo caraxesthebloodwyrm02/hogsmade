@@ -22,7 +22,9 @@ async function testModule(name, importPath) {
     const module = await import(importPath);
     console.log(`✅ ${name} - Module loads successfully`);
     console.log(
-      `   Exports: ${Object.keys(module).slice(0, 5).join(", ")}${Object.keys(module).length > 5 ? "..." : ""}`,
+      `   Exports: ${Object.keys(module).slice(0, 5).join(", ")}${
+        Object.keys(module).length > 5 ? "..." : ""
+      }`,
     );
     passedTests++;
     return module;

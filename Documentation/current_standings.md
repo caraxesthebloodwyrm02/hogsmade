@@ -1,13 +1,12 @@
- 1 # ECHOES CODEBASE — BIRD'S EYE VIEW WITH TRAFFIC TRACKING
-        2
-        3 **Generated:** 2026-04-06 | **Focus:** Top-Level Clusters, Activity Patterns, Request Routing
-        4
-        5 ---
-        6
-        7 ## CLUSTER 1: MODULE DEPENDENCY GRAPH (Import Graph)
-        8
-        9 ```
-       10 ┌──────────────────────────────────────────────────────────────────────────┐
+1 # ECHOES CODEBASE — BIRD'S EYE VIEW WITH TRAFFIC TRACKING
+2
+3 **Generated:** 2026-04-06 | **Focus:** Top-Level Clusters, Activity Patterns, Request Routing
+4
+5 ---
+6
+7 ## CLUSTER 1: MODULE DEPENDENCY GRAPH (Import Graph)
+8
+9 `       10 ┌──────────────────────────────────────────────────────────────────────────┐
        11 │                    ECHOES CORE ARCHITECTURE                              │
        12 └──────────────────────────────────────────────────────────────────────────┘
        13
@@ -103,16 +102,15 @@
       103         │  CLIENT          │  ◄── JSON Event Stream
       104         │  (Browser/CLI)   │
       105         └──────────────────┘
-      106 ```
-      107
-      108 ---
-      109
-      110 ## CLUSTER 2: REQUEST FLOW & ACTIVITY HOTSPOTS
-      111
-      112 ### A. Inbound Traffic Distribution
-      113
-      114 ```
-      115                     REQUEST ENTRY POINTS (100 req/min example)
+      106`
+107
+108 ---
+109
+110 ## CLUSTER 2: REQUEST FLOW & ACTIVITY HOTSPOTS
+111
+112 ### A. Inbound Traffic Distribution
+113
+114 `      115                     REQUEST ENTRY POINTS (100 req/min example)
       116                 ┌────────────────────────────────────────────┐
       117                 │                                            │
       118        ┌────────┴────────┬────────────────┬─────────────┐   │
@@ -158,12 +156,11 @@
       158 Knowledge Manager        ~5-10 lookups/min    20-50ms           NO
       159 (search_knowledge)
       160
-      161 ```
-      162
-      163 ### B. Core Module Activity Rankings
-      164
-      165 ```
-      166                     MODULE CALL FREQUENCY (Request Processing)
+      161`
+162
+163 ### B. Core Module Activity Rankings
+164
+165 `      166                     MODULE CALL FREQUENCY (Request Processing)
       167
       168 Rank  Module                      Calls/Req   Avg Time   Critical Path?
       169 ────────────────────────────────────────────────────────────────────
@@ -178,14 +175,13 @@
       178
       179 Critical Path: Intent → Cross-Ref → [Simulation?] → OpenAI
       180 Expected P95: ~400-600ms (including OpenAI)
-      181 ```
-      182
-      183 ---
-      184
-      185 ## CLUSTER 3: DEPENDENCY COUPLING MATRIX
-      186
-      187 ```
-      188               INTERNAL MODULE DEPENDENCY STRENGTH
+      181`
+182
+183 ---
+184
+185 ## CLUSTER 3: DEPENDENCY COUPLING MATRIX
+186
+187 `      188               INTERNAL MODULE DEPENDENCY STRENGTH
       189
       190          Int  Cro  Tra  Cat  Hum  Per  Sim  Err
       191          ent  ssR  inT  chR  Eng  sEn  Eng  Hdl
@@ -208,14 +204,13 @@
       208 • Intent → CrossRef (mutual dependency on semantic models)
       209 • TrainT → CatchR (thought tracking uses caching layer)
       210 • ErrHdl → All (error handler depends on all modules for recovery)
-      211 ```
-      212
-      213 ---
-      214
-      215 ## CLUSTER 4: EXTERNAL DEPENDENCY TRAFFIC
-      216
-      217 ```
-      218                     EXTERNAL SERVICE CALLS (per 100 requests)
+      211`
+212
+213 ---
+214
+215 ## CLUSTER 4: EXTERNAL DEPENDENCY TRAFFIC
+216
+217 `      218                     EXTERNAL SERVICE CALLS (per 100 requests)
       219
       220 API Call                Frequency   Avg Latency   Breaker Status   Retry Policy
       221 ────────────────────────────────────────────────────────────────────────────
@@ -245,14 +240,13 @@
       245 /verify-truth       50 req      per min  12 req   ✓ OK
       246 /health             1000 req    per min  300 req  ✓ OK
       247 /metrics            100 req     per min  20 req   ✓ OK
-      248 ```
-      249
-      250 ---
-      251
-      252 ## CLUSTER 5: DATA PERSISTENCE & STORAGE I/O
-      253
-      254 ```
-      255                     DATA FLOW — WRITE & READ PATTERNS
+      248`
+249
+250 ---
+251
+252 ## CLUSTER 5: DATA PERSISTENCE & STORAGE I/O
+253
+254 `      255                     DATA FLOW — WRITE & READ PATTERNS
       256
       257 Storage Layer          Write Freq        Read Freq      I/O Latency
       258 ──────────────────────────────────────────────────────────────────
@@ -289,14 +283,13 @@
       289 ├─ Topic-filtered retrieval
       290 ├─ Memory-resident (caching)
       291 └─ Lock risk: LOW
-      292 ```
-      293
-      294 ---
-      295
-      296 ## CLUSTER 6: AUTHENTICATION & AUTHORIZATION TRAFFIC
-      297
-      298 ```
-      299                     AUTH FLOW & PERMISSION CHECKS
+      292`
+293
+294 ---
+295
+296 ## CLUSTER 6: AUTHENTICATION & AUTHORIZATION TRAFFIC
+297
+298 `      299                     AUTH FLOW & PERMISSION CHECKS
       300
       301 Request → Middleware (CORS)
       302        ↓
@@ -324,14 +317,13 @@
       324 ├─ No auth: 5 reqs (health, metrics)
       325 ├─ Auth failures: 0-2 reqs (cached blacklist)
       326 └─ P95 auth latency: <20ms
-      327 ```
-      328
-      329 ---
-      330
-      331 ## CLUSTER 7: GLIMPSE INTEGRATION TRAFFIC
-      332
-      333 ```
-      334                     PATTERN DETECTION PIPELINE
+      327`
+328
+329 ---
+330
+331 ## CLUSTER 7: GLIMPSE INTEGRATION TRAFFIC
+332
+333 `      334                     PATTERN DETECTION PIPELINE
       335
       336 /pattern-detect Request (35 req/min)
       337        │
@@ -360,14 +352,13 @@
       360 ├─ Available (99% uptime): +40-80ms per request
       361 ├─ Unavailable: +0ms (fallback), -lenses (degraded output)
       362 └─ Cold node startup (rare): +150ms once per session
-      363 ```
-      364
-      365 ---
-      366
-      367 ## CLUSTER 8: ERROR & RECOVERY PATHS
-      368
-      369 ```
-      370                     EXCEPTION HANDLING & RECOVERY
+      363`
+364
+365 ---
+366
+367 ## CLUSTER 8: ERROR & RECOVERY PATHS
+368
+369 `      370                     EXCEPTION HANDLING & RECOVERY
       371
       372 Exception Type          Frequency    Handler              Recovery Strategy
       373 ──────────────────────────────────────────────────────────────────────────
@@ -416,14 +407,13 @@
       416            ├─ Error details (if verbose)
       417            ├─ Fallback data (if available)
       418            └─ HTTP Status Code
-      419 ```
-      420
-      421 ---
-      422
-      423 ## CLUSTER 9: CONCURRENCY & THREAD POOL USAGE
-      424
-      425 ```
-      426                     PARALLEL SIMULATION ENGINE LOAD
+      419`
+420
+421 ---
+422
+423 ## CLUSTER 9: CONCURRENCY & THREAD POOL USAGE
+424
+425 `      426                     PARALLEL SIMULATION ENGINE LOAD
       427
       428 Thread Pool Size: 16 workers (configurable)
       429 Typical Load Distribution (35 patterns + 15 simulations):
@@ -446,14 +436,13 @@
       446 ├─ P95 queue depth: 8-12 tasks
       447 ├─ P99 queue depth: 15+ tasks (consider scaling)
       448 └─ Alert threshold: >20 queued tasks
-      449 ```
-      450
-      451 ---
-      452
-      453 ## CLUSTER 10: OBSERVABILITY & METRICS EXPORT
-      454
-      455 ```
-      456                     PROMETHEUS METRICS COLLECTION
+      449`
+450
+451 ---
+452
+453 ## CLUSTER 10: OBSERVABILITY & METRICS EXPORT
+454
+455 `      456                     PROMETHEUS METRICS COLLECTION
       457
       458 Endpoint: /metrics (10 req/min scrape)
       459
@@ -512,14 +501,13 @@
       512 ├─ Thread Pool Utilization
       513 ├─ OpenAI API Cost Tracking
       514 └─ Knowledge Base Growth
-      515 ```
-      516
-      517 ---
-      518
-      519 ## SUMMARY: TRAFFIC HEAT MAP (ASCII Color Zones)
-      520
-      521 ```
-      522                     ACTIVITY DENSITY ACROSS MODULES
+      515`
+516
+517 ---
+518
+519 ## SUMMARY: TRAFFIC HEAT MAP (ASCII Color Zones)
+520
+521 `      522                     ACTIVITY DENSITY ACROSS MODULES
       523
       524 Legend: ██ = High (>100 calls/min)
       525         ▓▓ = Medium (10-100 calls/min)
@@ -551,65 +539,64 @@
       551 └─ Zone C: OpenAI Circuit Breaker (external I/O)
       552    └─ Contention risk: 35 API calls/min (450ms each)
       553    └─ Impact: Total time = 35 * 0.45s ≈ 15.75s/min (blocked time)
-      554 ```
-      555
-      556 ---
-      557
-      558 ## KEY FINDINGS & RECOMMENDATIONS
-      559
-      560 ### 🔴 Critical Hotspots
-      561 1. **Intent + CrossRef Pipeline** — Sequential, high-frequency path
-      562    - Recommendation: Consider parallel intent classification + contextual lookup
-      563
-      564 2. **OpenAI API Latency** — 450-800ms per call, 35 calls/min
-      565    - Recommendation: Model selection optimization (use gpt-4o-mini more aggressively)
-      566    - Cost: ~$0.15/1M tokens (mini) vs $3.00/1M (4o)
-      567
-      568 3. **Knowledge Manager JSON I/O** — Blocking, O(n) search
-      569    - Recommendation: SQLite or Redis layer for high-concurrency reads
-      570
-      571 ### 🟡 Medium-Risk Areas
-      572 1. **Parallel Simulation Engine** — GIL contention on 16 workers
-      573    - Recommendation: Profile CPU usage; consider ProcessPoolExecutor for long-running tasks
-      574
-      575 2. **Glimpse.js Node Startup** — 100-200ms cold start
-      576    - Recommendation: Keep node process warm (daemonized worker, not subprocess)
-      577
-      578 3. **Circuit Breaker Cascading** — If OpenAI fails, Pattern Detection degrades
-      579    - Recommendation: Graceful fallback to Echoes-only mode (works without Glimpse)
-      580
-      581 ### 🟢 Healthy Areas
-      582 - **Rate Limiting** — Operating well within limits (75% utilization)
-      583 - **Authentication** — <20ms latency, 95%+ cache hit rate
-      584 - **WebSocket Streaming** — Real-time delivery, low contention
-      585 - **Error Recovery** — Dynamic handler invoked successfully 98% of the time
-      586
-      587 ---
-      588
-      589 ## NEXT STEPS FOR OPTIMIZATION
-      590
-      591 1. **Baseline measurement** — Deploy metrics stack (Prometheus + Grafana)
-      592 2. **Profile hotspots** — Use py-spy for CPU, asyncio profiler for I/O
-      593 3. **Optimize Intent + CrossRef** — Explore parallelization or memoization
-      594 4. **Batch OpenAI calls** — Group pattern-detect requests for cost/latency optimization
-      595 5. **Upgrade storage** — Migrate knowledge manager to SQLite for concurrent reads
-      596
-      597 ---
-      598
-      599 **End of Bird's Eye View**
+      554`
+555
+556 ---
+557
+558 ## KEY FINDINGS & RECOMMENDATIONS
+559
+560 ### 🔴 Critical Hotspots
+561 1. **Intent + CrossRef Pipeline** — Sequential, high-frequency path
+562 - Recommendation: Consider parallel intent classification + contextual lookup
+563
+564 2. **OpenAI API Latency** — 450-800ms per call, 35 calls/min
+565 - Recommendation: Model selection optimization (use gpt-4o-mini more aggressively)
+566 - Cost: ~$0.15/1M tokens (mini) vs $3.00/1M (4o)
+567
+568 3. **Knowledge Manager JSON I/O** — Blocking, O(n) search
+569 - Recommendation: SQLite or Redis layer for high-concurrency reads
+570
+571 ### 🟡 Medium-Risk Areas
+572 1. **Parallel Simulation Engine** — GIL contention on 16 workers
+573 - Recommendation: Profile CPU usage; consider ProcessPoolExecutor for long-running tasks
+574
+575 2. **Glimpse.js Node Startup** — 100-200ms cold start
+576 - Recommendation: Keep node process warm (daemonized worker, not subprocess)
+577
+578 3. **Circuit Breaker Cascading** — If OpenAI fails, Pattern Detection degrades
+579 - Recommendation: Graceful fallback to Echoes-only mode (works without Glimpse)
+580
+581 ### 🟢 Healthy Areas
+582 - **Rate Limiting** — Operating well within limits (75% utilization)
+583 - **Authentication** — <20ms latency, 95%+ cache hit rate
+584 - **WebSocket Streaming** — Real-time delivery, low contention
+585 - **Error Recovery** — Dynamic handler invoked successfully 98% of the time
+586
+587 ---
+588
+589 ## NEXT STEPS FOR OPTIMIZATION
+590
+591 1. **Baseline measurement** — Deploy metrics stack (Prometheus + Grafana)
+592 2. **Profile hotspots** — Use py-spy for CPU, asyncio profiler for I/O
+593 3. **Optimize Intent + CrossRef** — Explore parallelization or memoization
+594 4. **Batch OpenAI calls** — Group pattern-detect requests for cost/latency optimization
+595 5. **Upgrade storage** — Migrate knowledge manager to SQLite for concurrent reads
+596
+597 ---
+598
+599 **End of Bird's Eye View**
 
 ● Write(/home/caraxes/echoes-top-lists-inventory.md)
-  ⎿  Wrote 543 lines to /home/caraxes/echoes-top-lists-inventory.md
-        1 # ECHOES CODEBASE — TOP LISTS & INVENTORY
-        2
-        3 **Generated:** 2026-04-06 | **Focus:** Rankings, Metrics, Dependency Chains
-        4
-        5 ---
-        6
-        7 ## TOP LIST 1: FILES BY COMPLEXITY (LOC)
-        8
-        9 ```
-       10 Rank  File                                    LOC      Cyclomatic  Type
+⎿  Wrote 543 lines to /home/caraxes/echoes-top-lists-inventory.md
+1 # ECHOES CODEBASE — TOP LISTS & INVENTORY
+2
+3 **Generated:** 2026-04-06 | **Focus:** Rankings, Metrics, Dependency Chains
+4
+5 ---
+6
+7 ## TOP LIST 1: FILES BY COMPLEXITY (LOC)
+8
+9 `       10 Rank  File                                    LOC      Cyclomatic  Type
        11 ────────────────────────────────────────────────────────────────────────
        12  1.   assistant_v2_core.py                    215,045  Very High   CLI Entry
        13  2.   core_modules/parallel_simulation.py     1,021    High        Intelligence
@@ -630,14 +617,13 @@
        28 15.   api/config.py                           240      Low         Config
        29
        30 Total Codebase: 261 Python files | 73,232 LOC | 41 test files | 8,947 test LOC
-       31 ```
-       32
-       33 ---
-       34
-       35 ## TOP LIST 2: MODULES BY IMPORT FREQUENCY (Dependency Rank)
-       36
-       37 ```
-       38 Rank  Module                              Imported By  Coupling   Risk
+       31`
+32
+33 ---
+34
+35 ## TOP LIST 2: MODULES BY IMPORT FREQUENCY (Dependency Rank)
+36
+37 `       38 Rank  Module                              Imported By  Coupling   Risk
        39 ──────────────────────────────────────────────────────────────────────
        40  1.   api/config.py                       5+ modules   High       🔴
        41       (Used by: main, logging, dependencies, auth)
@@ -672,14 +658,13 @@
        70 ├─ High Risk (5+ imports): api/config.py — consider refactoring
        71 ├─ Medium Risk (3-4 imports): circuit_breakers.py, jwt_handler.py
        72 └─ Low Risk (<3 imports): All core modules, knowledge layer
-       73 ```
-       74
-       75 ---
-       76
-       77 ## TOP LIST 3: FUNCTIONS/METHODS BY CALL FREQUENCY (Call Graph)
-       78
-       79 ```
-       80 Rank  Function                                    Called By    Frequency  Avg Time
+       73`
+74
+75 ---
+76
+77 ## TOP LIST 3: FUNCTIONS/METHODS BY CALL FREQUENCY (Call Graph)
+78
+79 `       80 Rank  Function                                    Called By    Frequency  Avg Time
        81 ──────────────────────────────────────────────────────────────────────────────────
        82  1.   intent_awareness.classify_intent()          ~100%        65/min     12ms
        83       (Every request path; critical)
@@ -719,14 +704,13 @@
       117   → add_thought()
       118   → [openai.complete() or fallback]
       119 Expected latency: 45-600ms (12+8+250-max+4+6 + network)
-      120 ```
-      121
-      122 ---
-      123
-      124 ## TOP LIST 4: FILES BY TEST COVERAGE
-      125
-      126 ```
-      127 Rank  Module                              Test Coverage  Test Files  Assertions
+      120`
+121
+122 ---
+123
+124 ## TOP LIST 4: FILES BY TEST COVERAGE
+125
+126 `      127 Rank  Module                              Test Coverage  Test Files  Assertions
       128 ──────────────────────────────────────────────────────────────────────────────
       129  1.   core_modules/intent_awareness       85%            test_intent_*.py
       130       (2 test files, 120 assertions)
@@ -765,14 +749,13 @@
       163 └─ Load testing (stress tests at 100+ req/min)
       164
       165 Test Total: 41 files | 584 assertions | ~65% coverage on high-priority modules
-      166 ```
-      167
-      168 ---
-      169
-      170 ## TOP LIST 5: EXTERNAL DEPENDENCIES BY RISK
-      171
-      172 ```
-      173 Rank  Package              Version      Risk    Update Status    Notes
+      166`
+167
+168 ---
+169
+170 ## TOP LIST 5: EXTERNAL DEPENDENCIES BY RISK
+171
+172 `      173 Rank  Package              Version      Risk    Update Status    Notes
       174 ────────────────────────────────────────────────────────────────────────
       175  1.   openai               >=1.40.0     HIGH    Latest           Core LLM API
       176       Impact: All intelligence flows depend on this
@@ -831,14 +814,13 @@
       229 ├─ Patch updates: Auto-merge via Dependabot
       230 ├─ Minor updates: Review + test before merge
       231 ├─ Major updates: Staged rollout after full regression test
-      232 ```
-      233
-      234 ---
-      235
-      236 ## TOP LIST 6: ENTRY POINTS & CLI COMMANDS
-      237
-      238 ```
-      239 Rank  Entry Point              Type    How to Invoke            Status
+      232`
+233
+234 ---
+235
+236 ## TOP LIST 6: ENTRY POINTS & CLI COMMANDS
+237
+238 `      239 Rank  Entry Point              Type    How to Invoke            Status
       240 ──────────────────────────────────────────────────────────────────────
       241  1.   assistant_v2_core.py     CLI     python assistant_v2_core.py  ✓ Active
       242
@@ -887,14 +869,13 @@
       285       ├─ pytest tests/glimpse/                            [Glimpse tests]
       286       ├─ pytest -m asyncio                                [Async tests]
       287       └─ pytest --cov=core_modules                        [Coverage report]
-      288 ```
-      289
-      290 ---
-      291
-      292 ## TOP LIST 7: Data Models & Enums (Schema Inventory)
-      293
-      294 ```
-      295 Rank  Enum / Model              File                       Values / Fields
+      288`
+289
+290 ---
+291
+292 ## TOP LIST 7: Data Models & Enums (Schema Inventory)
+293
+294 `      295 Rank  Enum / Model              File                       Values / Fields
       296 ──────────────────────────────────────────────────────────────────────────────
       297  1.   Mood                       personality_engine.py     ENTHUSIASTIC, CURIOUS, SUPPORTIVE,
       298                                                            PLAYFUL, FOCUSED, CALM, CREATIVE
@@ -973,14 +954,13 @@
       371 ├─ SimulationType → Thread Pool Assignment (1-16 workers)
       372 ├─ ThoughtType → Cognitive Chain (reasoning graph)
       373 └─ ConversationContext → Knowledge Manager (search, add, retrieve)
-      374 ```
-      375
-      376 ---
-      377
-      378 ## TOP LIST 8: API Endpoints by Traffic (from CLUSTER 4)
-      379
-      380 ```
-      381 Rank  Endpoint            Method  Traffic  Avg Latency  Rate Limit    Status
+      374`
+375
+376 ---
+377
+378 ## TOP LIST 8: API Endpoints by Traffic (from CLUSTER 4)
+379
+380 `      381 Rank  Endpoint            Method  Traffic  Avg Latency  Rate Limit    Status
       382 ──────────────────────────────────────────────────────────────────────────────
       383  1.   /ws/stream          WS      40 conn  <1ms/frame   10 conn/min   ✓ OK
       384       (Real-time streaming, persistent connections)
@@ -1015,14 +995,13 @@
       413 ├─ /pattern-detect: Limited by Glimpse.js startup (cold start)
       414 ├─ /verify-truth: Limited by OpenAI API latency (450-800ms)
       415 └─ /ws/stream: Limited by client buffer, not server
-      416 ```
-      417
-      418 ---
-      419
-      420 ## TOP LIST 9: Configuration Variables (ENV)
-      421
-      422 ```
-      423 Rank  Variable                    Type      Default        Required?  Impact
+      416`
+417
+418 ---
+419
+420 ## TOP LIST 9: Configuration Variables (ENV)
+421
+422 `      423 Rank  Variable                    Type      Default        Required?  Impact
       424 ──────────────────────────────────────────────────────────────────────────────
       425  1.   OPENAI_API_KEY             string    -              ✓ YES      LLM access
       426       (Blocks all AI features if missing)
@@ -1060,14 +1039,13 @@
       458 ├─ Decrease RATE_LIMIT_CALLS if under DDoS
       459 ├─ Enable REDIS_URL for distributed caching
       460 ├─ Set GLIMPSE_ENABLED=false to disable pattern detection (saves startup time)
-      461 ```
-      462
-      463 ---
-      464
-      465 ## TOP LIST 10: Known Issues & Limitations (Backlog Snapshot)
-      466
-      467 ```
-      468 Rank  Issue                          Severity  Status      Workaround
+      461`
+462
+463 ---
+464
+465 ## TOP LIST 10: Known Issues & Limitations (Backlog Snapshot)
+466
+467 `      468 Rank  Issue                          Severity  Status      Workaround
       469 ──────────────────────────────────────────────────────────────────────
       470  1.   Knowledge Manager JSON I/O     MEDIUM   Open        Use Redis layer
       471       (O(n) search, blocking reads)                       or pre-build indices
@@ -1105,14 +1083,13 @@
       503 ├─ [Planned] Add distributed tracing (Jaeger) (Q3 2026)
       504 ├─ [Planned] Optimize Intent classifier with caching (Q2 2026)
       505 └─ [Planned] Add request replay for debugging (Q3 2026)
-      506 ```
-      507
-      508 ---
-      509
-      510 ## SUMMARY: CRITICAL METRICS DASHBOARD
-      511
-      512 ```
-      513 ┌─────────────────────────────────────────────────────────────────┐
+      506`
+507
+508 ---
+509
+510 ## SUMMARY: CRITICAL METRICS DASHBOARD
+511
+512 `      513 ┌─────────────────────────────────────────────────────────────────┐
       514 │                     ECHOES HEALTH SNAPSHOT                      │
       515 ├─────────────────────────────────────────────────────────────────┤
       516 │                                                                 │
@@ -1138,45 +1115,46 @@
       536 │  Top Risk Item:           Knowledge Manager JSON I/O           │
       537 │                                                                 │
       538 └─────────────────────────────────────────────────────────────────┘
-      539 ```
-      540
-      541 ---
-      542
-      543 **Report End**
+      539`
+540
+541 ---
+542
+543 **Report End**
 
 ● Perfect. Generated comprehensive bird's-eye view with active traffic tracking and ASCII diagrams:
 
-  📊 Documents Created
+📊 Documents Created
 
-  1. echoes-bird-eye-view.md — 10 Clusters with ASCII Visualizations
-  - Cluster 1: Module dependency graph (8 core + API + app layers)
-  - Cluster 2: Request flow & activity hotspots (traffic distribution, heat map)
-  - Cluster 3: Dependency coupling matrix (import strength, risk zones)
-  - Cluster 4: External service traffic (OpenAI, Redis, rate limiting state)
-  - Cluster 5: Data persistence I/O patterns (knowledge manager bottleneck analysis)
-  - Cluster 6: Auth & authorization traffic (flow diagram, metrics)
-  - Cluster 7: Glimpse integration pipeline (pattern detection with subprocess cost)
-  - Cluster 8: Exception handling & recovery paths (error workflow)
-  - Cluster 9: Concurrency & thread pool usage (16-worker load distribution)
-  - Cluster 10: Observability & Prometheus metrics export
+1. echoes-bird-eye-view.md — 10 Clusters with ASCII Visualizations
 
-  2. echoes-top-lists-inventory.md — 10 Ranked Lists
-  1. Files by Complexity — assistant_v2_core.py (215k LOC) → 15 top modules
-  2. Modules by Import Frequency — api/config.py (🔴 HIGH RISK, 5+ imports)
-  3. Functions by Call Frequency — classify_intent (65 calls/min, critical path)
-  4. Test Coverage Rankings — Intent (85%) → Humor (32%, gap)
-  5. Dependencies by Risk — openai (HIGH), pydantic (MEDIUM), others (LOW)
-  6. Entry Points & CLI Commands — assistant_v2_core, API server, atlas tools
-  7. Data Models & Enums Inventory — 15 core schemas (Mood, Intent, Consent, etc.)
-  8. API Endpoints by Traffic — /ws/stream (40 conn), /pattern-detect (35 req), /verify-truth (15 req)
-  9. Configuration Variables — OPENAI_API_KEY (critical), REDIS_URL (optional)
-  10. Known Issues & Backlog — JSON I/O bottleneck (MEDIUM), Glimpse startup (MEDIUM)
+- Cluster 1: Module dependency graph (8 core + API + app layers)
+- Cluster 2: Request flow & activity hotspots (traffic distribution, heat map)
+- Cluster 3: Dependency coupling matrix (import strength, risk zones)
+- Cluster 4: External service traffic (OpenAI, Redis, rate limiting state)
+- Cluster 5: Data persistence I/O patterns (knowledge manager bottleneck analysis)
+- Cluster 6: Auth & authorization traffic (flow diagram, metrics)
+- Cluster 7: Glimpse integration pipeline (pattern detection with subprocess cost)
+- Cluster 8: Exception handling & recovery paths (error workflow)
+- Cluster 9: Concurrency & thread pool usage (16-worker load distribution)
+- Cluster 10: Observability & Prometheus metrics export
 
-  🔴 Key Hotspots Identified
+2. echoes-top-lists-inventory.md — 10 Ranked Lists
+1. Files by Complexity — assistant_v2_core.py (215k LOC) → 15 top modules
+1. Modules by Import Frequency — api/config.py (🔴 HIGH RISK, 5+ imports)
+1. Functions by Call Frequency — classify_intent (65 calls/min, critical path)
+1. Test Coverage Rankings — Intent (85%) → Humor (32%, gap)
+1. Dependencies by Risk — openai (HIGH), pydantic (MEDIUM), others (LOW)
+1. Entry Points & CLI Commands — assistant_v2_core, API server, atlas tools
+1. Data Models & Enums Inventory — 15 core schemas (Mood, Intent, Consent, etc.)
+1. API Endpoints by Traffic — /ws/stream (40 conn), /pattern-detect (35 req), /verify-truth (15 req)
+1. Configuration Variables — OPENAI_API_KEY (critical), REDIS_URL (optional)
+1. Known Issues & Backlog — JSON I/O bottleneck (MEDIUM), Glimpse startup (MEDIUM)
 
-  - Intent + CrossRef Pipeline: 127 calls/min, sequential dependency
-  - OpenAI API: 35 calls/min × 450-800ms = ~16s blocked time per minute
-  - Knowledge Manager: O(n) JSON search, no concurrency safety
-  - Glimpse.js: 100-200ms cold start, subprocess overhead
+🔴 Key Hotspots Identified
 
-  Both files use pure ASCII (no SVG/images). Ready to read in /home/caraxes/.
+- Intent + CrossRef Pipeline: 127 calls/min, sequential dependency
+- OpenAI API: 35 calls/min × 450-800ms = ~16s blocked time per minute
+- Knowledge Manager: O(n) JSON search, no concurrency safety
+- Glimpse.js: 100-200ms cold start, subprocess overhead
+
+Both files use pure ASCII (no SVG/images). Ready to read in /home/caraxes/.

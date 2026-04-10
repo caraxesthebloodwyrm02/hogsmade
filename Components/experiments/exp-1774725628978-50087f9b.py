@@ -20,7 +20,7 @@ def record_audit(source: str, tool: str, status: str, duration_ms: int) -> dict:
 def main():
     print("=== Audit Ingest Throughput Benchmark ===")
     print("Measuring 10 record_audit calls with varying statuses\n")
-    
+
     # Define 10 calls: 7 success, 3 error
     calls = [
         ("grid-server", "workflow_execute", "success", 150),
@@ -34,32 +34,32 @@ def main():
         ("grid-server", "workflow_execute", "success", 210),
         ("grid-server", "workflow_execute", "error", 40),
     ]
-    
+
     results = []
     total_start = time.time()
-    
+
     for i, (source, tool, status, duration) in enumerate(calls, 1):
         call_start = time.time()
         result = record_audit(source, tool, status, duration)
         call_end = time.time()
         call_time = (call_end - call_start) * 1000  # Convert to ms
-        
+
         results.append({
             "call_number": i,
             "status": status,
             "wall_time_ms": call_time,
             "timestamp": result["timestamp"]
         })
-        
+
         print(f"Call {i:2d} [{status:7s}]: {call_time:8.2f} ms")
-    
+
     total_end = time.time()
     total_time = (total_end - total_start) * 1000
-    
+
     # Calculate statistics
     success_times = [r["wall_time_ms"] for r in results if r["status"] == "success"]
     error_times = [r["wall_time_ms"] for r in results if r["status"] == "error"]
-    
+
     print(f"\n=== Results Summary ===")
     print(f"Total calls:          {len(results)}")
     print(f"Success calls:        {len(success_times)}")
@@ -71,7 +71,7 @@ def main():
     print(f"Min wall time:        {min(r['wall_time_ms'] for r in results):.2f} ms")
     print(f"Max wall time:        {max(r['wall_time_ms'] for r in results):.2f} ms")
     print(f"Throughput:           {len(results) / (total_time / 1000):.2f} calls/sec")
-    
+
     # Return structured results for experiment comparison
     return {
         "total_calls": len(results),

@@ -475,7 +475,10 @@ console.log("=== Startup ecosystem — utilities + real Glimpse pipeline ===\n")
 console.log("— Aggregations (plain JS)");
 console.log(`   Companies: ${utils.count(startupData)}`);
 console.log(
-  `   Era: ${utils.min(startupData, "founded")}–${utils.max(startupData, "founded")}   Sectors: ${utils.unique(startupData, "domain").join(", ")}`,
+  `   Era: ${utils.min(startupData, "founded")}–${utils.max(
+    startupData,
+    "founded",
+  )}   Sectors: ${utils.unique(startupData, "domain").join(", ")}`,
 );
 console.log();
 
@@ -495,12 +498,16 @@ console.log(`   Primary lens: ${result.primaryLens?.label ?? "(none)"}`);
 console.log("   Lenses:");
 result.contextLenses.forEach((lens, i) => {
   const n = result.entities.filter((e) => result.facts.entityLensScores[e.id]?.[lens.id]).length;
-  console.log(`     ${i + 1}. ${lens.label} (${lens.role}, score ${lens.score}) — ${n} entities tagged`);
+  console.log(
+    `     ${i + 1}. ${lens.label} (${lens.role}, score ${lens.score}) — ${n} entities tagged`,
+  );
 });
 console.log();
 
 const influenced = result.relations.filter((r) => r.type === "influenced");
-console.log(`   Relations: ${result.relations.length} total, ${influenced.length} explicit influence edges`);
+console.log(
+  `   Relations: ${result.relations.length} total, ${influenced.length} explicit influence edges`,
+);
 if (influenced.length) {
   influenced.forEach((r) => {
     const a = result.entities.find((e) => e.id === r.source);

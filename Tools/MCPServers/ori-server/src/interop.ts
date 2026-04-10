@@ -99,8 +99,7 @@ export async function getEchoesAuditStats(): Promise<{
 
 function seedsSnapshotDir(): string {
   return path.resolve(
-    process.env.SEEDS_SNAPSHOT_DIR?.trim() ||
-      path.join(os.homedir(), ".seeds-server", "snapshots"),
+    process.env.SEEDS_SNAPSHOT_DIR?.trim() || path.join(os.homedir(), ".seeds-server", "snapshots"),
   );
 }
 

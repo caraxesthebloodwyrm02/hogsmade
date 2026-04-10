@@ -53,7 +53,9 @@ function checkScanRateLimit(scanType: string): string | null {
   const last = lastScanTimes.get(scanType);
   if (last && now - last < SCAN_COOLDOWN_MS) {
     const waitSec = Math.ceil((SCAN_COOLDOWN_MS - (now - last)) / 1000);
-    return `Rate limited: ${scanType} was run ${Math.round((now - last) / 1000)}s ago. Wait ${waitSec}s.`;
+    return `Rate limited: ${scanType} was run ${Math.round(
+      (now - last) / 1000,
+    )}s ago. Wait ${waitSec}s.`;
   }
   lastScanTimes.set(scanType, now);
   return null;

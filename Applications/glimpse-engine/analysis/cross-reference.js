@@ -45,7 +45,9 @@ export function crossReferenceEntities(entities, relations, evidences) {
           scope: "entity",
           targetId: entityId,
           affects: ["context_lens"],
-          reason: `${entity?.name || entityId} is supported by ${uniqueRules.size} independent rules.`,
+          reason: `${entity?.name || entityId} is supported by ${
+            uniqueRules.size
+          } independent rules.`,
           payload: { ruleCount: uniqueRules.size, entityId },
           basis: "cross-reference",
         }),
@@ -91,7 +93,9 @@ export function crossReferenceRelations(entities, relations, evidences) {
             scope: "relation",
             targetId: rel.id,
             affects: ["relation", "diagnostics"],
-            reason: `Shared-space claim between ${source.name} and ${target.name} is weak (${Math.round(sim.score * 100)}% similarity).`,
+            reason: `Shared-space claim between ${source.name} and ${
+              target.name
+            } is weak (${Math.round(sim.score * 100)}% similarity).`,
             payload: { relationType: rel.type, similarity: sim.score },
             basis: "cross-reference-validation",
           }),

@@ -28,12 +28,7 @@ import {
 } from "./storage.js";
 import { seedCoreScenarios, registerScenario } from "./scenarios.js";
 import { runScenario, generatePythonManifest } from "./runner.js";
-import {
-  armAgent,
-  disarmAgent,
-  triggerCycle,
-  getAgentState,
-} from "./agent.js";
+import { armAgent, disarmAgent, triggerCycle, getAgentState } from "./agent.js";
 
 const SERVER_NAME = "harness-server";
 const VERSION = "0.1.0";
@@ -99,9 +94,7 @@ export function buildServer(): McpServer {
       inputSchema: z.object({
         scenario: z
           .string()
-          .describe(
-            "Scenario name or ID (e.g. 'bastiodon', 'talonflame', 'exeggutor-a')",
-          ),
+          .describe("Scenario name or ID (e.g. 'bastiodon', 'talonflame', 'exeggutor-a')"),
         cycle: z
           .number()
           .int()
@@ -216,9 +209,7 @@ export function buildServer(): McpServer {
         "Returns transistor gate state, decorated vars, and anomaly flags. " +
         "Signal staleness of up to 5 steps is expected during Talonflame's Incinerate cadence.",
       inputSchema: z.object({
-        scenario_id: z
-          .string()
-          .describe("Scenario name or ID to probe"),
+        scenario_id: z.string().describe("Scenario name or ID to probe"),
         signal_type: z
           .enum(["transistor", "decorated_var", "ambient", "anomaly", "all"])
           .optional()
@@ -240,11 +231,7 @@ export function buildServer(): McpServer {
           content: [
             {
               type: "text" as const,
-              text: JSON.stringify(
-                { error: `Scenario "${args.scenario_id}" not found` },
-                null,
-                2,
-              ),
+              text: JSON.stringify({ error: `Scenario "${args.scenario_id}" not found` }, null, 2),
             },
           ],
           isError: true,
@@ -255,8 +242,8 @@ export function buildServer(): McpServer {
         args.signal_type === "all" || !args.signal_type
           ? signals
           : args.signal_type === "anomaly"
-          ? signals.filter((s) => s.isAnomaly)
-          : signals.filter((s) => s.signalType === args.signal_type);
+            ? signals.filter((s) => s.isAnomaly)
+            : signals.filter((s) => s.signalType === args.signal_type);
 
       const anomalyCount = signals.filter((s) => s.isAnomaly).length;
 
@@ -386,8 +373,7 @@ export function buildServer(): McpServer {
   registerTool(
     "scenario_list",
     {
-      description:
-        "List all registered harness scenarios with their layer, zone, and status.",
+      description: "List all registered harness scenarios with their layer, zone, and status.",
       inputSchema: z.object({
         layer: z
           .enum(["Foundation", "Probe", "Integration", "Custom"])
@@ -456,11 +442,7 @@ export function buildServer(): McpServer {
           .describe("Quantization zone binding"),
         types: z.array(z.string()).optional().default([]).describe("Pokemon types"),
         fast_move: z.string().optional().default("").describe("Fast move name"),
-        charged_moves: z
-          .array(z.string())
-          .optional()
-          .default([])
-          .describe("Charged move names"),
+        charged_moves: z.array(z.string()).optional().default([]).describe("Charged move names"),
         domain_function: z.string().describe("Domain-function description for this scenario"),
       }),
     },
@@ -537,10 +519,7 @@ export function buildServer(): McpServer {
         "Collect all signals from a scenario run or all scenarios. " +
         "Returns transistor gates, decorated vars, and anomaly flags grouped by zone.",
       inputSchema: z.object({
-        scenario_id: z
-          .string()
-          .optional()
-          .describe("Scenario name or ID (omit for all)"),
+        scenario_id: z.string().optional().describe("Scenario name or ID (omit for all)"),
         zone: z
           .enum(["buildup", "silence", "drop"])
           .optional()
@@ -633,9 +612,7 @@ export function buildServer(): McpServer {
       const silenceSignals = signals.filter((s) => s.zone === "silence");
 
       // Check probe cadence (Talonflame — 5-step cadence)
-      const probeSignals = transistorSignals.filter((s) =>
-        s.key.includes("EMIT_PROBE"),
-      );
+      const probeSignals = transistorSignals.filter((s) => s.key.includes("EMIT_PROBE"));
       let cadenceCompliant = true;
       if (probeSignals.length > 1) {
         for (let i = 1; i < probeSignals.length; i++) {
@@ -647,29 +624,23 @@ export function buildServer(): McpServer {
       }
 
       // Check double-weakness (Exeggutor — two paths sharing cold dependency)
-      const integrationSignals = signals.filter(
-        (s) => s.scenarioName === "exeggutor-a",
-      );
-      const coldPathSignals = integrationSignals.filter((s) =>
-        s.key.includes("COLD_PATH"),
-      );
+      const integrationSignals = signals.filter((s) => s.scenarioName === "exeggutor-a");
+      const coldPathSignals = integrationSignals.filter((s) => s.key.includes("COLD_PATH"));
       const doubleWeaknessDetected = coldPathSignals.length >= 2;
 
       // Chain health
       const armFired = successFires.some((s) => s.key.includes("ARM_FOUNDATION"));
       const probeFired = successFires.some((s) => s.key.includes("EMIT_PROBE"));
-      const integrationFired = successFires.some((s) =>
-        s.key.includes("FIRE_INTEGRATION"),
-      );
+      const integrationFired = successFires.some((s) => s.key.includes("FIRE_INTEGRATION"));
 
       const chainHealth =
         armFired && probeFired && integrationFired
           ? "healthy"
           : armFired && probeFired
-          ? "partial (integration not fired)"
-          : armFired
-          ? "partial (probe not fired)"
-          : "incomplete (foundation not armed)";
+            ? "partial (integration not fired)"
+            : armFired
+              ? "partial (probe not fired)"
+              : "incomplete (foundation not armed)";
 
       emitAudit({
         source: SERVER_NAME,

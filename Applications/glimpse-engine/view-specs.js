@@ -159,7 +159,9 @@ function renderConstellation(context, state) {
       const nx = -(target.y - source.y) * 0.08;
       const ny = (target.x - source.x) * 0.08;
       svg.push(
-        `<path class="${cls}" d="M${source.x},${source.y} Q${mx + nx},${my + ny} ${target.x},${target.y}" marker-end="url(#arrowhead)"/>`,
+        `<path class="${cls}" d="M${source.x},${source.y} Q${mx + nx},${my + ny} ${target.x},${
+          target.y
+        }" marker-end="url(#arrowhead)"/>`,
       );
     } else {
       svg.push(
@@ -170,7 +172,15 @@ function renderConstellation(context, state) {
   nodes.forEach((node) => {
     const radius = Math.min(18, 7 + node.score * 0.6);
     svg.push(
-      `<g data-eid="${node.id}" data-name="${esc(node.name)}"><circle class="node-circle" cx="${node.x}" cy="${node.y}" r="${radius}" fill="var(--teal-500)" opacity="0.84"/><text class="node-label" x="${node.x}" y="${node.y + radius + 13}">${esc(node.name.length > 16 ? `${node.name.slice(0, 15)}…` : node.name)}</text></g>`,
+      `<g data-eid="${node.id}" data-name="${esc(node.name)}"><circle class="node-circle" cx="${
+        node.x
+      }" cy="${
+        node.y
+      }" r="${radius}" fill="var(--teal-500)" opacity="0.84"/><text class="node-label" x="${
+        node.x
+      }" y="${node.y + radius + 13}">${esc(
+        node.name.length > 16 ? `${node.name.slice(0, 15)}…` : node.name,
+      )}</text></g>`,
     );
   });
   svg.push("</svg>");
@@ -208,7 +218,9 @@ function renderTimeline(context) {
     const x = scale(decade);
     const w = scale(decade + 10) - x;
     svg.push(
-      `<rect class="era-band" x="${x}" y="${pad.t}" width="${w}" height="${height - pad.t - pad.b}" fill="${(decade / 10) % 2 === 0 ? "var(--teal-500)" : "var(--amber-400)"}"/>`,
+      `<rect class="era-band" x="${x}" y="${pad.t}" width="${w}" height="${
+        height - pad.t - pad.b
+      }" fill="${(decade / 10) % 2 === 0 ? "var(--teal-500)" : "var(--amber-400)"}"/>`,
     );
     svg.push(`<text class="era-label" x="${x + w / 2}" y="${pad.t - 10}">${decade}s</text>`);
   }
@@ -217,7 +229,9 @@ function renderTimeline(context) {
     const y = pad.t + index * ((height - pad.t - pad.b) / Math.max(laneNames.length, 1)) + 22;
     svg.push(`<text class="lane-label" x="${pad.l - 12}" y="${y + 4}">${esc(lane)}</text>`);
     svg.push(
-      `<line x1="${pad.l}" y1="${y}" x2="${width - pad.r}" y2="${y}" stroke="var(--border)" stroke-width="0.5"/>`,
+      `<line x1="${pad.l}" y1="${y}" x2="${
+        width - pad.r
+      }" y2="${y}" stroke="var(--border)" stroke-width="0.5"/>`,
     );
   });
 
@@ -254,7 +268,11 @@ function renderTimeline(context) {
     const jitter = (countBySlot[key] - 1) * 14 - 7;
     const y = pad.t + laneIndex * laneHeight + laneHeight / 2 + jitter;
     svg.push(
-      `<g data-eid="${entity.id}" data-name="${esc(entity.name)}"><circle class="node-circle" cx="${x}" cy="${y}" r="8" fill="var(--amber-400)" opacity="0.9"/><text class="node-label" x="${x}" y="${y + 20}">${esc(entity.name.length > 14 ? `${entity.name.slice(0, 13)}…` : entity.name)}</text></g>`,
+      `<g data-eid="${entity.id}" data-name="${esc(
+        entity.name,
+      )}"><circle class="node-circle" cx="${x}" cy="${y}" r="8" fill="var(--amber-400)" opacity="0.9"/><text class="node-label" x="${x}" y="${
+        y + 20
+      }">${esc(entity.name.length > 14 ? `${entity.name.slice(0, 13)}…` : entity.name)}</text></g>`,
     );
   });
 
@@ -281,7 +299,9 @@ function renderClusters(context, state) {
       `<circle class="cluster-boundary" cx="${cx}" cy="${cy}" r="${radius}" stroke="var(--teal-500)" fill="var(--teal-100)"/>`,
     );
     svg.push(
-      `<text class="cluster-label" x="${cx}" y="${cy - radius - 8}">${esc(cluster.label)} (${cluster.size})</text>`,
+      `<text class="cluster-label" x="${cx}" y="${cy - radius - 8}">${esc(cluster.label)} (${
+        cluster.size
+      })</text>`,
     );
     cluster.entities.slice(0, 12).forEach((entityId, entityIndex) => {
       const entity = context.entities.find((item) => item.id === entityId);
@@ -290,7 +310,15 @@ function renderClusters(context, state) {
       const ex = cx + Math.cos(angle) * radius * 0.64;
       const ey = cy + Math.sin(angle) * radius * 0.64;
       svg.push(
-        `<g data-eid="${entity.id}" data-name="${esc(entity.name)}"><circle class="node-circle" cx="${ex}" cy="${ey}" r="9" fill="var(--emerald-500)" opacity="0.9"/>${cluster.entities.length <= 8 ? `<text class="node-label" x="${ex}" y="${ey + 18}">${esc(entity.name.length > 12 ? `${entity.name.slice(0, 11)}…` : entity.name)}</text>` : ""}</g>`,
+        `<g data-eid="${entity.id}" data-name="${esc(
+          entity.name,
+        )}"><circle class="node-circle" cx="${ex}" cy="${ey}" r="9" fill="var(--emerald-500)" opacity="0.9"/>${
+          cluster.entities.length <= 8
+            ? `<text class="node-label" x="${ex}" y="${ey + 18}">${esc(
+                entity.name.length > 12 ? `${entity.name.slice(0, 11)}…` : entity.name,
+              )}</text>`
+            : ""
+        }</g>`,
       );
     });
   });
@@ -318,7 +346,11 @@ function renderExplorer(context, state) {
   }
   const previewRows = rows.slice(0, 50);
   const arrow = (column) => (state.sortCol === column ? (state.sortDir > 0 ? " ▲" : " ▼") : "");
-  return `<input class="table-search" id="tableSearch" placeholder="Filter records..." value="${esc(state.tableFilter || "")}"><div style="max-height:420px;overflow:auto"><table class="data-table"><thead><tr>${headers.map((header) => `<th data-col="${esc(header)}">${esc(header)}${arrow(header)}</th>`).join("")}</tr></thead><tbody>${previewRows
+  return `<input class="table-search" id="tableSearch" placeholder="Filter records..." value="${esc(
+    state.tableFilter || "",
+  )}"><div style="max-height:420px;overflow:auto"><table class="data-table"><thead><tr>${headers
+    .map((header) => `<th data-col="${esc(header)}">${esc(header)}${arrow(header)}</th>`)
+    .join("")}</tr></thead><tbody>${previewRows
     .map(
       (row) =>
         `<tr>${headers
@@ -366,19 +398,29 @@ function renderMatrix(context) {
     const x = pad + index * cellSize + cellSize / 2;
     const y = pad - 22;
     svg.push(
-      `<text class="node-label" x="${x}" y="${y}" transform="rotate(-25 ${x} ${y})">${esc(entity.name.length > 12 ? `${entity.name.slice(0, 11)}…` : entity.name)}</text>`,
+      `<text class="node-label" x="${x}" y="${y}" transform="rotate(-25 ${x} ${y})">${esc(
+        entity.name.length > 12 ? `${entity.name.slice(0, 11)}…` : entity.name,
+      )}</text>`,
     );
     svg.push(
-      `<text class="lane-label" x="${pad - 10}" y="${pad + index * cellSize + cellSize / 2 + 4}">${esc(entity.name.length > 14 ? `${entity.name.slice(0, 13)}…` : entity.name)}</text>`,
+      `<text class="lane-label" x="${pad - 10}" y="${
+        pad + index * cellSize + cellSize / 2 + 4
+      }">${esc(entity.name.length > 14 ? `${entity.name.slice(0, 13)}…` : entity.name)}</text>`,
     );
     entities.forEach((other, j) => {
       const score = pairScore(entity, other);
       const shade = Math.round(240 - score * 110);
       svg.push(
-        `<rect x="${pad + j * cellSize}" y="${pad + index * cellSize}" width="${cellSize - 4}" height="${cellSize - 4}" rx="10" fill="rgb(${shade}, ${250 - score * 90}, ${248 - score * 40})" stroke="var(--border)"/>`,
+        `<rect x="${pad + j * cellSize}" y="${pad + index * cellSize}" width="${
+          cellSize - 4
+        }" height="${cellSize - 4}" rx="10" fill="rgb(${shade}, ${250 - score * 90}, ${
+          248 - score * 40
+        })" stroke="var(--border)"/>`,
       );
       svg.push(
-        `<text class="cluster-label" x="${pad + j * cellSize + (cellSize - 4) / 2}" y="${pad + index * cellSize + cellSize / 2 + 4}">${score.toFixed(2)}</text>`,
+        `<text class="cluster-label" x="${pad + j * cellSize + (cellSize - 4) / 2}" y="${
+          pad + index * cellSize + cellSize / 2 + 4
+        }">${score.toFixed(2)}</text>`,
       );
     });
   });
@@ -421,10 +463,14 @@ function renderFlow(context) {
       const y = 90 + index * 110;
       positions[id] = { x, y };
       svg.push(
-        `<rect x="${x - 70}" y="${y - 24}" width="140" height="48" rx="16" fill="var(--surface-raised)" stroke="var(--teal-200)"/>`,
+        `<rect x="${x - 70}" y="${
+          y - 24
+        }" width="140" height="48" rx="16" fill="var(--surface-raised)" stroke="var(--teal-200)"/>`,
       );
       svg.push(
-        `<text class="cluster-label" x="${x}" y="${y + 4}">${esc(entity.name.length > 18 ? `${entity.name.slice(0, 17)}…` : entity.name)}</text>`,
+        `<text class="cluster-label" x="${x}" y="${y + 4}">${esc(
+          entity.name.length > 18 ? `${entity.name.slice(0, 17)}…` : entity.name,
+        )}</text>`,
       );
     });
   });
@@ -433,7 +479,9 @@ function renderFlow(context) {
     const target = positions[relation.target];
     if (!source || !target) return;
     svg.push(
-      `<line x1="${source.x + 70}" y1="${source.y}" x2="${target.x - 70}" y2="${target.y}" stroke="var(--teal-500)" stroke-width="2.2" marker-end="url(#flowArrow)"/>`,
+      `<line x1="${source.x + 70}" y1="${source.y}" x2="${target.x - 70}" y2="${
+        target.y
+      }" stroke="var(--teal-500)" stroke-width="2.2" marker-end="url(#flowArrow)"/>`,
     );
   });
   svg.push("</svg>");

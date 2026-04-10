@@ -65,10 +65,10 @@ Each table lists **workflow names** from that repo’s `.github/workflows/auto-l
 
 **After enabling root CodeQL:** open a PR that touches `Components/**` or `.github/workflows` and confirm these check names in the PR **Checks** tab, then add any you want enforced:
 
-| Workflow file                                                                          | Typical check name (verify in UI)    |
-| -------------------------------------------------------------------------------------- | ------------------------------------ |
-| [`.github/workflows/codeql.yml`](.github/workflows/codeql.yml)                         | `Analyze JavaScript/TypeScript`      |
-| [`.github/workflows/root-typescript-ci.yml`](.github/workflows/root-typescript-ci.yml) | `Shared packages test + coverage`    |
+| Workflow file                                                                          | Typical check name (verify in UI) |
+| -------------------------------------------------------------------------------------- | --------------------------------- |
+| [`.github/workflows/codeql.yml`](.github/workflows/codeql.yml)                         | `Analyze JavaScript/TypeScript`   |
+| [`.github/workflows/root-typescript-ci.yml`](.github/workflows/root-typescript-ci.yml) | `Shared packages test + coverage` |
 
 Suggested expanded contexts (hogsmade branch), **after** each job has run at least once:
 

@@ -157,7 +157,9 @@ function detectScoreDrop(data: AggregatedData): DriftItem[] {
     {
       entity: "ecosystem",
       type: "snapshot-score-drop",
-      detail: `Ecosystem score dropped by ${Math.abs(delta)} points (${data.previousSnapshot.overallScore} → ${data.latestSnapshot.overallScore})`,
+      detail: `Ecosystem score dropped by ${Math.abs(delta)} points (${
+        data.previousSnapshot.overallScore
+      } → ${data.latestSnapshot.overallScore})`,
       severity,
       firstDetected: data.latestSnapshot.timestamp,
     },
@@ -179,7 +181,9 @@ function detectStaleData(data: AggregatedData): DriftItem[] {
       items.push({
         entity: src.name,
         type: "stale-data",
-        detail: `Data source "${src.name}" last updated ${Math.round(ageMs / (60 * 60 * 1000))}h ago`,
+        detail: `Data source "${src.name}" last updated ${Math.round(
+          ageMs / (60 * 60 * 1000),
+        )}h ago`,
         severity: "warning",
         firstDetected: null,
       });
@@ -187,7 +191,9 @@ function detectStaleData(data: AggregatedData): DriftItem[] {
       items.push({
         entity: src.name,
         type: "stale-data",
-        detail: `Data source "${src.name}" last updated ${Math.round(ageMs / (60 * 60 * 1000))}h ago`,
+        detail: `Data source "${src.name}" last updated ${Math.round(
+          ageMs / (60 * 60 * 1000),
+        )}h ago`,
         severity: "info",
         firstDetected: null,
       });

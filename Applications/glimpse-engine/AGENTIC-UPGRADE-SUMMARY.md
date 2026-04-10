@@ -406,6 +406,6 @@ When adding new validator rules:
 
 ---
 
-**Implementation Date:** 2026-03-30  
-**Version:** v2.1 Agentic  
+**Implementation Date:** 2026-03-30
+**Version:** v2.1 Agentic
 **Status:** ✅ Production Ready

@@ -3,13 +3,13 @@
 Pre-ship review package for ori-server.
 Start here. Read in this order.
 
-| File | Audience | Purpose |
-|------|----------|---------|
-| [REVIEW.md](REVIEW.md) | Human + Agent | What to look at, what to evaluate, how to flag findings |
-| [SETUP.md](SETUP.md) | Human | Exact cold-start steps to run ori-server on any machine |
-| [SURFACE.md](SURFACE.md) | Agent + Human | Mechanical tool catalog — 22 tools, schemas, dependency map |
-| [SECURITY.md](SECURITY.md) | Agent + Human | Every attack surface, what to probe, what to flag |
-| [TRACE.md](TRACE.md) | Agent + Human | Live test run + expected e2e tool call sequence |
+| File                       | Audience      | Purpose                                                     |
+| -------------------------- | ------------- | ----------------------------------------------------------- |
+| [REVIEW.md](REVIEW.md)     | Human + Agent | What to look at, what to evaluate, how to flag findings     |
+| [SETUP.md](SETUP.md)       | Human         | Exact cold-start steps to run ori-server on any machine     |
+| [SURFACE.md](SURFACE.md)   | Agent + Human | Mechanical tool catalog — 22 tools, schemas, dependency map |
+| [SECURITY.md](SECURITY.md) | Agent + Human | Every attack surface, what to probe, what to flag           |
+| [TRACE.md](TRACE.md)       | Agent + Human | Live test run + expected e2e tool call sequence             |
 
 ## For Agents
 

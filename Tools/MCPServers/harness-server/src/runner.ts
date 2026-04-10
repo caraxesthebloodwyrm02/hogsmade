@@ -19,17 +19,8 @@ import type {
   DecoratedVar,
   ManifestRef,
 } from "./types.js";
-import {
-  zoneForStep,
-  intensityForStep,
-  SILENCE_RANGE,
-} from "./types.js";
-import {
-  readScenarios,
-  upsertScenario,
-  appendSignals,
-  appendManifestRef,
-} from "./storage.js";
+import { zoneForStep, intensityForStep, SILENCE_RANGE } from "./types.js";
+import { readScenarios, upsertScenario, appendSignals, appendManifestRef } from "./storage.js";
 import { getConfig } from "./config.js";
 
 const SERVER_NAME = "harness-server";
@@ -45,9 +36,7 @@ export async function runScenario(
   cycle: number = 0,
 ): Promise<HarnessRunResult> {
   const all = await readScenarios();
-  const scenario = all.find(
-    (s) => s.id === scenarioNameOrId || s.name === scenarioNameOrId,
-  );
+  const scenario = all.find((s) => s.id === scenarioNameOrId || s.name === scenarioNameOrId);
 
   if (!scenario) {
     throw new Error(`Scenario "${scenarioNameOrId}" not found`);
@@ -80,8 +69,7 @@ export async function runScenario(
     const zone = zoneForStep(cycleIndex);
     const intensity = intensityForStep(cycleIndex);
     const now = new Date().toISOString();
-    const isInSilence =
-      cycleIndex >= SILENCE_RANGE[0] && cycleIndex < SILENCE_RANGE[1];
+    const isInSilence = cycleIndex >= SILENCE_RANGE[0] && cycleIndex < SILENCE_RANGE[1];
 
     // Process transistor hooks
     for (const hook of hooks) {
@@ -181,7 +169,8 @@ export async function runScenario(
     scenarioId: scenario.id,
     scenarioName: scenario.name,
     cycle,
-    stepsExecuted: getZoneRange(scenario.quantizationZone)[1] - getZoneRange(scenario.quantizationZone)[0],
+    stepsExecuted:
+      getZoneRange(scenario.quantizationZone)[1] - getZoneRange(scenario.quantizationZone)[0],
     transistorsFired,
     decoratedVarsFired,
     signalsEmitted: signals.length,
@@ -230,9 +219,7 @@ async function scanManifestFiles(): Promise<{
     if (mdFiles.length > 0) {
       return {
         mdPath: path.join(config.manifestDir, mdFiles[0]),
-        jsonPath: jsonFiles.length > 0
-          ? path.join(config.manifestDir, jsonFiles[0])
-          : "",
+        jsonPath: jsonFiles.length > 0 ? path.join(config.manifestDir, jsonFiles[0]) : "",
       };
     }
   } catch {
@@ -276,18 +263,16 @@ export async function generatePythonManifest(): Promise<ManifestRef | null> {
         proc.on("close", (code) => {
           if (code === 0) resolve();
           else
-            reject(
-              new Error(
-                `Harness runner exited with code ${code}: ${stderr.slice(0, 500)}`,
-              ),
-            );
+            reject(new Error(`Harness runner exited with code ${code}: ${stderr.slice(0, 500)}`));
         });
         proc.on("error", reject);
       });
     } catch (err) {
       // Log but don't fail — fall through to scan existing manifests
       console.error(
-        `[harness-server] Python manifest generation failed: ${err instanceof Error ? err.message : String(err)}`,
+        `[harness-server] Python manifest generation failed: ${
+          err instanceof Error ? err.message : String(err)
+        }`,
       );
     }
   }

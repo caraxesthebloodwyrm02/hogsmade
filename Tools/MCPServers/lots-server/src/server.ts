@@ -125,7 +125,9 @@ async function loadCatalog(): Promise<Catalog> {
   const result = CatalogSchema.safeParse(parsed);
   if (!result.success) {
     throw new Error(
-      `Catalog schema invalid: ${result.error.issues.map((i: { message: string }) => i.message).join("; ")}`,
+      `Catalog schema invalid: ${result.error.issues
+        .map((i: { message: string }) => i.message)
+        .join("; ")}`,
     );
   }
   return result.data;
@@ -723,7 +725,10 @@ export function buildServer(): McpServer {
                   },
                   speedDiff:
                     a.results && b.results && a.results.durationMs > 0
-                      ? `${(((b.results.durationMs - a.results.durationMs) / a.results.durationMs) * 100).toFixed(1)}%`
+                      ? `${(
+                          ((b.results.durationMs - a.results.durationMs) / a.results.durationMs) *
+                          100
+                        ).toFixed(1)}%`
                       : "N/A",
                 },
               },

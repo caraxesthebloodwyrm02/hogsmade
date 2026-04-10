@@ -21,11 +21,38 @@ describe("interop module", () => {
     mkdirSync(echoesDir, { recursive: true });
     const auditPath = path.join(echoesDir, "audit.ndjson");
     const events = [
-      { timestamp: "2026-04-08T09:00:00.000Z", source: "ori-server", tool: "health_check", status: "success" },
-      { timestamp: "2026-04-08T09:01:00.000Z", source: "echoes-server", tool: "query_audit", status: "success", durationMs: 15 },
-      { timestamp: "2026-04-08T09:02:00.000Z", source: "ori-server", tool: "run_tests", status: "success", durationMs: 3200 },
-      { timestamp: "2026-04-08T09:03:00.000Z", source: "seeds-server", tool: "ecosystem_scan", status: "success" },
-      { timestamp: "2026-04-08T09:04:00.000Z", source: "ori-server", tool: "collect_logs", status: "success" },
+      {
+        timestamp: "2026-04-08T09:00:00.000Z",
+        source: "ori-server",
+        tool: "health_check",
+        status: "success",
+      },
+      {
+        timestamp: "2026-04-08T09:01:00.000Z",
+        source: "echoes-server",
+        tool: "query_audit",
+        status: "success",
+        durationMs: 15,
+      },
+      {
+        timestamp: "2026-04-08T09:02:00.000Z",
+        source: "ori-server",
+        tool: "run_tests",
+        status: "success",
+        durationMs: 3200,
+      },
+      {
+        timestamp: "2026-04-08T09:03:00.000Z",
+        source: "seeds-server",
+        tool: "ecosystem_scan",
+        status: "success",
+      },
+      {
+        timestamp: "2026-04-08T09:04:00.000Z",
+        source: "ori-server",
+        tool: "collect_logs",
+        status: "success",
+      },
     ];
     writeFileSync(auditPath, events.map((e) => JSON.stringify(e)).join("\n") + "\n", "utf-8");
     process.env.ECHOES_AUDIT_PATH = auditPath;
@@ -61,8 +88,13 @@ describe("interop module", () => {
     );
     process.env.SEEDS_SNAPSHOT_DIR = seedsDir;
 
-    ({ readEchoesAudit, getEchoesAuditStats, loadLatestSeedsSnapshot, countSeedsSnapshots, collectEcosystemContext } =
-      await import("../src/interop.ts"));
+    ({
+      readEchoesAudit,
+      getEchoesAuditStats,
+      loadLatestSeedsSnapshot,
+      countSeedsSnapshots,
+      collectEcosystemContext,
+    } = await import("../src/interop.ts"));
   });
 
   afterAll(() => {

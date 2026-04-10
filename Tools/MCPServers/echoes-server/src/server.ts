@@ -199,7 +199,9 @@ async function readAuditLog(
     const stat = await fs.stat(AUDIT_LOG_PATH);
     if (stat.size > MAX_AUDIT_FILE_BYTES) {
       throw new Error(
-        `Audit log too large (${Math.round(stat.size / (1024 * 1024))}MB) — refusing to load into memory`,
+        `Audit log too large (${Math.round(
+          stat.size / (1024 * 1024),
+        )}MB) — refusing to load into memory`,
       );
     }
     content = await fs.readFile(AUDIT_LOG_PATH, "utf-8");
@@ -294,9 +296,7 @@ async function readCharacterLog(
   try {
     const stat = await fs.stat(CHARACTER_LOG_PATH);
     if (stat.size > MAX_CHARACTER_FILE_BYTES) {
-      throw new Error(
-        `Character log too large (${Math.round(stat.size / (1024 * 1024))}MB)`,
-      );
+      throw new Error(`Character log too large (${Math.round(stat.size / (1024 * 1024))}MB)`);
     }
     content = await fs.readFile(CHARACTER_LOG_PATH, "utf-8");
   } catch {
@@ -887,7 +887,9 @@ export function buildServer(): McpServer {
         query: z
           .string()
           .optional()
-          .describe("Free-text query to match against cluster content. Omit to return all clusters."),
+          .describe(
+            "Free-text query to match against cluster content. Omit to return all clusters.",
+          ),
         axis: z
           .enum(["mood", "governance", "personality", "graph", "cluster", "coherence"])
           .optional()
@@ -944,7 +946,10 @@ export function buildServer(): McpServer {
         status: z
           .enum(["success", "failure", "blocked", "dry_run", "error"])
           .describe("Status to check"),
-        metadata: z.record(z.string(), z.unknown()).optional().describe("Metadata for fingerprint matching"),
+        metadata: z
+          .record(z.string(), z.unknown())
+          .optional()
+          .describe("Metadata for fingerprint matching"),
         isMutating: z
           .boolean()
           .optional()

@@ -98,7 +98,9 @@ function runEpisodeSummary(dioRoot: string, signal?: AbortSignal): Promise<Episo
       } catch (error) {
         reject(
           new Error(
-            `Failed to parse DIO summary JSON: ${error instanceof Error ? error.message : String(error)}`,
+            `Failed to parse DIO summary JSON: ${
+              error instanceof Error ? error.message : String(error)
+            }`,
           ),
         );
       }
@@ -339,7 +341,9 @@ async function runSecurityAudit(
       };
     } catch (error) {
       throw new Error(
-        `Failed to parse security audit JSON: ${error instanceof Error ? error.message : String(error)}`,
+        `Failed to parse security audit JSON: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
       );
     }
   }

@@ -138,9 +138,10 @@ export async function discoverTestSuites(id: string): Promise<{
   return {
     found: true,
     testFiles,
-    details: testFiles > 0
-      ? `Found ${testFiles} test file(s) in ${testDirs.join(", ")}`
-      : `No test files found in ${project.runner.cwd}`,
+    details:
+      testFiles > 0
+        ? `Found ${testFiles} test file(s) in ${testDirs.join(", ")}`
+        : `No test files found in ${project.runner.cwd}`,
   };
 }
 

@@ -14,24 +14,24 @@ Canonical shared rules (TUV-001, coding standards, safety invariants): `/home/ca
 
 ## Workspace layout
 
-| Project                | Stack                       | Notes                                        |
-| ---------------------- | --------------------------- | -------------------------------------------- |
-| `afloat-server/`       | TypeScript, MCP SDK, Vitest | Workflow orchestration                       |
-| `echoes-server/`       | TypeScript, MCP SDK, Vitest | Audit/telemetry persistence                  |
-| `eligibility-server/`  | TypeScript, MCP SDK, Vitest | Promotion gates and eligibility              |
-| `glimpse-server/`      | TypeScript, MCP SDK, Vitest | Glimpse rendering bridge                     |
-| `grid-server/`         | TypeScript, MCP SDK, Vitest | GRID/GATE integration                        |
-| `lots-server/`         | TypeScript, MCP SDK, Vitest | Experiment catalog and runner                |
-| `maintain-server/`     | TypeScript, MCP SDK, Vitest | Diagnostics and cleanup                      |
-| `mangrove-server/`     | TypeScript, MCP SDK, Vitest | Ecosystem coordination                       |
-| `ori-server/`          | TypeScript, MCP SDK, Vitest | Orientation and onboarding                   |
-| `overview-server/`     | TypeScript, MCP SDK, Vitest | Checkpoint and health check                  |
-| `pulse-server/`        | TypeScript, MCP SDK, Vitest | Briefings, focus, journaling                 |
-| `seeds-server/`        | TypeScript, MCP SDK, Vitest | Ecosystem snapshots                          |
-| `shared-types/`        | TypeScript                  | Shared types + audit client; **build first** |
-| `glimpse-artifact/`    | React 18, Vite, TailwindCSS | Component library                            |
-| `glimpse-engine/`      | JavaScript (ES modules)     | Browser-only viz engine; no package.json     |
-| `GRID-main/`           | Python 3.13+, FastAPI, uv   | Nested repo — manage in its own git root     |
+| Project               | Stack                       | Notes                                        |
+| --------------------- | --------------------------- | -------------------------------------------- |
+| `afloat-server/`      | TypeScript, MCP SDK, Vitest | Workflow orchestration                       |
+| `echoes-server/`      | TypeScript, MCP SDK, Vitest | Audit/telemetry persistence                  |
+| `eligibility-server/` | TypeScript, MCP SDK, Vitest | Promotion gates and eligibility              |
+| `glimpse-server/`     | TypeScript, MCP SDK, Vitest | Glimpse rendering bridge                     |
+| `grid-server/`        | TypeScript, MCP SDK, Vitest | GRID/GATE integration                        |
+| `lots-server/`        | TypeScript, MCP SDK, Vitest | Experiment catalog and runner                |
+| `maintain-server/`    | TypeScript, MCP SDK, Vitest | Diagnostics and cleanup                      |
+| `mangrove-server/`    | TypeScript, MCP SDK, Vitest | Ecosystem coordination                       |
+| `ori-server/`         | TypeScript, MCP SDK, Vitest | Orientation and onboarding                   |
+| `overview-server/`    | TypeScript, MCP SDK, Vitest | Checkpoint and health check                  |
+| `pulse-server/`       | TypeScript, MCP SDK, Vitest | Briefings, focus, journaling                 |
+| `seeds-server/`       | TypeScript, MCP SDK, Vitest | Ecosystem snapshots                          |
+| `shared-types/`       | TypeScript                  | Shared types + audit client; **build first** |
+| `glimpse-artifact/`   | React 18, Vite, TailwindCSS | Component library                            |
+| `glimpse-engine/`     | JavaScript (ES modules)     | Browser-only viz engine; no package.json     |
+| `GRID-main/`          | Python 3.13+, FastAPI, uv   | Nested repo — manage in its own git root     |
 
 ## Build and test commands
 

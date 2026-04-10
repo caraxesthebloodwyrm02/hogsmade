@@ -13,6 +13,7 @@
 **Question**: Does ori-server do what it claims?
 
 **How to test**:
+
 - Run the self-test (`run_tests` with ori-server's own projectId)
 - Verify 100 tests pass with 0 failures
 - Feed known-bad log lines to `collect_logs` and verify correct classification
@@ -20,6 +21,7 @@
 - Generate a report and check that sections correspond to available data
 
 **Pass criteria**:
+
 - All 100 built-in tests pass
 - Risk patterns correctly identify known signals (e.g., "FAIL" → critical)
 - Reports contain only sections with supporting data
@@ -54,6 +56,7 @@
   Verify that ori-server never writes to external data directories.
 
 **Pass criteria**:
+
 - No tool accepts unvalidated input
 - Sandbox rejects paths outside allowed roots
 - Guarded tools fail closed when gate is unavailable
@@ -86,6 +89,7 @@
   Could any be merged? Are any missing?
 
 **Pass criteria**:
+
 - Tool names follow a consistent pattern
 - Schemas reject invalid input with clear errors
 - Output is structured and scannable
@@ -97,6 +101,7 @@
 **Question**: Does ori-server handle edge cases and failures gracefully?
 
 **What to test**:
+
 - Call tools with empty inputs where data is expected
 - Call analysis tools when no logs have been collected
 - Call `run_tests` for a nonexistent projectId
@@ -104,6 +109,7 @@
 - Fill the notebook with many entries and verify query performance
 
 **Pass criteria**:
+
 - Empty/missing data returns structured empty responses, not errors
 - Invalid inputs return validation errors, not crashes
 - Gate disconnection triggers circuit breaker, not hang

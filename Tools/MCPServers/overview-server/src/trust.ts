@@ -142,7 +142,9 @@ function computeBuilderTrust(
     const penalty = Math.min(0.2, clusterAuditFailures * 0.05);
     score -= penalty;
     basis.push({
-      signal: `${clusterAuditFailures} audit failure${clusterAuditFailures === 1 ? "" : "s"} in window`,
+      signal: `${clusterAuditFailures} audit failure${
+        clusterAuditFailures === 1 ? "" : "s"
+      } in window`,
       weight: -penalty,
       sentiment: "negative",
     });

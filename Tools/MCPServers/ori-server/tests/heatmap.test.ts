@@ -1,10 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { ProjectEntry } from "../src/types.js";
 import type { CoverageReport, ThreatModel } from "../src/threat-model.js";
-import {
-  buildThreatProjectHeatmap,
-  scoreThreatProjectCell,
-} from "../src/heatmap.js";
+import { buildThreatProjectHeatmap, scoreThreatProjectCell } from "../src/heatmap.js";
 
 function modelWithThreats(ids: string[]): ThreatModel {
   return {

@@ -20,14 +20,15 @@ const pytestAdapter: RunnerAdapter = {
 
   parseOutput(stdout, stderr) {
     const combined = stdout + "\n" + stderr;
-    let passed = 0, failed = 0, skipped = 0, errors = 0;
+    let passed = 0,
+      failed = 0,
+      skipped = 0,
+      errors = 0;
     let durationMs = 0;
 
     // pytest short summary line: "5 passed, 2 failed, 1 skipped in 3.45s"
     // Also handles: "5 passed in 1.23s", "3 failed, 1 error in 2.00s"
-    const summaryMatch = combined.match(
-      /=+\s*((?:\d+\s+\w+(?:,\s*)?)+)\s+in\s+([\d.]+)s\s*=+/,
-    );
+    const summaryMatch = combined.match(/=+\s*((?:\d+\s+\w+(?:,\s*)?)+)\s+in\s+([\d.]+)s\s*=+/);
     if (summaryMatch) {
       const parts = summaryMatch[1];
       const passedMatch = parts.match(/(\d+)\s+passed/);
@@ -71,16 +72,17 @@ const vitestAdapter: RunnerAdapter = {
 
   parseOutput(stdout, stderr) {
     const combined = stdout + "\n" + stderr;
-    let passed = 0, failed = 0, skipped = 0, errors = 0;
+    let passed = 0,
+      failed = 0,
+      skipped = 0,
+      errors = 0;
     let durationMs = 0;
 
     // Vitest summary lines:
     //  "Tests  10 passed (10)"
     //  "Tests  3 failed | 7 passed (10)"
     //  "Tests  1 skipped | 9 passed (10)"
-    const testsLine = combined.match(
-      /Tests\s+((?:\d+\s+\w+(?:\s*\|\s*)?)+)\s*\(\d+\)/,
-    );
+    const testsLine = combined.match(/Tests\s+((?:\d+\s+\w+(?:\s*\|\s*)?)+)\s*\(\d+\)/);
     if (testsLine) {
       const parts = testsLine[1];
       const passedMatch = parts.match(/(\d+)\s+passed/);
@@ -101,9 +103,7 @@ const vitestAdapter: RunnerAdapter = {
     // "Test Files  2 passed (2)" or "Test Files  1 failed | 1 passed (2)"
     // If individual test counts weren't found, try test file counts as fallback
     if (passed === 0 && failed === 0) {
-      const fileLine = combined.match(
-        /Test Files\s+((?:\d+\s+\w+(?:\s*\|\s*)?)+)\s*\(\d+\)/,
-      );
+      const fileLine = combined.match(/Test Files\s+((?:\d+\s+\w+(?:\s*\|\s*)?)+)\s*\(\d+\)/);
       if (fileLine) {
         const parts = fileLine[1];
         const fp = parts.match(/(\d+)\s+passed/);
@@ -133,7 +133,10 @@ const nodeTestAdapter: RunnerAdapter = {
 
   parseOutput(stdout, stderr) {
     const combined = stdout + "\n" + stderr;
-    let passed = 0, failed = 0, skipped = 0, errors = 0;
+    let passed = 0,
+      failed = 0,
+      skipped = 0,
+      errors = 0;
     let durationMs = 0;
 
     // Node test runner TAP-like output:

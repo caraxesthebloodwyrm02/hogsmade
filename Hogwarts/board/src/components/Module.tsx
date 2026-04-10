@@ -60,7 +60,9 @@ export function Module({ house, knobs, selectedKnobId, onKnobClick }: ModuleProp
           </span>
           <ChevronDown
             size={16}
-            className={`text-text-muted transition-transform duration-200 ${collapsed ? "-rotate-90" : ""}`}
+            className={`text-text-muted transition-transform duration-200 ${
+              collapsed ? "-rotate-90" : ""
+            }`}
           />
         </div>
       </button>

@@ -59,9 +59,7 @@ export async function runTestSuite(
   const finalArgs = options?.filter ? [...args, options.filter] : args;
 
   // Security: validate the command doesn't contain shell operators
-  const cmdCheck = executionPolicy.validateCommand(
-    [command, ...finalArgs].join(" "),
-  );
+  const cmdCheck = executionPolicy.validateCommand([command, ...finalArgs].join(" "));
   if (cmdCheck.verdict === "deny") {
     throw new Error(`Security policy blocked command: ${cmdCheck.reason}`);
   }
@@ -219,7 +217,14 @@ export async function runAllTests(
         id: generateId("run"),
         projectId: id,
         timestamp: new Date().toISOString(),
-        summary: { passed: 0, failed: 0, skipped: 0, errors: 1, durationMs: 0, timestamp: new Date().toISOString() },
+        summary: {
+          passed: 0,
+          failed: 0,
+          skipped: 0,
+          errors: 1,
+          durationMs: 0,
+          timestamp: new Date().toISOString(),
+        },
         rawStdoutPath: "",
         rawStderrPath: "",
         logEntriesCreated: 0,
@@ -273,7 +278,10 @@ export async function listRuns(options?: {
 
   try {
     const files = await fs.readdir(config.runsDir);
-    const jsonFiles = files.filter((f) => f.endsWith(".json")).sort().reverse();
+    const jsonFiles = files
+      .filter((f) => f.endsWith(".json"))
+      .sort()
+      .reverse();
 
     const allRuns: TestRunResult[] = [];
     for (const file of jsonFiles) {

@@ -167,9 +167,7 @@ export async function onCaseStatusChanged(
   if (caseRecord.status === "promoted") {
     // Note: In real implementation, this would call seeds-server MCP tool
     const safeCaseId4 = sanitizeLogValue(caseRecord.caseId);
-    console.error(
-      `[SEEDS_HOOK] Would create ecosystem snapshot for promoted case ${safeCaseId4}`,
-    );
+    console.error(`[SEEDS_HOOK] Would create ecosystem snapshot for promoted case ${safeCaseId4}`);
   }
 }
 

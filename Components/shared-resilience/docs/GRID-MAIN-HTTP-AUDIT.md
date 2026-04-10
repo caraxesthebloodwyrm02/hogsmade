@@ -1,6 +1,6 @@
 # GRID-main HTTP Call Site Audit
 
-**Date:** 2026-03-14  
+**Date:** 2026-03-14
 **Purpose:** Identify all HTTP call sites in GRID-main that need resilience wrapping (circuit breaker, retry, rate limiting).
 
 ---

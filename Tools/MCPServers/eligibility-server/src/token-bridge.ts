@@ -10,12 +10,7 @@
  * Memo pattern: pipeline.ts deriveConditions/deriveObservations, evolution.ts buildMomentum
  */
 
-import type {
-  WeightBand,
-  CycleStatus,
-  EndpointStatus,
-  ConditionSeverity,
-} from "./types.js";
+import type { WeightBand, CycleStatus, EndpointStatus, ConditionSeverity } from "./types.js";
 
 // ── Token group identifiers ──
 
@@ -63,12 +58,12 @@ export interface ResolvedToken {
 
 const MOOD_TOKENS: Record<AtlasMoodKey, ResolvedToken> = {
   enthusiastic: { cssVar: "--atlas-mood-enthusiastic", value: "#c2956b", group: "mood" },
-  curious:      { cssVar: "--atlas-mood-curious",      value: "#a4b5c8", group: "mood" },
-  supportive:   { cssVar: "--atlas-mood-supportive",   value: "#c9ad8e", group: "mood" },
-  playful:      { cssVar: "--atlas-mood-playful",      value: "#d4a87e", group: "mood" },
-  focused:      { cssVar: "--atlas-mood-focused",      value: "#6d7f96", group: "mood" },
-  calm:         { cssVar: "--atlas-mood-calm",          value: "#8a9bb0", group: "mood" },
-  creative:     { cssVar: "--atlas-mood-creative",     value: "#a8886a", group: "mood" },
+  curious: { cssVar: "--atlas-mood-curious", value: "#a4b5c8", group: "mood" },
+  supportive: { cssVar: "--atlas-mood-supportive", value: "#c9ad8e", group: "mood" },
+  playful: { cssVar: "--atlas-mood-playful", value: "#d4a87e", group: "mood" },
+  focused: { cssVar: "--atlas-mood-focused", value: "#6d7f96", group: "mood" },
+  calm: { cssVar: "--atlas-mood-calm", value: "#8a9bb0", group: "mood" },
+  creative: { cssVar: "--atlas-mood-creative", value: "#a8886a", group: "mood" },
 };
 
 const COOL_SCALE: Record<CoolScaleStep, string> = {
@@ -102,29 +97,42 @@ const MEMORY_COLORS: Record<MemoryRecency, string> = {
 
 export function weightBandToOpacity(band: WeightBand): TraceOpacityIndex {
   switch (band) {
-    case "dominant": return 0;
-    case "elevated": return 1;
-    case "steady": return 3;
-    case "trace": return 4;
+    case "dominant":
+      return 0;
+    case "elevated":
+      return 1;
+    case "steady":
+      return 3;
+    case "trace":
+      return 4;
   }
 }
 
 export function cycleStatusToState(status: CycleStatus): AtlasStateKey {
   switch (status) {
-    case "active": return "active";
-    case "promotion_pending": return "transitioning";
-    case "promoted": return "sealed";
-    case "returned": return "dormant";
-    case "archived": return "dormant";
+    case "active":
+      return "active";
+    case "promotion_pending":
+      return "transitioning";
+    case "promoted":
+      return "sealed";
+    case "returned":
+      return "dormant";
+    case "archived":
+      return "dormant";
   }
 }
 
 export function gateDecisionToCool(decision: PromotionGateDecision): CoolScaleStep {
   switch (decision) {
-    case "allow_promotion": return 100;
-    case "hold_for_tighten": return 400;
-    case "return_to_balance": return 600;
-    case "deny_promotion": return 900;
+    case "allow_promotion":
+      return 100;
+    case "hold_for_tighten":
+      return 400;
+    case "return_to_balance":
+      return 600;
+    case "deny_promotion":
+      return 900;
   }
 }
 
@@ -150,9 +158,12 @@ export function endpointStatusToConsent(status: EndpointStatus): ConsentPack {
 
 export function conditionSeverityToOpacity(severity: ConditionSeverity): TraceOpacityIndex {
   switch (severity) {
-    case "priority": return 0;
-    case "watch": return 2;
-    case "info": return 4;
+    case "priority":
+      return 0;
+    case "watch":
+      return 2;
+    case "info":
+      return 4;
   }
 }
 
@@ -234,10 +245,10 @@ export interface AttentionHead {
 }
 
 export const ATTENTION_HEADS: Record<string, AttentionHead> = {
-  sentinel: { name: "sentinel", depth: 1, angularTolerance: 5, distanceRadius: 0.10 },
+  sentinel: { name: "sentinel", depth: 1, angularTolerance: 5, distanceRadius: 0.1 },
   watchman: { name: "watchman", depth: 2, angularTolerance: 15, distanceRadius: 0.35 },
-  explorer: { name: "explorer", depth: 3, angularTolerance: 30, distanceRadius: 0.60 },
-  open:     { name: "open",     depth: 5, angularTolerance: 90, distanceRadius: 1.0 },
+  explorer: { name: "explorer", depth: 3, angularTolerance: 30, distanceRadius: 0.6 },
+  open: { name: "open", depth: 5, angularTolerance: 90, distanceRadius: 1.0 },
 };
 
 // ── Angular computation ──
@@ -322,11 +333,7 @@ export function arcsPerLayer(points: EntityPoint[]): ArcSlice[] {
 
 // ── Attention ──
 
-export function attentionScore(
-  query: EntityPoint,
-  key: EntityPoint,
-  head: AttentionHead,
-): number {
+export function attentionScore(query: EntityPoint, key: EntityPoint, head: AttentionHead): number {
   const dist = angularDistance(query, key);
   if (dist >= head.angularTolerance) return 0;
   return 1 - dist / head.angularTolerance;

@@ -98,7 +98,9 @@ function transformGateResponse(api: GateApiResponse): GateSnapshot {
     source: "grid-server",
     status: env.passed ? ("success" as const) : ("failure" as const),
     durationMs: env.durationMs,
-    summary: `Envelope ${env.id} ${env.passed ? "passed" : "failed"} ${env.steps.length} checks in ${env.durationMs.toFixed(1)}ms`,
+    summary: `Envelope ${env.id} ${env.passed ? "passed" : "failed"} ${
+      env.steps.length
+    } checks in ${env.durationMs.toFixed(1)}ms`,
   }));
 
   const nonces: NonceEntry[] = api.nonces.map((n) => ({

@@ -47,9 +47,9 @@ export interface TransistorGate {
   armedAtStep: number;
   firesAtStep: number;
   state: TransistorState;
-  armedAt?: string;   // ISO timestamp
-  firedAt?: string;   // ISO timestamp
-  firedValue?: "0" | "1";  // "1" = success fire, "0" = failure (armed=OFF at fire step)
+  armedAt?: string; // ISO timestamp
+  firedAt?: string; // ISO timestamp
+  firedValue?: "0" | "1"; // "1" = success fire, "0" = failure (armed=OFF at fire step)
 }
 
 // ── Decorated Variable ──
@@ -61,7 +61,7 @@ export interface DecoratedVar {
   triggerStep: number;
   zone: QuantizationZone;
   fireOn: "step_enter" | "step_exit" | "checkpoint";
-  firedAt?: string;  // ISO timestamp
+  firedAt?: string; // ISO timestamp
 }
 
 // ── Signal ──
@@ -81,7 +81,7 @@ export interface HarnessSignal {
   zone: QuantizationZone;
   intensity: number;
   timestamp: string;
-  isAnomaly: boolean;  // true if signal fires in silence zone
+  isAnomaly: boolean; // true if signal fires in silence zone
 }
 
 // ── Scenario ──
@@ -90,11 +90,11 @@ export type ScenarioStatus = "pending" | "running" | "complete" | "failed";
 
 export interface HarnessScenario {
   id: string;
-  name: string;        // e.g. "bastiodon", "talonflame", "exeggutor-a"
+  name: string; // e.g. "bastiodon", "talonflame", "exeggutor-a"
   displayName: string; // e.g. "Bastiodon — Foundation Layer Anchor"
   layer: HarnessLayer;
   quantizationZone: QuantizationZone;
-  types: string[];     // e.g. ["Steel", "Rock"]
+  types: string[]; // e.g. ["Steel", "Rock"]
   fastMove: string;
   chargedMoves: string[];
   domainFunction: string;

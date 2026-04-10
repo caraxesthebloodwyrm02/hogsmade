@@ -32,6 +32,7 @@ A concise 3-call batch that returns a go/no-go verdict in seconds. Run this inst
 **When to use**: Session start, mid-session sanity check, or pre-commit validation.
 
 // turbo
+
 1. Run the looking-glass batch — 3 parallel calls:
 
 ```
@@ -68,6 +69,7 @@ LOOKING-GLASS VERDICT:
 ```
 
 **Example — Fast Clear (skip full pipeline)**:
+
 ```
   check_the_line → clean: true, 0 errors, 0 warnings
   ecosystem_scan → overallScore: 82, 0 issues
@@ -77,6 +79,7 @@ LOOKING-GLASS VERDICT:
 ```
 
 **Example — Fast Act (run full pipeline)**:
+
 ```
   check_the_line → clean: false, 2 errors
   ecosystem_scan → overallScore: 68
@@ -87,6 +90,7 @@ LOOKING-GLASS VERDICT:
 ```
 
 **Example — Fast Watch (probe only)**:
+
 ```
   check_the_line → clean: true
   ecosystem_scan → overallScore: 65
@@ -103,16 +107,17 @@ LOOKING-GLASS VERDICT:
 All calls are read-only with no side effects. Run in parallel.
 
 // turbo
+
 1. Run the parallel signal sweep — call all six tools simultaneously:
 
-| Tool | Source Server | Signal Collected |
-|------|---------------|------------------|
-| `mcp13_checkpoint(depth: "deep")` | overview | Cluster health, trust scores, drift items |
-| `mcp16_ecosystem_scan(saveSnapshot: true)` | seeds | Repo health, uncommitted counts, branch state |
-| `mcp3_check_the_line()` | eligibility | Structural findings: barrel gaps, orphaned exports, import drift |
-| `mcp3_list_active_cycles()` | eligibility | Evolution beat position, momentum, drift |
-| `mcp2_enforcement_status()` | echoes | Precedent escalation levels, active counts |
-| `mcp2_audit_stats()` | echoes | Failure rates, event counts by tool and source |
+| Tool                                       | Source Server | Signal Collected                                                 |
+| ------------------------------------------ | ------------- | ---------------------------------------------------------------- |
+| `mcp13_checkpoint(depth: "deep")`          | overview      | Cluster health, trust scores, drift items                        |
+| `mcp16_ecosystem_scan(saveSnapshot: true)` | seeds         | Repo health, uncommitted counts, branch state                    |
+| `mcp3_check_the_line()`                    | eligibility   | Structural findings: barrel gaps, orphaned exports, import drift |
+| `mcp3_list_active_cycles()`                | eligibility   | Evolution beat position, momentum, drift                         |
+| `mcp2_enforcement_status()`                | echoes        | Precedent escalation levels, active counts                       |
+| `mcp2_audit_stats()`                       | echoes        | Failure rates, event counts by tool and source                   |
 
 **Output**: Six signal sets that feed into the QUANTIFY formula.
 
@@ -130,58 +135,58 @@ PATH = 100 × [ (health/100 × 0.30)
               + (momentum     × 0.10) ]
 ```
 
-| Signal    | Weight | Source                             | Raw → Normalized                  |
-|-----------|--------|------------------------------------|-----------------------------------|
-| health    | 0.30   | `ecosystem_scan` healthScore       | 0–100 → divide by 100             |
-| trust     | 0.25   | `checkpoint` trust.confidence      | already 0.0–1.0                   |
-| drift     | 0.20   | uncommitted file count / 30        | capped at 1.0; inverted (1−drift) |
-| fail      | 0.15   | audit failures / total events      | already 0.0–1.0; inverted (1−fail)|
-| momentum  | 0.10   | evolution cycle momentum           | 0.0–1.0; default 0.5 if no cycle  |
+| Signal   | Weight | Source                        | Raw → Normalized                   |
+| -------- | ------ | ----------------------------- | ---------------------------------- |
+| health   | 0.30   | `ecosystem_scan` healthScore  | 0–100 → divide by 100              |
+| trust    | 0.25   | `checkpoint` trust.confidence | already 0.0–1.0                    |
+| drift    | 0.20   | uncommitted file count / 30   | capped at 1.0; inverted (1−drift)  |
+| fail     | 0.15   | audit failures / total events | already 0.0–1.0; inverted (1−fail) |
+| momentum | 0.10   | evolution cycle momentum      | 0.0–1.0; default 0.5 if no cycle   |
 
 2. Apply the formula to each entity from Phase 1 data. For entities without a direct evolution cycle, use momentum = 0.5 (neutral). Group by cluster and average for cluster-level PATH.
 
 **Reference scoring** (GRUFF baseline 2026-04-06):
 
-| Rank | Entity             | Health | Trust | Drift | Fail  | Mom  | **PATH** | Tier   |
-|------|--------------------|--------|-------|-------|-------|------|----------|--------|
-|  1   | afloat             | 0.95   | 0.80  | 0.00  | 0.00  | 0.50 | **73.5** | CLEAR  |
-|  2   | echoes             | 0.85   | 0.80  | 0.10  | 0.00  | 0.50 | **69.5** | CLEAR  |
-|  3   | seeds-server       | 0.90   | 0.50  | 0.00  | 0.00  | 0.50 | **67.0** | CLEAR  |
-|  4   | GRID               | 0.90   | 0.40  | 0.17  | 0.00  | 0.50 | **63.6** | WATCH  |
-|  5   | glimpse-engine     | 0.85   | 0.80  | 0.33  | 0.00  | 0.50 | **64.9** | WATCH  |
-|  6   | eligibility-server | 0.80   | 0.50  | 0.00  | 0.18  | 0.13 | **57.9** | WATCH  |
-|  7   | apiguard           | 0.50   | 0.40  | 0.00  | 0.00  | 0.50 | **50.0** | WATCH  |
-|  8   | Vision             | 0.50   | 0.40  | 0.00  | 0.00  | 0.50 | **50.0** | WATCH  |
-|  9   | hogsmade           | 0.70   | 0.50  | 0.90  | 0.00  | 0.50 | **50.5** | WATCH  |
-| 10   | grid-server        | 0.75   | 0.40  | 0.00  | 0.67  | 0.50 | **47.5** | ACT    |
+| Rank | Entity             | Health | Trust | Drift | Fail | Mom  | **PATH** | Tier  |
+| ---- | ------------------ | ------ | ----- | ----- | ---- | ---- | -------- | ----- |
+| 1    | afloat             | 0.95   | 0.80  | 0.00  | 0.00 | 0.50 | **73.5** | CLEAR |
+| 2    | echoes             | 0.85   | 0.80  | 0.10  | 0.00 | 0.50 | **69.5** | CLEAR |
+| 3    | seeds-server       | 0.90   | 0.50  | 0.00  | 0.00 | 0.50 | **67.0** | CLEAR |
+| 4    | GRID               | 0.90   | 0.40  | 0.17  | 0.00 | 0.50 | **63.6** | WATCH |
+| 5    | glimpse-engine     | 0.85   | 0.80  | 0.33  | 0.00 | 0.50 | **64.9** | WATCH |
+| 6    | eligibility-server | 0.80   | 0.50  | 0.00  | 0.18 | 0.13 | **57.9** | WATCH |
+| 7    | apiguard           | 0.50   | 0.40  | 0.00  | 0.00 | 0.50 | **50.0** | WATCH |
+| 8    | Vision             | 0.50   | 0.40  | 0.00  | 0.00 | 0.50 | **50.0** | WATCH |
+| 9    | hogsmade           | 0.70   | 0.50  | 0.90  | 0.00 | 0.50 | **50.5** | WATCH |
+| 10   | grid-server        | 0.75   | 0.40  | 0.00  | 0.67 | 0.50 | **47.5** | ACT   |
 
 ---
 
 ## Phase 3 — SORT (rank and tier-assign)
 
-| Tier       | PATH Range | Action Required                      |
-|------------|------------|--------------------------------------|
-| **CLEAR**  | 65–100     | None — reference baseline             |
-| **WATCH**  | 50–64      | Monitor; batch-fix if convenient     |
-| **ACT**    | 35–49      | Fix this session before continuing   |
-| **URGENT** | 0–34       | Stop everything; fix immediately     |
+| Tier       | PATH Range | Action Required                    |
+| ---------- | ---------- | ---------------------------------- |
+| **CLEAR**  | 65–100     | None — reference baseline          |
+| **WATCH**  | 50–64      | Monitor; batch-fix if convenient   |
+| **ACT**    | 35–49      | Fix this session before continuing |
+| **URGENT** | 0–34       | Stop everything; fix immediately   |
 
 3. Sort entities descending by PATH and assign tiers. Print the ranked table for the session.
 
 **Baseline ranking** (2026-04-06):
 
-| Rank | Entity             | PATH  | Tier    | Dominant Signal                  |
-|------|--------------------|-------|---------|----------------------------------|
-|  1   | afloat             | 73.5  | CLEAR   | High trust (0.80), zero drift    |
-|  2   | echoes             | 69.5  | CLEAR   | Stable, 3 uncommitted only       |
-|  3   | seeds-server       | 67.0  | CLEAR   | Zero audit failures              |
-|  4   | glimpse-engine     | 64.9  | WATCH   | Drift: 10 uncommitted files      |
-|  5   | GRID               | 63.6  | WATCH   | Low trust (0.40) despite 90 hp   |
-|  6   | eligibility-server | 57.9  | WATCH   | 18% audit failure rate           |
-|  7   | hogsmade           | 50.5  | WATCH   | 27 uncommitted (0.90 drift)      |
-|  8   | apiguard           | 50.0  | WATCH   | No git repo — 50 health floor    |
-|  9   | Vision             | 50.0  | WATCH   | No git repo — 50 health floor    |
-| 10   | grid-server        | 47.5  | **ACT** | 67% audit failure rate           |
+| Rank | Entity             | PATH | Tier    | Dominant Signal                |
+| ---- | ------------------ | ---- | ------- | ------------------------------ |
+| 1    | afloat             | 73.5 | CLEAR   | High trust (0.80), zero drift  |
+| 2    | echoes             | 69.5 | CLEAR   | Stable, 3 uncommitted only     |
+| 3    | seeds-server       | 67.0 | CLEAR   | Zero audit failures            |
+| 4    | glimpse-engine     | 64.9 | WATCH   | Drift: 10 uncommitted files    |
+| 5    | GRID               | 63.6 | WATCH   | Low trust (0.40) despite 90 hp |
+| 6    | eligibility-server | 57.9 | WATCH   | 18% audit failure rate         |
+| 7    | hogsmade           | 50.5 | WATCH   | 27 uncommitted (0.90 drift)    |
+| 8    | apiguard           | 50.0 | WATCH   | No git repo — 50 health floor  |
+| 9    | Vision             | 50.0 | WATCH   | No git repo — 50 health floor  |
+| 10   | grid-server        | 47.5 | **ACT** | 67% audit failure rate         |
 
 ---
 
@@ -205,17 +210,20 @@ URGENT PROTOCOL:
 ```
 
 **Example** — grid-server drops to 25 (admission gate cascade failure):
+
 ```bash
 # Step 1: Start GRID API (dependency for grid-server)
 cd /home/caraxes/CascadeProjects/Projects/GRID-main
 GRID_API_URL=http://localhost:8080 nohup uv run python -m application.mothership.main > /tmp/grid-mothership.log 2>&1 &
 sleep 5 && curl -s --max-time 5 http://localhost:8080/health
 ```
+
 ```
 # Step 2: Verify
 mcp9_health_check()              → should show "healthy"
 mcp9_admission_stats()           → should return data (not fetch error)
 ```
+
 ```
 # Step 3: Re-score — failure rate drops from 0.67 → ~0.10, PATH rises to ~60+
 ```
@@ -237,17 +245,21 @@ SWEEP A — grid-server (requires user approval for server start)
 
   Step 1 — Check if GRID API is already running:
 ```
+
 ```bash
 curl -s --max-time 3 http://localhost:8080/health || echo "DOWN — need /startup Area 4"
 ```
+
 ```
   Step 2 — If DOWN, start mothership:
 ```
+
 ```bash
 cd /home/caraxes/CascadeProjects/Projects/GRID-main
 GRID_API_URL=http://localhost:8080 nohup uv run python -m application.mothership.main > /tmp/grid-mothership.log 2>&1 &
 sleep 5 && tail -5 /tmp/grid-mothership.log
 ```
+
 ```
   Step 3 — Verify grid-server reconnects:
     mcp9_health_check()
@@ -272,14 +284,18 @@ These are stable. Execute in batch if time permits, or defer to next session.
 ```
 SWEEP B — hogsmade drift reduction
 ```
+
 // turbo
+
 ```bash
 echo "=== hogsmade uncommitted inventory ==="
 git -C /home/caraxes/CascadeProjects status --short | head -40
 ```
+
 ```
   Step 1 — Inspect and group changes:
 ```
+
 ```bash
 echo "--- MCP Servers ---"
 git -C /home/caraxes/CascadeProjects diff --stat -- Tools/MCPServers/
@@ -290,9 +306,11 @@ git -C /home/caraxes/CascadeProjects diff --stat -- .windsurf/
 echo "--- Other ---"
 git -C /home/caraxes/CascadeProjects diff --stat -- ':!Tools/MCPServers/' ':!Components/' ':!.windsurf/'
 ```
+
 ```
   Step 2 — Commit in conventional batches (requires user approval):
 ```
+
 ```bash
 cd /home/caraxes/CascadeProjects
 git add Tools/MCPServers/ && git commit -m "feat(mcp): update server implementations"
@@ -300,6 +318,7 @@ git add Components/ && git commit -m "fix(shared): update shared packages"
 git add .windsurf/ && git commit -m "docs(workflows): add lumos workflow and updates"
 git add -A && git commit -m "chore: batch remaining changes"
 ```
+
 ```
   Step 3 — Verify:
     mcp16_repo_detail(repoName: "hogsmade") → uncommitted should drop to 0
@@ -311,18 +330,23 @@ git add -A && git commit -m "chore: batch remaining changes"
 ```
 SWEEP C — glimpse-engine drift reduction
 ```
+
 // turbo
+
 ```bash
 echo "=== glimpse-engine uncommitted ==="
 git -C /home/caraxes/CascadeProjects diff --stat -- Applications/glimpse-engine/
 ```
+
 ```
   Step 1 — Batch commit:
 ```
+
 ```bash
 cd /home/caraxes/CascadeProjects
 git add Applications/glimpse-engine/ && git commit -m "feat(glimpse-engine): update engine and configs"
 ```
+
 ```
   Step 2 — Verify:
     mcp16_repo_detail(repoName: "glimpse-engine") → uncommitted → 0
@@ -334,18 +358,23 @@ git add Applications/glimpse-engine/ && git commit -m "feat(glimpse-engine): upd
 ```
 SWEEP D — GRID drift reduction
 ```
+
 // turbo
+
 ```bash
 echo "=== GRID uncommitted ==="
 git -C /home/caraxes/CascadeProjects/Projects/GRID-main status --short
 ```
+
 ```
   Step 1 — Commit on feature branch:
 ```
+
 ```bash
 cd /home/caraxes/CascadeProjects/Projects/GRID-main
 git add -A && git commit -m "feat(knowledge): sqlite fts5 migration progress"
 ```
+
 ```
   Step 2 — Verify:
     mcp16_repo_detail(repoName: "GRID") → uncommitted → 0
@@ -381,12 +410,14 @@ SWEEP F — uninitialized repo decision (requires user decision)
 
   Option A — Initialize as git repos:
 ```
+
 ```bash
 for dir in apiguard Vision; do
   path=$(find /home/caraxes/canopy /home/caraxes/grove -maxdepth 3 -type d -name "$dir" 2>/dev/null | head -1)
   [ -n "$path" ] && echo "Found: $path" && git -C "$path" init
 done
 ```
+
 ```
   Option B — Exclude from scan roots (preferred if not source-controlled):
     Edit seeds-server config to exclude these directories from SEEDS_ROOT
@@ -398,10 +429,10 @@ done
 
 ### 4.4 — CLEAR Tier (reference baselines — no action)
 
-| Entity       | PATH | Role                                                |
-|--------------|------|-----------------------------------------------------|
-| afloat       | 73.5 | Gold standard: zero drift, 0.80 trust, 95 health   |
-| echoes       | 69.5 | Near-clear: 3 uncommitted files, otherwise perfect  |
+| Entity       | PATH | Role                                                  |
+| ------------ | ---- | ----------------------------------------------------- |
+| afloat       | 73.5 | Gold standard: zero drift, 0.80 trust, 95 health      |
+| echoes       | 69.5 | Near-clear: 3 uncommitted files, otherwise perfect    |
 | seeds-server | 67.0 | Reliable signal source: zero failures, 9 clean events |
 
 Use these as comparison anchors when evaluating sweep effectiveness.
@@ -439,6 +470,7 @@ EXECUTION ORDER (dependency chain):
 7. After all sweeps complete, run the full re-probe:
 
 // turbo
+
 ```bash
 echo "=== LUMOS Re-probe ==="
 echo "All sweeps complete. Collecting updated signals..."
@@ -491,6 +523,7 @@ Call in parallel:
 ```
 
 **Current state**:
+
 ```
   Case:     cycle-15bb439a
   Beat:     balance → (target: tighten)
@@ -527,23 +560,23 @@ Tiers: CLEAR ≥ 65 │ WATCH ≥ 50 │ ACT ≥ 35 │ URGENT < 35
 
 ### Tool Cheat Sheet
 
-| Phase    | Tools                                                                   |
-|----------|-------------------------------------------------------------------------|
-| PROBE    | `checkpoint`, `ecosystem_scan`, `check_the_line`, `audit_stats`, `enforcement_status`, `list_active_cycles` |
-| STRUCT   | `hold_the_line`, `check_the_line`                                       |
-| FIX      | `/startup`, `git add && git commit`, config edits                       |
-| VERIFY   | `health_check`, `repo_detail`, `get_cycle_snapshot`, `audit_stats`      |
-| EVOLVE   | `get_cycle_snapshot`, `advance_cycle`, `record_cycle_signal`            |
-| JOURNAL  | `journal_add`, `focus_start`, `focus_end`                               |
-| COMPARE  | `experiment_compare`, `ecosystem_trend`, `collect_table`                |
+| Phase   | Tools                                                                                                       |
+| ------- | ----------------------------------------------------------------------------------------------------------- |
+| PROBE   | `checkpoint`, `ecosystem_scan`, `check_the_line`, `audit_stats`, `enforcement_status`, `list_active_cycles` |
+| STRUCT  | `hold_the_line`, `check_the_line`                                                                           |
+| FIX     | `/startup`, `git add && git commit`, config edits                                                           |
+| VERIFY  | `health_check`, `repo_detail`, `get_cycle_snapshot`, `audit_stats`                                          |
+| EVOLVE  | `get_cycle_snapshot`, `advance_cycle`, `record_cycle_signal`                                                |
+| JOURNAL | `journal_add`, `focus_start`, `focus_end`                                                                   |
+| COMPARE | `experiment_compare`, `ecosystem_trend`, `collect_table`                                                    |
 
 ### Expected Outcomes After Full Sweep
 
-| Metric             | Before | Target  |
-|--------------------|--------|---------|
-| Ecosystem score    | 75     | 82+     |
-| Drift items        | 7      | ≤ 2     |
-| ACT-tier entities  | 1      | 0       |
-| grid-server fail%  | 67%    | < 15%   |
-| Evolution beat     | balance| tighten |
-| Uncommitted total  | 45     | < 5     |
+| Metric            | Before  | Target  |
+| ----------------- | ------- | ------- |
+| Ecosystem score   | 75      | 82+     |
+| Drift items       | 7       | ≤ 2     |
+| ACT-tier entities | 1       | 0       |
+| grid-server fail% | 67%     | < 15%   |
+| Evolution beat    | balance | tighten |
+| Uncommitted total | 45      | < 5     |

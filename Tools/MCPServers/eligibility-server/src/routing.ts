@@ -90,7 +90,10 @@ export function withAudit(
       await emitEligibilityAudit(toolName, "failure", {
         ...(metadata ?? {}),
         durationMs,
-        error: error instanceof Error ? error.message : String(error).slice(0, MAX_METADATA_VALUE_LENGTH),
+        error:
+          error instanceof Error
+            ? error.message
+            : String(error).slice(0, MAX_METADATA_VALUE_LENGTH),
       });
       throw error;
     }

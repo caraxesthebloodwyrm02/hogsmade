@@ -1,7 +1,7 @@
 # Phase 3 — Next Steps and Actionable Recommendations
 
-**Date**: 2026-03-08  
-**Spec**: [2026-03-08-iteration-phases.md](./2026-03-08-iteration-phases.md) (Phase 3)  
+**Date**: 2026-03-08
+**Spec**: [2026-03-08-iteration-phases.md](./2026-03-08-iteration-phases.md) (Phase 3)
 **Prerequisite**: [Phase 2 baseline](./2026-03-08-phase2-baseline.md) closed
 
 ---

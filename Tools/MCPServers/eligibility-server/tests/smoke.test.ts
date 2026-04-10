@@ -149,7 +149,8 @@ describe("eligibility verification: schema-handler alignment", () => {
     });
     expect(evaluation.validation.ok).toBe(true);
     expect(evaluation.validation.candidateCount).toBe(3);
-    const overallSlices = evaluation.result?.hierarchy.filter((s) => s.dimension === "overall") ?? [];
+    const overallSlices =
+      evaluation.result?.hierarchy.filter((s) => s.dimension === "overall") ?? [];
     expect(overallSlices.length).toBe(3);
     expect(overallSlices[0].rank).toBe(1);
   });
@@ -337,7 +338,15 @@ describe("token bridge — mood → resolved token", () => {
     expect(token.group).toBe("mood");
   });
   it("covers all 7 moods", () => {
-    const moods = ["enthusiastic", "curious", "supportive", "playful", "focused", "calm", "creative"] as const;
+    const moods = [
+      "enthusiastic",
+      "curious",
+      "supportive",
+      "playful",
+      "focused",
+      "calm",
+      "creative",
+    ] as const;
     for (const mood of moods) {
       const token = moodToToken(mood);
       expect(token.cssVar).toContain(mood);
@@ -425,9 +434,9 @@ describe("token bridge — resolve helpers", () => {
 // ── Angular attention: geometric sort with transformer-inspired heads ──
 
 const SEEDS: EntityPoint[] = [
-  { entityId: "grounding-gate",    g: 1.0, score: 1.0, layer: 2 },
-  { entityId: "struggle-point",    g: 1.0, score: 0.8, layer: 3 },
-  { entityId: "token-bridge",      g: 0.8, score: 0.7, layer: 3 },
+  { entityId: "grounding-gate", g: 1.0, score: 1.0, layer: 2 },
+  { entityId: "struggle-point", g: 1.0, score: 0.8, layer: 3 },
+  { entityId: "token-bridge", g: 0.8, score: 0.7, layer: 3 },
   { entityId: "scaffold-boundary", g: 0.6, score: 0.6, layer: 2 },
 ];
 
@@ -499,7 +508,7 @@ describe("angular attention — arcs per layer", () => {
 describe("angular attention — attention heads", () => {
   it("sentinel head: tight window (5°) excludes distant entities", () => {
     const query = SEEDS[0]; // grounding-gate θ=45°
-    const key = SEEDS[1];   // struggle-point θ≈38.66°
+    const key = SEEDS[1]; // struggle-point θ≈38.66°
     // angular distance ≈ 6.34° > sentinel tolerance 5° → score = 0
     expect(attentionScore(query, key, ATTENTION_HEADS.sentinel)).toBe(0);
   });

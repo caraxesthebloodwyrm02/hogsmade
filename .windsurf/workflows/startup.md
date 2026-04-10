@@ -11,6 +11,7 @@ Run this at the start of every session via `/startup`. It covers all areas in de
 Check what is and isn't listening before touching anything.
 
 // turbo
+
 1. Run the live service snapshot:
 
 ```bash
@@ -23,8 +24,7 @@ echo "=== Ports ===" && ss -tlnp | grep -E '8080|11434|3000|8000|8001' || echo "
 
 ## Area 2 — Environment variables (read-only)
 
-// turbo
-2. Print the values that MCP servers read at spawn time:
+// turbo 2. Print the values that MCP servers read at spawn time:
 
 ```bash
 echo "GRID_API_URL        = ${GRID_API_URL:-<NOT SET>}"
@@ -41,8 +41,7 @@ If any are `<NOT SET>`, check `mcp_config.json` — they are injected per-server
 
 ## Area 3 — Python venv / GRID-main sync (read-only first)
 
-// turbo
-3. Verify the GRID venv and sync state:
+// turbo 3. Verify the GRID venv and sync state:
 
 ```bash
 python_bin="/home/caraxes/CascadeProjects/Projects/GRID-main/.venv/bin/python"
@@ -54,6 +53,7 @@ fi
 ```
 
 **Fix if missing** (requires approval):
+
 ```bash
 cd /home/caraxes/CascadeProjects/Projects/GRID-main && uv sync --group dev --group test
 ```
@@ -74,6 +74,7 @@ sleep 5 && tail -20 /tmp/grid-mothership.log
 ```
 
 Confirm it bound:
+
 ```bash
 curl -s --max-time 5 http://localhost:8080/health
 ```
@@ -92,11 +93,13 @@ sleep 3 && curl -s http://localhost:11434/api/tags | python3 -c "import sys,json
 ```
 
 Verify required models are pulled:
+
 ```bash
 ollama list | grep -E "nomic-embed-text|ministral"
 ```
 
 If missing:
+
 ```bash
 ollama pull nomic-embed-text-v2-moe:latest
 ollama pull ministral-3:latest
@@ -106,8 +109,7 @@ ollama pull ministral-3:latest
 
 ## Area 6 — Repo health flags (read-only)
 
-// turbo
-6. Spot-check repos that the seeds-server has flagged as "no git repository found":
+// turbo 6. Spot-check repos that the seeds-server has flagged as "no git repository found":
 
 ```bash
 for dir in apiguard Vision assistive-agreement-contracts; do
@@ -121,6 +123,7 @@ done
 ```
 
 These repos score 50/100 in ecosystem scans and skew health averages. Remediation options:
+
 - `git init` + connect remote if intentional standalone
 - Remove from `SEEDS_ROOTS` scan paths if they are not source-controlled projects
 
@@ -128,8 +131,7 @@ These repos score 50/100 in ecosystem scans and skew health averages. Remediatio
 
 ## Area 7 — Final status summary
 
-// turbo
-7. Re-run the compact status check after any fixes:
+// turbo 7. Re-run the compact status check after any fixes:
 
 ```bash
 echo "--- GRID API ---" && curl -s --max-time 3 http://localhost:8080/health | python3 -m json.tool 2>/dev/null || echo "still DOWN"

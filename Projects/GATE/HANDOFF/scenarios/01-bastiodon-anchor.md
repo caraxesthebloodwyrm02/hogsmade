@@ -1,9 +1,9 @@
 # Scenario 01 — Bastiodon: Foundation Layer Anchor
 
-**Scenario ID**: `bastiodon`  
-**Pokemon**: Bastiodon (Steel/Rock)  
-**Role**: Lead / Anchor  
-**Layer**: Foundation  
+**Scenario ID**: `bastiodon`
+**Pokemon**: Bastiodon (Steel/Rock)
+**Role**: Lead / Anchor
+**Layer**: Foundation
 **Quantization Zone**: Buildup (steps 0–43 per cycle)
 
 ## Scenario Contract
@@ -51,16 +51,16 @@ harness_probe(scenario_id="bastiodon-<id>", signal_type="transistor")
 
 ## Expected Signals
 
-| Step | Signal | Value |
-|------|--------|-------|
-| 12 | HARNESS_TRANSISTOR_ARM_FOUNDATION | 0 (armed, not yet fired) |
-| 28 | HARNESS_ENERGY_BASTIODON | 8+ (accumulated) |
-| 43 | HARNESS_TRANSISTOR_ARM_FOUNDATION | 1 (fired) |
+| Step | Signal                            | Value                    |
+| ---- | --------------------------------- | ------------------------ |
+| 12   | HARNESS_TRANSISTOR_ARM_FOUNDATION | 0 (armed, not yet fired) |
+| 28   | HARNESS_ENERGY_BASTIODON          | 8+ (accumulated)         |
+| 43   | HARNESS_TRANSISTOR_ARM_FOUNDATION | 1 (fired)                |
 
 ## Failure Modes
 
-| Failure | Cause | Recovery |
-|---------|-------|----------|
-| Gate stuck ON | Pipeline interrupted at step 12-42 | Re-run from step 0; transistor resets on cycle re-entry |
-| Energy never accumulates | Scenario registered in wrong zone (drop instead of buildup) | Check `scenario.quantization_zone == "buildup"` |
-| ARM_FOUNDATION never fires | `fires_at_step` overridden to >43 | Check pipeline config; must be ≤43 |
+| Failure                    | Cause                                                       | Recovery                                                |
+| -------------------------- | ----------------------------------------------------------- | ------------------------------------------------------- |
+| Gate stuck ON              | Pipeline interrupted at step 12-42                          | Re-run from step 0; transistor resets on cycle re-entry |
+| Energy never accumulates   | Scenario registered in wrong zone (drop instead of buildup) | Check `scenario.quantization_zone == "buildup"`         |
+| ARM_FOUNDATION never fires | `fires_at_step` overridden to >43                           | Check pipeline config; must be ≤43                      |

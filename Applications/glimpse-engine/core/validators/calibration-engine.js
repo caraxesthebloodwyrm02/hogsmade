@@ -135,7 +135,9 @@ export function createCalibrationEngine(policyName = "adaptive", overrides = {})
 
           recordGap(frame, {
             type: GAP_TYPES.LOW_COVERAGE,
-            description: `Coverage ${(ratio * 100).toFixed(1)}% below threshold ${(threshold * 100).toFixed(0)}% for ${dim} dimension`,
+            description: `Coverage ${(ratio * 100).toFixed(1)}% below threshold ${(
+              threshold * 100
+            ).toFixed(0)}% for ${dim} dimension`,
             severity: Math.min(1, severity),
             affectedIds: entities.filter((e) => e.dimensions?.[dim] == null).map((e) => e.id),
             metadata: {
@@ -152,7 +154,9 @@ export function createCalibrationEngine(policyName = "adaptive", overrides = {})
       if (evidences?.length < policy.minEvidenceCount) {
         recordGap(frame, {
           type: GAP_TYPES.INSUFFICIENT_EVIDENCE,
-          description: `${evidences?.length || 0} evidence below minimum ${policy.minEvidenceCount} for policy ${policy.name}`,
+          description: `${evidences?.length || 0} evidence below minimum ${
+            policy.minEvidenceCount
+          } for policy ${policy.name}`,
           severity: 0.5 + (1 - (evidences?.length || 0) / policy.minEvidenceCount) * 0.3,
           metadata: {
             actualCount: evidences?.length || 0,
@@ -235,7 +239,9 @@ export function createCalibrationEngine(policyName = "adaptive", overrides = {})
           canAdjust: true,
           confidence: 0.8,
           action: "lower_thresholds",
-          reason: `Consistently low gap count (${avgGaps.toFixed(1)} avg) suggests thresholds may be too strict`,
+          reason: `Consistently low gap count (${avgGaps.toFixed(
+            1,
+          )} avg) suggests thresholds may be too strict`,
           suggestedAdjustment: -policy.adjustmentFactor || -0.05,
           affectedThresholds: ["LOW_COVERAGE", "WEAK_BASIS"],
           statistics: { avgGaps, variance, trend, sampleSize: gaps.length },
@@ -248,7 +254,9 @@ export function createCalibrationEngine(policyName = "adaptive", overrides = {})
           canAdjust: true,
           confidence: 0.7,
           action: "raise_thresholds",
-          reason: `High and increasing gap count (${avgGaps.toFixed(1)} avg) suggests thresholds too permissive`,
+          reason: `High and increasing gap count (${avgGaps.toFixed(
+            1,
+          )} avg) suggests thresholds too permissive`,
           suggestedAdjustment: policy.adjustmentFactor || 0.05,
           affectedThresholds: ["LOW_COVERAGE", "WEAK_BASIS"],
           statistics: { avgGaps, variance, trend, sampleSize: gaps.length },
@@ -261,7 +269,9 @@ export function createCalibrationEngine(policyName = "adaptive", overrides = {})
           canAdjust: true,
           confidence: 0.5,
           action: "tighten_bounds",
-          reason: `High variance in gap detection (${variance.toFixed(1)}) suggests unstable configuration`,
+          reason: `High variance in gap detection (${variance.toFixed(
+            1,
+          )}) suggests unstable configuration`,
           suggestedAdjustment: 0,
           recommendation: "Review pipeline configuration for consistency",
           statistics: { avgGaps, variance, trend, sampleSize: gaps.length },

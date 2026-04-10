@@ -21,30 +21,30 @@ This file provides guidance to Claude when working in the CascadeProjects worksp
 
 ### Quick Decode
 
-| Shorthand | Meaning |
-| --- | --- |
-| GRID | `Projects/GRID-main` - Python AI framework |
-| Glimpse | `Applications/glimpse-artifact` + `Applications/glimpse-engine` |
-| MCP ecosystem | `Tools/MCPServers/*` plus the GRID Python MCPs |
-| DIO | `Projects/DIO` - control room suite + episode tool |
-| GATE | `Projects/GATE` - envelopes, contracts, and runtime data |
-| CascadeProjects | `$CASCADE_WORKSPACE_ROOT` (default: `~/CascadeProjects`) |
-| Components | `Components/` - current shared package location |
-| Hogwarts | `Hogwarts/` - governance simulation and board UI |
+| Shorthand       | Meaning                                                         |
+| --------------- | --------------------------------------------------------------- |
+| GRID            | `Projects/GRID-main` - Python AI framework                      |
+| Glimpse         | `Applications/glimpse-artifact` + `Applications/glimpse-engine` |
+| MCP ecosystem   | `Tools/MCPServers/*` plus the GRID Python MCPs                  |
+| DIO             | `Projects/DIO` - control room suite + episode tool              |
+| GATE            | `Projects/GATE` - envelopes, contracts, and runtime data        |
+| CascadeProjects | `$CASCADE_WORKSPACE_ROOT` (default: `~/CascadeProjects`)        |
+| Components      | `Components/` - current shared package location                 |
+| Hogwarts        | `Hogwarts/` - governance simulation and board UI                |
 
 ### Active Workspace Areas
 
-| Area | Status | Notes |
-| --- | --- | --- |
-| `Projects/GRID-main/` | Production | Full-stack AI framework and nested git repo |
-| `Tools/MCPServers/` | Working | First-party TypeScript MCP servers |
-| `Applications/glimpse-artifact/` | Complete | React component library |
-| `Applications/glimpse-engine/` | Working | Browser-based visualization engine |
-| `Applications/pi-mangrove/` | Active | Workspace package for prompt / skill assets |
-| `Projects/DIO/` | Active | Control room suite and security scripts |
-| `Projects/GATE/` | Active | Runtime envelopes, contracts, and audit data |
-| `Projects/projects/viz/` | Active | Visualization experiments |
-| `Components/shared-*` | Working | Shared packages and utilities |
+| Area                             | Status     | Notes                                        |
+| -------------------------------- | ---------- | -------------------------------------------- |
+| `Projects/GRID-main/`            | Production | Full-stack AI framework and nested git repo  |
+| `Tools/MCPServers/`              | Working    | First-party TypeScript MCP servers           |
+| `Applications/glimpse-artifact/` | Complete   | React component library                      |
+| `Applications/glimpse-engine/`   | Working    | Browser-based visualization engine           |
+| `Applications/pi-mangrove/`      | Active     | Workspace package for prompt / skill assets  |
+| `Projects/DIO/`                  | Active     | Control room suite and security scripts      |
+| `Projects/GATE/`                 | Active     | Runtime envelopes, contracts, and audit data |
+| `Projects/projects/viz/`         | Active     | Visualization experiments                    |
+| `Components/shared-*`            | Working    | Shared packages and utilities                |
 
 ### Preferences
 
@@ -60,14 +60,14 @@ This file provides guidance to Claude when working in the CascadeProjects worksp
 
 This is a multi-project workspace. The current layout is namespaced rather than flat.
 
-| Path | Type | Notes |
-| --- | --- | --- |
-| `Applications/` | Apps and engines | `glimpse-artifact`, `glimpse-engine`, `pi-mangrove` |
+| Path                | Type                    | Notes                                                                                                                                                                                                                                    |
+| ------------------- | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Applications/`     | Apps and engines        | `glimpse-artifact`, `glimpse-engine`, `pi-mangrove`                                                                                                                                                                                      |
 | `Tools/MCPServers/` | First-party MCP servers | 12 TS (`afloat-server`, `echoes-server`, `eligibility-server`, `glimpse-server`, `grid-server`, `lots-server`, `maintain-server`, `mangrove-server`, `ori-server`, `overview-server`, `pulse-server`, `seeds-server`) + 7 Python servers |
-| `Projects/` | Operational projects | `GRID-main`, `DIO`, `GATE`, `projects/viz` |
-| `Components/` | Shared packages | `shared-types`, `shared-resilience`, `shared-pipeline` |
-| `Documentation/` | Shared docs and audits | Workspace guides, audits, and conventions |
-| `Hogwarts/` | Governance sim | Board UI, houses, arena, governors |
+| `Projects/`         | Operational projects    | `GRID-main`, `DIO`, `GATE`, `projects/viz`                                                                                                                                                                                               |
+| `Components/`       | Shared packages         | `shared-types`, `shared-resilience`, `shared-pipeline`                                                                                                                                                                                   |
+| `Documentation/`    | Shared docs and audits  | Workspace guides, audits, and conventions                                                                                                                                                                                                |
+| `Hogwarts/`         | Governance sim          | Board UI, houses, arena, governors                                                                                                                                                                                                       |
 
 ## Per-Project Guidance
 
@@ -192,4 +192,3 @@ python scripts/glimpse-bench.py leaderboard
 - Change **generators and source**, not hand-edited **`dist/`** or lockfiles, unless the task is explicitly to update those files.
 - **Secrets:** Never commit credentials. If found tracked or staged, stop and escalate: **`.gitignore`**, **`git rm --cached`**, and rotation / history scrub are **human-gated** when pushes occurred.
 - **New repos:** `~/seed/templates/gitignore-node-strict.template` or `gitignore-python-uv.template`. **Audit:** `~/scripts/gitignore-audit.sh`.
-

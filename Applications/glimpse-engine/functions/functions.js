@@ -208,7 +208,9 @@ const BUILTIN_FUNCTIONS = [
       return {
         matched: actual !== undefined && actual !== null && actual !== "",
         value: actual,
-        reason: `${args.path} is ${actual !== undefined && actual !== null && actual !== "" ? "available" : "missing"}.`,
+        reason: `${args.path} is ${
+          actual !== undefined && actual !== null && actual !== "" ? "available" : "missing"
+        }.`,
       };
     },
   },
@@ -223,7 +225,9 @@ const BUILTIN_FUNCTIONS = [
       return {
         matched: actual === args.value,
         value: actual,
-        reason: `${args.path} ${actual === args.value ? "matches" : "does not match"} ${String(args.value)}.`,
+        reason: `${args.path} ${actual === args.value ? "matches" : "does not match"} ${String(
+          args.value,
+        )}.`,
       };
     },
   },
@@ -491,7 +495,9 @@ const BUILTIN_FUNCTIONS = [
         matched: n >= Number(args.min_records || 1),
         value: n,
         score: complexity,
-        reason: `Dataset has ${n} records, ${totalDims} fields (${numericCount} numeric, ${stringCount} categorical). Complexity: ${complexity.toFixed(2)}.`,
+        reason: `Dataset has ${n} records, ${totalDims} fields (${numericCount} numeric, ${stringCount} categorical). Complexity: ${complexity.toFixed(
+          2,
+        )}.`,
         payload: {
           recordCount: n,
           dimensions: totalDims,
@@ -664,7 +670,9 @@ const BUILTIN_FUNCTIONS = [
         value: matches.length,
         score: clamp(matches.length / Math.max(descriptors.length, 1), 0, 1),
         reason: matches.length
-          ? `${matches.length} field(s) match pattern /${args.pattern}/: ${matches.map((m) => m.name).join(", ")}.`
+          ? `${matches.length} field(s) match pattern /${args.pattern}/: ${matches
+              .map((m) => m.name)
+              .join(", ")}.`
           : `No fields match pattern /${args.pattern}/.`,
         payload: { matchedFields: matches.map((m) => m.name) },
       };
@@ -726,7 +734,9 @@ const BUILTIN_FUNCTIONS = [
         matched: n >= min && n <= max,
         value: n,
         score: clamp(n / Math.max(max, 1), 0, 1),
-        reason: `Record count ${n} is ${n >= min && n <= max ? "within" : "outside"} range [${min}, ${max}].`,
+        reason: `Record count ${n} is ${
+          n >= min && n <= max ? "within" : "outside"
+        } range [${min}, ${max}].`,
       };
     },
   },
@@ -775,7 +785,9 @@ const BUILTIN_FUNCTIONS = [
         matched: matched.length >= min,
         value: matched.length,
         score,
-        reason: `Found ${matched.length} signal-related fields (${matched.join(", ") || "none"}). Stability score: ${score.toFixed(2)}.`,
+        reason: `Found ${matched.length} signal-related fields (${
+          matched.join(", ") || "none"
+        }). Stability score: ${score.toFixed(2)}.`,
         payload: { signal_fields: matched, ratio },
       };
     },
@@ -823,7 +835,9 @@ const BUILTIN_FUNCTIONS = [
         matched: totalSignals >= min,
         value: totalSignals,
         score,
-        reason: `Found ${totalSignals} branching signals (${matched.join(", ") || "none"}${hasInfluence ? " + influence links" : ""}). Growth score: ${score.toFixed(2)}.`,
+        reason: `Found ${totalSignals} branching signals (${matched.join(", ") || "none"}${
+          hasInfluence ? " + influence links" : ""
+        }). Growth score: ${score.toFixed(2)}.`,
         payload: { branch_fields: matched, has_influence: hasInfluence },
       };
     },

@@ -155,14 +155,10 @@ export function evaluateCandidateHandler(input: {
   const candidates = ensureCandidates(input);
   const evaluation = safeEvaluateRoutine(candidates, shapeArgs(input.args));
   const auditStatus = getEvaluationAuditStatus(evaluation.validation);
-  void emitEligibilityAudit(
-    "evaluate_candidate",
-    auditStatus,
-    {
-      candidateCount: candidates.length,
-      reason: auditStatus === "dry_run" ? "no_candidates_provided" : undefined,
-    } as Record<string, unknown>,
-  );
+  void emitEligibilityAudit("evaluate_candidate", auditStatus, {
+    candidateCount: candidates.length,
+    reason: auditStatus === "dry_run" ? "no_candidates_provided" : undefined,
+  } as Record<string, unknown>);
   return evaluation;
 }
 
@@ -318,10 +314,7 @@ export function upsertEndpointSpecHandler(input: {
   return result;
 }
 
-export function updateCaseArgsHandler(input: {
-  caseId: string;
-  args: Partial<RoutineArgs>;
-}) {
+export function updateCaseArgsHandler(input: { caseId: string; args: Partial<RoutineArgs> }) {
   const result = updateCaseArgs(input);
   void emitEligibilityAudit("update_case_args", "success", {
     caseId: input.caseId,
@@ -519,7 +512,9 @@ export function buildServer(): McpServer {
     "Advance the cycle one beat forward or return it one beat backward.",
     {
       caseId: z.string().describe("Case id to advance."),
-      direction: z.enum(["forward", "return"]).describe("Direction to move: 'forward' or 'return'."),
+      direction: z
+        .enum(["forward", "return"])
+        .describe("Direction to move: 'forward' or 'return'."),
       reason: z.string().optional().describe("Optional reason for the advance."),
     },
     async (input: any) => toJsonText(advanceCycleHandler(input)),

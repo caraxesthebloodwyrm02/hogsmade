@@ -141,7 +141,9 @@ export function formatLendingView(analysis) {
   const lines = [];
   if (analysis.request) {
     lines.push(
-      `${analysis.request.from} wants ৳${analysis.request.amount.toLocaleString()} for: ${analysis.request.reason}`,
+      `${analysis.request.from} wants ৳${analysis.request.amount.toLocaleString()} for: ${
+        analysis.request.reason
+      }`,
     );
     lines.push(`Urgency: ${analysis.request.urgency}`);
     lines.push("");

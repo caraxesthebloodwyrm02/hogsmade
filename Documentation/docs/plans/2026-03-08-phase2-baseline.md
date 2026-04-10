@@ -75,12 +75,12 @@ Further integration (e.g., GRID-main endpoint, broader shared-types adoption, au
 
 Items to resolve or document before or when starting Phase 3 (scheduled diagnostics, workflow automation) so the path is unblocked:
 
-1. **Scheduled task environment** — **Resolved.**  
+1. **Scheduled task environment** — **Resolved.**
    `register_windows_task.ps1` now reads `CASCADE_WORKSPACE_ROOT`, `SEEDS_ROOT`, and `ECHOES_AUDIT_PATH` from the current session and injects them into the task action. Registration fails with a clear error if any are missing. The task no longer depends on ambient user/system env at execution time.
 
-2. **Audit consistency** — **Resolved.**  
+2. **Audit consistency** — **Resolved.**
    `run_scheduled_diagnostics.ts` uses the `@cascade/shared-types` audit-client (`emitAudit`); no separate implementation.
 
-3. **Docs**  
-   [afloat-server/docs/windows-task-scheduler.md](../../afloat-server/docs/windows-task-scheduler.md) already lists the runtime requirements.  
+3. **Docs**
+   [afloat-server/docs/windows-task-scheduler.md](../../afloat-server/docs/windows-task-scheduler.md) already lists the runtime requirements.
    Ensure it states explicitly that the scheduled task will fail at runtime if `CASCADE_WORKSPACE_ROOT`, `SEEDS_ROOT`, and `ECHOES_AUDIT_PATH` are not set in the environment when the task runs.

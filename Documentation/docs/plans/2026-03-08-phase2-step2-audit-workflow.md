@@ -2,8 +2,8 @@
 
 **Goal:** Write one real lots-server audit event and one real maintain-server audit event into the shared echoes audit NDJSON file so pulse can consume them and Step 2 exit check is satisfied.
 
-**Audit file (default when `ECHOES_AUDIT_PATH` unset):**  
-`C:\Users\USER\.echoes\audit.ndjson` (Windows; replace `USER` with your username).  
+**Audit file (default when `ECHOES_AUDIT_PATH` unset):**
+`C:\Users\USER\.echoes\audit.ndjson` (Windows; replace `USER` with your username).
 Override with env: `ECHOES_AUDIT_PATH`.
 
 ---

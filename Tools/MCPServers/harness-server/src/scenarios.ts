@@ -6,16 +6,8 @@
  */
 
 import { generateId } from "@cascade/shared-types/id";
-import type {
-  HarnessScenario,
-  TransistorGate,
-  DecoratedVar,
-} from "./types.js";
-import {
-  readScenarios,
-  writeScenarios,
-  upsertScenario,
-} from "./storage.js";
+import type { HarnessScenario, TransistorGate, DecoratedVar } from "./types.js";
+import { readScenarios, writeScenarios, upsertScenario } from "./storage.js";
 
 // ── Core Scenario Definitions ──
 
@@ -161,9 +153,7 @@ export interface ScenarioRegistration {
   domainFunction: string;
 }
 
-export async function registerScenario(
-  reg: ScenarioRegistration,
-): Promise<HarnessScenario> {
+export async function registerScenario(reg: ScenarioRegistration): Promise<HarnessScenario> {
   // Validate zone
   if (!["buildup", "silence", "drop"].includes(reg.quantizationZone)) {
     throw new Error(
@@ -175,9 +165,7 @@ export async function registerScenario(
   const coreIds = ["bastiodon", "talonflame", "exeggutor-a"];
   const safeName = reg.name.toLowerCase().trim();
   if (coreIds.includes(safeName)) {
-    throw new Error(
-      `Cannot re-register core scenario "${reg.name}". Use a unique name.`,
-    );
+    throw new Error(`Cannot re-register core scenario "${reg.name}". Use a unique name.`);
   }
 
   const scenario: HarnessScenario = {

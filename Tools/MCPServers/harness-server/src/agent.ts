@@ -12,11 +12,7 @@
 import { emitAudit } from "@cascade/shared-types/audit-client";
 import { generateId } from "@cascade/shared-types/id";
 import type { AgentLoopState, AgentCycleRecord } from "./types.js";
-import {
-  readAgentState,
-  writeAgentState,
-  readScenarios,
-} from "./storage.js";
+import { readAgentState, writeAgentState, readScenarios } from "./storage.js";
 import { runScenario, generatePythonManifest } from "./runner.js";
 
 const SERVER_NAME = "harness-server";
@@ -214,9 +210,7 @@ async function runAgentCycle(manual: boolean = false): Promise<AgentCycleRecord>
       state.cyclesCompleted = cycleNumber + 1;
       state.currentScenario = undefined;
       state.cycleHistory.push(cycleRecord);
-      state.nextCycleAt = new Date(
-        Date.now() + state.intervalSeconds * 1000,
-      ).toISOString();
+      state.nextCycleAt = new Date(Date.now() + state.intervalSeconds * 1000).toISOString();
 
       // Auto-disarm if max cycles reached
       if (state.cyclesCompleted >= state.maxCycles) {

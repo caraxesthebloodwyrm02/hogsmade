@@ -91,7 +91,9 @@ export function buildBaseRelations(entities) {
             targetId: `${a.id}:${b.id}`,
             confidence: Math.round(scaledConfidence * 100) / 100,
             affects: ["relation", "cluster"],
-            reason: `${a.name} and ${b.name} share place proximity: ${a.dimensions.space} ~ ${b.dimensions.space} (${sim.method}, ${Math.round(sim.score * 100)}%).`,
+            reason: `${a.name} and ${b.name} share place proximity: ${a.dimensions.space} ~ ${
+              b.dimensions.space
+            } (${sim.method}, ${Math.round(sim.score * 100)}%).`,
             payload: { relationType: "shared-space", source: a.id, target: b.id },
             basis: sim.method,
           });
@@ -126,7 +128,9 @@ export function buildBaseRelations(entities) {
             targetId: `${a.id}:${b.id}`,
             confidence: Math.round(scaledConfidence * 100) / 100,
             affects: ["relation", "cluster"],
-            reason: `${a.name} and ${b.name} are temporally close: ${a.dimensions.time} ~ ${b.dimensions.time} (${Math.round(effectiveScore * 100)}% proximity).`,
+            reason: `${a.name} and ${b.name} are temporally close: ${a.dimensions.time} ~ ${
+              b.dimensions.time
+            } (${Math.round(effectiveScore * 100)}% proximity).`,
             payload: { relationType: "shared-era", source: a.id, target: b.id, gap: sim.gap },
             basis: sim.method,
           });
@@ -155,7 +159,9 @@ export function buildBaseRelations(entities) {
             targetId: `${a.id}:${b.id}`,
             confidence: Math.round(scaledConfidence * 100) / 100,
             affects: ["relation", "cluster"],
-            reason: `${a.name} and ${b.name} share domain proximity: ${a.dimensions.domain} ~ ${b.dimensions.domain} (${sim.method}, ${Math.round(sim.score * 100)}%).`,
+            reason: `${a.name} and ${b.name} share domain proximity: ${a.dimensions.domain} ~ ${
+              b.dimensions.domain
+            } (${sim.method}, ${Math.round(sim.score * 100)}%).`,
             payload: {
               relationType: "shared-domain",
               source: a.id,

@@ -592,7 +592,9 @@ if (wantsInterview) {
 
     console.log(`  ── Interview Result ──`);
     console.log(
-      `  posture: ${interviewResult.postureLabel} (${(interviewResult.confidence * 100).toFixed(0)}% alignment)`,
+      `  posture: ${interviewResult.postureLabel} (${(interviewResult.confidence * 100).toFixed(
+        0,
+      )}% alignment)`,
     );
     console.log(`  → ${modulated.nudge}`);
   } else {

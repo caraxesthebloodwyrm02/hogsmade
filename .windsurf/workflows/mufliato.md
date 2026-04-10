@@ -9,12 +9,12 @@
 
 Choose one mode before starting. The mode governs how deeply the document is transformed.
 
-| Mode | What it does | When to use |
-|------|-------------|-------------|
-| **substitute** | Replace literals (paths, keys, ports) with env-var references or generic placeholders | Configs, .env examples, setup guides with hardcoded values |
-| **reframe** | Restructure content around principles, not specifics — rename concepts, anonymize topology | Architecture docs, decision records, internal design notes |
-| **reauthor** | Rewrite as a standalone public artifact — new structure, new voice, same instructional value | Pre-ship review packages, public READMEs, blog-ready write-ups (see `Tools/MCPServers/integration-review/public/` as reference) |
-| **veil** *(flex)* | All of the above plus glass-shader opacity: inject plausible decoy blocks at signal-gated ratio | High-sensitivity docs where structural fingerprinting is a concern |
+| Mode              | What it does                                                                                    | When to use                                                                                                                     |
+| ----------------- | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| **substitute**    | Replace literals (paths, keys, ports) with env-var references or generic placeholders           | Configs, .env examples, setup guides with hardcoded values                                                                      |
+| **reframe**       | Restructure content around principles, not specifics — rename concepts, anonymize topology      | Architecture docs, decision records, internal design notes                                                                      |
+| **reauthor**      | Rewrite as a standalone public artifact — new structure, new voice, same instructional value    | Pre-ship review packages, public READMEs, blog-ready write-ups (see `Tools/MCPServers/integration-review/public/` as reference) |
+| **veil** _(flex)_ | All of the above plus glass-shader opacity: inject plausible decoy blocks at signal-gated ratio | High-sensitivity docs where structural fingerprinting is a concern                                                              |
 
 Pinned core: **substitute + reframe + reauthor** are always available.
 Flex slot: **veil** is opt-in — invoke only when `noise-level=high` or explicitly requested.
@@ -26,6 +26,7 @@ Flex slot: **veil** is opt-in — invoke only when `noise-level=high` or explici
 Run `scripts/mufliato.py scan <input.md>` before touching the document.
 
 The script handles:
+
 - Absolute paths (`/home/*`, `/Users/*`, `C:\Users\*`)
 - Env var assignments with literal values
 - API key / secret / token literals
@@ -44,13 +45,13 @@ Before substituting anything, map the document's skeleton:
 
 1. List all headings and their nesting depth
 2. Identify the primary action sequence (what the reader is being asked to do, in order)
-3. Flag any section whose *content* would change meaning if its sensitive values were replaced — these need reframe or reauthor treatment, not just substitute
+3. Flag any section whose _content_ would change meaning if its sensitive values were replaced — these need reframe or reauthor treatment, not just substitute
 
 This step is agent work — do it by reading the document, not by running the script.
 
 ---
 
-## Layer 3 — Decoy Injection *(veil mode only)*
+## Layer 3 — Decoy Injection _(veil mode only)_
 
 Activate only if `noise-level=high` or mode is **veil**.
 
@@ -87,8 +88,9 @@ After the script runs, verify the surviving finding count it reports. Any surviv
 Substitute alone is not enough. After the mechanical pass, read the document as the target audience would — not as someone who already knows what the internals mean.
 
 For each section, ask:
-- Is the *why* still present, or did substitution strip it?
-- Does the *action sequence* still make sense without the specific values?
+
+- Is the _why_ still present, or did substitution strip it?
+- Does the _action sequence_ still make sense without the specific values?
 - Would the target audience (external contributor, public reviewer, partner team) be able to reproduce the intent from the output alone?
 
 If any section fails this test: reframe (restructure around the principle) or reauthor (rewrite the section from scratch preserving only the instructional goal).
@@ -113,14 +115,14 @@ Also ensure `.mufliato-log.json` is committed alongside the output (or stored in
 
 ## Output Contract
 
-| Property | Guarantee | Verified by |
-|----------|-----------|-------------|
-| No absolute paths | ✓ | Script re-scan |
-| No literal secrets | ✓ | Script re-scan |
-| No internal naming | ✓ | Layer 5 audience read |
-| Core instructional value preserved | ✓ | Layer 5 audience read |
-| Reproducible from principle alone | ✓ | Layer 5 audience read |
-| Provenance traceable | ✓ | `.mufliato-log.json` + provenance footer |
+| Property                           | Guarantee | Verified by                              |
+| ---------------------------------- | --------- | ---------------------------------------- |
+| No absolute paths                  | ✓         | Script re-scan                           |
+| No literal secrets                 | ✓         | Script re-scan                           |
+| No internal naming                 | ✓         | Layer 5 audience read                    |
+| Core instructional value preserved | ✓         | Layer 5 audience read                    |
+| Reproducible from principle alone  | ✓         | Layer 5 audience read                    |
+| Provenance traceable               | ✓         | `.mufliato-log.json` + provenance footer |
 
 ---
 
@@ -146,11 +148,11 @@ After the mechanical pass, continue with Layers 2–5 as agent work.
 
 ## Coverage Map
 
-| Layer | Handled by | Mode |
-|-------|-----------|------|
-| 1. Mechanical scan | `mufliato.py scan` | All |
-| 2. Structural survey | Agent | All |
-| 3. Decoy injection | Agent (script flag reserved) | veil only |
-| 4. Substitution | `mufliato.py sanitize` + agent | All |
-| 5. Audience translation | Agent | reframe / reauthor / veil |
-| 6. Provenance seal | Script (auto) + agent (reauthor) | All |
+| Layer                   | Handled by                       | Mode                      |
+| ----------------------- | -------------------------------- | ------------------------- |
+| 1. Mechanical scan      | `mufliato.py scan`               | All                       |
+| 2. Structural survey    | Agent                            | All                       |
+| 3. Decoy injection      | Agent (script flag reserved)     | veil only                 |
+| 4. Substitution         | `mufliato.py sanitize` + agent   | All                       |
+| 5. Audience translation | Agent                            | reframe / reauthor / veil |
+| 6. Provenance seal      | Script (auto) + agent (reauthor) | All                       |

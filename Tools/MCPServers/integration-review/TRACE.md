@@ -25,15 +25,15 @@
 
 ### Test Coverage Map
 
-| Test File | What It Covers |
-|-----------|---------------|
-| `smoke.test.ts` | Server boots, health_check returns valid shape, all 22 tools registered |
-| `executor.test.ts` | Sandbox validation, test execution, output capture, run result retrieval |
-| `registry.test.ts` | Project CRUD, registry persistence, health status updates |
-| `reporter.test.ts` | Report generation, conditional sections, markdown output |
-| `threat-model.test.ts` | Threat parsing, coverage mapping, gap detection |
-| `notebook.test.ts` | Note append, query filters, summary aggregation |
-| `interop.test.ts` | Echoes audit parsing, seeds snapshot loading, graceful absence |
+| Test File              | What It Covers                                                           |
+| ---------------------- | ------------------------------------------------------------------------ |
+| `smoke.test.ts`        | Server boots, health_check returns valid shape, all 22 tools registered  |
+| `executor.test.ts`     | Sandbox validation, test execution, output capture, run result retrieval |
+| `registry.test.ts`     | Project CRUD, registry persistence, health status updates                |
+| `reporter.test.ts`     | Report generation, conditional sections, markdown output                 |
+| `threat-model.test.ts` | Threat parsing, coverage mapping, gap detection                          |
+| `notebook.test.ts`     | Note append, query filters, summary aggregation                          |
+| `interop.test.ts`      | Echoes audit parsing, seeds snapshot loading, graceful absence           |
 
 ---
 
@@ -69,6 +69,8 @@ what it returns conceptually, and what to check.
 { "tool": "list_projects", "input": {} }
 
 // Expected: array of project entries with id, name, location, healthStatus
+
+
 // First run: seed data from registry-data.ts (25+ projects)
 ```
 
@@ -122,6 +124,8 @@ what it returns conceptually, and what to check.
 
 // Expected: array of recommendations, each with:
 // { read: "what to look at", reason: "why it matters", action: "what to do", reproducibility: "how to verify" }
+
+
 // After a clean run: 0 recommendations is normal.
 ```
 
@@ -134,6 +138,8 @@ what it returns conceptually, and what to check.
 { "tool": "generate_report", "input": {} }
 
 // Expected: saves markdown report to ~/.ori/reports/YYYY-MM-DD-report.md
+
+
 // Returns: { reportPath, sections: [...] }
 ```
 
@@ -146,16 +152,16 @@ risk signal analysis, threat coverage. Sections with no data are omitted (condit
 
 When GRID API is unreachable:
 
-| Tool | Behavior |
-|------|----------|
-| `health_check` | Returns `status: "degraded"`, `circuitState: "OPEN"` |
-| `run_tests` | **Blocked** — merit guard rejects (circuit open) |
-| `collect_logs` | Works normally |
-| `probe_test_suite` | Works normally |
-| `get_recommendations` | Works normally |
-| `notebook_add` | Works normally |
-| `generate_report` | **Blocked** — merit guard rejects |
-| `ecosystem_context` | Works normally (reads local files only) |
+| Tool                  | Behavior                                             |
+| --------------------- | ---------------------------------------------------- |
+| `health_check`        | Returns `status: "degraded"`, `circuitState: "OPEN"` |
+| `run_tests`           | **Blocked** — merit guard rejects (circuit open)     |
+| `collect_logs`        | Works normally                                       |
+| `probe_test_suite`    | Works normally                                       |
+| `get_recommendations` | Works normally                                       |
+| `notebook_add`        | Works normally                                       |
+| `generate_report`     | **Blocked** — merit guard rejects                    |
+| `ecosystem_context`   | Works normally (reads local files only)              |
 
 **This is by design.** Read/analysis tools are independent of GRID.
 Execution/reporting tools require the gate.
@@ -165,6 +171,7 @@ Execution/reporting tools require the gate.
 ## Output Quality Questions for Reviewer
 
 1. Is the risk pattern set (`src/patterns.ts`) comprehensive enough?
+
    - 15 patterns covering: assertion failures, timeouts, unhandled rejections,
      deprecation warnings, memory leaks, connection errors, permission denied,
      segfaults, import errors, type errors, uncaught exceptions, ENOENT,
@@ -172,10 +179,12 @@ Execution/reporting tools require the gate.
    - **Missing patterns?** Flag them.
 
 2. Is the report format (`src/reporter.ts`) useful?
+
    - Conditional sections, severity-sorted, threat-mapped.
    - **Too verbose? Too sparse?** Flag the specific section.
 
 3. Are recommendations actionable?
+
    - Format: read → reason → action → reproducibility.
    - **Vague recommendations?** Flag with the pattern ID that triggered them.
 

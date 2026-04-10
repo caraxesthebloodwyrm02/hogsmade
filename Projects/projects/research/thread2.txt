@@ -53,12 +53,12 @@ How to become a Rising Talent on Upwork
 The Complete Upwork Algorithm Guide 2026
 16 Tips To Make Your Freelancer Profile Stand Out – Upwork
 How to get started with Project Catalog – Upwork Help
-/product-management:sprint-planning 
-/productivity:start 
-/marketing:draft-content 
-/brand-voice:generate-guidelines 
-/brand-voice:brand-voice-enforcement 
-/enterprise-search:search 
+/product-management:sprint-planning
+/productivity:start
+/marketing:draft-content
+/brand-voice:generate-guidelines
+/brand-voice:brand-voice-enforcement
+/enterprise-search:search
 /product-management:competitive-analysis use these skills to analyze, strategize, refine and plan how to create a portfolio with detailed placement to cut through the nosie and design my portfolio in UPWORK in such a fashion that i can effectively and quickly score the first freelance job/contract/gig in UPWORK marketplace. ask questions to minimize and close any gaps that might be there leaving you guessing, once you have all the details, context and data to confidently move to action, only then proceed.
 
 Show more
@@ -231,4 +231,3 @@ UPWORK_STRATEGY_COMPLETE.md — competitive analysis, brand voice, content, spri
 UPWORK_CONNECTS_PLAYBOOK.md — replaces P2 in the strategy doc with precision allocation
 UPWORK_CHROME_HANDOFF.md — original handoff (superseded by Section 6 in the strategy doc)
 Sources: Upwork Connects Strategy 2026, GigRadar Connects Guide, Upwork Conversion Benchmarks, Understanding Connects
-

@@ -58,9 +58,9 @@ describe("MCP server tool wiring", () => {
 
   it("evaluate_candidate accepts fixtureId and returns validation", async () => {
     const handler = toolHandler(buildServer(), "evaluate_candidate");
-    const payload = parseToolJson(
-      await handler({ fixtureId: "balanced-bridge" }),
-    ) as { validation: { ok: boolean } };
+    const payload = parseToolJson(await handler({ fixtureId: "balanced-bridge" })) as {
+      validation: { ok: boolean };
+    };
     expect(payload.validation.ok).toBe(true);
   });
 });

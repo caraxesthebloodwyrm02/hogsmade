@@ -78,9 +78,7 @@ export const CLUSTER_DEFINITIONS: ClusterDef[] = [
       { name: "echoes", type: "repo", path: `${CASCADE}/Tools/MCPServers/echoes-server` },
       { name: "afloat-server", type: "mcp-server", auditSource: "afloat-server" },
     ],
-    dependencyEdges: [
-      { from: "shared-types", to: "afloat-server", type: "build-dep" },
-    ],
+    dependencyEdges: [{ from: "shared-types", to: "afloat-server", type: "build-dep" }],
   },
   {
     id: "glimpse-family",
@@ -166,9 +164,8 @@ function buildClusterInsight(
   const clusterHealth =
     scoredEntities.length > 0
       ? Math.round(
-        scoredEntities.reduce((sum, e) => sum + (e.healthScore ?? 0), 0) /
-        scoredEntities.length,
-      )
+          scoredEntities.reduce((sum, e) => sum + (e.healthScore ?? 0), 0) / scoredEntities.length,
+        )
       : 0;
 
   const issueCount = entities.reduce((sum, e) => sum + e.issues.length, 0);
@@ -186,15 +183,10 @@ function buildClusterInsight(
   };
 }
 
-function findRepoData(
-  entityName: string,
-  data: AggregatedData,
-): SeedsRepoData | null {
+function findRepoData(entityName: string, data: AggregatedData): SeedsRepoData | null {
   if (!data.latestSnapshot) return null;
   return (
-    data.latestSnapshot.repos.find(
-      (r) => r.name.toLowerCase() === entityName.toLowerCase(),
-    ) ?? null
+    data.latestSnapshot.repos.find((r) => r.name.toLowerCase() === entityName.toLowerCase()) ?? null
   );
 }
 
@@ -233,9 +225,7 @@ function computeAuditSummary(
   lastTimestamp: string | null;
 } {
   const sourceNameLower = sourceName.toLowerCase();
-  const matching = events.filter(
-    (e) => e.source.toLowerCase() === sourceNameLower,
-  );
+  const matching = events.filter((e) => e.source.toLowerCase() === sourceNameLower);
 
   if (matching.length === 0) {
     return { eventsInWindow: 0, failures: 0, lastStatus: null, lastTimestamp: null };

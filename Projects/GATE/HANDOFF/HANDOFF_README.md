@@ -24,11 +24,11 @@ HANDOFF/
 
 ## Layer Map
 
-| Member | Types | Layer | Quantization Zone | Transistor Role |
-|--------|-------|-------|------------------|-----------------|
-| Bastiodon | Steel/Rock | Foundation | Buildup (0-43) | Arms the gate |
-| Talonflame | Fire/Flying | Probe | Buildup (0-43) | Emits signals |
-| Alolan Exeggutor | Grass/Dragon | Integration | Drop (48-67) | Fires the burst |
+| Member           | Types        | Layer       | Quantization Zone | Transistor Role |
+| ---------------- | ------------ | ----------- | ----------------- | --------------- |
+| Bastiodon        | Steel/Rock   | Foundation  | Buildup (0-43)    | Arms the gate   |
+| Talonflame       | Fire/Flying  | Probe       | Buildup (0-43)    | Emits signals   |
+| Alolan Exeggutor | Grass/Dragon | Integration | Drop (48-67)      | Fires the burst |
 
 ## Related Deliverables
 

@@ -679,7 +679,9 @@ function cmdAnalyze() {
     }
     const corr = denA && denS ? num / Math.sqrt(denA * denS) : 0;
     console.log(
-      `  │  Correlation: r=${corr.toFixed(3)}  (${Math.abs(corr) > 0.7 ? "STRONG" : Math.abs(corr) > 0.3 ? "MODERATE" : "WEAK"})`,
+      `  │  Correlation: r=${corr.toFixed(3)}  (${
+        Math.abs(corr) > 0.7 ? "STRONG" : Math.abs(corr) > 0.3 ? "MODERATE" : "WEAK"
+      })`,
     );
     console.log(`  └${"─".repeat(50)}\n`);
   }
@@ -850,7 +852,9 @@ function cmdHtml() {
 <body>
 
 <h1>Audio ↔ Software Architecture — Parallel Systems</h1>
-<p class="subtitle">${runs.length} simulation runs · Generated ${new Date().toISOString().slice(0, 16)} · Source: CascadeProjects codebase</p>
+<p class="subtitle">${runs.length} simulation runs · Generated ${new Date()
+    .toISOString()
+    .slice(0, 16)} · Source: CascadeProjects codebase</p>
 
 <div class="stats">
   <div class="stat audio"><div class="value" id="s-peak-avg">—</div><div class="label">Avg Peak Reduction (dB)</div></div>
@@ -914,10 +918,18 @@ const softStageData = ${JSON.stringify(softStageData)};
 
 // Stats
 const avg = arr => arr.reduce((a, b) => a + b, 0) / arr.length;
-const peakReds = chartData.map((d, i) => (${JSON.stringify(runs.map((r) => r.audio.input.peak))}[i] || 0) - d.audioPeak);
-const rmsDeltas = chartData.map((d, i) => d.audioRms - (${JSON.stringify(runs.map((r) => r.audio.input.rms))}[i] || 0));
-const latAdded = chartData.map((d, i) => d.softLatency - (${JSON.stringify(runs.map((r) => r.software.input.latency))}[i] || 0));
-const tpDeltas = chartData.map((d, i) => d.softThroughput - (${JSON.stringify(runs.map((r) => r.software.input.throughput))}[i] || 0));
+const peakReds = chartData.map((d, i) => (${JSON.stringify(
+    runs.map((r) => r.audio.input.peak),
+  )}[i] || 0) - d.audioPeak);
+const rmsDeltas = chartData.map((d, i) => d.audioRms - (${JSON.stringify(
+    runs.map((r) => r.audio.input.rms),
+  )}[i] || 0));
+const latAdded = chartData.map((d, i) => d.softLatency - (${JSON.stringify(
+    runs.map((r) => r.software.input.latency),
+  )}[i] || 0));
+const tpDeltas = chartData.map((d, i) => d.softThroughput - (${JSON.stringify(
+    runs.map((r) => r.software.input.throughput),
+  )}[i] || 0));
 
 document.getElementById("s-peak-avg").textContent = avg(peakReds).toFixed(1);
 document.getElementById("s-rms-avg").textContent = avg(rmsDeltas).toFixed(1);

@@ -71,21 +71,25 @@ Runtime: Node 22+, npm. No Python required.
 ## What to Review
 
 ### For quality
+
 - Read `src/server.ts` — is the tool registration clean? Are schemas precise?
 - Read `tests/` — do tests cover the critical paths? Any gaps?
 - Run `npm test` — do all 100 tests pass on your machine?
 
 ### For security
+
 - Read SECURITY.md in this directory — it maps every attack surface
 - Read `src/executor.ts` — is the sandbox tight enough?
 - Read `src/server.ts` lines 55-60 — merit guard + rate limiter setup
 
 ### For design
+
 - Read SURFACE.md in this directory — is the tool naming coherent?
 - Look at the e2e trace in TRACE.md — is the output useful and readable?
 - Read `src/reporter.ts` — is the report format well-structured?
 
 ### For shipping readiness
+
 - Check: are there any hardcoded paths? (there should be zero)
 - Check: does `.env.example` document all required configuration?
 - Check: does the README accurately describe the tool catalog?
@@ -105,6 +109,7 @@ RECOMMENDATION: <what to do about it>
 ```
 
 Example:
+
 ```
 FLAG: security
 SEVERITY: warning

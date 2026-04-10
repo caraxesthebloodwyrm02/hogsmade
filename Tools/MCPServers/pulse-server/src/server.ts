@@ -264,7 +264,9 @@ async function readRecentAuditEntries(limit: number): Promise<unknown[]> {
     const stat = await fs.stat(ECHOES_AUDIT);
     if (stat.size > MAX_AUDIT_FILE_BYTES) {
       console.error(
-        `[${SERVER_NAME}] Audit log too large (${Math.round(stat.size / (1024 * 1024))}MB) — skipping`,
+        `[${SERVER_NAME}] Audit log too large (${Math.round(
+          stat.size / (1024 * 1024),
+        )}MB) — skipping`,
       );
       return [];
     }
@@ -718,7 +720,9 @@ function scoreAndRankItems(
       items.push({
         score,
         priority: "medium",
-        title: `${latest.source ?? "unknown"} ${latest.tool ?? "tool"} failure${relatedRepo ? ` (${relatedRepo})` : ""}`,
+        title: `${latest.source ?? "unknown"} ${latest.tool ?? "tool"} failure${
+          relatedRepo ? ` (${relatedRepo})` : ""
+        }`,
         reasoning: [
           `Recent status: ${latest.status ?? "unknown"}`,
           group.length > 1 ? `${group.length} occurrences` : "",
@@ -747,7 +751,9 @@ function scoreAndRankItems(
     items.push({
       score,
       priority: score >= 20 ? "high" : "medium",
-      title: `${latest.source ?? "unknown"} ${latest.tool ?? "tool"} failure linked to ${relatedRepo}`,
+      title: `${latest.source ?? "unknown"} ${
+        latest.tool ?? "tool"
+      } failure linked to ${relatedRepo}`,
       reasoning: [
         `Recent status: ${latest.status ?? "unknown"}`,
         formatRepoIssue(repo),
@@ -995,8 +1001,8 @@ export function buildServer(): McpServer {
       const latestSnapshotResult = await getLatestSeedsSnapshot();
       const latestSnapshot = latestSnapshotResult.snapshot;
       const recentExecutions = await listRecentWorkflowExecutions(20);
-      const workflowsToday = recentExecutions.filter((execution) =>
-        execution.startedAt?.startsWith(todayKey()),
+      const workflowsToday = recentExecutions.filter(
+        (execution) => execution.startedAt?.startsWith(todayKey()),
       ).length;
       const ecosystemScore = latestSnapshot?.overallScore ?? (await getLatestEcosystemScore());
       const telemetry = await getLatestTelemetry();
@@ -1028,7 +1034,9 @@ export function buildServer(): McpServer {
             return null;
           }
 
-          return `${event.tool ?? "unknown_tool"} failed and ${repo} health is ${repoHealth.healthScore}/100 (${(repoHealth.issues ?? []).join(", ") || "no issues listed"})`;
+          return `${event.tool ?? "unknown_tool"} failed and ${repo} health is ${
+            repoHealth.healthScore
+          }/100 (${(repoHealth.issues ?? []).join(", ") || "no issues listed"})`;
         })
         .filter(Boolean) as string[];
       const correlatedItems = correlatedSignals.map((message) => ({ message }));
@@ -1041,7 +1049,9 @@ export function buildServer(): McpServer {
 
       if (lowHealthRepos.length > 0) {
         warnings.push(
-          `${lowHealthRepos.length} repo(s) below health threshold: ${lowHealthRepos.map((repo) => `${repo.name} (${repo.healthScore})`).join(", ")}`,
+          `${lowHealthRepos.length} repo(s) below health threshold: ${lowHealthRepos
+            .map((repo) => `${repo.name} (${repo.healthScore})`)
+            .join(", ")}`,
         );
         priorities.push("Run ecosystem_scan to inspect degraded repositories");
       }
@@ -1198,7 +1208,9 @@ export function buildServer(): McpServer {
           .slice(0, 3)
           .map(
             (workflow) =>
-              `[workflow] ${workflow.workflowId ?? workflow.executionId ?? "unknown"} status=${workflow.status ?? "unknown"}`,
+              `[workflow] ${workflow.workflowId ?? workflow.executionId ?? "unknown"} status=${
+                workflow.status ?? "unknown"
+              }`,
           ),
       ];
 
@@ -1637,7 +1649,9 @@ export function buildServer(): McpServer {
       journal.push({
         id: generateId("j"),
         timestamp: session.endedAt,
-        entry: `Focus session: ${session.task} (${session.durationMinutes}min, ${session.interruptions} interruptions)${args.outcome ? ` — ${args.outcome}` : ""}`,
+        entry: `Focus session: ${session.task} (${session.durationMinutes}min, ${
+          session.interruptions
+        } interruptions)${args.outcome ? ` — ${args.outcome}` : ""}`,
         tags: ["focus-session", ...(session.project ? [session.project] : [])],
         mood:
           session.interruptions <= 1 && session.durationMinutes >= 25
@@ -1731,8 +1745,8 @@ export function buildServer(): McpServer {
       // Cross-server
       const recentAudit = await readRecentAuditEntries(50);
       const todayAudit = recentAudit.filter((e: any) => e.timestamp?.startsWith(dateKey));
-      const workflowsRun = (await listRecentWorkflowExecutions(50)).filter((execution) =>
-        execution.startedAt?.startsWith(dateKey),
+      const workflowsRun = (await listRecentWorkflowExecutions(50)).filter(
+        (execution) => execution.startedAt?.startsWith(dateKey),
       ).length;
       const ecosystemScore = await getLatestEcosystemScore();
 

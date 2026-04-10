@@ -1,8 +1,8 @@
 # Scenario 00 — Team Foundation
 
-**Scenario ID**: `00-team-foundation`  
-**Type**: Overview  
-**Harness Layer**: All three layers  
+**Scenario ID**: `00-team-foundation`
+**Type**: Overview
+**Harness Layer**: All three layers
 **Quantization Zone**: Full cycle
 
 ## Summary
@@ -38,6 +38,7 @@ Bastiodon (Foundation)
 ## Verification
 
 After all three scenarios complete, verify:
+
 - `harness_manifest()` returns a complete 136-step manifest
 - `get_scenario_insights()` shows `total_transistors_fired: 2` (ARM + FIRE)
 - `collect_signals()` shows probe signals from both Bastiodon and Talonflame buildup windows

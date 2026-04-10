@@ -130,7 +130,7 @@ function parseFocusPaths(lines: string[]): FocusPath[] {
     const extractedPath = pathMatch ? pathMatch[1] : pathCell;
 
     // Extract threat IDs from last cell
-    const threatIds = (cells[2].match(/TM-\d+/g) ?? []);
+    const threatIds = cells[2].match(/TM-\d+/g) ?? [];
 
     paths.push({
       path: extractedPath,
@@ -217,7 +217,9 @@ export function buildCoverageMap(
       .filter((p) => !p.lastRunTimestamp || p.healthStatus === "failing");
     if (staleProjects.length > 0 && coveredBy.length > 0) {
       gaps.push(
-        `${staleProjects.length} covering project(s) have no recent healthy run: ${staleProjects.map((p) => p.id).join(", ")}`,
+        `${staleProjects.length} covering project(s) have no recent healthy run: ${staleProjects
+          .map((p) => p.id)
+          .join(", ")}`,
       );
     }
 
@@ -256,9 +258,7 @@ export function routeThreatToTests(
   const matchedProjects = projects
     .filter((p) => p.threatModelIds?.includes(threatId))
     .map((p) => ({ id: p.id, name: p.name, healthStatus: p.healthStatus }));
-  const matchedPaths = threatModel.focusPaths.filter((fp) =>
-    fp.threatIds.includes(threatId),
-  );
+  const matchedPaths = threatModel.focusPaths.filter((fp) => fp.threatIds.includes(threatId));
 
   return { threat, projects: matchedProjects, focusPaths: matchedPaths };
 }

@@ -91,10 +91,10 @@ If all four work, you're ready to review. See TRACE.md for expected outputs.
 
 ## Troubleshooting
 
-| Symptom | Cause | Fix |
-|---------|-------|-----|
-| `Cannot find module '@cascade/shared-types'` | shared-types not built | Run `npm run build` in `Components/shared-types` |
-| `health_check` returns `status: "degraded"` | GRID API offline | Normal — read/analysis tools still work |
-| `run_tests` returns error with "circuit OPEN" | GRID gate unreachable | Expected without GRID — test with unguarded tools |
-| `list_projects` returns empty | First run, no registry yet | Call `discover_tests` first, or the seed data loads automatically |
-| Tests fail with `ENOENT` | PATH_TO env var points to nonexistent dir | Check `.env` paths match your clone |
+| Symptom                                       | Cause                                     | Fix                                                               |
+| --------------------------------------------- | ----------------------------------------- | ----------------------------------------------------------------- |
+| `Cannot find module '@cascade/shared-types'`  | shared-types not built                    | Run `npm run build` in `Components/shared-types`                  |
+| `health_check` returns `status: "degraded"`   | GRID API offline                          | Normal — read/analysis tools still work                           |
+| `run_tests` returns error with "circuit OPEN" | GRID gate unreachable                     | Expected without GRID — test with unguarded tools                 |
+| `list_projects` returns empty                 | First run, no registry yet                | Call `discover_tests` first, or the seed data loads automatically |
+| Tests fail with `ENOENT`                      | PATH_TO env var points to nonexistent dir | Check `.env` paths match your clone                               |

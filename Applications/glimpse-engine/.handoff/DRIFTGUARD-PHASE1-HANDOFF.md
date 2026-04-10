@@ -2,12 +2,12 @@
 
 ## Structured Input for Planning/Research Agent
 
-**Handoff ID**: DG-P1-001  
-**Date**: 2026-03-31  
-**From**: Implementation Agent  
-**To**: Planning/Research Agent  
-**Priority**: P0 - BLOCKING  
-**Estimated Duration**: 8 hours  
+**Handoff ID**: DG-P1-001
+**Date**: 2026-03-31
+**From**: Implementation Agent
+**To**: Planning/Research Agent
+**Priority**: P0 - BLOCKING
+**Estimated Duration**: 8 hours
 **Dependencies**: None (foundational)
 
 ---
@@ -377,11 +377,13 @@ node -e "import('./core/engine.js').then(m => {
    ```
 
 2. **Test Compatibility**: All existing tests must pass without modification
+
    - Do NOT change test file paths
    - Do NOT change test assertions
    - Do NOT change exported function signatures
 
 3. **No New Dependencies**: Only use existing Node.js built-ins
+
    - ✅ fs, path, crypto, child_process
    - ❌ No npm packages
 
@@ -525,12 +527,15 @@ diff exports-before.txt exports-after.txt
 ### Decisions Made (Don't Revisit)
 
 1. **Keep DRIFT_POLICIES in resolver.js** (not separate file)
+
    - Reason: Only used by resolver, YAGNI
 
 2. **Don't create separate types.js yet**
+
    - Reason: Can add later if TypeScript definitions needed
 
 3. **Keep VERSION in guard.js**
+
    - Reason: It's a DriftGuard constant
 
 4. **Keep barrel exports simple** (no re-organization)
@@ -539,6 +544,7 @@ diff exports-before.txt exports-after.txt
 ### Decisions to Make (Agent Authority)
 
 1. **Whether to extract private helpers**
+
    - If function is >20 lines and used by only one class → extract to file
    - Else → keep as private method
 
@@ -648,5 +654,5 @@ createGuardedFrame; // from adapter
 
 ---
 
-**END OF HANDOFF**  
+**END OF HANDOFF**
 **Next Expected Output**: `.handoff/PHASE1-COMPLETE.md` or `.handoff/BLOCKED.md`

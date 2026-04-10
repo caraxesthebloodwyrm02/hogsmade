@@ -1157,7 +1157,9 @@ function recomputeMomentum(caseRecord: EvolutionCaseRecord): void {
         : 0.45;
 
   const submittedHandoffs = caseRecord.handoffs.length;
-  const acceptedHandoffs = caseRecord.handoffs.filter((handoff) => handoff.status === "accepted").length;
+  const acceptedHandoffs = caseRecord.handoffs.filter(
+    (handoff) => handoff.status === "accepted",
+  ).length;
   const handoffCompletion = submittedHandoffs > 0 ? acceptedHandoffs / submittedHandoffs : 0.0;
 
   const successCalls = caseRecord.signals.filter(
@@ -1169,7 +1171,9 @@ function recomputeMomentum(caseRecord: EvolutionCaseRecord): void {
   const integrationSamples = successCalls + failedCalls;
   const integrationSuccessRate = integrationSamples > 0 ? successCalls / integrationSamples : 0.6;
 
-  const staleSignals = caseRecord.signals.filter((signal) => signal.type === "heartbeat_stale").length;
+  const staleSignals = caseRecord.signals.filter(
+    (signal) => signal.type === "heartbeat_stale",
+  ).length;
   const staleWindowRatio =
     caseRecord.signals.length > 0 ? staleSignals / caseRecord.signals.length : 0;
 
@@ -1188,11 +1192,19 @@ function recomputeMomentum(caseRecord: EvolutionCaseRecord): void {
     1.0,
   );
   const momentum = clamp(
-    0.42 + endpointReadiness * 0.22 + handoffCompletion * 0.12 + integrationSuccessRate * 0.24 - sidewalkDrift * 0.3,
+    0.42 +
+      endpointReadiness * 0.22 +
+      handoffCompletion * 0.12 +
+      integrationSuccessRate * 0.24 -
+      sidewalkDrift * 0.3,
     0.0,
     1.0,
   );
-  const acceleration = clamp(momentum - 0.5 + endpointReadiness * 0.1 - reversalRate * 0.12, 0.0, 1.0);
+  const acceleration = clamp(
+    momentum - 0.5 + endpointReadiness * 0.1 - reversalRate * 0.12,
+    0.0,
+    1.0,
+  );
 
   caseRecord.momentum = {
     acceleration,
@@ -1212,7 +1224,9 @@ function summarizeCase(caseRecord: EvolutionCaseRecord): string {
   const momentum = caseRecord.momentum;
   return [
     `Beat ${caseRecord.currentBeat} with status ${caseRecord.status}.`,
-    `Momentum ${momentum.momentum.toFixed(3)}, sidewalk drift ${momentum.sidewalkDrift.toFixed(3)}.`,
+    `Momentum ${momentum.momentum.toFixed(3)}, sidewalk drift ${momentum.sidewalkDrift.toFixed(
+      3,
+    )}.`,
     `${caseRecord.endpointSpecs.length} endpoint specs, ${caseRecord.handoffs.length} handoffs, ${caseRecord.signals.length} signals.`,
   ].join(" ");
 }
@@ -1239,7 +1253,12 @@ function toSnapshot(caseRecord: EvolutionCaseRecord): CycleSnapshot {
   };
 }
 
-function createCaseRecord(input: { fixtureId?: string; label?: string; owner?: string; caseId?: string }): EvolutionCaseRecord {
+function createCaseRecord(input: {
+  fixtureId?: string;
+  label?: string;
+  owner?: string;
+  caseId?: string;
+}): EvolutionCaseRecord {
   const fixtureId = input.fixtureId ?? "balanced-bridge";
   const caseId = input.caseId?.trim() || `case-${randomUUID().slice(0, 12)}`;
   const openedAt = nowIso();
@@ -1280,7 +1299,13 @@ function createCaseRecord(input: { fixtureId?: string; label?: string; owner?: s
   };
 
   caseRecord.timeline.push(
-    createTimelineEntry(caseId, caseRecord.currentBeat, caseRecord.status, "case_opened", "Case opened"),
+    createTimelineEntry(
+      caseId,
+      caseRecord.currentBeat,
+      caseRecord.status,
+      "case_opened",
+      "Case opened",
+    ),
   );
   return caseRecord;
 }
@@ -1329,8 +1354,10 @@ function evaluatePromotionGate(caseRecord: EvolutionCaseRecord): PromotionGateRe
   const reasons: string[] = [];
   if (!endpointReady) reasons.push("Required endpoints are not ready");
   if (overallScore < thresholds.overallScore) reasons.push("Overall score below threshold");
-  if (governanceScore < thresholds.governanceScore) reasons.push("Governance score below threshold");
-  if (integrationScore < thresholds.integrationScore) reasons.push("Integration score below threshold");
+  if (governanceScore < thresholds.governanceScore)
+    reasons.push("Governance score below threshold");
+  if (integrationScore < thresholds.integrationScore)
+    reasons.push("Integration score below threshold");
   if (sidewalkDrift > thresholds.sidewalkDrift) reasons.push("Sidewalk drift above threshold");
 
   if (passed) {
@@ -1622,7 +1649,9 @@ export function glimpseApiPlugin(): Plugin {
 
         const cycleSignalMatch = url.pathname.match(/^\/api\/evolution\/cases\/([^/]+)\/signal$/);
         if (cycleSignalMatch && req.method === "POST") {
-          readJsonBody<{ type?: CycleSignalType; note?: string; weight?: number; source?: string }>(req)
+          readJsonBody<{ type?: CycleSignalType; note?: string; weight?: number; source?: string }>(
+            req,
+          )
             .then((body) => {
               const caseId = decodeURIComponent(cycleSignalMatch[1] ?? "");
               const caseRecord = getCaseOrThrow(caseId);
@@ -1704,7 +1733,9 @@ export function glimpseApiPlugin(): Plugin {
 
         const cycleHandoffMatch = url.pathname.match(/^\/api\/evolution\/cases\/([^/]+)\/handoff$/);
         if (cycleHandoffMatch && req.method === "POST") {
-          readJsonBody<{ from?: string; to?: string; status?: HandoffStatus; summary?: string }>(req)
+          readJsonBody<{ from?: string; to?: string; status?: HandoffStatus; summary?: string }>(
+            req,
+          )
             .then((body) => {
               const caseId = decodeURIComponent(cycleHandoffMatch[1] ?? "");
               const caseRecord = getCaseOrThrow(caseId);
@@ -1733,7 +1764,8 @@ export function glimpseApiPlugin(): Plugin {
                 id: randomUUID(),
                 caseId,
                 type: signalType[handoff.status],
-                weight: handoff.status === "accepted" ? 0.25 : handoff.status === "rejected" ? 0.4 : 0.15,
+                weight:
+                  handoff.status === "accepted" ? 0.25 : handoff.status === "rejected" ? 0.4 : 0.15,
                 beat: caseRecord.currentBeat,
                 source: "glimpse-api",
                 note: handoff.summary,
@@ -1762,7 +1794,9 @@ export function glimpseApiPlugin(): Plugin {
           return;
         }
 
-        const cycleEndpointMatch = url.pathname.match(/^\/api\/evolution\/cases\/([^/]+)\/endpoint$/);
+        const cycleEndpointMatch = url.pathname.match(
+          /^\/api\/evolution\/cases\/([^/]+)\/endpoint$/,
+        );
         if (cycleEndpointMatch && req.method === "POST") {
           readJsonBody<{
             endpointId?: string;
@@ -1842,9 +1876,7 @@ export function glimpseApiPlugin(): Plugin {
 
         const cycleAdvanceMatch = url.pathname.match(/^\/api\/evolution\/cases\/([^/]+)\/advance$/);
         if (cycleAdvanceMatch && req.method === "POST") {
-          readJsonBody<{ direction?: "forward" | "return"; reason?: string }>(
-            req,
-          )
+          readJsonBody<{ direction?: "forward" | "return"; reason?: string }>(req)
             .then((body) => {
               const caseId = decodeURIComponent(cycleAdvanceMatch[1] ?? "");
               const caseRecord = getCaseOrThrow(caseId);
@@ -1901,7 +1933,9 @@ export function glimpseApiPlugin(): Plugin {
           return;
         }
 
-        const shaderDataMatch = url.pathname.match(/^\/api\/evolution\/cases\/([^/]+)\/shader-data$/);
+        const shaderDataMatch = url.pathname.match(
+          /^\/api\/evolution\/cases\/([^/]+)\/shader-data$/,
+        );
         if (shaderDataMatch && req.method === "GET") {
           try {
             const caseId = decodeURIComponent(shaderDataMatch[1] ?? "");
@@ -1913,14 +1947,15 @@ export function glimpseApiPlugin(): Plugin {
               momentum: caseRecord?.momentum ?? null,
             });
           } catch (error: unknown) {
-            const message =
-              error instanceof Error ? error.message : "Failed to load shader data";
+            const message = error instanceof Error ? error.message : "Failed to load shader data";
             jsonResponse(res, { error: message }, 404);
           }
           return;
         }
 
-        const cyclePromotionMatch = url.pathname.match(/^\/api\/evolution\/cases\/([^/]+)\/promotion$/);
+        const cyclePromotionMatch = url.pathname.match(
+          /^\/api\/evolution\/cases\/([^/]+)\/promotion$/,
+        );
         if (cyclePromotionMatch && req.method === "POST") {
           try {
             const caseId = decodeURIComponent(cyclePromotionMatch[1] ?? "");

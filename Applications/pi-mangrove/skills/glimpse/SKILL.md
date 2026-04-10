@@ -15,15 +15,18 @@ description: "Maintenance and development guide for the Glimpse cognitive engine
 ## Steps
 
 1. **Identify the target layer**
+
    - Determine whether the change belongs in master YAML, engine runtime, browser app state, view specs, or support scripts
    - Confirm the dependency chain before editing connected files
 
 2. **Follow the canonical file map**
+
    - Treat `glimpse.master.yaml` as the source of truth for rules, taxonomy, presets, functions, and views
    - Use `engine.js` for pipeline logic, `app.js` for browser state and render flow, and `view-specs.js` for view rendering and ranking
    - Treat `glimpse-artifact/` as a separate concern unless the task explicitly targets the React app
 
 3. **Apply the right change pattern**
+
    - For a new domain, update taxonomy, add rules, connect rule sets, and optionally tune presets
    - For a new rule, edit YAML directly or use the available rule-building workflow
    - For a new view, add renderer logic, register it, and wire view scoring support
@@ -37,9 +40,11 @@ description: "Maintenance and development guide for the Glimpse cognitive engine
 ## Maintenance Commands
 
 - After editing `glimpse.master.yaml`
+
   - `node scripts/sync-default-master.mjs`
 
 - After editing `.js` files in `glimpse-engine/`
+
   - `node scripts/bootstrap_glimpse_logic.mjs`
 
 - To run in browser
