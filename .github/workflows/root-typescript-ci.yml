@@ -53,7 +53,7 @@ jobs:
         with:
           node-version: "22"
           cache: npm
-          cache-dependency-path: Components/shared-types/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - run: npm ci -w @cascade/shared-types
       - run: npm run build -w @cascade/shared-types
@@ -183,7 +183,7 @@ jobs:
         with:
           node-version: "22"
           cache: npm
-          cache-dependency-path: Applications/glimpse-engine/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - name: Install deps
         run: npm ci -w glimpse-engine
