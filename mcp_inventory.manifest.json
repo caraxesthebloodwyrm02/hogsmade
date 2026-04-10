@@ -157,6 +157,13 @@
       "runtime": "typescript",
       "bootstrapType": "mcp_sdk_stdio_ts",
       "entryRelative": "harness-server/src/server.ts"
+    },
+    {
+      "mcpServerKey": "craft-server",
+      "runtime": "typescript",
+      "bootstrapType": "mcp_sdk_stdio_ts",
+      "entryRelative": "craft-server/src/server.ts",
+      "note": "Bridges python-craft (~/roots/python-craft) via uv run. Env: CRAFT_ROOT."
     }
   ]
 }

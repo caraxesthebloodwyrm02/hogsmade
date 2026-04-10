@@ -1,0 +1,26 @@
+{
+  "name": "craft-server",
+  "version": "1.0.0",
+  "description": "MCP server for python-craft — transformer LSP templates, geometric renders, and context artifacts",
+  "type": "module",
+  "main": "src/server.ts",
+  "scripts": {
+    "start": "tsx src/server.ts",
+    "build": "tsc",
+    "lint": "tsc --noEmit",
+    "dev": "tsx --watch src/server.ts",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.2",
+    "@vitest/coverage-v8": "4.1.2",
+    "tsx": "^4.6.0",
+    "typescript": "~6.0.2",
+    "vitest": "4.1.2"
+  }
+}

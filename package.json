@@ -20,6 +20,7 @@
     "Tools/MCPServers/mangrove-server",
     "Tools/MCPServers/ori-server",
     "Tools/MCPServers/eligibility-server",
+    "Tools/MCPServers/craft-server",
     "Applications/pi-mangrove",
     "Applications/glimpse-artifact",
     "Applications/glimpse-engine"
