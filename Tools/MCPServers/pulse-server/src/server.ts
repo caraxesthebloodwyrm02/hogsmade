@@ -1305,7 +1305,8 @@ export function buildServer(): McpServer {
         const age = hoursSince(event.timestamp);
         return age !== null && age <= 24 && isFailureStatus(event.status);
       });
-      const { actionable: recentFailures } = filterActionableFailures(allRecentFailures);
+      const { actionable: recentFailures, noiseCount } =
+        filterActionableFailures(allRecentFailures);
       const failedWorkflows = (await listRecentWorkflowExecutions(20)).filter(
         (execution) => execution.status && execution.status !== "completed",
       );
@@ -1333,6 +1334,7 @@ export function buildServer(): McpServer {
               {
                 alertCount: alerts.length,
                 healthThreshold: threshold,
+                noiseFiltered: noiseCount,
                 snapshot: {
                   sourceFile: snapshotResult.metadata.sourceFile,
                   timestamp: snapshotResult.metadata.snapshotTimestamp,

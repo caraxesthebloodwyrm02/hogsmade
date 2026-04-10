@@ -385,18 +385,30 @@ describe("pulse-server smoke", () => {
     const auditPath = process.env.ECHOES_AUDIT_PATH!;
     const now = new Date().toISOString();
 
-    // Inject a mix of noise (7 entries) + real failure (1 entry)
+    // Inject a mix of noise (9 entries) + real failure (1 entry)
     const entries = [
-      // Noise: synth- prefix
+      // Noise: metadata.noise emitter tag (heuristic #1 — standalone)
+      JSON.stringify({
+        id: "aud-emitter-noise-1",
+        timestamp: now,
+        source: "grid-server",
+        tool: "validate_envelope",
+        status: "failure",
+        metadata: {
+          noise: "test-harness-probe",
+          envelopePath: "/home/caraxes/GATE/incoming/e.json",
+        },
+      }),
+      // Noise: synth- prefix (heuristic #2)
       JSON.stringify({
         id: "synth-noise-1",
         timestamp: now,
         source: "grid-server",
         tool: "validate_envelope",
         status: "failure",
-        metadata: { envelopePath: "/tmp/grid-server-abc/GATE/incoming/envelope_bad.json" },
+        metadata: { envelopePath: "/home/caraxes/GATE/incoming/envelope_bad.json" },
       }),
-      // Noise: known probe tool
+      // Noise: known probe tool (heuristic #3)
       JSON.stringify({
         id: "aud-probe-1",
         timestamp: now,
@@ -404,6 +416,15 @@ describe("pulse-server smoke", () => {
         tool: "tool_b",
         status: "failure",
         durationMs: 200,
+      }),
+      // Noise: /tmp/ envelopePath with normal id (heuristic #4 — isolated)
+      JSON.stringify({
+        id: "aud-tmp-path-1",
+        timestamp: now,
+        source: "grid-server",
+        tool: "validate_envelope",
+        status: "failure",
+        metadata: { envelopePath: "/tmp/grid-server-xyz/GATE/incoming/envelope_test.json" },
       }),
       // Noise: GRID_BACKEND_UNAVAILABLE (reason_code variant)
       JSON.stringify({
@@ -470,7 +491,7 @@ describe("pulse-server smoke", () => {
       content: Array<{ text: string }>;
     };
     const pPayload = parseToolJson(priorities);
-    expect(pPayload.noiseFiltered).toBe(7);
+    expect(pPayload.noiseFiltered).toBe(9);
     // The 1 real failure should appear in items
     expect(pPayload.items.length).toBeGreaterThan(0);
     const realItem = pPayload.items.find(
@@ -489,6 +510,13 @@ describe("pulse-server smoke", () => {
       (w: string) => typeof w === "string" && w.includes("noise"),
     );
     expect(noiseWarning).toBeDefined();
-    expect(noiseWarning).toContain("7");
+    expect(noiseWarning).toContain("9");
+
+    // Test check_alerts surfaces noise count
+    const alerts = (await invokeTool(server, "check_alerts", {
+      healthThreshold: 70,
+    })) as { content: Array<{ text: string }> };
+    const aPayload = parseToolJson(alerts);
+    expect(aPayload.noiseFiltered).toBe(9);
   });
 });
