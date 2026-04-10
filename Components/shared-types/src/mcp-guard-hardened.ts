@@ -129,6 +129,8 @@ export class HardenedMcpMeritGuard {
     apiFailures: 0,
     rateLimitHits: 0,
     circuitBreakerOpens: 0,
+    localPermissions: 0,
+    remotePermissions: 0,
   };
 
   constructor(config: HardenedMeritGuardConfig) {
@@ -287,6 +289,32 @@ export class HardenedMcpMeritGuard {
   }
 
   /**
+   * Layered validation: is the GRID API configured?
+   */
+  isApiConfigured(): boolean {
+    return Boolean(this.config.gridApiUrl);
+  }
+
+  /**
+   * Layered validation: is the GRID API reachable? (based on circuit breaker state)
+   */
+  isApiReachable(): boolean {
+    return this.isApiConfigured() && this.circuitState !== CircuitState.OPEN;
+  }
+
+  /**
+   * Returns the permission semantic for the last/current check.
+   * - 'local': no API configured, degraded mode
+   * - 'remote': API configured, permission checked via GRID
+   * - 'degraded': API configured but circuit open
+   */
+  getPermissionSemantic(): "local" | "remote" | "degraded" {
+    if (!this.isApiConfigured()) return "local";
+    if (this.circuitState === CircuitState.OPEN) return "degraded";
+    return "remote";
+  }
+
+  /**
    * Check permission with the GRID merit engine
    * No silent failures - all paths return explicit Result
    */
@@ -324,7 +352,7 @@ export class HardenedMcpMeritGuard {
       return err(new Error("Circuit breaker open"), "CIRCUIT_OPEN");
     }
 
-    // Attempt GRID API call
+    // Attempt GRID API call (semantic: remote)
     if (this.config.gridApiUrl) {
       try {
         const response = await this.callGridApi(entityId, actionClass, requiredScope);
@@ -338,6 +366,7 @@ export class HardenedMcpMeritGuard {
             ttl: this.config.cacheTtlMs,
           });
           this.recordSuccess();
+          this.metrics.remotePermissions++;
           return ok(result);
         } else {
           this.recordFailure();
@@ -353,9 +382,10 @@ export class HardenedMcpMeritGuard {
       }
     }
 
-    // No GRID API configured — local-only degraded mode.
+    // No GRID API configured — local-only degraded mode (semantic: local).
     // Allow tools to function without the merit engine; fail-closed applies
     // only when the API IS configured but unreachable (handled above).
+    this.metrics.localPermissions++;
     const requiredBadge = this.getRequiredBadge(actionClass);
     const requiredScopes = this.getRequiredScopes(actionClass);
     return ok({
@@ -434,10 +464,12 @@ export class HardenedMcpMeritGuard {
   private async logMeritDecision(
     entry: Omit<MeritAuditEntry, "timestamp" | "source">,
   ): Promise<void> {
+    const semantic = this.getPermissionSemantic();
     const auditEntry: MeritAuditEntry = {
       ...entry,
       timestamp: new Date().toISOString(),
       source: "mcp",
+      semantic,
     };
 
     try {
@@ -455,6 +487,7 @@ export class HardenedMcpMeritGuard {
           roll_number: auditEntry.roll_number,
           score: auditEntry.score,
           session_id: auditEntry.session_id,
+          semantic,
         },
       });
 
@@ -654,6 +687,7 @@ export class HardenedMcpMeritGuard {
                     _meta: {
                       entity_id: entityId,
                       action_class: options.actionClass,
+                      semantic: this.getPermissionSemantic(),
                       duration_ms: duration,
                     },
                   },
