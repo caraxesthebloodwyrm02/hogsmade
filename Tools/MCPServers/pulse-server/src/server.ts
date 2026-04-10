@@ -25,10 +25,10 @@
  * Follows the same patterns as echoes-server, grid-server, etc.
  */
 
+import { ActionClass, createHardenedMeritGuard } from "@cascade/shared-types";
 import { emitAudit } from "@cascade/shared-types/audit-client";
 import { generateId } from "@cascade/shared-types/id";
 import { SessionRateLimiter } from "@cascade/shared-types/session-rate-limit";
-import { ActionClass, Scope, createHardenedMeritGuard } from "@cascade/shared-types";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { promises as fs } from "fs";
@@ -338,6 +338,78 @@ function hoursSince(timestamp?: string): number | null {
 
 function isFailureStatus(status?: string): boolean {
   return status === "failure" || status === "blocked" || status === "error";
+}
+
+/** Known test-probe tool names that always produce synthetic noise */
+const SYNTHETIC_TOOL_NAMES = new Set([
+  "tool_a",
+  "tool_b",
+  "filter_tool",
+  "error_filter_probe",
+  "test_tool",
+  "time_tool",
+]);
+
+/**
+ * Heuristic noise classifier for audit entries.
+ * Returns a noise tag if the entry is synthetic/test-fixture, or null if actionable.
+ *
+ * Provenance markers checked:
+ * - ID starts with 'synth-' (test harness injected)
+ * - Tool name in SYNTHETIC_TOOL_NAMES (named test probes)
+ * - Metadata paths under /tmp/ (vitest tmpdir)
+ * - durationMs === 0 with failure status (mock execution)
+ * - reason_code 'GRID_BACKEND_UNAVAILABLE' during test (infra offline)
+ * - metadata.noise already tagged by the emitter
+ */
+function classifyNoise(entry: Record<string, any>): string | null {
+  // Explicit emitter tag takes precedence
+  if (entry.metadata?.noise) return entry.metadata.noise as string;
+
+  // Synth-prefixed IDs are test-harness injected
+  if (typeof entry.id === "string" && entry.id.startsWith("synth-")) return "synthetic";
+
+  // Known probe tool names
+  if (SYNTHETIC_TOOL_NAMES.has(entry.tool)) return "test_fixture";
+
+  // /tmp/ paths indicate vitest tmpdir fixtures
+  const envelopePath = entry.metadata?.envelopePath;
+  if (typeof envelopePath === "string" && envelopePath.startsWith("/tmp/")) return "test_fixture";
+
+  // Instant failures (durationMs 0-1) with very low overallScore from scan mocks
+  if (
+    entry.durationMs != null &&
+    entry.durationMs <= 1 &&
+    isFailureStatus(entry.status) &&
+    entry.metadata?.overallScore != null
+  ) {
+    return "synthetic";
+  }
+
+  // GRID_BACKEND_UNAVAILABLE during tests (API intentionally offline)
+  if (entry.metadata?.reason_code === "GRID_BACKEND_UNAVAILABLE") return "synthetic";
+
+  return null;
+}
+
+/**
+ * Filter actionable failures from audit entries, stripping test-fixture noise.
+ * Returns { actionable, noise } for observability.
+ */
+function filterActionableFailures(failures: Array<Record<string, any>>): {
+  actionable: Array<Record<string, any>>;
+  noiseCount: number;
+} {
+  const actionable: Array<Record<string, any>> = [];
+  let noiseCount = 0;
+  for (const entry of failures) {
+    if (classifyNoise(entry) !== null) {
+      noiseCount++;
+    } else {
+      actionable.push(entry);
+    }
+  }
+  return { actionable, noiseCount };
 }
 
 type SnapshotMetadata = {
@@ -1016,7 +1088,9 @@ export function buildServer(): McpServer {
         return age !== null && age <= 24;
       });
 
-      const recentFailures = overnightEvents.filter((event) => isFailureStatus(event.status));
+      const allRecentFailures = overnightEvents.filter((event) => isFailureStatus(event.status));
+      const { actionable: recentFailures, noiseCount: briefingNoiseCount } =
+        filterActionableFailures(allRecentFailures);
       const lowHealthRepos = getLowHealthRepos(latestSnapshot, 70);
       const failedWorkflows = recentExecutions.filter(
         (execution) => execution.status && execution.status !== "completed",
@@ -1043,8 +1117,13 @@ export function buildServer(): McpServer {
       const priorities: string[] = [];
       const warnings: string[] = [];
       if (recentFailures.length > 0) {
-        warnings.push(`${recentFailures.length} recent failure/block events in the last 24 hours`);
+        warnings.push(
+          `${recentFailures.length} actionable failure/block events in the last 24 hours`,
+        );
         priorities.push("Review blocked pipeline events");
+      }
+      if (briefingNoiseCount > 0) {
+        warnings.push(`${briefingNoiseCount} test-fixture/synthetic events filtered (noise)`);
       }
 
       if (lowHealthRepos.length > 0) {
@@ -1141,6 +1220,7 @@ export function buildServer(): McpServer {
         metadata: {
           overnightEvents: overnightEvents.length,
           failures: recentFailures.length,
+          noiseFiltered: briefingNoiseCount,
           warningCount: orderedWarnings.length,
           priorityCount: orderedPriorities.length,
           ecosystemScore: ecosystemScore ?? null,
@@ -1189,12 +1269,13 @@ export function buildServer(): McpServer {
       const snapshotResult = await getLatestSeedsSnapshot();
       const snapshot = snapshotResult.snapshot;
       const lowHealthRepos = getLowHealthRepos(snapshot, threshold);
-      const recentFailures = (
+      const allRecentFailures = (
         (await readRecentAuditEntries(100)) as Array<Record<string, any>>
       ).filter((event) => {
         const age = hoursSince(event.timestamp);
         return age !== null && age <= 24 && isFailureStatus(event.status);
       });
+      const { actionable: recentFailures } = filterActionableFailures(allRecentFailures);
       const failedWorkflows = (await listRecentWorkflowExecutions(20)).filter(
         (execution) => execution.status && execution.status !== "completed",
       );
@@ -1262,10 +1343,12 @@ export function buildServer(): McpServer {
       await ensureDataDir();
       const threshold = args.healthThreshold ?? 70;
       const recentAudit = (await readRecentAuditEntries(100)) as Array<Record<string, any>>;
-      const recentFailures = recentAudit.filter((event) => {
+      const allRecentFailures = recentAudit.filter((event) => {
         const age = hoursSince(event.timestamp);
         return age !== null && age <= 24 && isFailureStatus(event.status);
       });
+      const { actionable: recentFailures, noiseCount: workQueueNoiseCount } =
+        filterActionableFailures(allRecentFailures);
       const latestSnapshotResult = await getLatestSeedsSnapshot();
       const latestSnapshot = latestSnapshotResult.snapshot;
       const lowHealthRepos = getLowHealthRepos(latestSnapshot, threshold);
@@ -1330,6 +1413,7 @@ export function buildServer(): McpServer {
                   deduplicatedEntries: latestSnapshotResult.metadata.deduplicatedEntries,
                 },
                 journalEntriesToday: journal.length,
+                noiseFiltered: workQueueNoiseCount,
                 summary,
                 items: finalItems,
                 rules: {
