@@ -31,11 +31,13 @@ yarn-error.log*
 # Root-level build outputs
 dist/
 build/
+out/
 *.tsbuildinfo
 *.tsbuildinfo.*
 .tscache/
 .parcel-cache/
 .rollup.cache/
+.turbo/
 
 # MCP Server build outputs (explicit per-server for safety)
 */dist/
@@ -112,7 +114,12 @@ benchmarks/
 **/test-reports/
 **/junit.xml
 **/vitest.config.ts.timestamp-*
+**/.vitest-cache/
 *.test-results.json
+
+# Lint caches
+.eslintcache
+**/.eslintcache
 
 # ==========================
 # ENVIRONMENT & SECRETS
