@@ -146,12 +146,53 @@ Use these to filter morning briefing:
 
 ---
 
-## 6. Strategic Guardrails Summary
+## 6. Noise Filter — `classifyNoise()` Heuristics (pulse-server)
+
+8 provenance markers, ordered from most to least specific:
+
+| #   | Marker                                                                                           | Returns          | Catches                                                                           |
+| --- | ------------------------------------------------------------------------------------------------ | ---------------- | --------------------------------------------------------------------------------- |
+| 1   | `metadata.noise` set by emitter                                                                  | value as-is      | Explicit tags from merit guard / future emitters                                  |
+| 2   | ID starts with `synth-`                                                                          | `"synthetic"`    | Test harness injected entries                                                     |
+| 3   | Tool in `SYNTHETIC_TOOL_NAMES`                                                                   | `"test_fixture"` | `tool_a`, `tool_b`, `filter_tool`, `error_filter_probe`, `test_tool`, `time_tool` |
+| 4   | `metadata.envelopePath` under `/tmp/`                                                            | `"test_fixture"` | Vitest tmpdir fixtures                                                            |
+| 5   | `durationMs ≤ 1` + `overallScore` present                                                        | `"synthetic"`    | Mock scan execution (seeds-server)                                                |
+| 6   | `reason_code = GRID_BACKEND_UNAVAILABLE` or error contains `"fetch failed"` / `"not configured"` | `"synthetic"`    | API offline during tests                                                          |
+| 7   | `merit_check` + `score=0` + `verdict=denied`                                                     | `"stale"`        | Pre-fix NO_GRID_API bug pattern                                                   |
+| 8   | `eligibility-server` + `evolution_promotion_blocked`                                             | `"cascading"`    | Cycle management signals                                                          |
+
+**Coverage**: 348/398 (87.4%). Remaining 50 are genuinely actionable operational events.
+
+**Wired into**: `morning_briefing`, `what_should_i_work_on`, `check_alerts`. All three surface `noiseFiltered` count.
+
+---
+
+## 7. Residual Items Log (2026-04-10)
+
+### A. 50 Unclassified Audit Entries
+
+| Category                                    | Count | Date Range | Status                                                                  |
+| ------------------------------------------- | ----- | ---------- | ----------------------------------------------------------------------- |
+| Historical infra transients                 | 25    | Mar 25–29  | No action — outside 24h window, naturally deprioritized by time decay   |
+| Real GATE envelope failures                 | 9     | Apr 9      | Correctly caught by GATE validation (commit-wave trusted_source checks) |
+| Eligibility-server operational              | 10    | Apr 6–9    | Batch evaluation errors + clean-scan-logged-as-failure bug              |
+| Merit denial (score=45)                     | 1     | Mar 31     | Legitimate — entity had partial merit but insufficient badge            |
+| Other (admission 403s, repo_detail, probes) | 5     | Mar 29–31  | Infrastructure responses during Mothership degradation                  |
+
+### B. Known Bugs (Not Blocking)
+
+- **check_the_line status mapping**: Logs `status: failure` when `errorCount: 0` (clean scan). Logged as `note-1775818215607`.
+- **HMAC test badge mismatch**: 5 tests expect `B1_TRUSTED` for `action_write`, admission gate requires `B2_VERIFIED`. Logged as `note-1775818204372`.
+
+---
+
+## 8. Strategic Guardrails Summary
 
 | Guardrail                 | Rule                                                            | Exception                                               |
 | ------------------------- | --------------------------------------------------------------- | ------------------------------------------------------- |
-| **Noise filtering**       | Default `healthThreshold=70` in `what_should_i_work_on`         | Manual override for `semantic: local` issues            |
+| **Noise filtering**       | 8-heuristic `classifyNoise()` + `filterActionableFailures()`    | Manual override for `semantic: local` issues            |
 | **Dependency awareness**  | Check `repo_detail` for transitive fixes before starting a repo | Skip if repo has zero dependencies                      |
 | **Parallelization**       | Batch independent queries per the table in §4                   | Sequential for phases with data dependencies            |
 | **Impact scoring**        | Use `impact_score` to override volume-based prioritization      | All items reviewed if `impact_score ≥ 80` count is zero |
 | **Shared-lib regression** | Run `shared-types` tests before any triage                      | Skip if `git log --since=48h` shows no changes          |
+| **Filter boundary**       | 87.4% ceiling — remaining entries are real operational events   | Never filter entries without provenance markers         |
