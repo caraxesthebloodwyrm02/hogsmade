@@ -38,6 +38,7 @@ const DATA_DIR = config.dataDir;
 const CONFIG_PATH = path.join(DATA_DIR, "config.json");
 const REPORTS_DIR = path.join(DATA_DIR, "reports");
 const CLEANUP_LOG_PATH = path.join(DATA_DIR, "cleanup-log.json");
+const DEP_AUDIT_DIR = path.join(DATA_DIR, "dep-audit");
 
 // Preview token for multi-step safety: execute requires a token from a prior dry-run (TTL 5 min)
 const PREVIEW_TOKEN_TTL_MS = 5 * 60 * 1000;
@@ -184,11 +185,241 @@ interface Config {
   thresholds: typeof DEFAULT_CONFIG.thresholds;
 }
 
+// ── Dep-Audit Types (Phase 1) ──
+
+type LockfileType = "npm" | "pnpm" | "uv" | "pip" | "none";
+
+interface LockfileInfo {
+  type: LockfileType;
+  path: string;
+  exists: boolean;
+}
+
+interface Vulnerability {
+  name: string;
+  version: string;
+  severity: "info" | "low" | "moderate" | "high" | "critical";
+  advisory: string;
+  direct: boolean;
+}
+
+interface ProjectAuditResult {
+  project: string;
+  root: string;
+  lockfile: LockfileInfo;
+  vulnerabilities: Vulnerability[];
+  totalDeps: number;
+  error: string | null;
+}
+
+interface DepAuditResult {
+  timestamp: string;
+  projects: ProjectAuditResult[];
+  summary: {
+    totalProjects: number;
+    totalVulnerabilities: number;
+    bySeverity: Record<string, number>;
+  };
+  attention?: {
+    directVulnerabilities: number;
+    attentionList: { project: string; vuln: string; severity: string; cvss?: number }[];
+  };
+}
+
+// ── Dep-Audit Helpers (Phase 1) ──
+
+async function detectLockfile(rootPath: string): Promise<LockfileInfo> {
+  const npmLock = path.join(rootPath, "package-lock.json");
+  const pnpmLock = path.join(rootPath, "pnpm-lock.yaml");
+  const uvLock = path.join(rootPath, "uv.lock");
+  const reqTxt = path.join(rootPath, "requirements.txt");
+
+  if (await fileExists(npmLock)) {
+    return { type: "npm", path: npmLock, exists: true };
+  }
+  if (await fileExists(pnpmLock)) {
+    return { type: "pnpm", path: pnpmLock, exists: true };
+  }
+  if (await fileExists(uvLock)) {
+    return { type: "uv", path: uvLock, exists: true };
+  }
+  if (await fileExists(reqTxt)) {
+    return { type: "pip", path: reqTxt, exists: true };
+  }
+  return { type: "none", path: "", exists: false };
+}
+
+async function runNpmAudit(
+  rootPath: string,
+): Promise<{ vulnerabilities: Vulnerability[]; totalDeps: number; error: string | null }> {
+  try {
+    const { stdout, stderr } = await execFileAsync("npm", ["audit", "--json"], {
+      cwd: rootPath,
+      timeout: 30000,
+    });
+    const result = JSON.parse(stdout);
+
+    const vulnerabilities: Vulnerability[] = [];
+    if (result.vulnerabilities) {
+      for (const [name, data] of Object.entries(result.vulnerabilities)) {
+        const vuln = data as any;
+        const severity = vuln.severity as string;
+        vulnerabilities.push({
+          name,
+          version: vuln.via?.[0]?.range || "unknown",
+          severity: ["info", "low", "moderate", "high", "critical"].includes(severity)
+            ? (severity as Vulnerability["severity"])
+            : "low",
+          advisory: vuln.via?.[0]?.url || "",
+          direct: vuln.direct || false,
+        });
+      }
+    }
+
+    const metadata = result.metadata || {};
+    const totalDeps = metadata.dependencies?.total || 0;
+
+    return { vulnerabilities, totalDeps, error: null };
+  } catch (error) {
+    const err = error as any;
+    const stdout = err.stdout || "";
+    const stderr = err.stderr || "";
+
+    // npm audit exits with code 1 when vulnerabilities found, but JSON is still valid
+    if (stdout) {
+      try {
+        const result = JSON.parse(stdout);
+        const vulnerabilities: Vulnerability[] = [];
+        if (result.vulnerabilities) {
+          for (const [name, data] of Object.entries(result.vulnerabilities)) {
+            const vuln = data as any;
+            const severity = vuln.severity as string;
+            vulnerabilities.push({
+              name,
+              version: vuln.via?.[0]?.range || "unknown",
+              severity: ["info", "low", "moderate", "high", "critical"].includes(severity)
+                ? (severity as Vulnerability["severity"])
+                : "low",
+              advisory: vuln.via?.[0]?.url || "",
+              direct: vuln.direct || false,
+            });
+          }
+        }
+        const metadata = result.metadata || {};
+        const totalDeps = metadata.dependencies?.total || 0;
+        return { vulnerabilities, totalDeps, error: null };
+      } catch {
+        // JSON parse failed, fall through to error handling
+      }
+    }
+
+    const message = err.message || String(error);
+    return {
+      vulnerabilities: [],
+      totalDeps: 0,
+      error: `${message}${stderr ? ` | stderr: ${stderr}` : ""}`,
+    };
+  }
+}
+
+async function runPipAudit(
+  rootPath: string,
+): Promise<{ vulnerabilities: Vulnerability[]; totalDeps: number; error: string | null }> {
+  try {
+    const { stdout } = await execFileAsync(
+      "uv",
+      ["run", "--with", "pip-audit", "pip-audit", "--format", "json"],
+      {
+        cwd: rootPath,
+        timeout: 30000,
+      },
+    );
+    const result = JSON.parse(stdout);
+
+    const vulnerabilities: Vulnerability[] = [];
+    if (result.dependencies) {
+      for (const dep of result.dependencies) {
+        const vuln = dep.vulns?.[0];
+        if (vuln) {
+          const severityMap: Record<string, Vulnerability["severity"]> = {
+            low: "low",
+            medium: "moderate",
+            high: "high",
+            critical: "critical",
+          };
+          vulnerabilities.push({
+            name: dep.name,
+            version: dep.version,
+            severity: severityMap[vuln.advisory.severity] || "moderate",
+            advisory: vuln.advisory.url || "",
+            direct: dep.is_direct || false,
+          });
+        }
+      }
+    }
+
+    return { vulnerabilities, totalDeps: result.dependencies?.length || 0, error: null };
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    return { vulnerabilities: [], totalDeps: 0, error: msg };
+  }
+}
+
+async function auditProject(rootPath: string): Promise<ProjectAuditResult> {
+  const project = getStableRootLabel(rootPath) || path.basename(rootPath);
+  const lockfile = await detectLockfile(rootPath);
+
+  if (lockfile.type === "none") {
+    return {
+      project,
+      root: rootPath,
+      lockfile,
+      vulnerabilities: [],
+      totalDeps: 0,
+      error: "No lockfile found",
+    };
+  }
+
+  if (lockfile.type === "npm" || lockfile.type === "pnpm") {
+    const result = await runNpmAudit(rootPath);
+    return {
+      project,
+      root: rootPath,
+      lockfile,
+      vulnerabilities: result.vulnerabilities,
+      totalDeps: result.totalDeps,
+      error: result.error,
+    };
+  }
+
+  if (lockfile.type === "uv" || lockfile.type === "pip") {
+    const result = await runPipAudit(rootPath);
+    return {
+      project,
+      root: rootPath,
+      lockfile,
+      vulnerabilities: result.vulnerabilities,
+      totalDeps: result.totalDeps,
+      error: result.error,
+    };
+  }
+
+  return {
+    project,
+    root: rootPath,
+    lockfile,
+    vulnerabilities: [],
+    totalDeps: 0,
+    error: "Unsupported lockfile type",
+  };
+}
+
 // ── Data Layer ──
 
 async function ensureDataDir(): Promise<void> {
   await fs.mkdir(DATA_DIR, { recursive: true });
   await fs.mkdir(REPORTS_DIR, { recursive: true });
+  await fs.mkdir(DEP_AUDIT_DIR, { recursive: true });
 }
 
 async function fileExists(filepath: string): Promise<boolean> {
@@ -218,6 +449,37 @@ async function atomicWriteJson(filepath: string, data: unknown): Promise<void> {
 
 async function saveConfig(config: Config): Promise<void> {
   await atomicWriteJson(CONFIG_PATH, config);
+}
+
+async function saveDepAuditResult(result: DepAuditResult): Promise<void> {
+  const timestamp = result.timestamp.replace(/[:.]/g, "-");
+  const filename = `audit-${timestamp}.json`;
+  const filepath = path.join(DEP_AUDIT_DIR, filename);
+  await atomicWriteJson(filepath, result);
+}
+
+async function loadDepAuditResults(limit = 20): Promise<DepAuditResult[]> {
+  try {
+    const files = await fs.readdir(DEP_AUDIT_DIR);
+    const jsonFiles = files
+      .filter((f) => f.endsWith(".json"))
+      .sort()
+      .reverse()
+      .slice(0, limit);
+
+    const results: DepAuditResult[] = [];
+    for (const file of jsonFiles) {
+      try {
+        const content = await fs.readFile(path.join(DEP_AUDIT_DIR, file), "utf-8");
+        results.push(JSON.parse(content) as DepAuditResult);
+      } catch {
+        // Skip corrupt files
+      }
+    }
+    return results;
+  } catch {
+    return [];
+  }
 }
 
 function getStableRootLabel(rootPath: string): string | undefined {
@@ -1935,6 +2197,216 @@ export function buildServer(): McpServer {
                 reportsAvailable: reports.length,
                 trend,
                 history,
+              },
+              null,
+              2,
+            ),
+          },
+        ],
+      };
+    },
+  );
+
+  // Tool 9: dep_audit
+  registerTool(
+    "dep_audit",
+    {
+      description:
+        "Run dependency vulnerability audit (npm audit / pip-audit) across configured scan roots. Detects lockfile type, executes appropriate audit tool, and returns structured vulnerability data with severity mapping.",
+      inputSchema: z.object({
+        roots: z
+          .array(z.string())
+          .optional()
+          .describe("Root paths to audit (defaults to config.scanRoots if omitted)"),
+        maxAgeDays: z
+          .number()
+          .min(1)
+          .max(365)
+          .optional()
+          .default(7)
+          .describe("Filter: only report advisories published within this window (future use)"),
+      }),
+    },
+    async (args: { roots?: string[]; maxAgeDays?: number }) => {
+      const rlMsg = readLimiter.check("dep_audit");
+      if (rlMsg)
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }],
+          isError: true,
+        };
+
+      const rateLimitMsg = checkScanRateLimit("dep_audit");
+      if (rateLimitMsg) {
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({ error: rateLimitMsg }) }],
+          isError: true,
+        };
+      }
+
+      // Safety: validate roots against scanRoots allowlist (RED-4 mitigation)
+      const requestedRoots = args.roots || config.scanRoots;
+      const validatedRoots: string[] = [];
+      const seenRoots = new Set<string>();
+
+      for (const root of requestedRoots) {
+        const normalized = path.resolve(root);
+        // Deduplicate roots
+        if (seenRoots.has(normalized)) {
+          continue;
+        }
+        seenRoots.add(normalized);
+
+        const policyResult = executionPolicy.validateTargetPath(normalized);
+        if (policyResult.verdict === "deny") {
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: JSON.stringify({
+                  error: policyResult.reason,
+                }),
+              },
+            ],
+            isError: true,
+          };
+        }
+        validatedRoots.push(normalized);
+      }
+
+      // Run audit for each validated root
+      const projectResults: ProjectAuditResult[] = [];
+      for (const root of validatedRoots) {
+        const result = await auditProject(root);
+        projectResults.push(result);
+      }
+
+      // Build summary with attention mechanism
+      const bySeverity: Record<string, number> = {
+        info: 0,
+        low: 0,
+        moderate: 0,
+        high: 0,
+        critical: 0,
+      };
+      let totalVulnerabilities = 0;
+      let directVulnerabilities = 0;
+      const attentionList: { project: string; vuln: string; severity: string; cvss?: number }[] =
+        [];
+
+      for (const project of projectResults) {
+        for (const vuln of project.vulnerabilities) {
+          bySeverity[vuln.severity] = (bySeverity[vuln.severity] || 0) + 1;
+          totalVulnerabilities++;
+          if (vuln.direct) {
+            directVulnerabilities++;
+            // Attention mechanism: prioritize direct vulnerabilities
+            attentionList.push({
+              project: project.project,
+              vuln: vuln.name,
+              severity: vuln.severity,
+            });
+          }
+        }
+      }
+
+      const auditResult: DepAuditResult = {
+        timestamp: new Date().toISOString(),
+        projects: projectResults,
+        summary: {
+          totalProjects: projectResults.length,
+          totalVulnerabilities,
+          bySeverity,
+        },
+        attention: {
+          directVulnerabilities,
+          attentionList,
+        },
+      };
+
+      // Save audit result for history
+      await saveDepAuditResult(auditResult);
+
+      // Emit audit event
+      emitAudit({
+        source: "maintain-server",
+        tool: "dep_audit",
+        status: "success",
+        durationMs: 0,
+        metadata: {
+          projectsScanned: projectResults.length,
+          totalVulnerabilities,
+          bySeverity,
+        },
+      });
+
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(auditResult, null, 2),
+          },
+        ],
+      };
+    },
+  );
+
+  // Tool 10: dep_audit_history
+  registerTool(
+    "dep_audit_history",
+    {
+      description: "Retrieve historical dependency audit results with trend analysis.",
+      inputSchema: z.object({
+        limit: z
+          .number()
+          .min(1)
+          .max(50)
+          .optional()
+          .default(20)
+          .describe("Number of recent audit results to retrieve"),
+      }),
+    },
+    async (args: { limit?: number }) => {
+      const rlMsg = readLimiter.check("dep_audit_history");
+      if (rlMsg)
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }],
+          isError: true,
+        };
+
+      await ensureDataDir();
+      const results = await loadDepAuditResults(args.limit ?? 20);
+
+      if (results.length === 0) {
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: JSON.stringify({
+                message: "No audit history found. Run dep_audit first.",
+              }),
+            },
+          ],
+        };
+      }
+
+      // Trend analysis
+      let trend: "improving" | "degrading" | "stable" = "stable";
+      if (results.length >= 2) {
+        const latest = results[0].summary.totalVulnerabilities;
+        const previous = results[1].summary.totalVulnerabilities;
+        if (latest < previous) trend = "improving";
+        else if (latest > previous) trend = "degrading";
+      }
+
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(
+              {
+                available: results.length,
+                trend,
+                history: results,
               },
               null,
               2,
