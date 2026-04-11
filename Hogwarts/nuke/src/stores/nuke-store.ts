@@ -2,6 +2,7 @@ import { create } from "zustand";
 import type { NukeState, NukeKnob, NukeMacro, KnobStatus } from "../types/nuke.ts";
 import { KNOB_REGISTRY } from "../data/knob-registry.ts";
 import { MACRO_PRESETS } from "../data/macro-presets.ts";
+import { callMcp } from "../lib/mcp-bridge.ts";
 
 /* ── helpers ─────────────────────────────────────────────────────── */
 
@@ -17,12 +18,12 @@ function timestamp(): string {
   return new Date().toISOString();
 }
 
-/** Simulate firing a knob's MCP calls. In a real integration this would
- *  hit the MCP servers via fetch — for now it simulates with a delay. */
-async function simulateKnobExecution(knob: NukeKnob): Promise<void> {
-  const baseMs = 400 + knob.calls.length * 200;
-  const jitter = Math.random() * 300;
-  await new Promise((r) => setTimeout(r, baseMs + jitter));
+/** Execute all MCP calls defined on a knob sequentially.
+ *  Uses the real bridge when VITE_MCP_BRIDGE_URL is set, simulation otherwise. */
+async function executeKnobCalls(knob: NukeKnob): Promise<void> {
+  for (const call of knob.calls) {
+    await callMcp(call.server, call.tool, (call.params ?? {}) as Record<string, unknown>);
+  }
 }
 
 /* ── abort controller for macro cancellation ─────────────────────── */
@@ -59,7 +60,7 @@ export const useNukeStore = create<NukeState>((set, get) => ({
     setKnobStatus(knobId, "running");
 
     try {
-      await simulateKnobExecution(knob);
+      await executeKnobCalls(knob);
       const durationMs = Math.round(performance.now() - start);
 
       set((s) => ({
@@ -86,6 +87,11 @@ export const useNukeStore = create<NukeState>((set, get) => ({
           ...s.log,
         ].slice(0, 200),
       }));
+
+      // Auto-snapshot on success (fire-and-forget — does not block knob state)
+      void callMcp("overview-server", "checkpoint", { depth: "summary" }).catch(() => {
+        // snapshot failure is non-fatal
+      });
     } catch (err) {
       const durationMs = Math.round(performance.now() - start);
       const errorMsg = err instanceof Error ? err.message : String(err);

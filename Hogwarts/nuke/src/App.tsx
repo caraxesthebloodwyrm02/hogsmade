@@ -4,6 +4,7 @@ import { KNOB_BY_KEY } from "./data/knob-registry.ts";
 import { Pad } from "./components/Pad.tsx";
 import { MacroRail } from "./components/MacroRail.tsx";
 import { StatusBar } from "./components/StatusBar.tsx";
+import { RouteConfigLens } from "./components/RouteConfigLens.tsx";
 import type { HotKey } from "./types/nuke.ts";
 
 const VALID_KEYS = new Set<string>(KNOB_BY_KEY.keys());
@@ -60,6 +61,9 @@ export function App() {
 
       {/* macro rail */}
       <MacroRail />
+
+      {/* bus routing lens */}
+      <RouteConfigLens />
 
       {/* status bar / log */}
       <StatusBar />
