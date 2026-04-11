@@ -16,14 +16,19 @@ export type HotKey =
   | "x"
   | "c"
   | "v"
-  | "b";
+  | "b"
+  | "1"
+  | "2"
+  | "3"
+  | "4"
+  | "5";
 
 /** Keyboard rows map to operational tiers */
 export type KeyRow = "scan" | "analysis" | "zap";
 
 export const ROW_META: Record<KeyRow, { label: string; keys: readonly HotKey[] }> = {
   scan: { label: "Quick Scans", keys: ["q", "w", "e", "r", "t"] },
-  analysis: { label: "Analysis", keys: ["a", "s", "d", "f", "g"] },
+  analysis: { label: "Analysis", keys: ["a", "s", "d", "f", "g", "1"] },
   zap: { label: "Zap (Remediation)", keys: ["z", "x", "c", "v", "b"] },
 } as const;
 

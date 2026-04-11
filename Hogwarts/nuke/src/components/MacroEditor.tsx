@@ -18,13 +18,13 @@ export function MacroEditor() {
 
   return (
     <div
-      className="rounded-xl p-4 flex flex-col gap-3"
-      style={{ background: "var(--nuke-surface)", border: "1px solid var(--nuke-border-dim)" }}
+      className="rounded-xl p-4 flex flex-col gap-3 row-program"
+      style={{ background: "var(--knot-amber-bg)", border: "1px solid var(--knot-amber-border)" }}
     >
       <div className="flex items-center justify-between">
         <div
           className="text-xs font-semibold uppercase tracking-widest pl-1"
-          style={{ color: "var(--nuke-text-dim)" }}
+          style={{ color: "var(--knot-amber)" }}
         >
           Macro Editor
         </div>
@@ -48,8 +48,8 @@ export function MacroEditor() {
             className="px-2 py-1 rounded text-[10px] font-medium uppercase transition-colors"
             style={{
               background: "var(--key-bg)",
-              color: "var(--nuke-text-dim)",
-              border: "1px solid var(--nuke-border-dim)",
+              color: "var(--knot-amber-text)",
+              border: "1px solid var(--knot-amber-border)",
             }}
           >
             {knob.key} {knob.label}
@@ -73,8 +73,8 @@ export function MacroEditor() {
                   onClick={() => removeStep(i)}
                   className="px-2 py-1 rounded text-[10px] font-medium uppercase"
                   style={{
-                    background: "var(--rail-step)",
-                    color: "var(--nuke-text)",
+                    background: "var(--knot-amber-dim)",
+                    color: "#0a0a0f",
                   }}
                   title="Click to remove"
                 >

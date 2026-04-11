@@ -16,9 +16,12 @@
   --nuke-text-muted: #555570;
 
   /* row accents */
-  --scan-accent: #4fc3f7; /* cyan — quick scans */
-  --analysis-accent: #ffb74d; /* amber — analysis */
-  --zap-accent: #ef5350; /* red — remediation */
+  --scan-accent: #4fc3f7;
+  /* cyan — quick scans */
+  --analysis-accent: #ffb74d;
+  /* amber — analysis */
+  --zap-accent: #ef5350;
+  /* red — remediation */
 
   /* status LEDs */
   --led-idle: #555570;
@@ -37,6 +40,14 @@
   --rail-bg: #0e0e16;
   --rail-step: #2a2a3a;
   --rail-active: #4fc3f7;
+
+  /* amber knot — programming / authoring / dependency surfaces */
+  --knot-amber: #ffb74d;
+  --knot-amber-dim: #cc8a2e;
+  --knot-amber-bg: #1a1610;
+  --knot-amber-border: #3d2e14;
+  --knot-amber-hover: #ffe0b2;
+  --knot-amber-text: #ffe0b2;
 
   /* timing */
   --transition-fast: 120ms ease-out;
@@ -93,9 +104,11 @@ body {
   0% {
     transform: translateY(0);
   }
+
   40% {
     transform: translateY(2px);
   }
+
   100% {
     transform: translateY(0);
   }
@@ -106,6 +119,7 @@ body {
   100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.5;
   }
@@ -116,6 +130,7 @@ body {
     opacity: 0;
     transform: translateY(4px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -126,6 +141,7 @@ body {
   from {
     width: 0;
   }
+
   to {
     width: 100%;
   }
@@ -148,11 +164,17 @@ body {
 .row-scan {
   --row-accent: var(--scan-accent);
 }
+
 .row-analysis {
   --row-accent: var(--analysis-accent);
 }
+
 .row-zap {
   --row-accent: var(--zap-accent);
+}
+
+.row-program {
+  --row-accent: var(--knot-amber);
 }
 
 /* ── reduced motion ──────────────────────────────────────────────── */

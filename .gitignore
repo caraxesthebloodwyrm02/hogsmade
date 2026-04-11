@@ -286,6 +286,7 @@ claude-progress.txt
 # ==========================
 archive/
 data/
+!Hogwarts/nuke/src/data/
 memory/
 .rag_db/
 .cache/

@@ -1,10 +1,11 @@
-import { useEffect, useCallback } from "react";
-import { useNukeStore } from "./stores/nuke-store.ts";
-import { KNOB_BY_KEY } from "./data/knob-registry.ts";
-import { Pad } from "./components/Pad.tsx";
+import { useCallback, useEffect } from "react";
+import { MacroEditor } from "./components/MacroEditor.tsx";
 import { MacroRail } from "./components/MacroRail.tsx";
-import { StatusBar } from "./components/StatusBar.tsx";
+import { Pad } from "./components/Pad.tsx";
 import { RouteConfigLens } from "./components/RouteConfigLens.tsx";
+import { StatusBar } from "./components/StatusBar.tsx";
+import { KNOB_BY_KEY } from "./data/knob-registry.ts";
+import { useNukeStore } from "./stores/nuke-store.ts";
 import type { HotKey } from "./types/nuke.ts";
 
 const VALID_KEYS = new Set<string>(KNOB_BY_KEY.keys());
@@ -61,6 +62,9 @@ export function App() {
 
       {/* macro rail */}
       <MacroRail />
+
+      {/* macro editor — programming surface */}
+      <MacroEditor />
 
       {/* bus routing lens */}
       <RouteConfigLens />
