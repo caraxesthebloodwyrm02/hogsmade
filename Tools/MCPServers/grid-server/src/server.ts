@@ -357,9 +357,6 @@ export function buildServer(): McpServer {
     name: SERVER_NAME,
     version: VERSION,
   });
-  // Avoid deep generic instantiation cost in strict TS mode.
-  const registerTool = server.registerTool.bind(server) as any;
-
   // Initialize hardened merit guard for session-first identity enforcement
   const meritGuard = createHardenedMeritGuard(
     SERVER_NAME,
@@ -441,7 +438,7 @@ export function buildServer(): McpServer {
   );
 
   // Validate envelope structure (dry-run step 1)
-  registerTool(
+  server.registerTool(
     "validate_envelope",
     {
       description:
@@ -772,7 +769,7 @@ export function buildServer(): McpServer {
   );
 
   // Query GATE audit log
-  registerTool(
+  server.registerTool(
     "gate_audit",
     {
       description: "Query the GATE audit log (audit.ndjson) for verification events",
@@ -800,7 +797,7 @@ export function buildServer(): McpServer {
   );
 
   // Nonce registry status
-  registerTool(
+  server.registerTool(
     "nonce_status",
     {
       description: "Check the GATE nonce registry — list burned nonces and registry health",
@@ -849,7 +846,7 @@ export function buildServer(): McpServer {
   );
 
   // Check target permissions
-  registerTool(
+  server.registerTool(
     "check_permission",
     {
       description: "Check if a specific action is permitted on a deployment target",
@@ -1062,7 +1059,7 @@ export function buildServer(): McpServer {
   }
 
   // admission_policy — Get the current policy billboard
-  registerTool(
+  server.registerTool(
     "admission_policy",
     {
       description:
@@ -1113,7 +1110,7 @@ export function buildServer(): McpServer {
   );
 
   // admission_entity_report — Get entity violation history and penalty tier
-  registerTool(
+  server.registerTool(
     "admission_entity_report",
     {
       description:
@@ -1176,7 +1173,7 @@ export function buildServer(): McpServer {
   );
 
   // admission_compliance_check — Dry-run payload compliance check
-  registerTool(
+  server.registerTool(
     "admission_compliance_check",
     {
       description:
@@ -1279,7 +1276,7 @@ export function buildServer(): McpServer {
   );
 
   // admission_apply_penalty — Manually apply penalty to entity
-  registerTool(
+  server.registerTool(
     "admission_apply_penalty",
     {
       description:
@@ -1380,7 +1377,7 @@ export function buildServer(): McpServer {
   );
 
   // admission_bannered_entities — List all bannered entities
-  registerTool(
+  server.registerTool(
     "admission_bannered_entities",
     {
       description:
@@ -1451,7 +1448,7 @@ export function buildServer(): McpServer {
   );
 
   // admission_stats — Get gate operational statistics
-  registerTool(
+  server.registerTool(
     "admission_stats",
     {
       description:

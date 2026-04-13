@@ -902,9 +902,8 @@ async function scanGitRepo(repoPath: string): Promise<GitRepoResult> {
     }
   }
 
-  // Behind remote
+  // Behind remote (no fetch — avoids outbound network call in a read-only scan)
   let behindRemote = 0;
-  await runGitCommand(repoPath, ["fetch", "--quiet"]);
   const behindOutput = await runGitCommand(repoPath, ["rev-list", "--count", "HEAD..@{u}"]);
   if (behindOutput) {
     behindRemote = parseInt(behindOutput) || 0;
@@ -1223,7 +1222,7 @@ async function cleanupPipCache(
   if (!dryRun) {
     try {
       const before = await getDirSize(cachePath);
-      await execFileAsync("pip", ["cache", "purge"], { timeout: 60000 });
+      await execFileAsync("uv", ["pip", "cache", "purge"], { timeout: 60000 });
       const after = await getDirSize(cachePath);
       bytesFreed = before.size - after.size;
       filesRemoved = before.count - after.count;
