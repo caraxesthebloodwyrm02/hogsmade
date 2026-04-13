@@ -1,5 +1,19 @@
 # Repository Guidelines
 
+## Agent Registry
+
+| Agent                  | Role                                                                     | Default          | Definition                                 |
+| ---------------------- | ------------------------------------------------------------------------ | ---------------- | ------------------------------------------ |
+| `prince-runtime-intel` | Primary dev agent — full Mangrove ecosystem, default for all coding work | **YES**          | `~/.claude/agents/prince-runtime-intel.md` |
+| `hermes`               | Ecosystem coordination — CascadeProjects and cross-project mediation     | context-switched | `~/.claude/agents/hermes.md`               |
+| `caraxes`              | Marketplace and plugin ecosystem scouting                                | context-switched | `~/.claude/agents/caraxes.md`              |
+
+**Default agent:** `prince-runtime-intel` is the workspace default for all development tasks in this repo unless explicitly overridden. To activate: prefix with `@prince` or run `echo "prince" > ~/.claude/.active_persona`.
+
+**Behavioral rules:** Agent operational protocols in `~/.claude/rules/prince-agent.md` (problem-type routing, skill dispatch, output templates) and `~/.claude/rules/dev-rules.md` (TUV-001 governance contract). Rules are not duplicated here.
+
+---
+
 ## Project Structure & Module Organization
 
 This repository is a Node workspaces monorepo for Mangrove/Cascade projects.
