@@ -74,7 +74,7 @@ export const RISK_PATTERNS: RiskPattern[] = [
   {
     id: "flaky_test",
     label: "Flaky test signal",
-    regex: /flak|retr(y|ied)|intermittent|non-determin/i,
+    regex: /flaky?\s+test|intermittent\s+(fail|error)|non-determin/i,
     severity: "warning",
   },
 ];
