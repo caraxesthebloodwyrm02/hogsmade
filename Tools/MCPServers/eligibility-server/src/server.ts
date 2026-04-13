@@ -366,6 +366,8 @@ export function buildServer(): McpServer {
     async () => toJsonText(listAttributeCatalogHandler()),
   );
 
+  // NEXT: ProximityWindow → cycle_signal feed (future)
+
   tool(
     "evaluate_candidate",
     "Evaluate one or more candidates into weighted hierarchy, notes, forms, and collection rows.",

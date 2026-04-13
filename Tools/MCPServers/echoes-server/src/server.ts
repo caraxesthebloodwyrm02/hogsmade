@@ -10,14 +10,12 @@
  * Port: 8000 (per GATE/agent_schema.json)
  */
 
-import { AuditIntegrityGuard } from "@cascade/shared-types/security-policy";
 import { generateId } from "@cascade/shared-types/id";
 import { McpLogger } from "@cascade/shared-types/mcp-logger";
-import { DEFAULT_COOLDOWN_MS, PRECEDENT_TRIGGER_STATUSES } from "@cascade/shared-types/precedent";
 import type { RecurrenceCheckResult } from "@cascade/shared-types/precedent";
+import { PRECEDENT_TRIGGER_STATUSES } from "@cascade/shared-types/precedent";
+import { AuditIntegrityGuard } from "@cascade/shared-types/security-policy";
 import { SessionRateLimiter } from "@cascade/shared-types/session-rate-limit";
-import { PrecedentStore } from "./precedent-store.js";
-import { applySuccessDeescalation, applyTimeDecay, checkRecurrence } from "./recurrence.js";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { promises as fs } from "fs";
@@ -27,6 +25,8 @@ import { pathToFileURL } from "url";
 import * as z from "zod";
 import { CHARACTER_QUERY_CLUSTERS, findRelevantClusters } from "./character-clusters.js";
 import { getConfig } from "./config.js";
+import { PrecedentStore } from "./precedent-store.js";
+import { applySuccessDeescalation, applyTimeDecay, checkRecurrence } from "./recurrence.js";
 
 // ── Constants ──
 
@@ -457,6 +457,8 @@ export function buildServer(): McpServer {
       };
     },
   );
+
+  // NEXT: AuditEvent → anticipation_signal attribution chain
 
   // Record audit entry
   registerTool(

@@ -469,6 +469,8 @@ export function buildServer(): McpServer {
     },
   );
 
+  // NEXT: RepoHealthSignal → anticipation activation threshold
+
   // Scan all repos
   registerTool(
     "ecosystem_scan",

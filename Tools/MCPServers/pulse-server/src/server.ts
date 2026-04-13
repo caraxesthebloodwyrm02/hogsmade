@@ -1080,6 +1080,8 @@ export function buildServer(): McpServer {
     },
   );
 
+  // NEXT: PulseRhythm → anticipation cooldown timing
+
   // ── Morning Briefing (ANALYSIS_READ) ──
 
   registerGuardedTool(

@@ -626,6 +626,8 @@ export function buildServer(): McpServer {
     },
   );
 
+  // NEXT: ExperimentProposal → anticipation synthesis output consumer
+
   // Get experiment details
   registerTool(
     "experiment_get",
