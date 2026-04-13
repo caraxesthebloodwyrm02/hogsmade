@@ -39,8 +39,16 @@ def main() -> int:
     mcp_path = cascade_root / "mcp_config.json"
     manifest_path = cascade_root / "mcp_inventory.manifest.json"
     if not mcp_path.is_file():
-        print(f"verify_mcp_inventory: missing {mcp_path}", file=sys.stderr)
-        return 2
+        example_path = cascade_root / "mcp_config.example.json"
+        if example_path.is_file():
+            print(
+                f"verify_mcp_inventory: {mcp_path.name} not found; "
+                f"falling back to {example_path.name} for key-set validation (live config is gitignored)"
+            )
+            mcp_path = example_path
+        else:
+            print(f"verify_mcp_inventory: missing {mcp_path}", file=sys.stderr)
+            return 2
     if not manifest_path.is_file():
         print(f"verify_mcp_inventory: missing {manifest_path}", file=sys.stderr)
         return 2
