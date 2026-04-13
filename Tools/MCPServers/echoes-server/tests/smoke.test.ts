@@ -49,8 +49,35 @@ describe("echoes-server smoke", () => {
         "query_precedents",
         "resolve_precedent",
         "enforcement_status",
+        "record_glimpse_preflight",
       ]),
     );
+  });
+
+  it("record_glimpse_preflight tool works", async () => {
+    const server = buildServer();
+    const result = (await invokeTool(server, "record_glimpse_preflight", {
+      source: "test_session",
+      session_id: "test-session-123",
+      aligned: true,
+      status: "success",
+      sample: "test_sample",
+      essence: "test_essence",
+      delta: "test_delta",
+      attempt: 1,
+      stale: false,
+      probability_score: 0.95,
+      trajectory_delta: 0.1,
+    })) as {
+      id: string;
+      status: string;
+      metadata: Record<string, unknown>;
+    };
+
+    expect(result).toHaveProperty("status", "success");
+    expect(result.metadata).toHaveProperty("aligned", true);
+    expect(result.metadata).toHaveProperty("session_id", "test-session-123");
+    expect(result.metadata).toHaveProperty("tool", "glimpse_preflight");
   });
 
   it("runs health_check successfully", async () => {

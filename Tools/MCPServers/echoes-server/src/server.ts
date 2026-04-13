@@ -545,6 +545,118 @@ export function buildServer(): McpServer {
     },
   );
 
+  // Record a Glimpse preflight result — mandatory safety check before message commit.
+  // Writes a structured audit entry so graph_compiler can compile PREFLIGHT entities.
+  registerTool(
+    "record_glimpse_preflight",
+    {
+      description:
+        "Record a Glimpse preflight alignment result from canopy/echoes. " +
+        "Preflight checks are mandatory (the rearview mirror before merging to the highway). " +
+        "Results are written to the audit log so graph_compiler can compile them as PREFLIGHT entities.",
+      inputSchema: z.object({
+        source: z
+          .string()
+          .min(1)
+          .default("echoes-canopy")
+          .describe('Source identifier (e.g. "echoes-canopy")'),
+        session_id: z.string().describe("EchoesAssistantV2 session_id"),
+        aligned: z.boolean().describe("Whether the preflight alignment check passed"),
+        status: z.string().describe('Glimpse status string (e.g. "aligned", "misaligned")'),
+        sample: z.string().optional().describe("Sample text from Glimpse result"),
+        essence: z.string().optional().describe("Essence summary from Glimpse engine"),
+        delta: z.number().optional().describe("Trajectory delta from Glimpse result"),
+        attempt: z.number().optional().describe("Attempt number from Glimpse engine"),
+        stale: z.boolean().optional().describe("Whether the Glimpse result is stale"),
+        probability_score: z
+          .number()
+          .min(0)
+          .max(1)
+          .optional()
+          .describe("Probability score from preflight trajectory analysis (0–1)"),
+        trajectory_delta: z
+          .number()
+          .optional()
+          .describe("Trajectory delta between current and prior alignment"),
+        runMode: runModeSchema,
+      }),
+    },
+    async (args: any) => {
+      await ensureDataDir();
+      assertMutablePathsAllowed(args.runMode as RunMode, [AUDIT_LOG_PATH]);
+      const now = new Date().toISOString();
+
+      const integrityCheck = AuditIntegrityGuard.validateEntry(args.source, now);
+      if (integrityCheck.verdict === "deny") {
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: JSON.stringify({
+                recorded: false,
+                error: integrityCheck.reason,
+                policyId: integrityCheck.policyId,
+              }),
+            },
+          ],
+        };
+      }
+
+      const entry: AuditEntry = {
+        id: generateId("aud"),
+        timestamp: now,
+        source: args.source ?? "echoes-canopy",
+        tool: "glimpse_preflight",
+        status: args.aligned ? "success" : "failure",
+        metadata: {
+          session_id: args.session_id,
+          aligned: args.aligned,
+          glimpse_status: args.status,
+          sample: args.sample,
+          essence: args.essence,
+          delta: args.delta,
+          attempt: args.attempt,
+          stale: args.stale,
+          probability_score: args.probability_score,
+          trajectory_delta: args.trajectory_delta,
+        },
+      };
+      await appendAuditEntry(entry);
+
+      // Feed recurrence detector on misalignment
+      let recurrence: RecurrenceCheckResult | null = null;
+      if (!args.aligned) {
+        recurrence = checkRecurrence(
+          precedentStore,
+          {
+            source: entry.source,
+            tool: entry.tool,
+            status: entry.status,
+            metadata: entry.metadata,
+          },
+          false,
+          true,
+        );
+      } else {
+        precedentStore.recordSuccess(entry.source, entry.tool);
+      }
+
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify({
+              recorded: true,
+              id: entry.id,
+              aligned: args.aligned,
+              ...(recurrence ? { recurrence } : {}),
+            }),
+          },
+        ],
+      };
+    },
+  );
+
   // Query audit log
   registerTool(
     "query_audit",
