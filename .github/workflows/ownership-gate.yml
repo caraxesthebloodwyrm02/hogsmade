@@ -29,7 +29,7 @@ jobs:
 
       - name: Collect PR metadata
         id: pr_meta
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -119,7 +119,7 @@ jobs:
 
       - name: Annotate PR on deny
         if: failure() && steps.governance.outcome == 'failure'
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -156,7 +156,7 @@ jobs:
 
       - name: Annotate PR on escalation (advisory)
         if: success()
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
