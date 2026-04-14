@@ -4,6 +4,8 @@ import { homedir } from "os";
 import { dirname, resolve } from "path";
 import type { AuditEvent } from "./audit.js";
 
+export type { AuditEvent } from "./audit.js";
+
 const ECHOES_AUDIT_PATH =
   process.env.ECHOES_AUDIT_PATH || resolve(homedir(), ".echoes", "audit.ndjson");
 
