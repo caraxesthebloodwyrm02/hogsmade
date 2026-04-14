@@ -83,6 +83,10 @@ export interface ResilienceContext {
   operationName: string;
   startTime: number;
   attempt: number;
+  /** W3C trace-id for cross-service correlation (optional). */
+  traceId?: string;
+  /** W3C span-id for cross-service correlation (optional). */
+  spanId?: string;
 }
 
 export class ResilienceError extends Error {

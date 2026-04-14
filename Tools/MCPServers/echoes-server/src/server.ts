@@ -16,6 +16,12 @@ import type { RecurrenceCheckResult } from "@cascade/shared-types/precedent";
 import { PRECEDENT_TRIGGER_STATUSES } from "@cascade/shared-types/precedent";
 import { AuditIntegrityGuard } from "@cascade/shared-types/security-policy";
 import { SessionRateLimiter } from "@cascade/shared-types/session-rate-limit";
+import {
+  type TraceContext,
+  createChildSpan,
+  createRootSpan,
+  extractTrace,
+} from "@cascade/shared-types/trace-context";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { promises as fs } from "fs";
@@ -50,6 +56,8 @@ interface AuditEntry {
   tool: string;
   status: "success" | "failure" | "blocked" | "dry_run" | "error";
   durationMs?: number;
+  traceId?: string;
+  spanId?: string;
   metadata?: Record<string, unknown>;
 }
 
@@ -484,6 +492,10 @@ export function buildServer(): McpServer {
       ]);
       const now = new Date().toISOString();
 
+      // Extract W3C trace context from _trace arg (if provided by caller)
+      const incomingTrace: TraceContext | null = extractTrace(args);
+      const span = incomingTrace ? createChildSpan(incomingTrace) : createRootSpan();
+
       // P-INT-001 + P-INT-002: Validate source and timestamp integrity
       const integrityCheck = AuditIntegrityGuard.validateEntry(args.source, now);
       if (integrityCheck.verdict === "deny") {
@@ -508,6 +520,8 @@ export function buildServer(): McpServer {
         tool: args.tool,
         status: normalizeAuditStatus(args.status) ?? "failure",
         durationMs: args.durationMs,
+        traceId: span.traceId,
+        spanId: span.spanId,
         metadata: args.metadata as Record<string, unknown> | undefined,
       };
       await appendAuditEntry(entry);

@@ -16,6 +16,12 @@
 
 import { emitAudit } from "@cascade/shared-types/audit-client";
 import { SessionRateLimiter } from "@cascade/shared-types/session-rate-limit";
+import {
+  type TraceContext,
+  createChildSpan,
+  createRootSpan,
+  extractTrace,
+} from "@cascade/shared-types/trace-context";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { promises as fs } from "fs";
@@ -54,6 +60,7 @@ export function buildServer(): McpServer {
     "Check overview-server health and data source connectivity",
     {},
     async () => {
+      const span = createRootSpan();
       const startMs = Date.now();
 
       try {
@@ -77,6 +84,8 @@ export function buildServer(): McpServer {
         );
 
         emitAudit({
+          traceId: span.traceId,
+          spanId: span.spanId,
           source: SERVER_NAME,
           tool: "health_check",
           status: "success",
@@ -104,6 +113,8 @@ export function buildServer(): McpServer {
         };
       } catch (error) {
         emitAudit({
+          traceId: span.traceId,
+          spanId: span.spanId,
           source: SERVER_NAME,
           tool: "health_check",
           status: "error",
@@ -153,6 +164,7 @@ export function buildServer(): McpServer {
         ),
     },
     async ({ focus, since, depth }: any) => {
+      const span = createRootSpan();
       const rlMsg = readLimiter.check("checkpoint");
       if (rlMsg)
         return {
@@ -165,6 +177,8 @@ export function buildServer(): McpServer {
         const checkpoint = await aggregateCheckpoint({ focus, since, depth });
 
         emitAudit({
+          traceId: span.traceId,
+          spanId: span.spanId,
           source: SERVER_NAME,
           tool: "checkpoint",
           status: "success",
@@ -189,6 +203,8 @@ export function buildServer(): McpServer {
         };
       } catch (error) {
         emitAudit({
+          traceId: span.traceId,
+          spanId: span.spanId,
           source: SERVER_NAME,
           tool: "checkpoint",
           status: "error",

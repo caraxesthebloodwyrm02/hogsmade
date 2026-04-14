@@ -14,6 +14,12 @@ import { emitAudit } from "@cascade/shared-types/audit-client";
 import { generateId } from "@cascade/shared-types/id";
 import { ExecutionPolicyEngine } from "@cascade/shared-types/security-policy";
 import { SessionRateLimiter } from "@cascade/shared-types/session-rate-limit";
+import {
+  type TraceContext,
+  createChildSpan,
+  createRootSpan,
+  extractTrace,
+} from "@cascade/shared-types/trace-context";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { execFile } from "child_process";
@@ -474,6 +480,8 @@ export function buildServer(): McpServer {
       }),
     },
     async (args: { experimentId: string; timeoutSeconds?: number }) => {
+      const incomingTrace: TraceContext | null = extractTrace(args as Record<string, unknown>);
+      const span = incomingTrace ? createChildSpan(incomingTrace) : createRootSpan();
       if (!config.enableExperimentRun) {
         return {
           content: [
@@ -598,6 +606,8 @@ export function buildServer(): McpServer {
 
       try {
         emitAudit({
+          traceId: span.traceId,
+          spanId: span.spanId,
           source: "lots-server",
           tool: "experiment_run",
           status: exp.status === "complete" ? "success" : "failure",
@@ -1068,6 +1078,8 @@ export function buildServer(): McpServer {
       saveAsDraft?: boolean;
       maxProposals?: number;
     }) => {
+      const incomingTrace: TraceContext | null = extractTrace(args as Record<string, unknown>);
+      const span = incomingTrace ? createChildSpan(incomingTrace) : createRootSpan();
       const rlMsg = readLimiter.check("experiment_suggest");
       if (rlMsg)
         return {
@@ -1103,6 +1115,8 @@ export function buildServer(): McpServer {
 
       try {
         emitAudit({
+          traceId: span.traceId,
+          spanId: span.spanId,
           source: "lots-server",
           tool: "experiment_suggest",
           status: proposals.length > 0 ? "success" : "success",

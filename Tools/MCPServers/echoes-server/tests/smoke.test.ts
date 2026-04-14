@@ -57,27 +57,31 @@ describe("echoes-server smoke", () => {
   it("record_glimpse_preflight tool works", async () => {
     const server = buildServer();
     const result = (await invokeTool(server, "record_glimpse_preflight", {
-      source: "test_session",
+      source: "echoes-server",
       session_id: "test-session-123",
       aligned: true,
       status: "success",
       sample: "test_sample",
       essence: "test_essence",
-      delta: "test_delta",
+      delta: 0.05,
       attempt: 1,
       stale: false,
       probability_score: 0.95,
       trajectory_delta: 0.1,
+      runMode: "live",
     })) as {
-      id: string;
-      status: string;
-      metadata: Record<string, unknown>;
+      content?: Array<{ type: string; text?: string }>;
     };
 
-    expect(result).toHaveProperty("status", "success");
-    expect(result.metadata).toHaveProperty("aligned", true);
-    expect(result.metadata).toHaveProperty("session_id", "test-session-123");
-    expect(result.metadata).toHaveProperty("tool", "glimpse_preflight");
+    expect(result.content?.[0]?.type).toBe("text");
+    const parsed = JSON.parse(result.content?.[0]?.text ?? "{}") as {
+      recorded?: boolean;
+      id?: string;
+      aligned?: boolean;
+    };
+    expect(parsed.recorded).toBe(true);
+    expect(parsed.id).toBeDefined();
+    expect(parsed.aligned).toBe(true);
   });
 
   it("runs health_check successfully", async () => {
