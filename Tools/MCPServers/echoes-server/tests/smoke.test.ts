@@ -57,7 +57,7 @@ describe("echoes-server smoke", () => {
   it("record_glimpse_preflight tool works", async () => {
     const server = buildServer();
     const result = (await invokeTool(server, "record_glimpse_preflight", {
-      source: "test_session",
+      source: "echoes-server",
       session_id: "test-session-123",
       aligned: true,
       status: "success",
