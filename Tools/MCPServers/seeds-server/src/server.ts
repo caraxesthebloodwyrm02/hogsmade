@@ -15,6 +15,12 @@ import { emitAudit } from "@cascade/shared-types/audit-client";
 import { generateId } from "@cascade/shared-types/id";
 import { McpLogger } from "@cascade/shared-types/mcp-logger";
 import { SessionRateLimiter } from "@cascade/shared-types/session-rate-limit";
+import {
+  type TraceContext,
+  createChildSpan,
+  createRootSpan,
+  extractTrace,
+} from "@cascade/shared-types/trace-context";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { execFile } from "child_process";
@@ -487,6 +493,8 @@ export function buildServer(): McpServer {
       }),
     },
     async (args: { saveSnapshot?: boolean }) => {
+      const incomingTrace: TraceContext | null = extractTrace(args as Record<string, unknown>);
+      const span = incomingTrace ? createChildSpan(incomingTrace) : createRootSpan();
       const rlMsg = readLimiter.check("ecosystem_scan");
       if (rlMsg)
         return {
@@ -540,6 +548,8 @@ export function buildServer(): McpServer {
       }
 
       emitAudit({
+        traceId: span.traceId,
+        spanId: span.spanId,
         source: SERVER_NAME,
         tool: "ecosystem_scan",
         status: overallScore >= 50 ? "success" : "failure",
@@ -601,6 +611,8 @@ export function buildServer(): McpServer {
       }),
     },
     async (args: { repoName: string }) => {
+      const incomingTrace: TraceContext | null = extractTrace(args as Record<string, unknown>);
+      const span = incomingTrace ? createChildSpan(incomingTrace) : createRootSpan();
       const rlMsg = readLimiter.check("repo_detail");
       if (rlMsg)
         return {
@@ -612,6 +624,8 @@ export function buildServer(): McpServer {
       const knownInfo = KNOWN_REPOS[knownKey];
 
       emitAudit({
+        traceId: span.traceId,
+        spanId: span.spanId,
         source: SERVER_NAME,
         tool: "repo_detail",
         status: health.exists ? "success" : "failure",

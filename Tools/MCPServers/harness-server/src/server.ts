@@ -14,6 +14,12 @@
 
 import { emitAudit } from "@cascade/shared-types/audit-client";
 import { ActionClass, createHardenedMeritGuard } from "@cascade/shared-types";
+import {
+  type TraceContext,
+  createChildSpan,
+  createRootSpan,
+  extractTrace,
+} from "@cascade/shared-types/trace-context";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import * as z from "zod";
@@ -106,6 +112,8 @@ export function buildServer(): McpServer {
       }),
     },
     async (args: { scenario: string; cycle?: number }) => {
+      const incomingTrace: TraceContext | null = extractTrace(args as Record<string, unknown>);
+      const span = incomingTrace ? createChildSpan(incomingTrace) : createRootSpan();
       await ensureDataDirs();
 
       try {
@@ -121,6 +129,8 @@ export function buildServer(): McpServer {
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
         emitAudit({
+          traceId: span.traceId,
+          spanId: span.spanId,
           source: SERVER_NAME,
           tool: "harness_run",
           status: "error",
@@ -319,6 +329,8 @@ export function buildServer(): McpServer {
       }),
     },
     async (args: { regenerate?: boolean }) => {
+      const incomingTrace: TraceContext | null = extractTrace(args as Record<string, unknown>);
+      const span = incomingTrace ? createChildSpan(incomingTrace) : createRootSpan();
       await ensureDataDirs();
 
       let ref = args.regenerate ? null : await latestManifestRef();
@@ -347,6 +359,8 @@ export function buildServer(): McpServer {
       }
 
       emitAudit({
+        traceId: span.traceId,
+        spanId: span.spanId,
         source: SERVER_NAME,
         tool: "harness_manifest",
         status: "success",
@@ -456,6 +470,8 @@ export function buildServer(): McpServer {
       charged_moves?: string[];
       domain_function: string;
     }) => {
+      const incomingTrace: TraceContext | null = extractTrace(args as Record<string, unknown>);
+      const span = incomingTrace ? createChildSpan(incomingTrace) : createRootSpan();
       await ensureDataDirs();
 
       try {
@@ -471,6 +487,8 @@ export function buildServer(): McpServer {
         });
 
         emitAudit({
+          traceId: span.traceId,
+          spanId: span.spanId,
           source: SERVER_NAME,
           tool: "scenario_register",
           status: "success",
@@ -600,6 +618,8 @@ export function buildServer(): McpServer {
       }),
     },
     async (args: { scenario_id?: string }) => {
+      const incomingTrace: TraceContext | null = extractTrace(args as Record<string, unknown>);
+      const span = incomingTrace ? createChildSpan(incomingTrace) : createRootSpan();
       await ensureDataDirs();
       const signals = await readSignals(args.scenario_id);
       const scenarios = await readScenarios();
@@ -643,6 +663,8 @@ export function buildServer(): McpServer {
               : "incomplete (foundation not armed)";
 
       emitAudit({
+        traceId: span.traceId,
+        spanId: span.spanId,
         source: SERVER_NAME,
         tool: "get_scenario_insights",
         status: "success",

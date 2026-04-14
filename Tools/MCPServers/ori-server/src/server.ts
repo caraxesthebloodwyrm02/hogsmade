@@ -13,6 +13,12 @@ import { emitAudit } from "@cascade/shared-types/audit-client";
 import { generateId } from "@cascade/shared-types/id";
 import { SessionRateLimiter } from "@cascade/shared-types/session-rate-limit";
 import { ActionClass, Scope, createHardenedMeritGuard } from "@cascade/shared-types";
+import {
+  type TraceContext,
+  createChildSpan,
+  createRootSpan,
+  extractTrace,
+} from "@cascade/shared-types/trace-context";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import * as z from "zod";
@@ -124,6 +130,8 @@ export function buildServer(): McpServer {
       }),
     },
     async (args: { lines: string[]; source?: string }) => {
+      const incomingTrace: TraceContext | null = extractTrace(args as Record<string, unknown>);
+      const span = incomingTrace ? createChildSpan(incomingTrace) : createRootSpan();
       await ensureDataDirs();
       const source = args.source ?? "test-suite";
       const now = new Date().toISOString();
@@ -161,6 +169,8 @@ export function buildServer(): McpServer {
       }
 
       emitAudit({
+        traceId: span.traceId,
+        spanId: span.spanId,
         source: SERVER_NAME,
         tool: "collect_logs",
         status: "success",
@@ -307,6 +317,8 @@ export function buildServer(): McpServer {
       }),
     },
     async (args: { source?: string; since?: string; until?: string }) => {
+      const incomingTrace: TraceContext | null = extractTrace(args as Record<string, unknown>);
+      const span = incomingTrace ? createChildSpan(incomingTrace) : createRootSpan();
       const rlMsg = readLimiter.check("probe_test_suite");
       if (rlMsg)
         return {
@@ -326,6 +338,8 @@ export function buildServer(): McpServer {
       await saveProbe(probe);
 
       emitAudit({
+        traceId: span.traceId,
+        spanId: span.spanId,
         source: SERVER_NAME,
         tool: "probe_test_suite",
         status: "success",
@@ -383,6 +397,8 @@ export function buildServer(): McpServer {
       }),
     },
     async (args: { source?: string; since?: string; until?: string; save?: boolean }) => {
+      const incomingTrace: TraceContext | null = extractTrace(args as Record<string, unknown>);
+      const span = incomingTrace ? createChildSpan(incomingTrace) : createRootSpan();
       const rlMsg = readLimiter.check("get_recommendations");
       if (rlMsg)
         return {
@@ -406,6 +422,8 @@ export function buildServer(): McpServer {
       }
 
       emitAudit({
+        traceId: span.traceId,
+        spanId: span.spanId,
         source: SERVER_NAME,
         tool: "get_recommendations",
         status: "success",
@@ -531,11 +549,15 @@ export function buildServer(): McpServer {
       }),
     },
     async (args: { confirm: "CLEAR-ORI-LOGS" }) => {
+      const incomingTrace: TraceContext | null = extractTrace(args as Record<string, unknown>);
+      const span = incomingTrace ? createChildSpan(incomingTrace) : createRootSpan();
       await ensureDataDirs();
       const beforeCount = (await readAllLogs()).length;
       await clearAllLogs();
 
       emitAudit({
+        traceId: span.traceId,
+        spanId: span.spanId,
         source: SERVER_NAME,
         tool: "clear_logs",
         status: "success",
@@ -573,6 +595,8 @@ export function buildServer(): McpServer {
       }),
     },
     async (args: { tags?: string[]; healthStatus?: string }) => {
+      const incomingTrace: TraceContext | null = extractTrace(args as Record<string, unknown>);
+      const span = incomingTrace ? createChildSpan(incomingTrace) : createRootSpan();
       await ensureDataDirs();
       const projects = await listProjects({
         tags: args.tags,
@@ -580,6 +604,8 @@ export function buildServer(): McpServer {
       });
 
       emitAudit({
+        traceId: span.traceId,
+        spanId: span.spanId,
         source: SERVER_NAME,
         tool: "list_projects",
         status: "success",
@@ -630,6 +656,8 @@ export function buildServer(): McpServer {
       }),
     },
     async (args: { projectId: string }) => {
+      const incomingTrace: TraceContext | null = extractTrace(args as Record<string, unknown>);
+      const span = incomingTrace ? createChildSpan(incomingTrace) : createRootSpan();
       await ensureDataDirs();
       const project = await getProject(args.projectId);
 
@@ -650,6 +678,8 @@ export function buildServer(): McpServer {
       }
 
       emitAudit({
+        traceId: span.traceId,
+        spanId: span.spanId,
         source: SERVER_NAME,
         tool: "get_project",
         status: "success",
@@ -680,10 +710,14 @@ export function buildServer(): McpServer {
       }),
     },
     async (args: { projectId: string }) => {
+      const incomingTrace: TraceContext | null = extractTrace(args as Record<string, unknown>);
+      const span = incomingTrace ? createChildSpan(incomingTrace) : createRootSpan();
       await ensureDataDirs();
       const result = await discoverTestSuites(args.projectId);
 
       emitAudit({
+        traceId: span.traceId,
+        spanId: span.spanId,
         source: SERVER_NAME,
         tool: "discover_tests",
         status: result.found ? "success" : "failure",
@@ -722,6 +756,8 @@ export function buildServer(): McpServer {
       }),
     },
     async (args: { projectId: string; filter?: string; timeoutSeconds?: number }) => {
+      const incomingTrace: TraceContext | null = extractTrace(args as Record<string, unknown>);
+      const span = incomingTrace ? createChildSpan(incomingTrace) : createRootSpan();
       await ensureDataDirs();
 
       try {
@@ -757,6 +793,8 @@ export function buildServer(): McpServer {
         }
 
         emitAudit({
+          traceId: span.traceId,
+          spanId: span.spanId,
           source: SERVER_NAME,
           tool: "run_tests",
           status: "success",
@@ -805,6 +843,8 @@ export function buildServer(): McpServer {
         const msg = err instanceof Error ? err.message : String(err);
 
         emitAudit({
+          traceId: span.traceId,
+          spanId: span.spanId,
           source: SERVER_NAME,
           tool: "run_tests",
           status: "error",
@@ -852,6 +892,8 @@ export function buildServer(): McpServer {
       }),
     },
     async (args: { projectIds?: string[]; stopOnFailure?: boolean; timeoutSeconds?: number }) => {
+      const incomingTrace: TraceContext | null = extractTrace(args as Record<string, unknown>);
+      const span = incomingTrace ? createChildSpan(incomingTrace) : createRootSpan();
       await ensureDataDirs();
       const runStartedAt = new Date().toISOString();
 
@@ -885,6 +927,8 @@ export function buildServer(): McpServer {
       }
 
       emitAudit({
+        traceId: span.traceId,
+        spanId: span.spanId,
         source: SERVER_NAME,
         tool: "run_all_tests",
         status: "success",
@@ -1073,6 +1117,8 @@ export function buildServer(): McpServer {
       }),
     },
     async (args: { refresh?: boolean }) => {
+      const incomingTrace: TraceContext | null = extractTrace(args as Record<string, unknown>);
+      const span = incomingTrace ? createChildSpan(incomingTrace) : createRootSpan();
       await ensureDataDirs();
 
       const threatModel = args.refresh ? await parseThreatModel() : await loadThreatModel();
@@ -1080,6 +1126,8 @@ export function buildServer(): McpServer {
       const coverageReport = buildCoverageMap(projects, threatModel);
 
       emitAudit({
+        traceId: span.traceId,
+        spanId: span.spanId,
         source: SERVER_NAME,
         tool: "parse_threat_model",
         status: "success",
@@ -1263,6 +1311,8 @@ export function buildServer(): McpServer {
       maxThreats?: number;
       maxProjects?: number;
     }) => {
+      const incomingTrace: TraceContext | null = extractTrace(args as Record<string, unknown>);
+      const span = incomingTrace ? createChildSpan(incomingTrace) : createRootSpan();
       await ensureDataDirs();
       const threatModel = await loadThreatModel();
       const projects = await listProjects();
@@ -1275,6 +1325,8 @@ export function buildServer(): McpServer {
       });
 
       emitAudit({
+        traceId: span.traceId,
+        spanId: span.spanId,
         source: SERVER_NAME,
         tool: "get_threat_coverage_heatmap",
         status: "success",
@@ -1322,6 +1374,8 @@ export function buildServer(): McpServer {
       publish?: boolean;
       includeEcosystemContext?: boolean;
     }) => {
+      const incomingTrace: TraceContext | null = extractTrace(args as Record<string, unknown>);
+      const span = incomingTrace ? createChildSpan(incomingTrace) : createRootSpan();
       await ensureDataDirs();
 
       const allProjects = await listProjects();
@@ -1385,6 +1439,8 @@ export function buildServer(): McpServer {
       const result = await generateReport(data, { publish: args.publish });
 
       emitAudit({
+        traceId: span.traceId,
+        spanId: span.spanId,
         source: SERVER_NAME,
         tool: "generate_report",
         status: "success",
@@ -1430,6 +1486,7 @@ export function buildServer(): McpServer {
       inputSchema: z.object({}),
     },
     async () => {
+      const span = createRootSpan();
       await ensureDataDirs();
       const threatModel = await loadThreatModel();
       const projects = await listProjects();
@@ -1438,6 +1495,8 @@ export function buildServer(): McpServer {
       const gaps = coverageReport.mappings.filter((m) => m.uncoveredGaps.length > 0);
 
       emitAudit({
+        traceId: span.traceId,
+        spanId: span.spanId,
         source: SERVER_NAME,
         tool: "get_coverage_gaps",
         status: "success",
@@ -1496,6 +1555,8 @@ export function buildServer(): McpServer {
       tags?: string[];
       projectId?: string;
     }) => {
+      const incomingTrace: TraceContext | null = extractTrace(args as Record<string, unknown>);
+      const span = incomingTrace ? createChildSpan(incomingTrace) : createRootSpan();
       await ensureDataDirs();
       const note = await appendNote({
         category: args.category,
@@ -1507,6 +1568,8 @@ export function buildServer(): McpServer {
       });
 
       emitAudit({
+        traceId: span.traceId,
+        spanId: span.spanId,
         source: SERVER_NAME,
         tool: "notebook_add",
         status: "success",
@@ -1641,6 +1704,8 @@ export function buildServer(): McpServer {
       }),
     },
     async (args: { includeRecentEvents?: boolean }) => {
+      const incomingTrace: TraceContext | null = extractTrace(args as Record<string, unknown>);
+      const span = incomingTrace ? createChildSpan(incomingTrace) : createRootSpan();
       const context = await collectEcosystemContext();
 
       const payload: Record<string, unknown> = {
@@ -1663,6 +1728,8 @@ export function buildServer(): McpServer {
       };
 
       emitAudit({
+        traceId: span.traceId,
+        spanId: span.spanId,
         source: SERVER_NAME,
         tool: "ecosystem_context",
         status: "success",

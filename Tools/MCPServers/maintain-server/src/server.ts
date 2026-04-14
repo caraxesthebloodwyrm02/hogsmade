@@ -15,6 +15,12 @@
 import { emitAudit } from "@cascade/shared-types/audit-client";
 import { ExecutionPolicyEngine } from "@cascade/shared-types/security-policy";
 import { SessionRateLimiter } from "@cascade/shared-types/session-rate-limit";
+import {
+  type TraceContext,
+  createChildSpan,
+  createRootSpan,
+  extractTrace,
+} from "@cascade/shared-types/trace-context";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { execFile } from "child_process";
@@ -1911,6 +1917,8 @@ export function buildServer(): McpServer {
       confirmPhrase?: string;
       previewToken?: string;
     }) => {
+      const incomingTrace: TraceContext | null = extractTrace(args as Record<string, unknown>);
+      const span = incomingTrace ? createChildSpan(incomingTrace) : createRootSpan();
       await ensureDataDir();
       const config = await loadConfig();
 
@@ -2079,6 +2087,8 @@ export function buildServer(): McpServer {
       }
 
       emitAudit({
+        traceId: span.traceId,
+        spanId: span.spanId,
         source: "maintain-server",
         tool: "cleanup_execute",
         status: isDryRun ? "dry_run" : hasErrors ? "failure" : "success",
@@ -2227,6 +2237,8 @@ export function buildServer(): McpServer {
       }),
     },
     async (args: { roots?: string[]; maxAgeDays?: number }) => {
+      const incomingTrace: TraceContext | null = extractTrace(args as Record<string, unknown>);
+      const span = incomingTrace ? createChildSpan(incomingTrace) : createRootSpan();
       const rlMsg = readLimiter.check("dep_audit");
       if (rlMsg)
         return {
@@ -2327,6 +2339,8 @@ export function buildServer(): McpServer {
 
       // Emit audit event
       emitAudit({
+        traceId: span.traceId,
+        spanId: span.spanId,
         source: "maintain-server",
         tool: "dep_audit",
         status: "success",

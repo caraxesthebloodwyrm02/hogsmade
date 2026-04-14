@@ -29,6 +29,12 @@ import { ActionClass, createHardenedMeritGuard } from "@cascade/shared-types";
 import { emitAudit } from "@cascade/shared-types/audit-client";
 import { generateId } from "@cascade/shared-types/id";
 import { SessionRateLimiter } from "@cascade/shared-types/session-rate-limit";
+import {
+  type TraceContext,
+  createChildSpan,
+  createRootSpan,
+  extractTrace,
+} from "@cascade/shared-types/trace-context";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { promises as fs } from "fs";
@@ -1096,6 +1102,7 @@ export function buildServer(): McpServer {
       inputSchema: z.object({}),
     },
     async () => {
+      const span = createRootSpan();
       const rlMsg = readLimiter.check("morning_briefing");
       if (rlMsg) return { error: rlMsg };
       await ensureDataDir();
@@ -1246,6 +1253,8 @@ export function buildServer(): McpServer {
       }
 
       emitAudit({
+        traceId: span.traceId,
+        spanId: span.spanId,
         source: SERVER_NAME,
         tool: "morning_briefing",
         status: "success",
@@ -1527,6 +1536,8 @@ export function buildServer(): McpServer {
       mood?: "focused" | "scattered" | "blocked" | "flow";
       linkedServer?: string;
     }) => {
+      const incomingTrace: TraceContext | null = extractTrace(args as Record<string, unknown>);
+      const span = incomingTrace ? createChildSpan(incomingTrace) : createRootSpan();
       await ensureDataDir();
       const journal = await getTodayJournal();
       const newEntry: JournalEntry = {
@@ -1541,6 +1552,8 @@ export function buildServer(): McpServer {
       await saveTodayJournal(journal);
 
       emitAudit({
+        traceId: span.traceId,
+        spanId: span.spanId,
         source: SERVER_NAME,
         tool: "journal_add",
         status: "success",
