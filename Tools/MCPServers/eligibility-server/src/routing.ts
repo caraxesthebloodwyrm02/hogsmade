@@ -9,7 +9,7 @@
  * Follows the same patterns as grid-server, lots-server, maintain-server.
  */
 
-import type { AuditEvent } from "@cascade/shared-types";
+import type { AuditEvent } from "@cascade/shared-types/audit-client";
 import { emitAudit } from "@cascade/shared-types/audit-client";
 import type { TraceContext } from "@cascade/shared-types/trace-context";
 import { createChildSpan, createRootSpan, extractTrace } from "@cascade/shared-types/trace-context";
