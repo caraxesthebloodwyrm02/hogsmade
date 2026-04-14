@@ -17,6 +17,13 @@ import { emitAudit } from "@cascade/shared-types/audit-client";
 import { McpLogger } from "@cascade/shared-types/mcp-logger";
 import { GateSecurityPolicy } from "@cascade/shared-types/security-policy";
 import { SessionRateLimiter } from "@cascade/shared-types/session-rate-limit";
+import {
+  type TraceContext,
+  createChildSpan,
+  createRootSpan,
+  extractTrace,
+  formatTraceparent,
+} from "@cascade/shared-types/trace-context";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import crypto from "crypto";
@@ -294,6 +301,7 @@ export async function probeGridBackend(
 
 async function getEnhancedValidation(
   envelope: Record<string, unknown>,
+  trace?: TraceContext,
 ): Promise<Record<string, unknown> | null> {
   // Read GRID_API_URL from live environment only — config.gridApiUrl is frozen
   // at module-load time and may not reflect runtime env changes (e.g. in tests).
@@ -316,7 +324,10 @@ async function getEnhancedValidation(
     const payload = await gridApiPolicy.execute<Record<string, unknown>>("validate", async () => {
       const response = await fetch(`${gridApiUrl}/api/v1/gate/validate`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(trace ? { traceparent: formatTraceparent(trace) } : {}),
+        },
         body: JSON.stringify({
           source_agent: envelope["source_partition"],
           target: envelope["target_partition"],
@@ -451,6 +462,11 @@ export function buildServer(): McpServer {
       }),
     },
     async (args: { envelopePath?: string }) => {
+      // Extract W3C trace context from _trace arg (if provided by caller)
+      const incomingTrace: TraceContext | null = extractTrace(args as Record<string, unknown>);
+      const span = incomingTrace ? createChildSpan(incomingTrace) : createRootSpan();
+      const tracedLogger = logger.withTrace(span);
+
       const requiredFields = [
         "envelope_id",
         "payload",
@@ -685,7 +701,7 @@ export function buildServer(): McpServer {
       }
 
       const allPassed = checks.every((c) => c.passed);
-      const enhancedValidation = allPassed ? await getEnhancedValidation(envelope) : null;
+      const enhancedValidation = allPassed ? await getEnhancedValidation(envelope, span) : null;
       // P-INT-005: Fail closed when remote validation unavailable for production targets
       const targetPartition = envelope["target_partition"] as string | undefined;
       if (enhancedValidation && enhancedValidation["approved"] === false) {
@@ -710,6 +726,8 @@ export function buildServer(): McpServer {
         source: SERVER_NAME,
         tool: "validate_envelope",
         status: valid ? "success" : "failure",
+        traceId: span.traceId,
+        spanId: span.spanId,
         metadata: {
           envelopePath,
           checksRun: checks.length,
@@ -723,12 +741,14 @@ export function buildServer(): McpServer {
           timestamp: new Date().toISOString(),
           envelope_id: envelope.envelope_id,
           valid,
+          traceId: span.traceId,
+          spanId: span.spanId,
           checksRun: checks.length,
           checksFailed: checks.filter((c) => !c.passed).map((c) => c.check),
           enhancedConsulted: enhancedValidation != null,
         });
       } catch (auditErr) {
-        logger.error("GATE audit write failed", { error: String(auditErr) });
+        tracedLogger.error("GATE audit write failed", { error: String(auditErr) });
         // Continue but log - audit failure should not block validation
       }
 
@@ -743,7 +763,7 @@ export function buildServer(): McpServer {
         try {
           await writeNonceRegistry(updated);
         } catch (nonceErr) {
-          logger.error("Nonce registry write failed", { error: String(nonceErr) });
+          tracedLogger.error("Nonce registry write failed", { error: String(nonceErr) });
           // Continue but log - nonce burn failure is serious but validation already succeeded
         }
       }
