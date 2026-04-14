@@ -44,6 +44,17 @@ export { generateId } from "./id.js";
 export { McpLogger } from "./mcp-logger.js";
 
 export {
+  createChildSpan,
+  createRootSpan,
+  extractTrace,
+  formatTraceparent,
+  generateSpanId,
+  generateTraceId,
+  parseTraceparent,
+} from "./trace-context.js";
+export type { TraceContext } from "./trace-context.js";
+
+export {
   ARCHIVE_THRESHOLD_MS,
   DECAY_THRESHOLD_MS,
   DEFAULT_COOLDOWN_MS,

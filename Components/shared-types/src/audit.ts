@@ -9,6 +9,8 @@ export const AuditEventSchema = z.object({
   tool: z.string(),
   status: AuditStatusSchema,
   durationMs: z.number().optional(),
+  traceId: z.string().optional(),
+  spanId: z.string().optional(),
   metadata: z.record(z.string(), z.unknown()).optional(),
 });
 

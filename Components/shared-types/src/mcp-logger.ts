@@ -8,6 +8,7 @@
 import { appendFileSync, mkdirSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import type { TraceContext } from "./trace-context.js";
 
 const LOG_DIR = join(homedir(), ".echoes", "mcp-logs");
 
@@ -24,9 +25,15 @@ interface LogEntry {
 export class McpLogger {
   private readonly logPath: string;
   private dirReady = false;
+  private readonly traceCtx?: TraceContext;
 
-  constructor(private readonly serverName: string) {
+  constructor(serverName: string, traceCtx?: TraceContext);
+  constructor(
+    private readonly serverName: string,
+    traceCtx?: TraceContext,
+  ) {
     this.logPath = join(LOG_DIR, `${serverName}.ndjson`);
+    this.traceCtx = traceCtx;
   }
 
   private ensureDir(): void {
@@ -41,11 +48,16 @@ export class McpLogger {
   }
 
   private write(level: LogLevel, message: string, extra?: Record<string, unknown>): void {
+    const traceFields: Record<string, string> | undefined = this.traceCtx
+      ? { traceId: this.traceCtx.traceId, spanId: this.traceCtx.spanId }
+      : undefined;
+
     const entry: LogEntry = {
       timestamp: new Date().toISOString(),
       level,
       server: this.serverName,
       message,
+      ...traceFields,
       ...extra,
     };
     const line = JSON.stringify(entry);
@@ -76,5 +88,13 @@ export class McpLogger {
 
   error(message: string, extra?: Record<string, unknown>): void {
     this.write("error", message, extra);
+  }
+
+  /**
+   * Return a new McpLogger that automatically injects traceId/spanId
+   * into every log entry. Shares the same server name and log path.
+   */
+  withTrace(ctx: TraceContext): McpLogger {
+    return new McpLogger(this.serverName, ctx);
   }
 }
