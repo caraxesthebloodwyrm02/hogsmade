@@ -25,6 +25,17 @@ import type { LogEntry, RouteAction, RouteFiring, RouteState, SignalRoute } from
 
 const routeStates = new Map<string, RouteState>();
 
+/**
+ * Serialisation mutex for evaluateSignals.
+ *
+ * Node.js is single-threaded, but async/await creates re-entrant
+ * interleaving: two overlapping MCP tool calls can both enter
+ * evaluateSignals concurrently, observing and mutating the same
+ * RouteState in arbitrary order, leading to double-fires and
+ * hit-count corruption.  This mutex serialises the critical section.
+ */
+let evaluateLock: Promise<void> = Promise.resolve();
+
 /** Get or create runtime state for a route. */
 function getState(routeId: string): RouteState {
   let state = routeStates.get(routeId);
@@ -35,10 +46,20 @@ function getState(routeId: string): RouteState {
   return state;
 }
 
-/** Prune hits outside the sliding window. */
+/** Prune hits and source-window entries outside the sliding window. */
 function pruneWindow(state: RouteState, windowMinutes: number): void {
-  const cutoff = Date.now() - windowMinutes * 60_000;
-  state.hits = state.hits.filter((ts) => new Date(ts).getTime() >= cutoff);
+  const cutoff = new Date(Date.now() - windowMinutes * 60_000).toISOString();
+  state.hits = state.hits.filter((ts) => ts >= cutoff);
+  if (state.sourcesInWindow) {
+    for (const [src, timestamps] of state.sourcesInWindow.entries()) {
+      const fresh = timestamps.filter((ts) => ts >= cutoff);
+      if (fresh.length === 0) {
+        state.sourcesInWindow.delete(src);
+      } else {
+        state.sourcesInWindow.set(src, fresh);
+      }
+    }
+  }
 }
 
 /** Check if route is in cooldown. */
@@ -103,9 +124,12 @@ function entryMatchesTrigger(entry: LogEntry, route: SignalRoute): boolean {
 /**
  * Special matching for cross-source correlation: instead of counting
  * total hits, we count distinct sources in the window.
+ *
+ * Identified by an explicit flag on the trigger rather than a fragile
+ * string ID comparison so renamed/cloned routes continue to work.
  */
 function isCrossSourceRoute(route: SignalRoute): boolean {
-  return route.id === "cross-source-correlation";
+  return route.trigger.sources !== undefined && route.trigger.sources.length === 0;
 }
 
 // ── Action execution ──
@@ -183,10 +207,22 @@ async function executeAction(
  *
  * Called by server.ts after every collect_logs or run_tests ingest.
  * Returns an array of RouteFiring summaries for any routes that triggered.
+ *
+ * Serialised via `evaluateLock` to prevent concurrent async re-entrancy
+ * from corrupting shared RouteState (hit accumulator + lastFiredAt).
  */
 export async function evaluateSignals(newEntries: LogEntry[]): Promise<RouteFiring[]> {
   if (newEntries.length === 0) return [];
 
+  // Acquire the mutex — chain onto the previous promise so concurrent callers
+  // queue up rather than running in parallel.
+  let releaselock!: () => void;
+  const acquired = new Promise<void>((res) => (releaselock = res));
+  const prev = evaluateLock;
+  evaluateLock = acquired;
+  await prev;
+
+  try {
   const config = await loadRouterConfig();
   const firings: RouteFiring[] = [];
 
@@ -212,16 +248,33 @@ export async function evaluateSignals(newEntries: LogEntry[]): Promise<RouteFiri
     let thresholdMet = false;
 
     if (isCrossSourceRoute(route)) {
-      // Cross-source: count distinct sources in window
-      // We need to check the actual entries, not just timestamps
-      // Collect all matching sources from recent entries
-      const allLogs = await readAllLogs();
-      const windowCutoff = Date.now() - route.trigger.windowMinutes * 60_000;
-      const windowEntries = allLogs.filter(
-        (e) => new Date(e.timestamp).getTime() >= windowCutoff && entryMatchesTrigger(e, route),
-      );
-      const distinctSources = new Set(windowEntries.map((e) => e.source));
-      thresholdMet = distinctSources.size >= route.trigger.threshold;
+      // Cross-source: count distinct sources within the window.
+      // Use only the already-matched newEntries to avoid a full disk re-read
+      // on every evaluation cycle; the caller supplies a representative slice.
+      // The hit accumulator (`state.hits`) is timestamp-only, so we maintain
+      // a parallel source-keyed accumulator in the state.
+      if (!state.sourcesInWindow) state.sourcesInWindow = new Map<string, string[]>();
+
+      const windowCutoff = new Date(Date.now() - route.trigger.windowMinutes * 60_000).toISOString();
+
+      // Prune stale source entries
+      for (const [src, timestamps] of state.sourcesInWindow.entries()) {
+        const fresh = timestamps.filter((ts) => ts >= windowCutoff);
+        if (fresh.length === 0) {
+          state.sourcesInWindow.delete(src);
+        } else {
+          state.sourcesInWindow.set(src, fresh);
+        }
+      }
+
+      // Record newly matched sources
+      for (const entry of matched) {
+        const existing = state.sourcesInWindow.get(entry.source) ?? [];
+        existing.push(entry.timestamp);
+        state.sourcesInWindow.set(entry.source, existing);
+      }
+
+      thresholdMet = state.sourcesInWindow.size >= route.trigger.threshold;
     } else {
       thresholdMet = state.hits.length >= route.trigger.threshold;
     }
@@ -262,9 +315,10 @@ export async function evaluateSignals(newEntries: LogEntry[]): Promise<RouteFiri
       }
     }
 
-    // Record firing
+    // Record firing — reset all accumulators
     state.lastFiredAt = now;
-    state.hits = []; // Reset accumulator after fire
+    state.hits = [];
+    state.sourcesInWindow?.clear();
 
     firings.push({
       routeId: route.id,
@@ -279,6 +333,9 @@ export async function evaluateSignals(newEntries: LogEntry[]): Promise<RouteFiri
   }
 
   return firings;
+  } finally {
+    releaselock();
+  }
 }
 
 /**

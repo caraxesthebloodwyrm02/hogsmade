@@ -26,20 +26,25 @@ export class SessionRateLimiter {
   /**
    * Check whether a call is allowed. Returns `null` if allowed (and records
    * the call), or a human-readable error string if rate-limited.
+   *
+   * The internal timestamp array is pruned on every call, so its size is
+   * bounded by `maxCalls` at steady state.
    */
   check(operationName: string): string | null {
     const now = Date.now();
     const cutoff = now - this.config.windowMs;
+
+    // Prune expired entries — bounds the array to at most maxCalls entries.
     this.timestamps = this.timestamps.filter((t) => t > cutoff);
 
     if (this.timestamps.length >= this.config.maxCalls) {
       const oldest = this.timestamps[0];
       const retrySec = Math.ceil((this.config.windowMs - (now - oldest)) / 1000);
-      return `Rate limited: ${operationName} — ${
-        this.timestamps.length
-      } read operations in the last ${Math.round(this.config.windowMs / 1000)}s (max ${
-        this.config.maxCalls
-      }). Retry in ${retrySec}s.`;
+      return (
+        `Rate limited: ${operationName} — ${this.timestamps.length} read operations in the ` +
+        `last ${Math.round(this.config.windowMs / 1000)}s (max ${this.config.maxCalls}). ` +
+        `Retry in ${retrySec}s.`
+      );
     }
 
     this.timestamps.push(now);

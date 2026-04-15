@@ -186,23 +186,39 @@ export class HardenedMcpMeritGuard {
   }
 
   /**
-   * Check and enforce rate limits
-   * Returns true if allowed, false if rate limited
+   * Check and enforce rate limits.
+   * Returns true if allowed, false if rate limited.
+   *
+   * Also evicts fully-expired entity entries from the map to prevent
+   * unbounded growth when many distinct entity IDs pass through.
    */
   private checkRateLimit(entityId: string, maxCalls: number, windowMs: number): boolean {
     const now = Date.now();
     const calls = this.rateLimitMap.get(entityId) || [];
 
-    // Remove expired calls
+    // Remove expired calls for this entity
     const validCalls = calls.filter((t) => now - t < windowMs);
 
     if (validCalls.length >= maxCalls) {
       this.metrics.rateLimitHits++;
+      // Keep pruned list so we don't evict an active entity
+      this.rateLimitMap.set(entityId, validCalls);
       return false;
     }
 
     validCalls.push(now);
     this.rateLimitMap.set(entityId, validCalls);
+
+    // Periodic map eviction — remove entities with no valid calls left.
+    // Run 1% of the time to amortise cost without per-call overhead.
+    if (Math.random() < 0.01) {
+      for (const [key, timestamps] of this.rateLimitMap.entries()) {
+        if (timestamps.every((t) => now - t >= windowMs)) {
+          this.rateLimitMap.delete(key);
+        }
+      }
+    }
+
     return true;
   }
 

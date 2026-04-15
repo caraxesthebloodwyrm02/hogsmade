@@ -137,6 +137,12 @@ export interface RouteState {
   hits: string[];
   /** ISO timestamp of last route fire, if any */
   lastFiredAt?: string;
+  /**
+   * Per-source timestamp lists for cross-source correlation routes.
+   * Key: source identifier; value: ISO timestamps within the window.
+   * Maintained in-memory; cleared on route fire.
+   */
+  sourcesInWindow?: Map<string, string[]>;
 }
 
 /**
