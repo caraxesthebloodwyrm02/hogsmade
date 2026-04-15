@@ -14,12 +14,20 @@
  */
 
 import { emitAudit } from "@cascade/shared-types/audit-client";
+import { detectAntiPatterns } from "./anti-pattern.js";
 import { appendNote } from "./notebook.js";
 import { runProbe, saveProbe } from "./probe.js";
 import { generateRecommendations, saveRecommendations } from "./recommend.js";
 import { loadRouterConfig } from "./router-config.js";
 import { readAllLogs } from "./storage.js";
-import type { LogEntry, RouteAction, RouteFiring, RouteState, SignalRoute } from "./types.js";
+import type {
+  EvaluationResult,
+  LogEntry,
+  RouteAction,
+  RouteFiring,
+  RouteState,
+  SignalRoute,
+} from "./types.js";
 
 // ── Runtime state (in-memory, not persisted) ──
 
@@ -203,16 +211,18 @@ async function executeAction(
 // ── Main evaluation entry point ──
 
 /**
- * Evaluate newly ingested log entries against all enabled routes.
+ * Evaluate newly ingested log entries against all enabled routes and
+ * run the protocol-level anti-pattern scanner over the same slice.
  *
  * Called by server.ts after every collect_logs or run_tests ingest.
- * Returns an array of RouteFiring summaries for any routes that triggered.
+ * Returns an EvaluationResult containing both route firings and any
+ * anti-pattern findings detected in the entry sequence.
  *
  * Serialised via `evaluateLock` to prevent concurrent async re-entrancy
  * from corrupting shared RouteState (hit accumulator + lastFiredAt).
  */
-export async function evaluateSignals(newEntries: LogEntry[]): Promise<RouteFiring[]> {
-  if (newEntries.length === 0) return [];
+export async function evaluateSignals(newEntries: LogEntry[]): Promise<EvaluationResult> {
+  if (newEntries.length === 0) return { routeFirings: [], antiPatterns: [] };
 
   // Acquire the mutex — chain onto the previous promise so concurrent callers
   // queue up rather than running in parallel.
@@ -332,7 +342,12 @@ export async function evaluateSignals(newEntries: LogEntry[]): Promise<RouteFiri
     });
   }
 
-  return firings;
+  // Run protocol-level anti-pattern scanner over the same signal slice.
+  // Pure function — no I/O, runs inside the mutex so it shares the same
+  // serialised context as the route accumulation above.
+  const antiPatterns = detectAntiPatterns(newEntries);
+
+  return { routeFirings: firings, antiPatterns };
   } finally {
     releaselock();
   }
