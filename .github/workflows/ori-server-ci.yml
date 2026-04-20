@@ -22,9 +22,6 @@ concurrency:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: Tools/MCPServers/ori-server
 
     steps:
       - name: Checkout
@@ -37,16 +34,27 @@ jobs:
           cache: npm
           cache-dependency-path: Tools/MCPServers/ori-server/package.json
 
-      - name: Install
+      # @cascade/shared-types is a file: dependency; ori-server resolves ./dist exports — build it first.
+      - name: Install and build shared-types
+        working-directory: Components/shared-types
+        run: |
+          npm install
+          npm run build
+
+      - name: Install (ori-server)
+        working-directory: Tools/MCPServers/ori-server
         run: npm install
 
-      - name: Build
+      - name: Build (ori-server)
+        working-directory: Tools/MCPServers/ori-server
         run: npm run build
 
-      - name: Test
+      - name: Test (ori-server)
+        working-directory: Tools/MCPServers/ori-server
         run: npm test
 
       - name: GRUFF snapshot (dated SVG artifact)
+        working-directory: Tools/MCPServers/ori-server
         env:
           ORI_DATA_DIR: ${{ github.workspace }}/.ori-ci
         run: npm run gruff-ci-snapshot
