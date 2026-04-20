@@ -118,7 +118,9 @@ function BeatRail({ rail }: { rail: BeatRailEntry[] }) {
                   : isComplete
                     ? `${color}11`
                     : "var(--canvas-bg)",
-                border: `1px solid ${isCurrent ? color : isComplete ? `${color}44` : "var(--sediment-dark)"}`,
+                border: `1px solid ${
+                  isCurrent ? color : isComplete ? `${color}44` : "var(--sediment-dark)"
+                }`,
                 color: isCurrent || isComplete ? color : "var(--ink-ghost)",
                 boxShadow: isCurrent ? `0 0 12px ${color}33` : "none",
               }}
@@ -305,7 +307,7 @@ function ScoreBar({
   rank: number;
   band?: string;
 }) {
-  const bandColor = band ? (BAND_COLORS[band] ?? "var(--sediment-mid)") : "var(--teal-500)";
+  const bandColor = band ? BAND_COLORS[band] ?? "var(--sediment-mid)" : "var(--teal-500)";
   const width = Math.max(2, score * 100);
 
   return (

@@ -4,6 +4,21 @@ vi.mock("@cascade/shared-types/audit-client", () => ({
   emitAudit: () => Promise.resolve(true),
 }));
 
+vi.mock("@cascade/shared-types/trace-context", () => ({
+  extractTrace: () => null,
+  createRootSpan: () => ({
+    traceId: "00000000000000000000000000000000",
+    spanId: "0000000000000000",
+    traceFlags: 1,
+  }),
+  createChildSpan: () => ({
+    traceId: "00000000000000000000000000000000",
+    spanId: "1111111111111111",
+    traceFlags: 1,
+  }),
+  formatTraceparent: () => "00-00000000000000000000000000000000-0000000000000000-01",
+}));
+
 import { buildServer } from "../src/server.js";
 
 type ToolHandler = (args?: Record<string, unknown>) => Promise<unknown>;
@@ -58,9 +73,9 @@ describe("MCP server tool wiring", () => {
 
   it("evaluate_candidate accepts fixtureId and returns validation", async () => {
     const handler = toolHandler(buildServer(), "evaluate_candidate");
-    const payload = parseToolJson(
-      await handler({ fixtureId: "balanced-bridge" }),
-    ) as { validation: { ok: boolean } };
+    const payload = parseToolJson(await handler({ fixtureId: "balanced-bridge" })) as {
+      validation: { ok: boolean };
+    };
     expect(payload.validation.ok).toBe(true);
   });
 });

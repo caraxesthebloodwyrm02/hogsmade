@@ -106,7 +106,16 @@ function clone<T>(value: T): T {
   if (value === undefined) {
     return value;
   }
-  return JSON.parse(JSON.stringify(value)) as T;
+  // Use structuredClone when available for prototype-pollution-safe deep cloning
+  if (typeof structuredClone === "function") {
+    return structuredClone(value);
+  }
+  // Fallback: JSON round-trip with prototype pollution guard
+  const json = JSON.stringify(value);
+  if (json.includes("__proto__") || json.includes("constructor")) {
+    throw new Error("clone: rejected input containing prototype pollution patterns");
+  }
+  return JSON.parse(json) as T;
 }
 
 function hashString(input: string): string {
@@ -177,7 +186,11 @@ function summarizeCase(caseRecord: EvolutionCase): string {
     leaderId ??
     caseRecord.label;
   const overallScore = result ? sliceScore(result, leaderId, "overall").toFixed(3) : "0.000";
-  return `${leaderLabel} is in ${caseRecord.currentBeat} with momentum ${caseRecord.momentum.momentum.toFixed(3)}, drift ${caseRecord.momentum.sidewalkDrift.toFixed(3)}, and overall score ${overallScore}.`;
+  return `${leaderLabel} is in ${
+    caseRecord.currentBeat
+  } with momentum ${caseRecord.momentum.momentum.toFixed(
+    3,
+  )}, drift ${caseRecord.momentum.sidewalkDrift.toFixed(3)}, and overall score ${overallScore}.`;
 }
 
 function endpointReadinessScore(spec: EndpointSpec): number {
@@ -403,7 +416,9 @@ function buildObservations(
     id: `${caseRecord.caseId}:momentum:${timestamp}`,
     candidateId: caseRecord.candidateIds[0] ?? caseRecord.caseId,
     dimension: "overall",
-    message: `Momentum ${momentum.momentum.toFixed(3)} and drift ${momentum.sidewalkDrift.toFixed(3)} define the current transport tension.`,
+    message: `Momentum ${momentum.momentum.toFixed(3)} and drift ${momentum.sidewalkDrift.toFixed(
+      3,
+    )} define the current transport tension.`,
     surfaceHint:
       "Read momentum and drift together before deciding whether the next handoff is safe.",
     sourceSliceIds: ["momentum", "sidewalk-drift"],
@@ -1105,4 +1120,20 @@ export function hydrateExistingCases(
   store: EvolutionCycleStore = getEvolutionCycleStore(),
 ): EvolutionCase[] {
   return store.listCases();
+}
+
+export function updateCaseArgs(
+  input: { caseId: string; args: Partial<RoutineArgs> },
+  store: EvolutionCycleStore = getEvolutionCycleStore(),
+): { updated: boolean; snapshot: CycleSnapshot } {
+  const caseRecord = validateCaseLookup(store.getCase(input.caseId), input.caseId);
+  const mergedArgs = normalizeRoutineArgs({ ...caseRecord.args, ...input.args });
+  caseRecord.args = mergedArgs;
+  const timestamp = new Date().toISOString();
+  refreshCaseRecord(caseRecord, timestamp);
+  const stored = store.upsertCase(caseRecord);
+  emitCycleAudit(caseRecord, "beat_advanced", "args_updated", {
+    updatedArgs: input.args,
+  });
+  return { updated: true, snapshot: buildSnapshot(stored) };
 }

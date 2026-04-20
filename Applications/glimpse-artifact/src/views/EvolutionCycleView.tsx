@@ -417,7 +417,7 @@ export function EvolutionCycleView() {
   const [readiness, setReadiness] = useState("0.8");
 
   const caseMap = useMemo(() => new Map(cases.map((item) => [item.caseId, item])), [cases]);
-  const selectedSummary = selectedCaseId ? (caseMap.get(selectedCaseId) ?? null) : null;
+  const selectedSummary = selectedCaseId ? caseMap.get(selectedCaseId) ?? null : null;
 
   return (
     <section className="min-h-full bg-canvas-bg text-ink px-5 py-6 md:px-8 space-y-6">

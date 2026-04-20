@@ -10,7 +10,12 @@
   ],
   "workspaces": {
     "Components/shared-types": {
-      "entry": ["src/index.ts", "src/audit-client.ts", "src/security-policy.ts", "src/session-rate-limit.ts"],
+      "entry": [
+        "src/index.ts",
+        "src/audit-client.ts",
+        "src/security-policy.ts",
+        "src/session-rate-limit.ts"
+      ],
       "ignore": ["examples/**"]
     },
     "Tools/MCPServers/afloat-server": {

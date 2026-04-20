@@ -29,6 +29,13 @@ const CANONICAL_PACKAGES: CanonicalPackage[] = [
       "/audit-client": ["emitAudit", "AuditEvent"],
       "/security-policy": ["securityPolicy"],
       "/session-rate-limit": ["sessionRateLimit"],
+      "/trace-context": [
+        "TraceContext",
+        "extractTrace",
+        "formatTraceparent",
+        "createRootSpan",
+        "createChildSpan",
+      ],
     },
   },
   {
@@ -326,6 +333,7 @@ function checkMockAlignment(
   }
 
   for (const [srcSpec, locs] of srcSpecs) {
+    if (mocked.has(srcSpec)) continue;
     const srcRoot = srcSpec.startsWith("@")
       ? srcSpec.split("/").slice(0, 2).join("/")
       : srcSpec.split("/")[0];

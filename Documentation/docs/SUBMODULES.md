@@ -12,8 +12,8 @@ Historical references to `mcp-tool-experiment` are archival only and do not desc
 
 ## Current state
 
-| Path | Parent expects | Typical cause of dirty status |
-| --- | --- | --- |
+| Path                  | Parent expects                                | Typical cause of dirty status                                  |
+| --------------------- | --------------------------------------------- | -------------------------------------------------------------- |
 | `Projects/GRID-main/` | A specific commit recorded in the parent repo | Local branch changes or untracked files inside the nested repo |
 
 ## Option 1: Ignore dirty state
@@ -50,8 +50,8 @@ git clean -fdx
 
 ## Summary
 
-| Goal | Action |
-| --- | --- |
-| Root `git status` clean, keep local work in submodule | Ignore dirty state in `.gitmodules` |
-| Submodule exactly matches parent ref | Update or clean the nested repo |
-| Keep submodule work and record it in the parent | Commit inside the submodule, then update the parent ref |
+| Goal                                                  | Action                                                  |
+| ----------------------------------------------------- | ------------------------------------------------------- |
+| Root `git status` clean, keep local work in submodule | Ignore dirty state in `.gitmodules`                     |
+| Submodule exactly matches parent ref                  | Update or clean the nested repo                         |
+| Keep submodule work and record it in the parent       | Commit inside the submodule, then update the parent ref |

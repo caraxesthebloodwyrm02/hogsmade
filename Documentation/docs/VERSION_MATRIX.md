@@ -17,12 +17,12 @@ Cross-repo version compatibility for Mangrove ecosystem.
 
 ## PyPI Status
 
-| Package | Local Name | PyPI Name | PyPI Version | Status |
-|---------|-----------|-----------|-------------|--------|
-| GRID | `grid-intelligence` | [`grid-intelligence`](https://pypi.org/project/grid-intelligence/) | 2.8.0 | Published |
-| APIGuard | `GRID-APIGUARD` | [`GRID-APIGUARD`](https://pypi.org/project/GRID-APIGUARD/) | 0.1.0 | Published, current |
-| Echoes | `echoes` | — | Name collision (`echoes` 1.0.2 is unrelated) | Do not publish under `echoes` |
-| Vision | `vision-ui` | — | Name collision (`vision-ui` 2.1.4 is unrelated) | Do not publish under `vision-ui` |
+| Package  | Local Name          | PyPI Name                                                          | PyPI Version                                    | Status                           |
+| -------- | ------------------- | ------------------------------------------------------------------ | ----------------------------------------------- | -------------------------------- |
+| GRID     | `grid-intelligence` | [`grid-intelligence`](https://pypi.org/project/grid-intelligence/) | 2.8.0                                           | Published                        |
+| APIGuard | `GRID-APIGUARD`     | [`GRID-APIGUARD`](https://pypi.org/project/GRID-APIGUARD/)         | 0.1.0                                           | Published, current               |
+| Echoes   | `echoes`            | —                                                                  | Name collision (`echoes` 1.0.2 is unrelated)    | Do not publish under `echoes`    |
+| Vision   | `vision-ui`         | —                                                                  | Name collision (`vision-ui` 2.1.4 is unrelated) | Do not publish under `vision-ui` |
 
 GRID (`grid-intelligence`) and GRID-APIGUARD are published to PyPI. Echoes and Vision have PyPI name collisions with unrelated packages — use prefixed names if publishing in the future.
 
@@ -47,18 +47,18 @@ MCP servers (depend on shared packages)
 
 ## Key Dependency Versions (as of 2026-04-04)
 
-| Dependency | Version | Scope |
-| --- | --- | --- |
-| TypeScript | ~6.0.2 | All TS packages + GRID frontend |
-| @types/node | 25.5.2 | shared-types, shared-pipeline, shared-resilience, mangrove-server |
-| vitest | 4.1.2 | shared-resilience, shared-pipeline, overview, glimpse, mangrove |
-| @vitest/coverage-v8 | 4.1.2 | Same as vitest |
-| vite | 8.0.3 | glimpse-artifact |
-| zod | 4.3.6 | mangrove-server |
-| eslint | 10.2.0 | glimpse-artifact |
-| tailwindcss | 4.2.2 | glimpse-artifact |
-| pytest-asyncio | strict mode | GRID (asyncio_mode="strict") |
-| Python | 3.13 | GRID, echoes, apiguard, Vision |
+| Dependency          | Version     | Scope                                                             |
+| ------------------- | ----------- | ----------------------------------------------------------------- |
+| TypeScript          | ~6.0.2      | All TS packages + GRID frontend                                   |
+| @types/node         | 25.5.2      | shared-types, shared-pipeline, shared-resilience, mangrove-server |
+| vitest              | 4.1.2       | shared-resilience, shared-pipeline, overview, glimpse, mangrove   |
+| @vitest/coverage-v8 | 4.1.2       | Same as vitest                                                    |
+| vite                | 8.0.3       | glimpse-artifact                                                  |
+| zod                 | 4.3.6       | mangrove-server                                                   |
+| eslint              | 10.2.0      | glimpse-artifact                                                  |
+| tailwindcss         | 4.2.2       | glimpse-artifact                                                  |
+| pytest-asyncio      | strict mode | GRID (asyncio_mode="strict")                                      |
+| Python              | 3.13        | GRID, echoes, apiguard, Vision                                    |
 
 ## Compatibility Rules
 

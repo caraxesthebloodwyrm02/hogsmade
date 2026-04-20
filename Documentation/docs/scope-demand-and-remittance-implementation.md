@@ -1,6 +1,6 @@
 # Scope demand and remittance contracts — implementation
 
-Deliverable from the plan: synthesized scopes, steps per scope, and a single start-to-complete flow.  
+Deliverable from the plan: synthesized scopes, steps per scope, and a single start-to-complete flow.
 **Reference:** Bangladesh direct-beneficiary revenue work; Remittance = highest market demand; work-payment contracts via Remittance.
 
 ---
@@ -70,22 +70,27 @@ One path from start to “plan implemented” using the scopes and remittance fo
 **Start**
 
 1. **Pick your primary scope.**
+
    - Default for “highest market demand” = **Remittance.**
    - If you are payee: you receive work payment via remittance. If payer: you send work payment to BD via remittance. If intermediary: you enable or formalize such contracts.
 
 2. **Confirm your role and counterparty.**
+
    - Payer: diaspora employer, international client, remote company.
    - Payee: BD freelancer, contractor, vendor.
    - Intermediary: bank/MFS, platform, EOR.
 
 3. **Use the steps for that scope (Section 2).**
+
    - For Remittance: steps 1–5 under “Scope 1: Remittance.”
    - For other scopes: follow the corresponding 4-step block.
 
 4. **Define the work-payment contract.**
+
    - In writing or platform terms: what work, what payment, which channel (for Remittance: bank/MFS), and when revenue is recognized (for Remittance: when FX is credited to beneficiary).
 
 5. **Execute and record.**
+
    - Do the work; send or receive payment; record the defining moment (e.g. “FX credited on [date]” or “LC received on [date]”).
 
 6. **Reconcile and repeat.**

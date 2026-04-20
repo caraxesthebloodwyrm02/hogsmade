@@ -1,0 +1,59 @@
+# Persistent automation for ori-server: build + test on code changes and weekly heartbeat.
+name: ori-server
+
+on:
+  push:
+    paths:
+      - "Tools/MCPServers/ori-server/**"
+      - "Components/shared-types/**"
+      - ".github/workflows/ori-server-ci.yml"
+  pull_request:
+    paths:
+      - "Tools/MCPServers/ori-server/**"
+      - "Components/shared-types/**"
+      - ".github/workflows/ori-server-ci.yml"
+  schedule:
+    # Monday 06:00 UTC — keeps toolchain + registry-related tests in muscle memory
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: ori-server-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    env:
+      # Default config resolves threat model under ~/CascadeProjects; CI checkout lives in GITHUB_WORKSPACE.
+      CASCADE_WORKSPACE_ROOT: ${{ github.workspace }}
+    defaults:
+      run:
+        working-directory: Tools/MCPServers/ori-server
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: Tools/MCPServers/ori-server/package.json
+
+      # ori-server depends on @cascade/shared-types via file: — dist/ must exist before tsc resolves exports.
+      - name: Build @cascade/shared-types
+        working-directory: Components/shared-types
+        run: |
+          npm install
+          npm run build
+
+      - name: Install
+        run: npm install
+
+      - name: Build
+        run: npm run build
+
+      - name: Test
+        run: npm test

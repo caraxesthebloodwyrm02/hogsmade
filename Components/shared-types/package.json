@@ -33,6 +33,10 @@
     "./precedent": {
       "types": "./dist/precedent.d.ts",
       "default": "./dist/precedent.js"
+    },
+    "./trace-context": {
+      "types": "./dist/trace-context.d.ts",
+      "default": "./dist/trace-context.js"
     }
   },
   "scripts": {

@@ -401,7 +401,9 @@ export class AuditIntegrityGuard {
         return {
           policyId: "P-INT-003",
           verdict: "escalate",
-          reason: `Snapshot score delta ${delta.toFixed(1)} exceeds threshold ${AuditIntegrityGuard.MAX_SCORE_DELTA}`,
+          reason: `Snapshot score delta ${delta.toFixed(1)} exceeds threshold ${
+            AuditIntegrityGuard.MAX_SCORE_DELTA
+          }`,
           threatBasis: "TM-004",
           metadata: { previousScore, currentScore, delta },
           timestamp: new Date().toISOString(),
@@ -695,7 +697,9 @@ export class ReadScopePolicy {
       return {
         policyId: "P-MCP-004",
         verdict: "warn",
-        reason: `Bulk read activity detected: ${entry.count} calls to '${toolName}' in ${this.windowMs / 1000}s window (threshold: ${this.maxCallsPerWindow})`,
+        reason: `Bulk read activity detected: ${entry.count} calls to '${toolName}' in ${
+          this.windowMs / 1000
+        }s window (threshold: ${this.maxCallsPerWindow})`,
         threatBasis: "TM-006",
         metadata: {
           sessionId,

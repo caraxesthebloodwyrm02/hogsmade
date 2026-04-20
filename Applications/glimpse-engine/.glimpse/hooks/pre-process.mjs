@@ -170,7 +170,9 @@ async function cleanup() {
   const duration = stages.reduce((a, s) => a + (s.duration || 0), 0);
   log(
     "info",
-    `${C.cyan}Process completed: ${stages.filter((s) => s.status === "success").length}/${stages.length} stages, ${errors} errors, ${duration}ms total${C.reset}`,
+    `${C.cyan}Process completed: ${stages.filter((s) => s.status === "success").length}/${
+      stages.length
+    } stages, ${errors} errors, ${duration}ms total${C.reset}`,
   );
 }
 
@@ -179,7 +181,9 @@ async function cleanup() {
 // ═══════════════════════════════════════════════════════════════════
 
 async function main() {
-  console.log(`\n${C.bright}${C.cyan}╔══════════════════════════════════════════════════════════════════╗
+  console.log(`\n${C.bright}${
+    C.cyan
+  }╔══════════════════════════════════════════════════════════════════╗
 ║  GLIMPSE AGENTIC HOOK — Structured Routine                        ║
 ║  Run ID: ${RUN_ID.padEnd(55)}║
 ╚══════════════════════════════════════════════════════════════════╝${C.reset}\n`);

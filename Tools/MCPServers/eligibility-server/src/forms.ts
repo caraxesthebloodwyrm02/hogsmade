@@ -96,7 +96,9 @@ Runtime-backed seed: \`${input.seed}\`
 Args: ${formatArgs(input.args)}
 
 Top overall ordering:
-${top.map((slice) => `- ${slice.candidateId} (rank ${slice.rank}, score ${slice.score.toFixed(3)})`).join("\n")}
+${top
+  .map((slice) => `- ${slice.candidateId} (rank ${slice.rank}, score ${slice.score.toFixed(3)})`)
+  .join("\n")}
 
 Conditions:
 ${input.conditions.map((note) => `- [${note.severity}] ${note.message}`).join("\n") || "- none"}
@@ -178,13 +180,19 @@ Argv signature: \`${input.argvSignature}\`
 ${input.summary}
 
 ## Top overall ordering
-${top.map((slice) => `- ${slice.candidateId}: ${slice.score.toFixed(3)} (rank ${slice.rank})`).join("\n")}
+${top
+  .map((slice) => `- ${slice.candidateId}: ${slice.score.toFixed(3)} (rank ${slice.rank})`)
+  .join("\n")}
 
 ## Conditions
 ${input.conditions.map((note) => `- ${note.id}: ${note.message}`).join("\n") || "- none"}
 
 ## Observations
-${input.observations.map((note) => `- ${note.id}: ${note.message} — ${note.surfaceHint}`).join("\n") || "- none"}
+${
+  input.observations
+    .map((note) => `- ${note.id}: ${note.message} — ${note.surfaceHint}`)
+    .join("\n") || "- none"
+}
 `,
   };
 }
@@ -201,5 +209,17 @@ export function compileFormArtifacts(input: CompileArtifactsInput): FormArtifact
     reference: () => buildReferenceArtifact(input),
   };
 
-  return requestedTargets.map((target) => builders[target]());
+  // Validate all targets before accessing builders to prevent prototype traversal
+  const validTargets = requestedTargets.filter((target): target is FormArtifact["kind"] =>
+    ALL_FORM_TARGETS.includes(target as FormArtifact["kind"]),
+  );
+  if (validTargets.length !== requestedTargets.length) {
+    throw new Error(
+      `Invalid form target(s): ${requestedTargets
+        .filter((t) => !ALL_FORM_TARGETS.includes(t as FormArtifact["kind"]))
+        .join(", ")}`,
+    );
+  }
+
+  return validTargets.map((target) => builders[target]());
 }

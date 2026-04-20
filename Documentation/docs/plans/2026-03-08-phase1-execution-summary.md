@@ -1,7 +1,7 @@
 # Phase 1 Execution Summary
 
-**Date**: 2026-03-08  
-**Spec**: [2026-03-08-iteration-phases.md](./2026-03-08-iteration-phases.md)  
+**Date**: 2026-03-08
+**Spec**: [2026-03-08-iteration-phases.md](./2026-03-08-iteration-phases.md)
 **Truth docs**: [2026-03-08-status-report.md](./2026-03-08-status-report.md), [SECURITY_STATUS.md](../../SECURITY_STATUS.md)
 
 ---
@@ -103,6 +103,7 @@ Root `.env.example` exists with: `CASCADE_WORKSPACE_ROOT`, `GATE_DIR`, `LOTS_EXP
 ## Exact Next Actions
 
 1. **Create the first workspace-root commit**
+
    - Stage files per spec (exclude node_modules, build artifacts, secrets; respect `.gitignore`).
    - Commit with a message that reflects Phase 1 baseline (e.g. initial housekeeping).
    - This unblocks tracking all further work at workspace root.

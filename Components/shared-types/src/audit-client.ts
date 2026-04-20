@@ -1,11 +1,19 @@
-import { appendFileSync, closeSync, existsSync, mkdirSync, openSync, unlinkSync } from "fs";
+import { appendFileSync, closeSync, existsSync, mkdirSync, openSync, statSync, unlinkSync } from "fs";
 import { constants } from "fs";
 import { homedir } from "os";
 import { dirname, resolve } from "path";
 import type { AuditEvent } from "./audit.js";
 
+export type { AuditEvent } from "./audit.js";
+
 const ECHOES_AUDIT_PATH =
   process.env.ECHOES_AUDIT_PATH || resolve(homedir(), ".echoes", "audit.ndjson");
+
+/** Maximum number of pending write entries. Oldest entries are dropped when exceeded. */
+const MAX_QUEUE_SIZE = 500;
+
+/** Lock files older than this (ms) are considered stale from a crashed process. */
+const STALE_LOCK_AGE_MS = 30_000;
 
 let dirEnsured = false;
 let writeQueue: Array<{ event: string; resolve: (value: boolean) => void }> = [];
@@ -55,7 +63,17 @@ async function processWriteQueue(): Promise<void> {
         break;
       } catch (e: unknown) {
         if ((e as NodeJS.ErrnoException).code === "EEXIST") {
-          // Lock held by another process — wait and retry
+          // Check for stale lock left by a crashed process
+          try {
+            const stat = statSync(lockFile);
+            if (Date.now() - stat.mtimeMs > STALE_LOCK_AGE_MS) {
+              unlinkSync(lockFile);
+              // Loop again to acquire fresh lock
+              continue;
+            }
+          } catch {
+            // Lock vanished between stat and now — loop again
+          }
           await new Promise((r) => setTimeout(r, 50));
           retries++;
         } else {
@@ -65,21 +83,21 @@ async function processWriteQueue(): Promise<void> {
     }
 
     if (lockFd === null) {
-      // Lock timeout — skip this write
+      // Lock timeout — skip this write to avoid blocking indefinitely
       resolve(false);
       isWriting = false;
       setTimeout(processWriteQueue, 0);
       return;
     }
 
-    // Simple append with proper newline
+    // Append with proper newline
     appendFileSync(ECHOES_AUDIT_PATH, event);
 
     // Release lock
     try {
       unlinkSync(lockFile);
     } catch {
-      // Lock may have been cleaned up
+      // Lock may have been cleaned up concurrently
     }
 
     resolve(true);
@@ -127,7 +145,16 @@ export function emitAudit(event: Omit<AuditEvent, "timestamp">): Promise<boolean
 
     const eventString = JSON.stringify(record) + "\n";
 
-    // Add to write queue
+    // Enforce queue depth ceiling — shed oldest entry to make room.
+    // This prevents unbounded memory growth if disk I/O stalls.
+    if (writeQueue.length >= MAX_QUEUE_SIZE) {
+      const dropped = writeQueue.shift();
+      if (dropped) {
+        dropped.resolve(false);
+        process.stderr.write("[audit-client] write queue at capacity — oldest entry dropped\n");
+      }
+    }
+
     writeQueue.push({ event: eventString, resolve });
 
     // Trigger queue processing

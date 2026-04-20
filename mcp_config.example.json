@@ -1,0 +1,191 @@
+{
+  "_README": "Canonical MCP config — single source of truth for all editors",
+  "_inventory": "mcp_inventory.manifest.json — bootstrap types and excluded servers; run Components/scripts/verify_mcp_inventory.py",
+  "_updated": "2026-04-08",
+  "_usage": {
+    "windsurf": "Configured at ~/.codeium/windsurf/windsurf/mcp_config.json (absolutized Python paths, no cwd)",
+    "windsurf-next": "Configured at ~/.codeium/windsurf-next/mcp_config.json (same format as windsurf)",
+    "cursor": "Configured at .cursor/mcp.json in project root (cwd IS supported, uses claude_code_config.json pattern)",
+    "vscode": "Copy mcpServers block to .vscode/mcp.json (cwd IS supported)",
+    "claude-code": "See claude_code_config.json (different format: goes in ~/.claude.json under mcpServers)",
+    "zed": "Configured at ~/.config/zed/settings.json under context_servers (see also zed_config.jsonc reference)",
+    "opencode": "Configured at ~/.config/opencode/config.json under mcpServers (absolutized Python paths, no cwd)",
+    "antigravity": "Google VSCode fork — reads .vscode/mcp.json from workspace (same as vscode). Settings at ~/.config/Antigravity/User/settings.json",
+    "codex": "Configured at ~/.codex/config.toml under [mcp_servers.*] (TOML format, absolutized Python paths, no cwd)"
+  },
+  "mcpServers": {
+    "echoes-server": {
+      "command": "npx",
+      "args": ["-y", "tsx", "$HOME/CascadeProjects/Tools/MCPServers/echoes-server/src/server.ts"],
+      "env": {
+        "ECHOES_AUDIT_PATH": "$HOME/.echoes/audit.ndjson"
+      }
+    },
+    "grid-server": {
+      "command": "npx",
+      "args": ["-y", "tsx", "$HOME/CascadeProjects/Tools/MCPServers/grid-server/src/server.ts"],
+      "env": {
+        "CASCADE_WORKSPACE_ROOT": "$HOME/CascadeProjects",
+        "GATE_DIR": "$HOME/CascadeProjects/Projects/GATE",
+        "GRID_API_URL": "http://localhost:8080"
+      }
+    },
+    "afloat-server": {
+      "command": "npx",
+      "args": ["-y", "tsx", "$HOME/CascadeProjects/Tools/MCPServers/afloat-server/src/server.ts"],
+      "env": {}
+    },
+    "lots-server": {
+      "command": "npx",
+      "args": ["-y", "tsx", "$HOME/CascadeProjects/Tools/MCPServers/lots-server/src/server.ts"],
+      "env": {
+        "LOTS_EXPERIMENTS_DIR": "$HOME/CascadeProjects/experiments",
+        "ECHOES_AUDIT_PATH": "$HOME/.echoes/audit.ndjson"
+      }
+    },
+    "seeds-server": {
+      "command": "npx",
+      "args": ["-y", "tsx", "$HOME/CascadeProjects/Tools/MCPServers/seeds-server/src/server.ts"],
+      "env": {
+        "SEEDS_ROOT": "$HOME/CascadeProjects",
+        "SEEDS_ROOTS": "$HOME/CascadeProjects,$HOME/canopy,$HOME/grove"
+      }
+    },
+    "pulse-server": {
+      "command": "npx",
+      "args": ["-y", "tsx", "$HOME/CascadeProjects/Tools/MCPServers/pulse-server/src/server.ts"],
+      "env": {
+        "GRID_API_URL": "http://localhost:8080"
+      }
+    },
+    "grid-rag": {
+      "command": "$HOME/CascadeProjects/Projects/GRID-main/.venv/bin/python",
+      "args": ["mcp-setup/server/rag_mcp_server.py"],
+      "env": {
+        "PYTHONPATH": "$HOME/CascadeProjects/Projects/GRID-main/src:$HOME/CascadeProjects/Projects/GRID-main",
+        "RAG_EMBEDDING_PROVIDER": "ollama",
+        "RAG_EMBEDDING_MODEL": "nomic-embed-text-v2-moe:latest",
+        "RAG_LLM_MODE": "local",
+        "RAG_LLM_MODEL_LOCAL": "ministral-3:latest",
+        "RAG_VECTOR_STORE_PROVIDER": "chromadb",
+        "RAG_VECTOR_STORE_PATH": "$HOME/CascadeProjects/Projects/GRID-main/.rag_db",
+        "OLLAMA_BASE_URL": "http://localhost:11434"
+      }
+    },
+    "ori-server": {
+      "command": "npx",
+      "args": ["-y", "tsx", "$HOME/CascadeProjects/Tools/MCPServers/ori-server/src/server.ts"],
+      "env": {
+        "CASCADE_WORKSPACE_ROOT": "$HOME/CascadeProjects",
+        "ECHOES_AUDIT_PATH": "$HOME/.echoes/audit.ndjson",
+        "GRID_API_URL": "http://localhost:8080"
+      }
+    },
+    "grid-enhanced-tools": {
+      "command": "$HOME/CascadeProjects/Projects/GRID-main/.venv/bin/python",
+      "args": ["mcp-setup/server/enhanced_tools_mcp_server.py"],
+      "env": {
+        "PYTHONPATH": "$HOME/CascadeProjects/Projects/GRID-main/src:$HOME/CascadeProjects/Projects/GRID-main"
+      }
+    },
+    "portfolio-safety-lens": {
+      "command": "$HOME/CascadeProjects/Projects/GRID-main/.venv/bin/python",
+      "args": ["mcp-setup/server/portfolio_safety_mcp_server.py"],
+      "env": {
+        "PYTHONPATH": "$HOME/CascadeProjects/Projects/GRID-main/src:$HOME/CascadeProjects/Projects/GRID-main:$HOME/seed/archive/Coinbase_from_zip"
+      }
+    },
+    "code-analysis": {
+      "command": "$HOME/CascadeProjects/Projects/GRID-main/.venv/bin/python",
+      "args": ["mcp-setup/server/code_analysis_mcp_server.py"],
+      "env": {
+        "PYTHONPATH": "$HOME/CascadeProjects/Projects/GRID-main/src:$HOME/CascadeProjects/Projects/GRID-main",
+        "EXTRA_ALLOWED_ROOTS": "$HOME/CascadeProjects"
+      }
+    },
+    "test-runner": {
+      "command": "$HOME/CascadeProjects/Projects/GRID-main/.venv/bin/python",
+      "args": ["mcp-setup/server/test_runner_mcp_server.py"],
+      "env": {
+        "PYTHONPATH": "$HOME/CascadeProjects/Projects/GRID-main/src:$HOME/CascadeProjects/Projects/GRID-main",
+        "EXTRA_ALLOWED_ROOTS": "$HOME/CascadeProjects"
+      }
+    },
+    "maintain-server": {
+      "command": "npx",
+      "args": ["-y", "tsx", "$HOME/CascadeProjects/Tools/MCPServers/maintain-server/src/server.ts"],
+      "env": {
+        "CASCADE_WORKSPACE_ROOT": "$HOME/CascadeProjects",
+        "SEEDS_ROOT": "$HOME/CascadeProjects",
+        "ECHOES_AUDIT_PATH": "$HOME/.echoes/audit.ndjson"
+      }
+    },
+    "overview-server": {
+      "command": "npx",
+      "args": ["-y", "tsx", "$HOME/CascadeProjects/Tools/MCPServers/overview-server/src/server.ts"],
+      "env": {
+        "CASCADE_WORKSPACE_ROOT": "$HOME/CascadeProjects",
+        "SEEDS_ROOT": "$HOME/CascadeProjects",
+        "ECHOES_AUDIT_PATH": "$HOME/.echoes/audit.ndjson",
+        "GATE_DIR": "$HOME/CascadeProjects/Projects/GATE"
+      }
+    },
+    "mangrove-server": {
+      "command": "npx",
+      "args": ["-y", "tsx", "$HOME/CascadeProjects/Tools/MCPServers/mangrove-server/src/server.ts"],
+      "env": {
+        "MANGROVE_DIO_ROOT": "$HOME/CascadeProjects/DIO"
+      }
+    },
+    "glimpse-server": {
+      "command": "npx",
+      "args": ["-y", "tsx", "$HOME/CascadeProjects/Tools/MCPServers/glimpse-server/src/server.ts"],
+      "env": {}
+    },
+    "grid-intelligence": {
+      "command": "$HOME/CascadeProjects/Projects/GRID-main/.venv/bin/python",
+      "args": ["-m", "grid.mcp.intelligence_server"],
+      "env": {
+        "PYTHONPATH": "$HOME/CascadeProjects/Projects/GRID-main/src:$HOME/CascadeProjects/Projects/GRID-main"
+      }
+    },
+    "grid-rag-enhanced": {
+      "command": "$HOME/CascadeProjects/Projects/GRID-main/.venv/bin/python",
+      "args": ["-m", "grid.mcp.enhanced_rag_server"],
+      "env": {
+        "PYTHONPATH": "$HOME/CascadeProjects/Projects/GRID-main/src:$HOME/CascadeProjects/Projects/GRID-main",
+        "RAG_EMBEDDING_PROVIDER": "ollama",
+        "RAG_EMBEDDING_MODEL": "nomic-embed-text-v2-moe:latest",
+        "RAG_LLM_MODE": "local",
+        "RAG_LLM_MODEL_LOCAL": "ministral-3:latest",
+        "RAG_VECTOR_STORE_PROVIDER": "chromadb",
+        "RAG_VECTOR_STORE_PATH": "$HOME/CascadeProjects/Projects/GRID-main/.rag_db",
+        "OLLAMA_BASE_URL": "http://localhost:11434"
+      }
+    },
+    "eligibility-server": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "tsx",
+        "$HOME/CascadeProjects/Tools/MCPServers/eligibility-server/src/server.ts"
+      ],
+      "env": {
+        "ECHOES_AUDIT_PATH": "$HOME/.echoes/audit.ndjson",
+        "ELIGIBILITY_DATA_DIR": "$HOME/.eligibility-server"
+      }
+    },
+    "craft-server": {
+      "command": "npx",
+      "args": ["-y", "tsx", "$HOME/CascadeProjects/Tools/MCPServers/craft-server/src/server.ts"],
+      "env": {
+        "CRAFT_ROOT": "$HOME/roots/python-craft"
+      }
+    },
+    "harness-server": {
+      "command": "npx",
+      "args": ["-y", "tsx", "$HOME/CascadeProjects/Tools/MCPServers/harness-server/src/server.ts"]
+    }
+  },
+  "_python_mcp_audit": "grid-intelligence + grid-rag-enhanced: import-verified 2026-04-08 (GRID-main .venv); keep entries."
+}

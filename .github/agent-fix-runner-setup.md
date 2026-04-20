@@ -30,7 +30,6 @@ Workflows expect these to be available on `PATH`:
 - `uv`
 - `npm`
 
-
 ## 3. Run persistence with systemd (recommended)
 
 Use systemd so the runner stays up across reboots.

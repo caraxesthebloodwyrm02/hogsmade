@@ -310,6 +310,6 @@ DriftGuard is architecturally aligned with:
 
 ---
 
-**Version**: 2.1.0  
-**Last Updated**: 2026-03-31  
+**Version**: 2.1.0
+**Last Updated**: 2026-03-31
 **Status**: Production Ready

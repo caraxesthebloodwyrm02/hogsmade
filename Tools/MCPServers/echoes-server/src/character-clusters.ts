@@ -79,12 +79,7 @@ export const CHARACTER_QUERY_CLUSTERS: QueryCluster[] = [
       "Trait-to-mood coupling: do trait shifts precede or follow mood changes?",
       "Formality drift: does formality_level converge across sessions or stay volatile?",
     ],
-    telemetryKeys: [
-      "traitEntropy",
-      "dominantTraitName",
-      "traitDriftFromDefault",
-      "formalityLevel",
-    ],
+    telemetryKeys: ["traitEntropy", "dominantTraitName", "traitDriftFromDefault", "formalityLevel"],
   },
 
   // ── Graph Compiler ──

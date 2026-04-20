@@ -11,17 +11,17 @@
  * 7. No implicit returns — all paths explicit
  */
 
+import { randomUUID } from "crypto";
+import * as z from "zod";
+import { emitAudit } from "./audit-client.js";
 import {
-  generateMcpIdentity,
   ActionClass,
   Badge,
-  type PermissionCheckResult,
+  generateMcpIdentity,
   type MeritAuditEntry,
+  type PermissionCheckResult,
   Scope,
 } from "./merit-policy.js";
-import { emitAudit } from "./audit-client.js";
-import * as z from "zod";
-import { randomUUID } from "crypto";
 
 // Result type for explicit error handling
 type Result<T, E = Error> = { ok: true; value: T } | { ok: false; error: E; code: string };
@@ -129,6 +129,8 @@ export class HardenedMcpMeritGuard {
     apiFailures: 0,
     rateLimitHits: 0,
     circuitBreakerOpens: 0,
+    localPermissions: 0,
+    remotePermissions: 0,
   };
 
   constructor(config: HardenedMeritGuardConfig) {
@@ -184,23 +186,39 @@ export class HardenedMcpMeritGuard {
   }
 
   /**
-   * Check and enforce rate limits
-   * Returns true if allowed, false if rate limited
+   * Check and enforce rate limits.
+   * Returns true if allowed, false if rate limited.
+   *
+   * Also evicts fully-expired entity entries from the map to prevent
+   * unbounded growth when many distinct entity IDs pass through.
    */
   private checkRateLimit(entityId: string, maxCalls: number, windowMs: number): boolean {
     const now = Date.now();
     const calls = this.rateLimitMap.get(entityId) || [];
 
-    // Remove expired calls
+    // Remove expired calls for this entity
     const validCalls = calls.filter((t) => now - t < windowMs);
 
     if (validCalls.length >= maxCalls) {
       this.metrics.rateLimitHits++;
+      // Keep pruned list so we don't evict an active entity
+      this.rateLimitMap.set(entityId, validCalls);
       return false;
     }
 
     validCalls.push(now);
     this.rateLimitMap.set(entityId, validCalls);
+
+    // Periodic map eviction — remove entities with no valid calls left.
+    // Run 1% of the time to amortise cost without per-call overhead.
+    if (Math.random() < 0.01) {
+      for (const [key, timestamps] of this.rateLimitMap.entries()) {
+        if (timestamps.every((t) => now - t >= windowMs)) {
+          this.rateLimitMap.delete(key);
+        }
+      }
+    }
+
     return true;
   }
 
@@ -287,6 +305,32 @@ export class HardenedMcpMeritGuard {
   }
 
   /**
+   * Layered validation: is the GRID API configured?
+   */
+  isApiConfigured(): boolean {
+    return Boolean(this.config.gridApiUrl);
+  }
+
+  /**
+   * Layered validation: is the GRID API reachable? (based on circuit breaker state)
+   */
+  isApiReachable(): boolean {
+    return this.isApiConfigured() && this.circuitState !== CircuitState.OPEN;
+  }
+
+  /**
+   * Returns the permission semantic for the last/current check.
+   * - 'local': no API configured, degraded mode
+   * - 'remote': API configured, permission checked via GRID
+   * - 'degraded': API configured but circuit open
+   */
+  getPermissionSemantic(): "local" | "remote" | "degraded" {
+    if (!this.isApiConfigured()) return "local";
+    if (this.circuitState === CircuitState.OPEN) return "degraded";
+    return "remote";
+  }
+
+  /**
    * Check permission with the GRID merit engine
    * No silent failures - all paths return explicit Result
    */
@@ -324,7 +368,7 @@ export class HardenedMcpMeritGuard {
       return err(new Error("Circuit breaker open"), "CIRCUIT_OPEN");
     }
 
-    // Attempt GRID API call
+    // Attempt GRID API call (semantic: remote)
     if (this.config.gridApiUrl) {
       try {
         const response = await this.callGridApi(entityId, actionClass, requiredScope);
@@ -338,6 +382,7 @@ export class HardenedMcpMeritGuard {
             ttl: this.config.cacheTtlMs,
           });
           this.recordSuccess();
+          this.metrics.remotePermissions++;
           return ok(result);
         } else {
           this.recordFailure();
@@ -353,8 +398,26 @@ export class HardenedMcpMeritGuard {
       }
     }
 
-    // No GRID API configured - fail closed
-    return err(new Error("GRID API URL not configured"), "NO_GRID_API");
+    // No GRID API configured — local-only degraded mode (semantic: local).
+    // Allow tools to function without the merit engine; fail-closed applies
+    // only when the API IS configured but unreachable (handled above).
+    this.metrics.localPermissions++;
+    const requiredBadge = this.getRequiredBadge(actionClass);
+    const requiredScopes = this.getRequiredScopes(actionClass);
+    return ok({
+      allowed: true,
+      entity_id: entityId,
+      action_class: actionClass,
+      required_badge: requiredBadge,
+      actual_badge: requiredBadge,
+      has_badge: true,
+      required_scopes: requiredScopes,
+      eligible_scopes: requiredScopes,
+      has_scopes: true,
+      has_specific_scope: true,
+      roll_number: 0,
+      score: 0,
+    } satisfies PermissionCheckResult);
   }
 
   /**
@@ -417,10 +480,12 @@ export class HardenedMcpMeritGuard {
   private async logMeritDecision(
     entry: Omit<MeritAuditEntry, "timestamp" | "source">,
   ): Promise<void> {
+    const semantic = this.getPermissionSemantic();
     const auditEntry: MeritAuditEntry = {
       ...entry,
       timestamp: new Date().toISOString(),
       source: "mcp",
+      semantic,
     };
 
     try {
@@ -438,6 +503,7 @@ export class HardenedMcpMeritGuard {
           roll_number: auditEntry.roll_number,
           score: auditEntry.score,
           session_id: auditEntry.session_id,
+          semantic,
         },
       });
 
@@ -637,6 +703,7 @@ export class HardenedMcpMeritGuard {
                     _meta: {
                       entity_id: entityId,
                       action_class: options.actionClass,
+                      semantic: this.getPermissionSemantic(),
                       duration_ms: duration,
                     },
                   },

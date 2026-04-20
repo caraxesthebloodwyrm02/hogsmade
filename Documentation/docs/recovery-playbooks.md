@@ -32,6 +32,7 @@ Standardized procedures for recovering from common ecosystem failures and health
    ```
 
 3. **Common Remediations**
+
    - Commit uncommitted changes: `git add . && git commit -m "chore: cleanup working directory"`
    - Resolve test failures: Run project-specific test suite
    - Update dependencies: Check for outdated packages
@@ -61,6 +62,7 @@ Standardized procedures for recovering from common ecosystem failures and health
    ```
 
 2. **Restart Server**
+
    - Identify server process: `ps aux | grep <server-name>`
    - Graceful shutdown: `kill -TERM <pid>`
    - Restart: Navigate to server directory and run `npm run dev`
@@ -106,6 +108,7 @@ Standardized procedures for recovering from common ecosystem failures and health
    ```
 
 3. **Validate Data Format**
+
    - Check JSON format in audit entries
    - Ensure required fields are present
    - Verify timestamp format (ISO 8601)
@@ -135,11 +138,13 @@ Standardized procedures for recovering from common ecosystem failures and health
    ```
 
 2. **Step-by-Step Debug**
+
    - Run individual steps manually
    - Check command syntax and paths
    - Verify permissions and dependencies
 
 3. **Common Fixes**
+
    - Update command paths to absolute paths
    - Increase timeout values
    - Add error handling and rollback commands
@@ -168,11 +173,13 @@ Standardized procedures for recovering from common ecosystem failures and health
    ```
 
 2. **Repository Access Validation**
+
    - Verify Git repository status
    - Check file permissions
    - Validate repository paths
 
 3. **Dependency Resolution**
+
    - Update shared-types: `cd shared-types && npm run build`
    - Resolve Git submodules: `git submodule update --init --recursive`
 
@@ -188,6 +195,7 @@ Standardized procedures for recovering from common ecosystem failures and health
 **When multiple systems fail simultaneously**:
 
 1. **Stop All Automated Processes**
+
    - Pause scheduled workflows
    - Stop MCP servers
    - Prevent cascade failures
@@ -199,6 +207,7 @@ Standardized procedures for recovering from common ecosystem failures and health
    ```
 
 3. **Sequential Recovery**
+
    - Start with core infrastructure (seeds-server)
    - Restore dependent systems
    - Validate inter-system communication
@@ -213,10 +222,12 @@ Standardized procedures for recovering from common ecosystem failures and health
 **When audit logs or snapshots become corrupted**:
 
 1. **Isolate Corrupted Data**
+
    - Move corrupted files to quarantine
    - Preserve for forensic analysis
 
 2. **Restore from Backup**
+
    - Identify last known-good snapshot
    - Restore audit logs from backup
 

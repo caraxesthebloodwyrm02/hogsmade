@@ -2,8 +2,8 @@
 
 ## Decision 1: Long-Running Release — Phased Dark Mode Delivery
 
-**Status:** Proposed  
-**Date:** 2026-03-08  
+**Status:** Proposed
+**Date:** 2026-03-08
 **Context:** UI/UX — Theme System
 
 ### Problem

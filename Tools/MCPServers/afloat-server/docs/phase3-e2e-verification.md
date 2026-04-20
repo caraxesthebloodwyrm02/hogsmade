@@ -58,7 +58,7 @@ If the audit file itself does not exist yet, that is usually okay; the shared au
 .\scripts\register_windows_task.ps1 -TaskName "CascadeProjects-ScheduledDiagnostics" -Hour 9 -Minute 0
 ```
 
-**Success:** Script completes without error.  
+**Success:** Script completes without error.
 **Failure:** If an env var is missing you get a clear error, e.g. `Missing required environment variable for scheduled task: SEEDS_ROOT. Set it in this session...`
 
 ---
@@ -148,7 +148,7 @@ You may see `Running` then `Ready`. If it stays `Running` for a long time or ret
 Get-ScheduledTaskInfo -TaskName "CascadeProjects-ScheduledDiagnostics" | Format-List *
 ```
 
-**Important:** `LastRunTime`, `LastTaskResult`.  
+**Important:** `LastRunTime`, `LastTaskResult`.
 **Healthy:** `LastTaskResult = 0` (success). Non-zero means the task failed; inspect the runner and env.
 
 ---
@@ -173,10 +173,10 @@ Get-Content $env:ECHOES_AUDIT_PATH -Tail 20
 
 Look for a new line containing `"source":"afloat-scheduler"`, `"tool":"scheduled_diagnostics"`, `"status":"success"`.
 
-**Success example:**  
+**Success example:**
 `{"timestamp":"...","source":"afloat-scheduler","tool":"scheduled_diagnostics","status":"success","metadata":{"startedAt":"...","reportId":"report-....json","overallScore":...}}`
 
-**Failure example:**  
+**Failure example:**
 `"status":"failure"` with `metadata.error` (e.g. missing env at runtime).
 
 ---

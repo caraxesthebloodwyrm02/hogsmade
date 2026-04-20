@@ -12,14 +12,18 @@
  */
 
 import { ResiliencePolicy } from "@cascade/shared-resilience";
-import {
-  ActionClass,
-  createHardenedMeritGuard
-} from "@cascade/shared-types";
+import { ActionClass, createHardenedMeritGuard } from "@cascade/shared-types";
 import { emitAudit } from "@cascade/shared-types/audit-client";
 import { McpLogger } from "@cascade/shared-types/mcp-logger";
 import { GateSecurityPolicy } from "@cascade/shared-types/security-policy";
 import { SessionRateLimiter } from "@cascade/shared-types/session-rate-limit";
+import {
+  type TraceContext,
+  createChildSpan,
+  createRootSpan,
+  extractTrace,
+  formatTraceparent,
+} from "@cascade/shared-types/trace-context";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import crypto from "crypto";
@@ -297,8 +301,11 @@ export async function probeGridBackend(
 
 async function getEnhancedValidation(
   envelope: Record<string, unknown>,
+  trace?: TraceContext,
 ): Promise<Record<string, unknown> | null> {
-  const rawUrl = process.env.GRID_API_URL?.trim() || config.gridApiUrl || "";
+  // Read GRID_API_URL from live environment only — config.gridApiUrl is frozen
+  // at module-load time and may not reflect runtime env changes (e.g. in tests).
+  const rawUrl = process.env.GRID_API_URL?.trim() || "";
   if (!rawUrl) {
     return null;
   }
@@ -317,7 +324,10 @@ async function getEnhancedValidation(
     const payload = await gridApiPolicy.execute<Record<string, unknown>>("validate", async () => {
       const response = await fetch(`${gridApiUrl}/api/v1/gate/validate`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(trace ? { traceparent: formatTraceparent(trace) } : {}),
+        },
         body: JSON.stringify({
           source_agent: envelope["source_partition"],
           target: envelope["target_partition"],
@@ -358,9 +368,6 @@ export function buildServer(): McpServer {
     name: SERVER_NAME,
     version: VERSION,
   });
-  // Avoid deep generic instantiation cost in strict TS mode.
-  const registerTool = server.registerTool.bind(server) as any;
-
   // Initialize hardened merit guard for session-first identity enforcement
   const meritGuard = createHardenedMeritGuard(
     SERVER_NAME,
@@ -442,7 +449,7 @@ export function buildServer(): McpServer {
   );
 
   // Validate envelope structure (dry-run step 1)
-  registerTool(
+  server.registerTool(
     "validate_envelope",
     {
       description:
@@ -455,6 +462,11 @@ export function buildServer(): McpServer {
       }),
     },
     async (args: { envelopePath?: string }) => {
+      // Extract W3C trace context from _trace arg (if provided by caller)
+      const incomingTrace: TraceContext | null = extractTrace(args as Record<string, unknown>);
+      const span = incomingTrace ? createChildSpan(incomingTrace) : createRootSpan();
+      const tracedLogger = logger.withTrace(span);
+
       const requiredFields = [
         "envelope_id",
         "payload",
@@ -689,7 +701,7 @@ export function buildServer(): McpServer {
       }
 
       const allPassed = checks.every((c) => c.passed);
-      const enhancedValidation = allPassed ? await getEnhancedValidation(envelope) : null;
+      const enhancedValidation = allPassed ? await getEnhancedValidation(envelope, span) : null;
       // P-INT-005: Fail closed when remote validation unavailable for production targets
       const targetPartition = envelope["target_partition"] as string | undefined;
       if (enhancedValidation && enhancedValidation["approved"] === false) {
@@ -714,6 +726,8 @@ export function buildServer(): McpServer {
         source: SERVER_NAME,
         tool: "validate_envelope",
         status: valid ? "success" : "failure",
+        traceId: span.traceId,
+        spanId: span.spanId,
         metadata: {
           envelopePath,
           checksRun: checks.length,
@@ -727,12 +741,14 @@ export function buildServer(): McpServer {
           timestamp: new Date().toISOString(),
           envelope_id: envelope.envelope_id,
           valid,
+          traceId: span.traceId,
+          spanId: span.spanId,
           checksRun: checks.length,
           checksFailed: checks.filter((c) => !c.passed).map((c) => c.check),
           enhancedConsulted: enhancedValidation != null,
         });
       } catch (auditErr) {
-        logger.error("GATE audit write failed", { error: String(auditErr) });
+        tracedLogger.error("GATE audit write failed", { error: String(auditErr) });
         // Continue but log - audit failure should not block validation
       }
 
@@ -747,7 +763,7 @@ export function buildServer(): McpServer {
         try {
           await writeNonceRegistry(updated);
         } catch (nonceErr) {
-          logger.error("Nonce registry write failed", { error: String(nonceErr) });
+          tracedLogger.error("Nonce registry write failed", { error: String(nonceErr) });
           // Continue but log - nonce burn failure is serious but validation already succeeded
         }
       }
@@ -773,7 +789,7 @@ export function buildServer(): McpServer {
   );
 
   // Query GATE audit log
-  registerTool(
+  server.registerTool(
     "gate_audit",
     {
       description: "Query the GATE audit log (audit.ndjson) for verification events",
@@ -801,7 +817,7 @@ export function buildServer(): McpServer {
   );
 
   // Nonce registry status
-  registerTool(
+  server.registerTool(
     "nonce_status",
     {
       description: "Check the GATE nonce registry — list burned nonces and registry health",
@@ -850,7 +866,7 @@ export function buildServer(): McpServer {
   );
 
   // Check target permissions
-  registerTool(
+  server.registerTool(
     "check_permission",
     {
       description: "Check if a specific action is permitted on a deployment target",
@@ -1063,7 +1079,7 @@ export function buildServer(): McpServer {
   }
 
   // admission_policy — Get the current policy billboard
-  registerTool(
+  server.registerTool(
     "admission_policy",
     {
       description:
@@ -1114,7 +1130,7 @@ export function buildServer(): McpServer {
   );
 
   // admission_entity_report — Get entity violation history and penalty tier
-  registerTool(
+  server.registerTool(
     "admission_entity_report",
     {
       description:
@@ -1177,7 +1193,7 @@ export function buildServer(): McpServer {
   );
 
   // admission_compliance_check — Dry-run payload compliance check
-  registerTool(
+  server.registerTool(
     "admission_compliance_check",
     {
       description:
@@ -1185,9 +1201,9 @@ export function buildServer(): McpServer {
         "the pipeline. Reports profit-mask signals, context token estimate, structural " +
         "conformance, and entity penalty context. Use before submission to pre-validate.",
       inputSchema: z.object({
-        payload: z.record(z.unknown()).describe("Request payload body to check"),
+        payload: z.record(z.string(), z.unknown()).describe("Request payload body to check"),
         headers: z
-          .record(z.string())
+          .record(z.string(), z.string())
           .optional()
           .describe("Request headers to scan for profit-mask signals"),
         entity_id: z.string().optional().describe("Entity ID for penalty context lookup"),
@@ -1280,7 +1296,7 @@ export function buildServer(): McpServer {
   );
 
   // admission_apply_penalty — Manually apply penalty to entity
-  registerTool(
+  server.registerTool(
     "admission_apply_penalty",
     {
       description:
@@ -1310,7 +1326,10 @@ export function buildServer(): McpServer {
           .optional()
           .default("mcp_enforcement")
           .describe("Human-readable reason for the penalty"),
-        metadata: z.record(z.unknown()).optional().describe("Additional context metadata"),
+        metadata: z
+          .record(z.string(), z.unknown())
+          .optional()
+          .describe("Additional context metadata"),
       }),
     },
     async (args: {
@@ -1378,7 +1397,7 @@ export function buildServer(): McpServer {
   );
 
   // admission_bannered_entities — List all bannered entities
-  registerTool(
+  server.registerTool(
     "admission_bannered_entities",
     {
       description:
@@ -1449,7 +1468,7 @@ export function buildServer(): McpServer {
   );
 
   // admission_stats — Get gate operational statistics
-  registerTool(
+  server.registerTool(
     "admission_stats",
     {
       description:
@@ -1547,14 +1566,16 @@ export async function startServer(): Promise<McpServer> {
         } else {
           logger.warn(
             `GRID backend at ${gridApiUrl} is NOT reachable ` +
-            `(lastEndpoint=${probe.endpoint ?? "none"}, status=${probe.status ?? "unreachable"}, error=${probe.error ?? "unknown"}). ` +
-            `Remote gate validation will fail-closed (approved=false) until backend is restored.`,
+              `(lastEndpoint=${probe.endpoint ?? "none"}, status=${
+                probe.status ?? "unreachable"
+              }, error=${probe.error ?? "unknown"}). ` +
+              `Remote gate validation will fail-closed (approved=false) until backend is restored.`,
           );
         }
       } catch {
         logger.warn(
           `GRID backend probe failed for ${gridApiUrl}. ` +
-          `Remote gate validation will fail-closed.`,
+            `Remote gate validation will fail-closed.`,
         );
       }
     } else {

@@ -73,23 +73,7 @@ jobs:
         with:
           node-version: "22"
           cache: "npm"
-          cache-dependency-path: |
-            Components/shared-types/package-lock.json
-            Components/shared-resilience/package-lock.json
-            Components/shared-pipeline/package-lock.json
-            Tools/MCPServers/eligibility-server/package-lock.json
-            Tools/MCPServers/afloat-server/package-lock.json
-            Tools/MCPServers/echoes-server/package-lock.json
-            Tools/MCPServers/grid-server/package-lock.json
-            Tools/MCPServers/lots-server/package-lock.json
-            Tools/MCPServers/maintain-server/package-lock.json
-            Tools/MCPServers/pulse-server/package-lock.json
-            Tools/MCPServers/seeds-server/package-lock.json
-            Applications/glimpse-artifact/package-lock.json
-            Tools/MCPServers/glimpse-server/package-lock.json
-            Tools/MCPServers/mangrove-server/package-lock.json
-            Tools/MCPServers/overview-server/package-lock.json
-            Applications/glimpse-engine/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - name: Run trusted repo checks
         env:

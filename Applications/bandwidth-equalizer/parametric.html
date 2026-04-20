@@ -1,1057 +1,1399 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Parametric Spectrum Analyzer — Bandwidth EQ</title>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box
-    }
-
-    :root {
-      --bg: #08080d;
-      --bg2: #10101a;
-      --bg3: #181824;
-      --bg4: #20202e;
-      --bdr: #282840;
-      --tx: #d8d8e8;
-      --tx2: #7878a0;
-      --tx3: #484868;
-      --sub: #554488;
-      --low: #3366cc;
-      --lomid: #44aa88;
-      --mid: #88cc44;
-      --himid: #ccaa22;
-      --high: #ee6622;
-      --noise: #ff2244;
-      --cut: #ff3355;
-      --boost: #44ddaa;
-      --bench: #ff8844;
-      --curve: #6688ff;
-      --curve2: rgba(102, 136, 255, 0.15);
-      --sweep: #ffffff;
-      --hpf: #4488ff;
-      --lpf: #ff6644;
-    }
-
-    body {
-      background: var(--bg);
-      color: var(--tx);
-      font-family: 'SF Mono', 'JetBrains Mono', 'Fira Code', monospace;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      overflow-x: hidden
-    }
-
-    header {
-      padding: 12px 24px;
-      background: var(--bg2);
-      border-bottom: 1px solid var(--bdr);
-      display: flex;
-      justify-content: space-between;
-      align-items: center
-    }
-
-    header h1 {
-      font-size: 13px;
-      letter-spacing: 1.5px;
-      font-weight: 600
-    }
-
-    header span {
-      font-size: 10px;
-      color: var(--tx2)
-    }
-
-    .hdr-r {
-      display: flex;
-      gap: 8px;
-      align-items: center
-    }
-
-    button {
-      background: var(--bg4);
-      color: var(--tx);
-      border: 1px solid var(--bdr);
-      padding: 5px 12px;
-      border-radius: 5px;
-      font: inherit;
-      font-size: 10px;
-      cursor: pointer;
-      transition: all .12s;
-      letter-spacing: .4px
-    }
-
-    button:hover {
-      background: var(--bdr);
-      border-color: var(--tx3)
-    }
-
-    button.active {
-      background: var(--curve);
-      border-color: var(--curve);
-      color: #fff
-    }
-
-    button.sweep-btn {
-      background: #1a1a2a;
-      border-color: var(--sweep);
-      color: var(--sweep)
-    }
-
-    button.sweep-btn:hover {
-      background: var(--sweep);
-      color: var(--bg)
-    }
-
-    button.sweep-btn.running {
-      animation: sweepPulse 1s infinite;
-      pointer-events: none
-    }
-
-    @keyframes sweepPulse {
-
-      0%,
-      100% {
-        opacity: 1
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Parametric Spectrum Analyzer — Bandwidth EQ</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
       }
 
-      50% {
-        opacity: .5
+      :root {
+        --bg: #08080d;
+        --bg2: #10101a;
+        --bg3: #181824;
+        --bg4: #20202e;
+        --bdr: #282840;
+        --tx: #d8d8e8;
+        --tx2: #7878a0;
+        --tx3: #484868;
+        --sub: #554488;
+        --low: #3366cc;
+        --lomid: #44aa88;
+        --mid: #88cc44;
+        --himid: #ccaa22;
+        --high: #ee6622;
+        --noise: #ff2244;
+        --cut: #ff3355;
+        --boost: #44ddaa;
+        --bench: #ff8844;
+        --curve: #6688ff;
+        --curve2: rgba(102, 136, 255, 0.15);
+        --sweep: #ffffff;
+        --hpf: #4488ff;
+        --lpf: #ff6644;
       }
-    }
 
-    .curve-section {
-      position: relative;
-      height: 320px;
-      background: var(--bg2);
-      border-bottom: 1px solid var(--bdr);
-      overflow: hidden
-    }
-
-    .curve-section svg {
-      width: 100%;
-      height: 100%
-    }
-
-    .freq-labels {
-      position: absolute;
-      bottom: 0;
-      left: 60px;
-      right: 20px;
-      height: 20px;
-      display: flex;
-      justify-content: space-between;
-      pointer-events: none
-    }
-
-    .freq-labels span {
-      font-size: 8px;
-      color: var(--tx3)
-    }
-
-    .bands-section {
-      display: flex;
-      border-bottom: 1px solid var(--bdr);
-      min-height: 120px
-    }
-
-    .band-strip {
-      flex: 1;
-      padding: 8px 6px;
-      border-right: 1px solid var(--bdr);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 4px;
-      position: relative;
-      transition: background .2s
-    }
-
-    .band-strip:last-child {
-      border-right: none
-    }
-
-    .band-strip.noise {
-      background: repeating-linear-gradient(45deg, transparent, transparent 4px, rgba(255, 34, 68, .03) 4px, rgba(255, 34, 68, .03) 8px)
-    }
-
-    .band-strip.filtered {
-      opacity: .35;
-      filter: grayscale(.6)
-    }
-
-    .band-header {
-      font-size: 9px;
-      font-weight: 700;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      margin-bottom: 2px
-    }
-
-    .band-range {
-      font-size: 7px;
-      color: var(--tx3)
-    }
-
-    .band-entities {
-      display: flex;
-      flex-direction: column;
-      gap: 3px;
-      width: 100%;
-      align-items: center;
-      flex: 1
-    }
-
-    .entity-chip {
-      font-size: 9px;
-      padding: 3px 8px;
-      border-radius: 4px;
-      border: 1px solid var(--bdr);
-      background: var(--bg4);
-      cursor: pointer;
-      transition: all .15s;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      max-width: 100%;
-      white-space: nowrap;
-      position: relative
-    }
-
-    .entity-chip:hover {
-      border-color: var(--tx3);
-      transform: scale(1.03)
-    }
-
-    .entity-chip .e-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      flex-shrink: 0
-    }
-
-    .entity-chip .e-path {
-      font-weight: 600;
-      font-size: 8px;
-      margin-left: auto
-    }
-
-    .entity-chip.benched {
-      opacity: .4;
-      border-style: dashed;
-      text-decoration: line-through
-    }
-
-    .entity-chip.boosted {
-      border-color: var(--boost);
-      box-shadow: 0 0 8px rgba(68, 221, 170, .2)
-    }
-
-    .entity-chip.cut {
-      border-color: var(--cut);
-      box-shadow: 0 0 6px rgba(255, 51, 85, .15)
-    }
-
-    .entity-chip .spike {
-      position: absolute;
-      top: -5px;
-      right: -4px;
-      font-size: 7px;
-      color: var(--noise);
-      font-weight: 700
-    }
-
-    .controls-row {
-      display: flex;
-      border-bottom: 1px solid var(--bdr);
-      background: var(--bg3)
-    }
-
-    .ctrl-group {
-      flex: 1;
-      padding: 10px 16px;
-      border-right: 1px solid var(--bdr);
-      display: flex;
-      flex-direction: column;
-      gap: 6px
-    }
-
-    .ctrl-group:last-child {
-      border-right: none
-    }
-
-    .ctrl-group h3 {
-      font-size: 9px;
-      font-weight: 600;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      color: var(--tx2);
-      display: flex;
-      align-items: center;
-      gap: 6px
-    }
-
-    .ctrl-group h3 .indicator {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%
-    }
-
-    .ctrl-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 10px
-    }
-
-    .ctrl-row label {
-      color: var(--tx3);
-      min-width: 40px;
-      font-size: 9px
-    }
-
-    .ctrl-row .val {
-      color: var(--tx);
-      font-weight: 600;
-      min-width: 48px;
-      text-align: right;
-      font-size: 10px
-    }
-
-    input[type=range] {
-      flex: 1;
-      height: 3px;
-      -webkit-appearance: none;
-      appearance: none;
-      background: var(--bdr);
-      border-radius: 2px;
-      outline: none
-    }
-
-    input[type=range]::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      background: var(--curve);
-      cursor: pointer;
-      border: 2px solid var(--bg)
-    }
-
-    .bottom-panels {
-      display: flex;
-      flex: 1;
-      min-height: 0
-    }
-
-    .bench-panel {
-      flex: 1;
-      padding: 12px 16px;
-      border-right: 1px solid var(--bdr);
-      background: var(--bg2);
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 6px
-    }
-
-    .output-panel {
-      flex: 1.5;
-      padding: 12px 16px;
-      background: var(--bg);
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 8px
-    }
-
-    .panel-title {
-      font-size: 10px;
-      font-weight: 600;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      color: var(--tx2);
-      margin-bottom: 4px;
-      display: flex;
-      align-items: center;
-      gap: 8px
-    }
-
-    .bench-card {
-      background: var(--bg3);
-      border: 1px solid var(--bdr);
-      border-radius: 6px;
-      padding: 8px 10px;
-      font-size: 10px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      cursor: pointer;
-      transition: border-color .15s
-    }
-
-    .bench-card:hover {
-      border-color: var(--bench)
-    }
-
-    .bench-card .b-name {
-      font-weight: 600;
-      flex: 1
-    }
-
-    .bench-card .b-reason {
-      color: var(--tx3);
-      font-size: 9px
-    }
-
-    .bench-card .b-path {
-      font-weight: 700;
-      font-size: 11px
-    }
-
-    .output-block {
-      background: var(--bg2);
-      border: 1px solid var(--bdr);
-      border-radius: 6px;
-      padding: 10px 12px
-    }
-
-    .output-block h4 {
-      font-size: 9px;
-      letter-spacing: .8px;
-      text-transform: uppercase;
-      color: var(--tx2);
-      margin-bottom: 6px
-    }
-
-    .output-row {
-      display: flex;
-      justify-content: space-between;
-      font-size: 10px;
-      padding: 2px 0;
-      border-bottom: 1px solid rgba(40, 40, 64, .4)
-    }
-
-    .output-row:last-child {
-      border: none
-    }
-
-    .output-row .o-label {
-      color: var(--tx3)
-    }
-
-    .output-row .o-val {
-      font-weight: 600
-    }
-
-    .clarity-meter {
-      height: 6px;
-      border-radius: 3px;
-      background: var(--bg4);
-      margin-top: 6px;
-      overflow: hidden
-    }
-
-    .clarity-fill {
-      height: 100%;
-      border-radius: 3px;
-      transition: width .6s ease, background .4s ease
-    }
-
-    .sweep-line {
-      stroke: var(--sweep);
-      stroke-width: 1;
-      opacity: 0;
-      transition: opacity .2s
-    }
-
-    .sweep-line.active {
-      opacity: .6
-    }
-
-    .coupling-line {
-      stroke: var(--noise);
-      stroke-width: 1.5;
-      stroke-dasharray: 4 3;
-      opacity: .5
-    }
-
-    .entity-dot {
-      cursor: pointer;
-      transition: r .15s
-    }
-
-    .entity-dot:hover {
-      r: 7
-    }
-
-    .ghost-curve {
-      fill: none;
-      stroke: var(--boost);
-      stroke-width: 1.5;
-      stroke-dasharray: 6 4;
-      opacity: 0;
-      transition: opacity .4s
-    }
-
-    .ghost-curve.visible {
-      opacity: .6
-    }
-  </style>
-</head>
-
-<body>
-  <header>
-    <div>
-      <h1>Parametric Spectrum Analyzer</h1><span>20 Hz – 20 kHz · 6 bands · HPF/LPF · Sweep · Bench · Boost</span>
-    </div>
-    <div class="hdr-r">
-      <button class="sweep-btn" id="sweepBtn" onclick="runSweep()">▶ Sweep</button>
-      <button onclick="resetAll()">Reset</button>
-      <button onclick="takeSnapshot()">Snapshot</button>
-      <button onclick="exportOutput()">Export</button>
-    </div>
-  </header>
-
-  <div class="curve-section">
-    <svg id="curveSvg" viewBox="0 0 1200 300" preserveAspectRatio="none">
-      <defs>
-        <linearGradient id="curveFill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="rgba(102,136,255,0.25)" />
-          <stop offset="100%" stop-color="rgba(102,136,255,0)" />
-        </linearGradient>
-        <linearGradient id="ghostFill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="rgba(68,221,170,0.15)" />
-          <stop offset="100%" stop-color="rgba(68,221,170,0)" />
-        </linearGradient>
-        <filter id="glow">
-          <feGaussianBlur stdDeviation="3" result="g" />
-          <feMerge>
-            <feMergeNode in="g" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
-      </defs>
-      <g id="gridLines"></g>
-      <g id="bandRegions"></g>
-      <path id="curveArea" fill="url(#curveFill)" stroke="none" />
-      <path id="curveLine" fill="none" stroke="var(--curve)" stroke-width="2" filter="url(#glow)" />
-      <path id="ghostArea" class="ghost-curve" fill="url(#ghostFill)" />
-      <path id="ghostLine" class="ghost-curve" fill="none" />
-      <g id="couplingLines"></g>
-      <g id="entityDots"></g>
-      <line id="sweepLine" class="sweep-line" x1="0" y1="0" x2="0" y2="300" />
-      <g id="hpfRegion"></g>
-      <g id="lpfRegion"></g>
-    </svg>
-    <div class="freq-labels" id="freqLabels"></div>
-  </div>
-
-  <div class="bands-section" id="bandsSection"></div>
-
-  <div class="controls-row">
-    <div class="ctrl-group">
-      <h3><span class="indicator" style="background:var(--hpf)"></span>High-Pass Filter</h3>
-      <div class="ctrl-row"><label>Freq</label><input type="range" min="1" max="100" value="20" id="hpfFreq"
-          oninput="onFilterChange()"><span class="val" id="hpfFreqVal">20 Hz</span></div>
-      <div class="ctrl-row"><label>Slope</label><input type="range" min="6" max="48" step="6" value="24" id="hpfSlope"
-          oninput="onFilterChange()"><span class="val" id="hpfSlopeVal">24 dB/oct</span></div>
-    </div>
-    <div class="ctrl-group">
-      <h3><span class="indicator" style="background:var(--lpf)"></span>Low-Pass Filter</h3>
-      <div class="ctrl-row"><label>Freq</label><input type="range" min="15000" max="22000" value="19000" id="lpfFreq"
-          oninput="onFilterChange()"><span class="val" id="lpfFreqVal">19.0 kHz</span></div>
-      <div class="ctrl-row"><label>Slope</label><input type="range" min="6" max="48" step="6" value="24" id="lpfSlope"
-          oninput="onFilterChange()"><span class="val" id="lpfSlopeVal">24 dB/oct</span></div>
-    </div>
-    <div class="ctrl-group">
-      <h3><span class="indicator" style="background:var(--boost)"></span>Boost Gain</h3>
-      <div class="ctrl-row"><label>Gain</label><input type="range" min="0" max="60" value="15" id="boostGain"
-          oninput="onBoostChange()"><span class="val" id="boostGainVal">+1.5 dB</span></div>
-      <div class="ctrl-row"><label>Width</label><input type="range" min="2" max="40" value="12" id="boostQ"
-          oninput="onBoostChange()"><span class="val" id="boostQVal">Q 0.12</span></div>
-    </div>
-    <div class="ctrl-group">
-      <h3><span class="indicator" style="background:var(--cut)"></span>Cut Depth</h3>
-      <div class="ctrl-row"><label>Depth</label><input type="range" min="0" max="100" value="40" id="cutDepth"
-          oninput="onCutChange()"><span class="val" id="cutDepthVal">-4.0 dB</span></div>
-      <div class="ctrl-row"><label>Width</label><input type="range" min="5" max="80" value="60" id="cutQ"
-          oninput="onCutChange()"><span class="val" id="cutQVal">Q 0.60</span></div>
-    </div>
-  </div>
-
-  <div class="bottom-panels">
-    <div class="bench-panel" id="benchPanel">
-      <div class="panel-title"><span style="color:var(--bench)">■</span> Substitute Bench</div>
-      <div id="benchList" style="color:var(--tx3);font-size:10px">Run sweep to identify candidates…</div>
-    </div>
-    <div class="output-panel" id="outputPanel">
-      <div class="panel-title"><span style="color:var(--boost)">■</span> Session Output</div>
-      <div id="outputContent" style="color:var(--tx3);font-size:10px">Run sweep → apply cuts → boost sweet spots →
-        export</div>
-    </div>
-  </div>
-
-  <script>
-    const SVG_W = 1200, SVG_H = 300, PAD_L = 60, PAD_R = 20, PAD_T = 20, PAD_B = 30;
-    const PLOT_W = SVG_W - PAD_L - PAD_R, PLOT_H = SVG_H - PAD_T - PAD_B;
-    const LOG_MIN = Math.log10(5), LOG_MAX = Math.log10(25000);
-
-    const BANDS = [
-      { id: "sub", label: "SUB", lo: 0, hi: 20, color: "var(--sub)", noise: true },
-      { id: "low", label: "LOW", lo: 20, hi: 250, color: "var(--low)", noise: false },
-      { id: "lomid", label: "LO-MID", lo: 250, hi: 500, color: "var(--lomid)", noise: false },
-      { id: "mid", label: "MID", lo: 500, hi: 2000, color: "var(--mid)", noise: false },
-      { id: "himid", label: "HI-MID", lo: 2000, hi: 8000, color: "var(--himid)", noise: false },
-      { id: "high", label: "HIGH", lo: 8000, hi: 20000, color: "var(--high)", noise: false },
-      { id: "ultra", label: "ULTRA", lo: 19000, hi: 25000, color: "var(--sub)", noise: true },
-    ];
-
-    const ENTITIES = [
-      { id: "apiguard", name: "apiguard", freq: 8, health: 50, trust: 0.80, uncommitted: 1, failRate: 0, momentum: 0.50, spikes: 0, drag: "no git", band: "sub", coupling: [] },
-      { id: "vision", name: "Vision", freq: 14, health: 50, trust: 0.85, uncommitted: 0, failRate: 0, momentum: 0.50, spikes: 0, drag: "no git", band: "sub", coupling: [] },
-      { id: "grid", name: "GRID", freq: 60, health: 90, trust: 0.30, uncommitted: 47, failRate: 0, momentum: 0.50, spikes: 0, drag: "drift+trust", band: "low", coupling: ["grid-server"] },
-      { id: "hogsmade", name: "hogsmade", freq: 150, health: 75, trust: 0.50, uncommitted: 46, failRate: 0, momentum: 0.50, spikes: 0, drag: "drift saturated", band: "low", coupling: ["eligibility-server", "grid-server"] },
-      { id: "eligibility", name: "eligibility-server", freq: 350, health: 75, trust: 0.50, uncommitted: 46, failRate: 0.09, momentum: 0.125, spikes: 7, drag: "fail+drift+stalled", band: "lomid", coupling: ["hogsmade", "grid-server"] },
-      { id: "seeds", name: "seeds-server", freq: 480, health: 70, trust: 0.50, uncommitted: 1, failRate: 0, momentum: 0.50, spikes: 0, drag: "low trust", band: "lomid", coupling: [] },
-      { id: "echoes", name: "echoes", freq: 900, health: 85, trust: 0.80, uncommitted: 3, failRate: 0, momentum: 0.50, spikes: 0, drag: "minor drift", band: "mid", coupling: [] },
-      { id: "glimpse", name: "glimpse-engine", freq: 1400, health: 85, trust: 0.80, uncommitted: 10, failRate: 0, momentum: 0.50, spikes: 0, drag: "drift(10)", band: "mid", coupling: [] },
-      { id: "gridserver", name: "grid-server", freq: 3500, health: 75, trust: 0.30, uncommitted: 46, failRate: 0.571, momentum: 0.50, spikes: 4, drag: "57% fail+drift", band: "himid", coupling: ["grid", "eligibility", "hogsmade"] },
-      { id: "afloat", name: "afloat", freq: 10000, health: 95, trust: 0.80, uncommitted: 0, failRate: 0, momentum: 0.50, spikes: 0, drag: "—", band: "high", coupling: [] },
-    ];
-
-    let weights = { health: 0.30, trust: 0.25, drift: 0.20, fail: 0.15, momentum: 0.10 };
-    let hpf = { freq: 20, slope: 24 };
-    let lpf = { freq: 19000, slope: 24 };
-    let boostGain = 1.5, boostQ = 0.12;
-    let cutDepth = 4.0, cutQ = 0.60;
-    let benchIds = new Set();
-    let boostIds = new Set();
-    let cutIds = new Set();
-    let sweepDone = false;
-    let snapshots = [];
-
-    function computePATH(e) {
-      const d = Math.min(e.uncommitted / 30, 1);
-      return 100 * (e.health / 100 * weights.health + e.trust * weights.trust + (1 - d) * weights.drift + (1 - e.failRate) * weights.fail + e.momentum * weights.momentum);
-    }
-
-    function freqToX(f) {
-      const t = (Math.log10(Math.max(f, 5)) - LOG_MIN) / (LOG_MAX - LOG_MIN);
-      return PAD_L + t * PLOT_W;
-    }
-
-    function pathToY(p) {
-      return PAD_T + PLOT_H - (Math.min(Math.max(p, 0), 110) / 110) * PLOT_H;
-    }
-
-    function hpfAtten(freq) {
-      if (freq >= hpf.freq) return 0;
-      const oct = Math.log2(hpf.freq / Math.max(freq, 1));
-      return Math.min(oct * hpf.slope, 60);
-    }
-
-    function lpfAtten(freq) {
-      if (freq <= lpf.freq) return 0;
-      const oct = Math.log2(Math.max(freq, 1) / lpf.freq);
-      return Math.min(oct * lpf.slope, 60);
-    }
-
-    function effectivePATH(e) {
-      if (benchIds.has(e.id)) return null;
-      let p = computePATH(e);
-      p -= hpfAtten(e.freq) * (p / 100);
-      p -= lpfAtten(e.freq) * (p / 100);
-      if (cutIds.has(e.id)) p -= cutDepth * (100 / 20);
-      if (boostIds.has(e.id)) p += boostGain * (100 / 20);
-      return Math.min(Math.max(p, 0), 100);
-    }
-
-    function basePATH(e) { return computePATH(e); }
-
-    function buildCurvePoints(useBench) {
-      const pts = [];
-      ENTITIES.forEach(e => {
-        const p = useBench ? effectivePATH(e) : basePATH(e);
-        if (p !== null) pts.push({ x: freqToX(e.freq), y: pathToY(p), freq: e.freq, path: p, id: e.id });
-      });
-      pts.sort((a, b) => a.x - b.x);
-      if (pts.length > 0) {
-        pts.unshift({ x: PAD_L, y: pathToY(0), freq: 5 });
-        pts.push({ x: PAD_L + PLOT_W, y: pathToY(0), freq: 25000 });
+      body {
+        background: var(--bg);
+        color: var(--tx);
+        font-family: "SF Mono", "JetBrains Mono", "Fira Code", monospace;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        overflow-x: hidden;
       }
-      return pts;
-    }
 
-    function smoothPath(pts) {
-      if (pts.length < 2) return "";
-      let d = `M${pts[0].x},${pts[0].y}`;
-      for (let i = 1; i < pts.length; i++) {
-        const p = pts[i - 1], c = pts[i];
-        const cx = (p.x + c.x) / 2;
-        d += ` C${cx},${p.y} ${cx},${c.y} ${c.x},${c.y}`;
+      header {
+        padding: 12px 24px;
+        background: var(--bg2);
+        border-bottom: 1px solid var(--bdr);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
       }
-      return d;
-    }
 
-    function smoothArea(pts) {
-      const line = smoothPath(pts);
-      if (!line) return "";
-      return line + ` L${pts[pts.length - 1].x},${SVG_H} L${pts[0].x},${SVG_H} Z`;
-    }
-
-    function getTier(p) { return p >= 65 ? "clear" : p >= 50 ? "watch" : p >= 35 ? "act" : "urgent"; }
-    function tierColor(t) { return t === "clear" ? "var(--boost)" : t === "watch" ? "var(--himid)" : t === "act" ? "var(--cut)" : "var(--noise)"; }
-
-    function renderGrid() {
-      const g = document.getElementById("gridLines");
-      g.innerHTML = "";
-      const freqs = [20, 50, 100, 250, 500, 1000, 2000, 5000, 10000, 20000];
-      freqs.forEach(f => {
-        const x = freqToX(f);
-        g.innerHTML += `<line x1="${x}" y1="${PAD_T}" x2="${x}" y2="${SVG_H - PAD_B}" stroke="var(--bdr)" stroke-width="0.5"/>`;
-      });
-      for (let p = 0; p <= 100; p += 20) {
-        const y = pathToY(p);
-        g.innerHTML += `<line x1="${PAD_L}" y1="${y}" x2="${SVG_W - PAD_R}" y2="${y}" stroke="var(--bdr)" stroke-width="0.5"/>`;
-        g.innerHTML += `<text x="${PAD_L - 6}" y="${y + 3}" text-anchor="end" fill="var(--tx3)" font-size="8" font-family="inherit">${p}</text>`;
+      header h1 {
+        font-size: 13px;
+        letter-spacing: 1.5px;
+        font-weight: 600;
       }
-      [65, 50, 35].forEach((th, i) => {
-        const y = pathToY(th);
-        const colors = ["var(--boost)", "var(--himid)", "var(--cut)"];
-        const labels = ["CLEAR", "WATCH", "ACT"];
-        g.innerHTML += `<line x1="${PAD_L}" y1="${y}" x2="${SVG_W - PAD_R}" y2="${y}" stroke="${colors[i]}" stroke-width="0.5" stroke-dasharray="4 4" opacity="0.4"/>`;
-        g.innerHTML += `<text x="${SVG_W - PAD_R + 4}" y="${y + 3}" fill="${colors[i]}" font-size="7" font-family="inherit" opacity="0.7">${labels[i]}</text>`;
-      });
-      const fl = document.getElementById("freqLabels");
-      fl.innerHTML = "";
-      freqs.forEach(f => {
-        const label = f >= 1000 ? (f / 1000) + "k" : f + "";
-        fl.innerHTML += `<span>${label}</span>`;
-      });
-    }
 
-    function renderBandRegions() {
-      const g = document.getElementById("bandRegions");
-      g.innerHTML = "";
-      BANDS.forEach(b => {
-        const x1 = freqToX(Math.max(b.lo, 5)), x2 = freqToX(b.hi);
-        const isFiltered = (b.noise && b.lo < hpf.freq) || (b.noise && b.hi > lpf.freq);
-        const op = b.noise ? 0.04 : 0.06;
-        g.innerHTML += `<rect x="${x1}" y="${PAD_T}" width="${x2 - x1}" height="${PLOT_H}" fill="${b.color}" opacity="${isFiltered ? 0.02 : op}"/>`;
-      });
-    }
+      header span {
+        font-size: 10px;
+        color: var(--tx2);
+      }
 
-    function renderFilterRegions() {
-      const hg = document.getElementById("hpfRegion");
-      const lg = document.getElementById("lpfRegion");
-      const hx = freqToX(hpf.freq);
-      const lx = freqToX(lpf.freq);
-      hg.innerHTML = `<rect x="${PAD_L}" y="${PAD_T}" width="${hx - PAD_L}" height="${PLOT_H}" fill="var(--hpf)" opacity="0.06"/>
+      .hdr-r {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+
+      button {
+        background: var(--bg4);
+        color: var(--tx);
+        border: 1px solid var(--bdr);
+        padding: 5px 12px;
+        border-radius: 5px;
+        font: inherit;
+        font-size: 10px;
+        cursor: pointer;
+        transition: all 0.12s;
+        letter-spacing: 0.4px;
+      }
+
+      button:hover {
+        background: var(--bdr);
+        border-color: var(--tx3);
+      }
+
+      button.active {
+        background: var(--curve);
+        border-color: var(--curve);
+        color: #fff;
+      }
+
+      button.sweep-btn {
+        background: #1a1a2a;
+        border-color: var(--sweep);
+        color: var(--sweep);
+      }
+
+      button.sweep-btn:hover {
+        background: var(--sweep);
+        color: var(--bg);
+      }
+
+      button.sweep-btn.running {
+        animation: sweepPulse 1s infinite;
+        pointer-events: none;
+      }
+
+      @keyframes sweepPulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+
+        50% {
+          opacity: 0.5;
+        }
+      }
+
+      .curve-section {
+        position: relative;
+        height: 320px;
+        background: var(--bg2);
+        border-bottom: 1px solid var(--bdr);
+        overflow: hidden;
+      }
+
+      .curve-section svg {
+        width: 100%;
+        height: 100%;
+      }
+
+      .freq-labels {
+        position: absolute;
+        bottom: 0;
+        left: 60px;
+        right: 20px;
+        height: 20px;
+        display: flex;
+        justify-content: space-between;
+        pointer-events: none;
+      }
+
+      .freq-labels span {
+        font-size: 8px;
+        color: var(--tx3);
+      }
+
+      .bands-section {
+        display: flex;
+        border-bottom: 1px solid var(--bdr);
+        min-height: 120px;
+      }
+
+      .band-strip {
+        flex: 1;
+        padding: 8px 6px;
+        border-right: 1px solid var(--bdr);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        position: relative;
+        transition: background 0.2s;
+      }
+
+      .band-strip:last-child {
+        border-right: none;
+      }
+
+      .band-strip.noise {
+        background: repeating-linear-gradient(
+          45deg,
+          transparent,
+          transparent 4px,
+          rgba(255, 34, 68, 0.03) 4px,
+          rgba(255, 34, 68, 0.03) 8px
+        );
+      }
+
+      .band-strip.filtered {
+        opacity: 0.35;
+        filter: grayscale(0.6);
+      }
+
+      .band-header {
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        margin-bottom: 2px;
+      }
+
+      .band-range {
+        font-size: 7px;
+        color: var(--tx3);
+      }
+
+      .band-entities {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        width: 100%;
+        align-items: center;
+        flex: 1;
+      }
+
+      .entity-chip {
+        font-size: 9px;
+        padding: 3px 8px;
+        border-radius: 4px;
+        border: 1px solid var(--bdr);
+        background: var(--bg4);
+        cursor: pointer;
+        transition: all 0.15s;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        max-width: 100%;
+        white-space: nowrap;
+        position: relative;
+      }
+
+      .entity-chip:hover {
+        border-color: var(--tx3);
+        transform: scale(1.03);
+      }
+
+      .entity-chip .e-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+
+      .entity-chip .e-path {
+        font-weight: 600;
+        font-size: 8px;
+        margin-left: auto;
+      }
+
+      .entity-chip.benched {
+        opacity: 0.4;
+        border-style: dashed;
+        text-decoration: line-through;
+      }
+
+      .entity-chip.boosted {
+        border-color: var(--boost);
+        box-shadow: 0 0 8px rgba(68, 221, 170, 0.2);
+      }
+
+      .entity-chip.cut {
+        border-color: var(--cut);
+        box-shadow: 0 0 6px rgba(255, 51, 85, 0.15);
+      }
+
+      .entity-chip .spike {
+        position: absolute;
+        top: -5px;
+        right: -4px;
+        font-size: 7px;
+        color: var(--noise);
+        font-weight: 700;
+      }
+
+      .controls-row {
+        display: flex;
+        border-bottom: 1px solid var(--bdr);
+        background: var(--bg3);
+      }
+
+      .ctrl-group {
+        flex: 1;
+        padding: 10px 16px;
+        border-right: 1px solid var(--bdr);
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .ctrl-group:last-child {
+        border-right: none;
+      }
+
+      .ctrl-group h3 {
+        font-size: 9px;
+        font-weight: 600;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: var(--tx2);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .ctrl-group h3 .indicator {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+      }
+
+      .ctrl-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 10px;
+      }
+
+      .ctrl-row label {
+        color: var(--tx3);
+        min-width: 40px;
+        font-size: 9px;
+      }
+
+      .ctrl-row .val {
+        color: var(--tx);
+        font-weight: 600;
+        min-width: 48px;
+        text-align: right;
+        font-size: 10px;
+      }
+
+      input[type="range"] {
+        flex: 1;
+        height: 3px;
+        -webkit-appearance: none;
+        appearance: none;
+        background: var(--bdr);
+        border-radius: 2px;
+        outline: none;
+      }
+
+      input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: var(--curve);
+        cursor: pointer;
+        border: 2px solid var(--bg);
+      }
+
+      .bottom-panels {
+        display: flex;
+        flex: 1;
+        min-height: 0;
+      }
+
+      .bench-panel {
+        flex: 1;
+        padding: 12px 16px;
+        border-right: 1px solid var(--bdr);
+        background: var(--bg2);
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .output-panel {
+        flex: 1.5;
+        padding: 12px 16px;
+        background: var(--bg);
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .panel-title {
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: var(--tx2);
+        margin-bottom: 4px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .bench-card {
+        background: var(--bg3);
+        border: 1px solid var(--bdr);
+        border-radius: 6px;
+        padding: 8px 10px;
+        font-size: 10px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        transition: border-color 0.15s;
+      }
+
+      .bench-card:hover {
+        border-color: var(--bench);
+      }
+
+      .bench-card .b-name {
+        font-weight: 600;
+        flex: 1;
+      }
+
+      .bench-card .b-reason {
+        color: var(--tx3);
+        font-size: 9px;
+      }
+
+      .bench-card .b-path {
+        font-weight: 700;
+        font-size: 11px;
+      }
+
+      .output-block {
+        background: var(--bg2);
+        border: 1px solid var(--bdr);
+        border-radius: 6px;
+        padding: 10px 12px;
+      }
+
+      .output-block h4 {
+        font-size: 9px;
+        letter-spacing: 0.8px;
+        text-transform: uppercase;
+        color: var(--tx2);
+        margin-bottom: 6px;
+      }
+
+      .output-row {
+        display: flex;
+        justify-content: space-between;
+        font-size: 10px;
+        padding: 2px 0;
+        border-bottom: 1px solid rgba(40, 40, 64, 0.4);
+      }
+
+      .output-row:last-child {
+        border: none;
+      }
+
+      .output-row .o-label {
+        color: var(--tx3);
+      }
+
+      .output-row .o-val {
+        font-weight: 600;
+      }
+
+      .clarity-meter {
+        height: 6px;
+        border-radius: 3px;
+        background: var(--bg4);
+        margin-top: 6px;
+        overflow: hidden;
+      }
+
+      .clarity-fill {
+        height: 100%;
+        border-radius: 3px;
+        transition:
+          width 0.6s ease,
+          background 0.4s ease;
+      }
+
+      .sweep-line {
+        stroke: var(--sweep);
+        stroke-width: 1;
+        opacity: 0;
+        transition: opacity 0.2s;
+      }
+
+      .sweep-line.active {
+        opacity: 0.6;
+      }
+
+      .coupling-line {
+        stroke: var(--noise);
+        stroke-width: 1.5;
+        stroke-dasharray: 4 3;
+        opacity: 0.5;
+      }
+
+      .entity-dot {
+        cursor: pointer;
+        transition: r 0.15s;
+      }
+
+      .entity-dot:hover {
+        r: 7;
+      }
+
+      .ghost-curve {
+        fill: none;
+        stroke: var(--boost);
+        stroke-width: 1.5;
+        stroke-dasharray: 6 4;
+        opacity: 0;
+        transition: opacity 0.4s;
+      }
+
+      .ghost-curve.visible {
+        opacity: 0.6;
+      }
+    </style>
+  </head>
+
+  <body>
+    <header>
+      <div>
+        <h1>Parametric Spectrum Analyzer</h1>
+        <span>20 Hz – 20 kHz · 6 bands · HPF/LPF · Sweep · Bench · Boost</span>
+      </div>
+      <div class="hdr-r">
+        <button class="sweep-btn" id="sweepBtn" onclick="runSweep()">▶ Sweep</button>
+        <button onclick="resetAll()">Reset</button>
+        <button onclick="takeSnapshot()">Snapshot</button>
+        <button onclick="exportOutput()">Export</button>
+      </div>
+    </header>
+
+    <div class="curve-section">
+      <svg id="curveSvg" viewBox="0 0 1200 300" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="curveFill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="rgba(102,136,255,0.25)" />
+            <stop offset="100%" stop-color="rgba(102,136,255,0)" />
+          </linearGradient>
+          <linearGradient id="ghostFill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="rgba(68,221,170,0.15)" />
+            <stop offset="100%" stop-color="rgba(68,221,170,0)" />
+          </linearGradient>
+          <filter id="glow">
+            <feGaussianBlur stdDeviation="3" result="g" />
+            <feMerge>
+              <feMergeNode in="g" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
+        <g id="gridLines"></g>
+        <g id="bandRegions"></g>
+        <path id="curveArea" fill="url(#curveFill)" stroke="none" />
+        <path
+          id="curveLine"
+          fill="none"
+          stroke="var(--curve)"
+          stroke-width="2"
+          filter="url(#glow)"
+        />
+        <path id="ghostArea" class="ghost-curve" fill="url(#ghostFill)" />
+        <path id="ghostLine" class="ghost-curve" fill="none" />
+        <g id="couplingLines"></g>
+        <g id="entityDots"></g>
+        <line id="sweepLine" class="sweep-line" x1="0" y1="0" x2="0" y2="300" />
+        <g id="hpfRegion"></g>
+        <g id="lpfRegion"></g>
+      </svg>
+      <div class="freq-labels" id="freqLabels"></div>
+    </div>
+
+    <div class="bands-section" id="bandsSection"></div>
+
+    <div class="controls-row">
+      <div class="ctrl-group">
+        <h3><span class="indicator" style="background: var(--hpf)"></span>High-Pass Filter</h3>
+        <div class="ctrl-row">
+          <label>Freq</label
+          ><input
+            type="range"
+            min="1"
+            max="100"
+            value="20"
+            id="hpfFreq"
+            oninput="onFilterChange()"
+          /><span class="val" id="hpfFreqVal">20 Hz</span>
+        </div>
+        <div class="ctrl-row">
+          <label>Slope</label
+          ><input
+            type="range"
+            min="6"
+            max="48"
+            step="6"
+            value="24"
+            id="hpfSlope"
+            oninput="onFilterChange()"
+          /><span class="val" id="hpfSlopeVal">24 dB/oct</span>
+        </div>
+      </div>
+      <div class="ctrl-group">
+        <h3><span class="indicator" style="background: var(--lpf)"></span>Low-Pass Filter</h3>
+        <div class="ctrl-row">
+          <label>Freq</label
+          ><input
+            type="range"
+            min="15000"
+            max="22000"
+            value="19000"
+            id="lpfFreq"
+            oninput="onFilterChange()"
+          /><span class="val" id="lpfFreqVal">19.0 kHz</span>
+        </div>
+        <div class="ctrl-row">
+          <label>Slope</label
+          ><input
+            type="range"
+            min="6"
+            max="48"
+            step="6"
+            value="24"
+            id="lpfSlope"
+            oninput="onFilterChange()"
+          /><span class="val" id="lpfSlopeVal">24 dB/oct</span>
+        </div>
+      </div>
+      <div class="ctrl-group">
+        <h3><span class="indicator" style="background: var(--boost)"></span>Boost Gain</h3>
+        <div class="ctrl-row">
+          <label>Gain</label
+          ><input
+            type="range"
+            min="0"
+            max="60"
+            value="15"
+            id="boostGain"
+            oninput="onBoostChange()"
+          /><span class="val" id="boostGainVal">+1.5 dB</span>
+        </div>
+        <div class="ctrl-row">
+          <label>Width</label
+          ><input
+            type="range"
+            min="2"
+            max="40"
+            value="12"
+            id="boostQ"
+            oninput="onBoostChange()"
+          /><span class="val" id="boostQVal">Q 0.12</span>
+        </div>
+      </div>
+      <div class="ctrl-group">
+        <h3><span class="indicator" style="background: var(--cut)"></span>Cut Depth</h3>
+        <div class="ctrl-row">
+          <label>Depth</label
+          ><input
+            type="range"
+            min="0"
+            max="100"
+            value="40"
+            id="cutDepth"
+            oninput="onCutChange()"
+          /><span class="val" id="cutDepthVal">-4.0 dB</span>
+        </div>
+        <div class="ctrl-row">
+          <label>Width</label
+          ><input type="range" min="5" max="80" value="60" id="cutQ" oninput="onCutChange()" /><span
+            class="val"
+            id="cutQVal"
+            >Q 0.60</span
+          >
+        </div>
+      </div>
+    </div>
+
+    <div class="bottom-panels">
+      <div class="bench-panel" id="benchPanel">
+        <div class="panel-title"><span style="color: var(--bench)">■</span> Substitute Bench</div>
+        <div id="benchList" style="color: var(--tx3); font-size: 10px">
+          Run sweep to identify candidates…
+        </div>
+      </div>
+      <div class="output-panel" id="outputPanel">
+        <div class="panel-title"><span style="color: var(--boost)">■</span> Session Output</div>
+        <div id="outputContent" style="color: var(--tx3); font-size: 10px">
+          Run sweep → apply cuts → boost sweet spots → export
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const SVG_W = 1200,
+        SVG_H = 300,
+        PAD_L = 60,
+        PAD_R = 20,
+        PAD_T = 20,
+        PAD_B = 30;
+      const PLOT_W = SVG_W - PAD_L - PAD_R,
+        PLOT_H = SVG_H - PAD_T - PAD_B;
+      const LOG_MIN = Math.log10(5),
+        LOG_MAX = Math.log10(25000);
+
+      const BANDS = [
+        { id: "sub", label: "SUB", lo: 0, hi: 20, color: "var(--sub)", noise: true },
+        { id: "low", label: "LOW", lo: 20, hi: 250, color: "var(--low)", noise: false },
+        { id: "lomid", label: "LO-MID", lo: 250, hi: 500, color: "var(--lomid)", noise: false },
+        { id: "mid", label: "MID", lo: 500, hi: 2000, color: "var(--mid)", noise: false },
+        { id: "himid", label: "HI-MID", lo: 2000, hi: 8000, color: "var(--himid)", noise: false },
+        { id: "high", label: "HIGH", lo: 8000, hi: 20000, color: "var(--high)", noise: false },
+        { id: "ultra", label: "ULTRA", lo: 19000, hi: 25000, color: "var(--sub)", noise: true },
+      ];
+
+      const ENTITIES = [
+        {
+          id: "apiguard",
+          name: "apiguard",
+          freq: 8,
+          health: 50,
+          trust: 0.8,
+          uncommitted: 1,
+          failRate: 0,
+          momentum: 0.5,
+          spikes: 0,
+          drag: "no git",
+          band: "sub",
+          coupling: [],
+        },
+        {
+          id: "vision",
+          name: "Vision",
+          freq: 14,
+          health: 50,
+          trust: 0.85,
+          uncommitted: 0,
+          failRate: 0,
+          momentum: 0.5,
+          spikes: 0,
+          drag: "no git",
+          band: "sub",
+          coupling: [],
+        },
+        {
+          id: "grid",
+          name: "GRID",
+          freq: 60,
+          health: 90,
+          trust: 0.3,
+          uncommitted: 47,
+          failRate: 0,
+          momentum: 0.5,
+          spikes: 0,
+          drag: "drift+trust",
+          band: "low",
+          coupling: ["grid-server"],
+        },
+        {
+          id: "hogsmade",
+          name: "hogsmade",
+          freq: 150,
+          health: 75,
+          trust: 0.5,
+          uncommitted: 46,
+          failRate: 0,
+          momentum: 0.5,
+          spikes: 0,
+          drag: "drift saturated",
+          band: "low",
+          coupling: ["eligibility-server", "grid-server"],
+        },
+        {
+          id: "eligibility",
+          name: "eligibility-server",
+          freq: 350,
+          health: 75,
+          trust: 0.5,
+          uncommitted: 46,
+          failRate: 0.09,
+          momentum: 0.125,
+          spikes: 7,
+          drag: "fail+drift+stalled",
+          band: "lomid",
+          coupling: ["hogsmade", "grid-server"],
+        },
+        {
+          id: "seeds",
+          name: "seeds-server",
+          freq: 480,
+          health: 70,
+          trust: 0.5,
+          uncommitted: 1,
+          failRate: 0,
+          momentum: 0.5,
+          spikes: 0,
+          drag: "low trust",
+          band: "lomid",
+          coupling: [],
+        },
+        {
+          id: "echoes",
+          name: "echoes",
+          freq: 900,
+          health: 85,
+          trust: 0.8,
+          uncommitted: 3,
+          failRate: 0,
+          momentum: 0.5,
+          spikes: 0,
+          drag: "minor drift",
+          band: "mid",
+          coupling: [],
+        },
+        {
+          id: "glimpse",
+          name: "glimpse-engine",
+          freq: 1400,
+          health: 85,
+          trust: 0.8,
+          uncommitted: 10,
+          failRate: 0,
+          momentum: 0.5,
+          spikes: 0,
+          drag: "drift(10)",
+          band: "mid",
+          coupling: [],
+        },
+        {
+          id: "gridserver",
+          name: "grid-server",
+          freq: 3500,
+          health: 75,
+          trust: 0.3,
+          uncommitted: 46,
+          failRate: 0.571,
+          momentum: 0.5,
+          spikes: 4,
+          drag: "57% fail+drift",
+          band: "himid",
+          coupling: ["grid", "eligibility", "hogsmade"],
+        },
+        {
+          id: "afloat",
+          name: "afloat",
+          freq: 10000,
+          health: 95,
+          trust: 0.8,
+          uncommitted: 0,
+          failRate: 0,
+          momentum: 0.5,
+          spikes: 0,
+          drag: "—",
+          band: "high",
+          coupling: [],
+        },
+      ];
+
+      let weights = { health: 0.3, trust: 0.25, drift: 0.2, fail: 0.15, momentum: 0.1 };
+      let hpf = { freq: 20, slope: 24 };
+      let lpf = { freq: 19000, slope: 24 };
+      let boostGain = 1.5,
+        boostQ = 0.12;
+      let cutDepth = 4.0,
+        cutQ = 0.6;
+      let benchIds = new Set();
+      let boostIds = new Set();
+      let cutIds = new Set();
+      let sweepDone = false;
+      let snapshots = [];
+
+      function computePATH(e) {
+        const d = Math.min(e.uncommitted / 30, 1);
+        return (
+          100 *
+          ((e.health / 100) * weights.health +
+            e.trust * weights.trust +
+            (1 - d) * weights.drift +
+            (1 - e.failRate) * weights.fail +
+            e.momentum * weights.momentum)
+        );
+      }
+
+      function freqToX(f) {
+        const t = (Math.log10(Math.max(f, 5)) - LOG_MIN) / (LOG_MAX - LOG_MIN);
+        return PAD_L + t * PLOT_W;
+      }
+
+      function pathToY(p) {
+        return PAD_T + PLOT_H - (Math.min(Math.max(p, 0), 110) / 110) * PLOT_H;
+      }
+
+      function hpfAtten(freq) {
+        if (freq >= hpf.freq) return 0;
+        const oct = Math.log2(hpf.freq / Math.max(freq, 1));
+        return Math.min(oct * hpf.slope, 60);
+      }
+
+      function lpfAtten(freq) {
+        if (freq <= lpf.freq) return 0;
+        const oct = Math.log2(Math.max(freq, 1) / lpf.freq);
+        return Math.min(oct * lpf.slope, 60);
+      }
+
+      function effectivePATH(e) {
+        if (benchIds.has(e.id)) return null;
+        let p = computePATH(e);
+        p -= hpfAtten(e.freq) * (p / 100);
+        p -= lpfAtten(e.freq) * (p / 100);
+        if (cutIds.has(e.id)) p -= cutDepth * (100 / 20);
+        if (boostIds.has(e.id)) p += boostGain * (100 / 20);
+        return Math.min(Math.max(p, 0), 100);
+      }
+
+      function basePATH(e) {
+        return computePATH(e);
+      }
+
+      function buildCurvePoints(useBench) {
+        const pts = [];
+        ENTITIES.forEach((e) => {
+          const p = useBench ? effectivePATH(e) : basePATH(e);
+          if (p !== null)
+            pts.push({ x: freqToX(e.freq), y: pathToY(p), freq: e.freq, path: p, id: e.id });
+        });
+        pts.sort((a, b) => a.x - b.x);
+        if (pts.length > 0) {
+          pts.unshift({ x: PAD_L, y: pathToY(0), freq: 5 });
+          pts.push({ x: PAD_L + PLOT_W, y: pathToY(0), freq: 25000 });
+        }
+        return pts;
+      }
+
+      function smoothPath(pts) {
+        if (pts.length < 2) return "";
+        let d = `M${pts[0].x},${pts[0].y}`;
+        for (let i = 1; i < pts.length; i++) {
+          const p = pts[i - 1],
+            c = pts[i];
+          const cx = (p.x + c.x) / 2;
+          d += ` C${cx},${p.y} ${cx},${c.y} ${c.x},${c.y}`;
+        }
+        return d;
+      }
+
+      function smoothArea(pts) {
+        const line = smoothPath(pts);
+        if (!line) return "";
+        return line + ` L${pts[pts.length - 1].x},${SVG_H} L${pts[0].x},${SVG_H} Z`;
+      }
+
+      function getTier(p) {
+        return p >= 65 ? "clear" : p >= 50 ? "watch" : p >= 35 ? "act" : "urgent";
+      }
+      function tierColor(t) {
+        return t === "clear"
+          ? "var(--boost)"
+          : t === "watch"
+            ? "var(--himid)"
+            : t === "act"
+              ? "var(--cut)"
+              : "var(--noise)";
+      }
+
+      function renderGrid() {
+        const g = document.getElementById("gridLines");
+        g.innerHTML = "";
+        const freqs = [20, 50, 100, 250, 500, 1000, 2000, 5000, 10000, 20000];
+        freqs.forEach((f) => {
+          const x = freqToX(f);
+          g.innerHTML += `<line x1="${x}" y1="${PAD_T}" x2="${x}" y2="${SVG_H - PAD_B}" stroke="var(--bdr)" stroke-width="0.5"/>`;
+        });
+        for (let p = 0; p <= 100; p += 20) {
+          const y = pathToY(p);
+          g.innerHTML += `<line x1="${PAD_L}" y1="${y}" x2="${SVG_W - PAD_R}" y2="${y}" stroke="var(--bdr)" stroke-width="0.5"/>`;
+          g.innerHTML += `<text x="${PAD_L - 6}" y="${y + 3}" text-anchor="end" fill="var(--tx3)" font-size="8" font-family="inherit">${p}</text>`;
+        }
+        [65, 50, 35].forEach((th, i) => {
+          const y = pathToY(th);
+          const colors = ["var(--boost)", "var(--himid)", "var(--cut)"];
+          const labels = ["CLEAR", "WATCH", "ACT"];
+          g.innerHTML += `<line x1="${PAD_L}" y1="${y}" x2="${SVG_W - PAD_R}" y2="${y}" stroke="${colors[i]}" stroke-width="0.5" stroke-dasharray="4 4" opacity="0.4"/>`;
+          g.innerHTML += `<text x="${SVG_W - PAD_R + 4}" y="${y + 3}" fill="${colors[i]}" font-size="7" font-family="inherit" opacity="0.7">${labels[i]}</text>`;
+        });
+        const fl = document.getElementById("freqLabels");
+        fl.innerHTML = "";
+        freqs.forEach((f) => {
+          const label = f >= 1000 ? f / 1000 + "k" : f + "";
+          fl.innerHTML += `<span>${label}</span>`;
+        });
+      }
+
+      function renderBandRegions() {
+        const g = document.getElementById("bandRegions");
+        g.innerHTML = "";
+        BANDS.forEach((b) => {
+          const x1 = freqToX(Math.max(b.lo, 5)),
+            x2 = freqToX(b.hi);
+          const isFiltered = (b.noise && b.lo < hpf.freq) || (b.noise && b.hi > lpf.freq);
+          const op = b.noise ? 0.04 : 0.06;
+          g.innerHTML += `<rect x="${x1}" y="${PAD_T}" width="${x2 - x1}" height="${PLOT_H}" fill="${b.color}" opacity="${isFiltered ? 0.02 : op}"/>`;
+        });
+      }
+
+      function renderFilterRegions() {
+        const hg = document.getElementById("hpfRegion");
+        const lg = document.getElementById("lpfRegion");
+        const hx = freqToX(hpf.freq);
+        const lx = freqToX(lpf.freq);
+        hg.innerHTML = `<rect x="${PAD_L}" y="${PAD_T}" width="${hx - PAD_L}" height="${PLOT_H}" fill="var(--hpf)" opacity="0.06"/>
     <line x1="${hx}" y1="${PAD_T}" x2="${hx}" y2="${SVG_H - PAD_B}" stroke="var(--hpf)" stroke-width="1.5" opacity="0.5"/>
     <text x="${hx + 4}" y="${PAD_T + 10}" fill="var(--hpf)" font-size="8" font-family="inherit" opacity="0.7">HPF ${hpf.freq}Hz</text>`;
-      lg.innerHTML = `<rect x="${lx}" y="${PAD_T}" width="${SVG_W - PAD_R - lx}" height="${PLOT_H}" fill="var(--lpf)" opacity="0.06"/>
+        lg.innerHTML = `<rect x="${lx}" y="${PAD_T}" width="${SVG_W - PAD_R - lx}" height="${PLOT_H}" fill="var(--lpf)" opacity="0.06"/>
     <line x1="${lx}" y1="${PAD_T}" x2="${lx}" y2="${SVG_H - PAD_B}" stroke="var(--lpf)" stroke-width="1.5" opacity="0.5"/>
     <text x="${lx - 50}" y="${PAD_T + 10}" fill="var(--lpf)" font-size="8" font-family="inherit" opacity="0.7">LPF ${(lpf.freq / 1000).toFixed(1)}k</text>`;
-    }
-
-    function renderCurves() {
-      const base = buildCurvePoints(false);
-      const eff = buildCurvePoints(true);
-      document.getElementById("curveLine").setAttribute("d", smoothPath(base));
-      document.getElementById("curveArea").setAttribute("d", smoothArea(base));
-      if (benchIds.size > 0 || boostIds.size > 0 || cutIds.size > 0) {
-        document.getElementById("ghostLine").setAttribute("d", smoothPath(eff));
-        document.getElementById("ghostArea").setAttribute("d", smoothArea(eff));
-        document.getElementById("ghostLine").classList.add("visible");
-        document.getElementById("ghostArea").classList.add("visible");
-      } else {
-        document.getElementById("ghostLine").classList.remove("visible");
-        document.getElementById("ghostArea").classList.remove("visible");
       }
-    }
 
-    function renderDots() {
-      const g = document.getElementById("entityDots");
-      g.innerHTML = "";
-      ENTITIES.forEach(e => {
-        const ep = effectivePATH(e);
-        const bp = basePATH(e);
-        if (ep === null) return;
-        const x = freqToX(e.freq), y = pathToY(ep);
-        const tier = getTier(ep);
-        const col = benchIds.has(e.id) ? "var(--tx3)" : boostIds.has(e.id) ? "var(--boost)" : cutIds.has(e.id) ? "var(--cut)" : tierColor(tier);
-        const r = e.spikes > 0 ? 6 : 5;
-        g.innerHTML += `<circle class="entity-dot" cx="${x}" cy="${y}" r="${r}" fill="${col}" stroke="var(--bg)" stroke-width="1.5" opacity="0.9"/>`;
-        g.innerHTML += `<text x="${x}" y="${y - 10}" text-anchor="middle" fill="var(--tx)" font-size="8" font-family="inherit" font-weight="600">${e.name.split('-')[0]}</text>`;
-        if (bp !== ep) {
-          const by = pathToY(bp);
-          g.innerHTML += `<line x1="${x}" y1="${by}" x2="${x}" y2="${y}" stroke="${col}" stroke-width="0.8" stroke-dasharray="2 2" opacity="0.4"/>`;
+      function renderCurves() {
+        const base = buildCurvePoints(false);
+        const eff = buildCurvePoints(true);
+        document.getElementById("curveLine").setAttribute("d", smoothPath(base));
+        document.getElementById("curveArea").setAttribute("d", smoothArea(base));
+        if (benchIds.size > 0 || boostIds.size > 0 || cutIds.size > 0) {
+          document.getElementById("ghostLine").setAttribute("d", smoothPath(eff));
+          document.getElementById("ghostArea").setAttribute("d", smoothArea(eff));
+          document.getElementById("ghostLine").classList.add("visible");
+          document.getElementById("ghostArea").classList.add("visible");
+        } else {
+          document.getElementById("ghostLine").classList.remove("visible");
+          document.getElementById("ghostArea").classList.remove("visible");
         }
-        if (e.spikes > 0) {
-          g.innerHTML += `<text x="${x + 8}" y="${y - 4}" fill="var(--noise)" font-size="7" font-family="inherit" font-weight="700">×${e.spikes}</text>`;
-        }
-      });
-    }
+      }
 
-    function renderCouplings() {
-      const g = document.getElementById("couplingLines");
-      g.innerHTML = "";
-      if (!sweepDone) return;
-      ENTITIES.forEach(e => {
-        if (benchIds.has(e.id)) return;
-        e.coupling.forEach(cId => {
-          const target = ENTITIES.find(t => t.id === cId);
-          if (!target || benchIds.has(target.id)) return;
-          const ep1 = effectivePATH(e), ep2 = effectivePATH(target);
-          if (ep1 === null || ep2 === null) return;
-          if (ep1 < 65 || ep2 < 65) {
-            g.innerHTML += `<line class="coupling-line" x1="${freqToX(e.freq)}" y1="${pathToY(ep1)}" x2="${freqToX(target.freq)}" y2="${pathToY(ep2)}"/>`;
-          }
-        });
-      });
-    }
-
-    function renderBands() {
-      const sec = document.getElementById("bandsSection");
-      sec.innerHTML = "";
-      BANDS.filter(b => b.id !== "ultra").forEach(b => {
-        const strip = document.createElement("div");
-        strip.className = "band-strip" + (b.noise ? " noise" : "");
-        const isFiltered = b.noise && (b.hi <= hpf.freq || b.lo >= lpf.freq);
-        if (isFiltered) strip.classList.add("filtered");
-
-        const ents = ENTITIES.filter(e => e.band === b.id);
-        strip.innerHTML = `<div class="band-header" style="color:${b.color}">${b.label}</div>
-      <div class="band-range">${b.lo >= 1000 ? (b.lo / 1000) + "k" : b.lo} – ${b.hi >= 1000 ? (b.hi / 1000) + "k" : b.hi} Hz</div>
-      <div class="band-entities" id="band-${b.id}"></div>`;
-        sec.appendChild(strip);
-
-        const container = strip.querySelector(".band-entities");
-        ents.forEach(e => {
+      function renderDots() {
+        const g = document.getElementById("entityDots");
+        g.innerHTML = "";
+        ENTITIES.forEach((e) => {
           const ep = effectivePATH(e);
           const bp = basePATH(e);
-          const tier = ep !== null ? getTier(ep) : "bench";
-          const chip = document.createElement("div");
-          chip.className = "entity-chip" + (benchIds.has(e.id) ? " benched" : "") + (boostIds.has(e.id) ? " boosted" : "") + (cutIds.has(e.id) ? " cut" : "");
-          chip.onclick = () => toggleEntityAction(e.id);
-          const col = benchIds.has(e.id) ? "var(--tx3)" : boostIds.has(e.id) ? "var(--boost)" : cutIds.has(e.id) ? "var(--cut)" : tierColor(tier);
-          chip.innerHTML = `<span class="e-dot" style="background:${col}"></span>${e.name}
+          if (ep === null) return;
+          const x = freqToX(e.freq),
+            y = pathToY(ep);
+          const tier = getTier(ep);
+          const col = benchIds.has(e.id)
+            ? "var(--tx3)"
+            : boostIds.has(e.id)
+              ? "var(--boost)"
+              : cutIds.has(e.id)
+                ? "var(--cut)"
+                : tierColor(tier);
+          const r = e.spikes > 0 ? 6 : 5;
+          g.innerHTML += `<circle class="entity-dot" cx="${x}" cy="${y}" r="${r}" fill="${col}" stroke="var(--bg)" stroke-width="1.5" opacity="0.9"/>`;
+          g.innerHTML += `<text x="${x}" y="${y - 10}" text-anchor="middle" fill="var(--tx)" font-size="8" font-family="inherit" font-weight="600">${e.name.split("-")[0]}</text>`;
+          if (bp !== ep) {
+            const by = pathToY(bp);
+            g.innerHTML += `<line x1="${x}" y1="${by}" x2="${x}" y2="${y}" stroke="${col}" stroke-width="0.8" stroke-dasharray="2 2" opacity="0.4"/>`;
+          }
+          if (e.spikes > 0) {
+            g.innerHTML += `<text x="${x + 8}" y="${y - 4}" fill="var(--noise)" font-size="7" font-family="inherit" font-weight="700">×${e.spikes}</text>`;
+          }
+        });
+      }
+
+      function renderCouplings() {
+        const g = document.getElementById("couplingLines");
+        g.innerHTML = "";
+        if (!sweepDone) return;
+        ENTITIES.forEach((e) => {
+          if (benchIds.has(e.id)) return;
+          e.coupling.forEach((cId) => {
+            const target = ENTITIES.find((t) => t.id === cId);
+            if (!target || benchIds.has(target.id)) return;
+            const ep1 = effectivePATH(e),
+              ep2 = effectivePATH(target);
+            if (ep1 === null || ep2 === null) return;
+            if (ep1 < 65 || ep2 < 65) {
+              g.innerHTML += `<line class="coupling-line" x1="${freqToX(e.freq)}" y1="${pathToY(ep1)}" x2="${freqToX(target.freq)}" y2="${pathToY(ep2)}"/>`;
+            }
+          });
+        });
+      }
+
+      function renderBands() {
+        const sec = document.getElementById("bandsSection");
+        sec.innerHTML = "";
+        BANDS.filter((b) => b.id !== "ultra").forEach((b) => {
+          const strip = document.createElement("div");
+          strip.className = "band-strip" + (b.noise ? " noise" : "");
+          const isFiltered = b.noise && (b.hi <= hpf.freq || b.lo >= lpf.freq);
+          if (isFiltered) strip.classList.add("filtered");
+
+          const ents = ENTITIES.filter((e) => e.band === b.id);
+          strip.innerHTML = `<div class="band-header" style="color:${b.color}">${b.label}</div>
+      <div class="band-range">${b.lo >= 1000 ? b.lo / 1000 + "k" : b.lo} – ${b.hi >= 1000 ? b.hi / 1000 + "k" : b.hi} Hz</div>
+      <div class="band-entities" id="band-${b.id}"></div>`;
+          sec.appendChild(strip);
+
+          const container = strip.querySelector(".band-entities");
+          ents.forEach((e) => {
+            const ep = effectivePATH(e);
+            const bp = basePATH(e);
+            const tier = ep !== null ? getTier(ep) : "bench";
+            const chip = document.createElement("div");
+            chip.className =
+              "entity-chip" +
+              (benchIds.has(e.id) ? " benched" : "") +
+              (boostIds.has(e.id) ? " boosted" : "") +
+              (cutIds.has(e.id) ? " cut" : "");
+            chip.onclick = () => toggleEntityAction(e.id);
+            const col = benchIds.has(e.id)
+              ? "var(--tx3)"
+              : boostIds.has(e.id)
+                ? "var(--boost)"
+                : cutIds.has(e.id)
+                  ? "var(--cut)"
+                  : tierColor(tier);
+            chip.innerHTML = `<span class="e-dot" style="background:${col}"></span>${e.name}
         <span class="e-path" style="color:${col}">${ep !== null ? ep.toFixed(1) : "—"}</span>
         ${e.spikes > 0 ? `<span class="spike">×${e.spikes}</span>` : ""}`;
-          chip.title = `${e.name}: PATH ${bp.toFixed(1)}→${ep !== null ? ep.toFixed(1) : "benched"} | ${e.drag}`;
-          container.appendChild(chip);
+            chip.title = `${e.name}: PATH ${bp.toFixed(1)}→${ep !== null ? ep.toFixed(1) : "benched"} | ${e.drag}`;
+            container.appendChild(chip);
+          });
         });
-      });
-    }
-
-    function renderBench() {
-      const list = document.getElementById("benchList");
-      if (benchIds.size === 0) {
-        list.innerHTML = sweepDone ? "No entities benched. Click an entity to bench it." : "Run sweep to identify candidates…";
-        return;
       }
-      list.innerHTML = "";
-      ENTITIES.filter(e => benchIds.has(e.id)).forEach(e => {
-        const bp = basePATH(e);
-        const card = document.createElement("div");
-        card.className = "bench-card";
-        card.onclick = () => { benchIds.delete(e.id); render(); };
-        card.innerHTML = `<span class="b-path" style="color:var(--bench)">${bp.toFixed(1)}</span>
+
+      function renderBench() {
+        const list = document.getElementById("benchList");
+        if (benchIds.size === 0) {
+          list.innerHTML = sweepDone
+            ? "No entities benched. Click an entity to bench it."
+            : "Run sweep to identify candidates…";
+          return;
+        }
+        list.innerHTML = "";
+        ENTITIES.filter((e) => benchIds.has(e.id)).forEach((e) => {
+          const bp = basePATH(e);
+          const card = document.createElement("div");
+          card.className = "bench-card";
+          card.onclick = () => {
+            benchIds.delete(e.id);
+            render();
+          };
+          card.innerHTML = `<span class="b-path" style="color:var(--bench)">${bp.toFixed(1)}</span>
       <span class="b-name">${e.name}</span>
       <span class="b-reason">${e.drag}</span>`;
-        list.appendChild(card);
-      });
-    }
+          list.appendChild(card);
+        });
+      }
 
-    function renderOutput() {
-      const out = document.getElementById("outputContent");
-      const active = ENTITIES.filter(e => !benchIds.has(e.id));
-      const paths = active.map(e => effectivePATH(e)).filter(p => p !== null);
-      const avg = paths.reduce((a, b) => a + b, 0) / paths.length;
-      const clearN = paths.filter(p => p >= 65).length;
-      const watchN = paths.filter(p => p >= 50 && p < 65).length;
-      const actN = paths.filter(p => p < 50).length;
-      const cuts = ENTITIES.filter(e => cutIds.has(e.id));
-      const boosts = ENTITIES.filter(e => boostIds.has(e.id));
-      const benched = ENTITIES.filter(e => benchIds.has(e.id));
-      const variance = paths.reduce((s, p) => s + Math.pow(p - avg, 2), 0) / paths.length;
-      const clarity = Math.max(0, 100 - Math.sqrt(variance) - actN * 8 - watchN * 3 + clearN * 2);
-      const baseActive = ENTITIES.filter(e => !benchIds.has(e.id)).map(e => basePATH(e));
-      const baseAvg = baseActive.reduce((a, b) => a + b, 0) / baseActive.length;
-      const delta = avg - baseAvg;
+      function renderOutput() {
+        const out = document.getElementById("outputContent");
+        const active = ENTITIES.filter((e) => !benchIds.has(e.id));
+        const paths = active.map((e) => effectivePATH(e)).filter((p) => p !== null);
+        const avg = paths.reduce((a, b) => a + b, 0) / paths.length;
+        const clearN = paths.filter((p) => p >= 65).length;
+        const watchN = paths.filter((p) => p >= 50 && p < 65).length;
+        const actN = paths.filter((p) => p < 50).length;
+        const cuts = ENTITIES.filter((e) => cutIds.has(e.id));
+        const boosts = ENTITIES.filter((e) => boostIds.has(e.id));
+        const benched = ENTITIES.filter((e) => benchIds.has(e.id));
+        const variance = paths.reduce((s, p) => s + Math.pow(p - avg, 2), 0) / paths.length;
+        const clarity = Math.max(0, 100 - Math.sqrt(variance) - actN * 8 - watchN * 3 + clearN * 2);
+        const baseActive = ENTITIES.filter((e) => !benchIds.has(e.id)).map((e) => basePATH(e));
+        const baseAvg = baseActive.reduce((a, b) => a + b, 0) / baseActive.length;
+        const delta = avg - baseAvg;
 
-      let html = `<div class="output-block"><h4>Spectrum Summary</h4>
+        let html = `<div class="output-block"><h4>Spectrum Summary</h4>
     <div class="output-row"><span class="o-label">Active bands</span><span class="o-val">${active.length}/${ENTITIES.length}</span></div>
     <div class="output-row"><span class="o-label">Avg PATH</span><span class="o-val" style="color:${avg >= 65 ? "var(--boost)" : avg >= 50 ? "var(--himid)" : "var(--cut)"}">${avg.toFixed(1)} ${delta >= 0 ? "+" : ""}${delta.toFixed(1)}</span></div>
     <div class="output-row"><span class="o-label">Distribution</span><span class="o-val">${clearN}C ${watchN}W ${actN}A</span></div>
-    <div class="output-row"><span class="o-label">Benched</span><span class="o-val" style="color:var(--bench)">${benched.length} (${benched.map(e => e.name.split('-')[0]).join(', ') || '—'})</span></div>
-    <div class="output-row"><span class="o-label">Narrow cuts</span><span class="o-val" style="color:var(--cut)">${cuts.length} (${cuts.map(e => e.name.split('-')[0]).join(', ') || '—'})</span></div>
-    <div class="output-row"><span class="o-label">Wide boosts</span><span class="o-val" style="color:var(--boost)">${boosts.length} (${boosts.map(e => e.name.split('-')[0]).join(', ') || '—'})</span></div>
+    <div class="output-row"><span class="o-label">Benched</span><span class="o-val" style="color:var(--bench)">${benched.length} (${benched.map((e) => e.name.split("-")[0]).join(", ") || "—"})</span></div>
+    <div class="output-row"><span class="o-label">Narrow cuts</span><span class="o-val" style="color:var(--cut)">${cuts.length} (${cuts.map((e) => e.name.split("-")[0]).join(", ") || "—"})</span></div>
+    <div class="output-row"><span class="o-label">Wide boosts</span><span class="o-val" style="color:var(--boost)">${boosts.length} (${boosts.map((e) => e.name.split("-")[0]).join(", ") || "—"})</span></div>
   </div>`;
 
-      html += `<div class="output-block"><h4>Clarity & Transparency</h4>
+        html += `<div class="output-block"><h4>Clarity & Transparency</h4>
     <div class="output-row"><span class="o-label">Clarity score</span><span class="o-val" style="color:${clarity >= 70 ? "var(--boost)" : clarity >= 50 ? "var(--himid)" : "var(--cut)"}">${clarity.toFixed(1)}/100</span></div>
     <div class="clarity-meter"><div class="clarity-fill" style="width:${clarity}%;background:${clarity >= 70 ? "var(--boost)" : clarity >= 50 ? "var(--himid)" : "var(--cut)"}"></div></div>
     <div class="output-row" style="margin-top:6px"><span class="o-label">Variance</span><span class="o-val">${variance.toFixed(1)}</span></div>
     <div class="output-row"><span class="o-label">Transparency</span><span class="o-val">${actN === 0 ? "High" : "Low"} — ${actN === 0 ? "no ACT-tier remaining" : "ACT entities still present"}</span></div>
   </div>`;
 
-      if (sweepDone) {
-        const couplings = [];
-        ENTITIES.forEach(e => { if (!benchIds.has(e.id)) e.coupling.forEach(c => { const t = ENTITIES.find(x => x.id === c); if (t && !benchIds.has(t.id)) { const ep = effectivePATH(e), tp = effectivePATH(t); if (ep < 65 || tp < 65) couplings.push(`${e.name.split('-')[0]}↔${t.name.split('-')[0]}`) } }) });
-        const uniqueC = [...new Set(couplings)];
-        html += `<div class="output-block"><h4>Coupling Analysis</h4>
+        if (sweepDone) {
+          const couplings = [];
+          ENTITIES.forEach((e) => {
+            if (!benchIds.has(e.id))
+              e.coupling.forEach((c) => {
+                const t = ENTITIES.find((x) => x.id === c);
+                if (t && !benchIds.has(t.id)) {
+                  const ep = effectivePATH(e),
+                    tp = effectivePATH(t);
+                  if (ep < 65 || tp < 65)
+                    couplings.push(`${e.name.split("-")[0]}↔${t.name.split("-")[0]}`);
+                }
+              });
+          });
+          const uniqueC = [...new Set(couplings)];
+          html += `<div class="output-block"><h4>Coupling Analysis</h4>
       <div class="output-row"><span class="o-label">Active couplings</span><span class="o-val" style="color:${uniqueC.length > 0 ? "var(--noise)" : "var(--boost)"}">${uniqueC.length}</span></div>
-      ${uniqueC.map(c => `<div class="output-row"><span class="o-label" style="color:var(--noise)">⚡</span><span class="o-val" style="font-size:9px">${c}</span></div>`).join('')}
-      ${uniqueC.length === 0 ? '<div class="output-row"><span class="o-label">Status</span><span class="o-val" style="color:var(--boost)">Clean — no failure magnetism</span></div>' : ''}
+      ${uniqueC.map((c) => `<div class="output-row"><span class="o-label" style="color:var(--noise)">⚡</span><span class="o-val" style="font-size:9px">${c}</span></div>`).join("")}
+      ${uniqueC.length === 0 ? '<div class="output-row"><span class="o-label">Status</span><span class="o-val" style="color:var(--boost)">Clean — no failure magnetism</span></div>' : ""}
     </div>`;
 
-        const sweetSpots = ENTITIES.filter(e => !benchIds.has(e.id) && effectivePATH(e) >= 75).sort((a, b) => effectivePATH(b) - effectivePATH(a));
-        if (sweetSpots.length > 0) {
-          html += `<div class="output-block"><h4>Sweet Spots (Resonance Peaks)</h4>
-        ${sweetSpots.map(e => { const ep = effectivePATH(e); return `<div class="output-row"><span class="o-label" style="color:var(--boost)">${e.name}</span><span class="o-val">${ep.toFixed(1)} @ ${e.freq >= 1000 ? (e.freq / 1000) + "kHz" : e.freq + "Hz"}</span></div>` }).join('')}
+          const sweetSpots = ENTITIES.filter(
+            (e) => !benchIds.has(e.id) && effectivePATH(e) >= 75,
+          ).sort((a, b) => effectivePATH(b) - effectivePATH(a));
+          if (sweetSpots.length > 0) {
+            html += `<div class="output-block"><h4>Sweet Spots (Resonance Peaks)</h4>
+        ${sweetSpots
+          .map((e) => {
+            const ep = effectivePATH(e);
+            return `<div class="output-row"><span class="o-label" style="color:var(--boost)">${e.name}</span><span class="o-val">${ep.toFixed(1)} @ ${e.freq >= 1000 ? e.freq / 1000 + "kHz" : e.freq + "Hz"}</span></div>`;
+          })
+          .join("")}
       </div>`;
+          }
         }
+        out.innerHTML = html;
       }
-      out.innerHTML = html;
-    }
 
-    function toggleEntityAction(id) {
-      if (benchIds.has(id)) { benchIds.delete(id); cutIds.delete(id); boostIds.delete(id); }
-      else {
-        const e = ENTITIES.find(x => x.id === id);
-        const p = basePATH(e);
-        if (p < 50) benchIds.add(id);
-        else if (p < 65) { cutIds.has(id) ? cutIds.delete(id) : cutIds.add(id); }
-        else { boostIds.has(id) ? boostIds.delete(id) : boostIds.add(id); }
-      }
-      render();
-    }
-
-    function render() {
-      renderBandRegions(); renderFilterRegions(); renderCurves(); renderDots(); renderCouplings(); renderBands(); renderBench(); renderOutput();
-    }
-
-    function onFilterChange() {
-      hpf.freq = +document.getElementById("hpfFreq").value;
-      hpf.slope = +document.getElementById("hpfSlope").value;
-      lpf.freq = +document.getElementById("lpfFreq").value;
-      lpf.slope = +document.getElementById("lpfSlope").value;
-      document.getElementById("hpfFreqVal").textContent = hpf.freq + " Hz";
-      document.getElementById("hpfSlopeVal").textContent = hpf.slope + " dB/oct";
-      document.getElementById("lpfFreqVal").textContent = (lpf.freq / 1000).toFixed(1) + " kHz";
-      document.getElementById("lpfSlopeVal").textContent = lpf.slope + " dB/oct";
-      render();
-    }
-
-    function onBoostChange() {
-      boostGain = +document.getElementById("boostGain").value / 10;
-      boostQ = +document.getElementById("boostQ").value / 100;
-      document.getElementById("boostGainVal").textContent = "+" + boostGain.toFixed(1) + " dB";
-      document.getElementById("boostQVal").textContent = "Q " + boostQ.toFixed(2);
-      render();
-    }
-
-    function onCutChange() {
-      cutDepth = +document.getElementById("cutDepth").value / 10;
-      cutQ = +document.getElementById("cutQ").value / 100;
-      document.getElementById("cutDepthVal").textContent = "-" + cutDepth.toFixed(1) + " dB";
-      document.getElementById("cutQVal").textContent = "Q " + cutQ.toFixed(2);
-      render();
-    }
-
-    function runSweep() {
-      const btn = document.getElementById("sweepBtn");
-      btn.classList.add("running");
-      btn.textContent = "Sweeping…";
-      const line = document.getElementById("sweepLine");
-      line.classList.add("active");
-      let pos = PAD_L;
-      const step = (SVG_W - PAD_L - PAD_R) / 120;
-      const sortedEnts = [...ENTITIES].sort((a, b) => a.freq - b.freq);
-      let entIdx = 0;
-
-      const interval = setInterval(() => {
-        pos += step;
-        line.setAttribute("x1", pos); line.setAttribute("x2", pos);
-        while (entIdx < sortedEnts.length && freqToX(sortedEnts[entIdx].freq) <= pos) {
-          const e = sortedEnts[entIdx];
+      function toggleEntityAction(id) {
+        if (benchIds.has(id)) {
+          benchIds.delete(id);
+          cutIds.delete(id);
+          boostIds.delete(id);
+        } else {
+          const e = ENTITIES.find((x) => x.id === id);
           const p = basePATH(e);
-          if (p < 40) { benchIds.add(e.id); }
-          else if (p < 55 && e.failRate > 0.05) { cutIds.add(e.id); }
-          else if (p >= 80 && e.failRate === 0 && e.spikes === 0) { boostIds.add(e.id); }
-          entIdx++;
-          render();
+          if (p < 50) benchIds.add(id);
+          else if (p < 65) {
+            cutIds.has(id) ? cutIds.delete(id) : cutIds.add(id);
+          } else {
+            boostIds.has(id) ? boostIds.delete(id) : boostIds.add(id);
+          }
         }
-        if (pos >= SVG_W - PAD_R) {
-          clearInterval(interval);
-          line.classList.remove("active");
-          btn.classList.remove("running");
-          btn.textContent = "▶ Re-sweep";
-          sweepDone = true;
-          render();
-        }
-      }, 30);
-    }
+        render();
+      }
 
-    function resetAll() {
-      benchIds.clear(); boostIds.clear(); cutIds.clear(); sweepDone = false;
-      hpf = { freq: 20, slope: 24 }; lpf = { freq: 19000, slope: 24 };
-      boostGain = 1.5; boostQ = 0.12; cutDepth = 4.0; cutQ = 0.60;
-      document.getElementById("hpfFreq").value = 20;
-      document.getElementById("hpfSlope").value = 24;
-      document.getElementById("lpfFreq").value = 19000;
-      document.getElementById("lpfSlope").value = 24;
-      document.getElementById("boostGain").value = 15;
-      document.getElementById("boostQ").value = 12;
-      document.getElementById("cutDepth").value = 40;
-      document.getElementById("cutQ").value = 60;
-      onFilterChange(); onBoostChange(); onCutChange();
+      function render() {
+        renderBandRegions();
+        renderFilterRegions();
+        renderCurves();
+        renderDots();
+        renderCouplings();
+        renderBands();
+        renderBench();
+        renderOutput();
+      }
+
+      function onFilterChange() {
+        hpf.freq = +document.getElementById("hpfFreq").value;
+        hpf.slope = +document.getElementById("hpfSlope").value;
+        lpf.freq = +document.getElementById("lpfFreq").value;
+        lpf.slope = +document.getElementById("lpfSlope").value;
+        document.getElementById("hpfFreqVal").textContent = hpf.freq + " Hz";
+        document.getElementById("hpfSlopeVal").textContent = hpf.slope + " dB/oct";
+        document.getElementById("lpfFreqVal").textContent = (lpf.freq / 1000).toFixed(1) + " kHz";
+        document.getElementById("lpfSlopeVal").textContent = lpf.slope + " dB/oct";
+        render();
+      }
+
+      function onBoostChange() {
+        boostGain = +document.getElementById("boostGain").value / 10;
+        boostQ = +document.getElementById("boostQ").value / 100;
+        document.getElementById("boostGainVal").textContent = "+" + boostGain.toFixed(1) + " dB";
+        document.getElementById("boostQVal").textContent = "Q " + boostQ.toFixed(2);
+        render();
+      }
+
+      function onCutChange() {
+        cutDepth = +document.getElementById("cutDepth").value / 10;
+        cutQ = +document.getElementById("cutQ").value / 100;
+        document.getElementById("cutDepthVal").textContent = "-" + cutDepth.toFixed(1) + " dB";
+        document.getElementById("cutQVal").textContent = "Q " + cutQ.toFixed(2);
+        render();
+      }
+
+      function runSweep() {
+        const btn = document.getElementById("sweepBtn");
+        btn.classList.add("running");
+        btn.textContent = "Sweeping…";
+        const line = document.getElementById("sweepLine");
+        line.classList.add("active");
+        let pos = PAD_L;
+        const step = (SVG_W - PAD_L - PAD_R) / 120;
+        const sortedEnts = [...ENTITIES].sort((a, b) => a.freq - b.freq);
+        let entIdx = 0;
+
+        const interval = setInterval(() => {
+          pos += step;
+          line.setAttribute("x1", pos);
+          line.setAttribute("x2", pos);
+          while (entIdx < sortedEnts.length && freqToX(sortedEnts[entIdx].freq) <= pos) {
+            const e = sortedEnts[entIdx];
+            const p = basePATH(e);
+            if (p < 40) {
+              benchIds.add(e.id);
+            } else if (p < 55 && e.failRate > 0.05) {
+              cutIds.add(e.id);
+            } else if (p >= 80 && e.failRate === 0 && e.spikes === 0) {
+              boostIds.add(e.id);
+            }
+            entIdx++;
+            render();
+          }
+          if (pos >= SVG_W - PAD_R) {
+            clearInterval(interval);
+            line.classList.remove("active");
+            btn.classList.remove("running");
+            btn.textContent = "▶ Re-sweep";
+            sweepDone = true;
+            render();
+          }
+        }, 30);
+      }
+
+      function resetAll() {
+        benchIds.clear();
+        boostIds.clear();
+        cutIds.clear();
+        sweepDone = false;
+        hpf = { freq: 20, slope: 24 };
+        lpf = { freq: 19000, slope: 24 };
+        boostGain = 1.5;
+        boostQ = 0.12;
+        cutDepth = 4.0;
+        cutQ = 0.6;
+        document.getElementById("hpfFreq").value = 20;
+        document.getElementById("hpfSlope").value = 24;
+        document.getElementById("lpfFreq").value = 19000;
+        document.getElementById("lpfSlope").value = 24;
+        document.getElementById("boostGain").value = 15;
+        document.getElementById("boostQ").value = 12;
+        document.getElementById("cutDepth").value = 40;
+        document.getElementById("cutQ").value = 60;
+        onFilterChange();
+        onBoostChange();
+        onCutChange();
+        render();
+      }
+
+      function takeSnapshot() {
+        const active = ENTITIES.filter((e) => !benchIds.has(e.id));
+        const paths = active
+          .map((e) => ({ id: e.id, name: e.name, path: effectivePATH(e) }))
+          .filter((p) => p.path !== null);
+        snapshots.push({
+          ts: new Date().toISOString(),
+          weights: { ...weights },
+          hpf: { ...hpf },
+          lpf: { ...lpf },
+          boostGain,
+          boostQ,
+          cutDepth,
+          cutQ,
+          benched: [...benchIds],
+          boosted: [...boostIds],
+          cuts: [...cutIds],
+          paths,
+          sweepDone,
+        });
+        const btn = document.querySelector(".hdr-r button:nth-child(3)");
+        btn.textContent = `${snapshots.length} snaps`;
+        setTimeout(() => (btn.textContent = "Snapshot"), 1500);
+      }
+
+      function exportOutput() {
+        const active = ENTITIES.filter((e) => !benchIds.has(e.id));
+        const paths = active.map((e) => ({
+          id: e.id,
+          name: e.name,
+          freq: e.freq,
+          basePATH: basePATH(e).toFixed(2),
+          effectivePATH: (effectivePATH(e) || 0).toFixed(2),
+          tier: getTier(effectivePATH(e) || 0),
+          status: benchIds.has(e.id)
+            ? "benched"
+            : boostIds.has(e.id)
+              ? "boosted"
+              : cutIds.has(e.id)
+                ? "cut"
+                : "active",
+        }));
+        const state = {
+          exportedAt: new Date().toISOString(),
+          filters: { hpf: { ...hpf }, lpf: { ...lpf } },
+          eq: { boostGain, boostQ, cutDepth, cutQ },
+          benched: [...benchIds],
+          boosted: [...boostIds],
+          cuts: [...cutIds],
+          entities: paths,
+          snapshots: snapshots.length,
+        };
+        const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = `parametric-eq-${Date.now()}.json`;
+        a.click();
+      }
+
+      renderGrid();
       render();
-    }
-
-    function takeSnapshot() {
-      const active = ENTITIES.filter(e => !benchIds.has(e.id));
-      const paths = active.map(e => ({ id: e.id, name: e.name, path: effectivePATH(e) })).filter(p => p.path !== null);
-      snapshots.push({
-        ts: new Date().toISOString(),
-        weights: { ...weights }, hpf: { ...hpf }, lpf: { ...lpf },
-        boostGain, boostQ, cutDepth, cutQ,
-        benched: [...benchIds], boosted: [...boostIds], cuts: [...cutIds],
-        paths, sweepDone
-      });
-      const btn = document.querySelector('.hdr-r button:nth-child(3)');
-      btn.textContent = `${snapshots.length} snaps`;
-      setTimeout(() => btn.textContent = "Snapshot", 1500);
-    }
-
-    function exportOutput() {
-      const active = ENTITIES.filter(e => !benchIds.has(e.id));
-      const paths = active.map(e => ({ id: e.id, name: e.name, freq: e.freq, basePATH: basePATH(e).toFixed(2), effectivePATH: (effectivePATH(e) || 0).toFixed(2), tier: getTier(effectivePATH(e) || 0), status: benchIds.has(e.id) ? "benched" : boostIds.has(e.id) ? "boosted" : cutIds.has(e.id) ? "cut" : "active" }));
-      const state = {
-        exportedAt: new Date().toISOString(),
-        filters: { hpf: { ...hpf }, lpf: { ...lpf } },
-        eq: { boostGain, boostQ, cutDepth, cutQ },
-        benched: [...benchIds], boosted: [...boostIds], cuts: [...cutIds],
-        entities: paths, snapshots: snapshots.length
-      };
-      const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = `parametric-eq-${Date.now()}.json`;
-      a.click();
-    }
-
-    renderGrid();
-    render();
-  </script>
-</body>
-
+    </script>
+  </body>
 </html>

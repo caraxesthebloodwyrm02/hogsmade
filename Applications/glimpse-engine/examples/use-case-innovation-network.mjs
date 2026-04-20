@@ -553,7 +553,9 @@ const result = runContextPipeline(innovationData, "json", comprehensiveConfig);
 console.log("📊 Dataset Overview");
 console.log(`   Total Innovations: ${result.profile.recordCount}`);
 console.log(
-  `   Time Span: ${Math.min(...innovationData.map((d) => d.year))} - ${Math.max(...innovationData.map((d) => d.year))}`,
+  `   Time Span: ${Math.min(...innovationData.map((d) => d.year))} - ${Math.max(
+    ...innovationData.map((d) => d.year),
+  )}`,
 );
 console.log(
   `   Dimensions: ${Object.entries(result.profile.dimensionMap)
@@ -567,7 +569,9 @@ result.contextLenses.forEach((lens, i) => {
     (e) => result.facts.entityLensScores[e.id]?.[lens.id],
   ).length;
   console.log(
-    `   ${i + 1}. ${lens.label} (score: ${lens.score.toFixed(2)}, role: ${lens.role}, ${entityCount} entities)`,
+    `   ${i + 1}. ${lens.label} (score: ${lens.score.toFixed(2)}, role: ${
+      lens.role
+    }, ${entityCount} entities)`,
   );
 });
 console.log();

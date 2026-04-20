@@ -11,6 +11,7 @@ import {
   openEvolutionCase,
   recordCycleSignal,
   recordHandoff,
+  updateCaseArgs,
   upsertEndpointSpec,
 } from "./evolution.js";
 import { getFixtureCandidates } from "./examples.js";
@@ -154,14 +155,10 @@ export function evaluateCandidateHandler(input: {
   const candidates = ensureCandidates(input);
   const evaluation = safeEvaluateRoutine(candidates, shapeArgs(input.args));
   const auditStatus = getEvaluationAuditStatus(evaluation.validation);
-  void emitEligibilityAudit(
-    "evaluate_candidate",
-    auditStatus,
-    {
-      candidateCount: candidates.length,
-      reason: auditStatus === "dry_run" ? "no_candidates_provided" : undefined,
-    } as Record<string, unknown>,
-  );
+  void emitEligibilityAudit("evaluate_candidate", auditStatus, {
+    candidateCount: candidates.length,
+    reason: auditStatus === "dry_run" ? "no_candidates_provided" : undefined,
+  } as Record<string, unknown>);
   return evaluation;
 }
 
@@ -317,6 +314,15 @@ export function upsertEndpointSpecHandler(input: {
   return result;
 }
 
+export function updateCaseArgsHandler(input: { caseId: string; args: Partial<RoutineArgs> }) {
+  const result = updateCaseArgs(input);
+  void emitEligibilityAudit("update_case_args", "success", {
+    caseId: input.caseId,
+    args: input.args,
+  } as Record<string, unknown>);
+  return result;
+}
+
 export function advanceCycleHandler(input: {
   caseId: string;
   direction?: "forward" | "return";
@@ -359,6 +365,8 @@ export function buildServer(): McpServer {
     {},
     async () => toJsonText(listAttributeCatalogHandler()),
   );
+
+  // NEXT: ProximityWindow → cycle_signal feed (future)
 
   tool(
     "evaluate_candidate",
@@ -492,11 +500,23 @@ export function buildServer(): McpServer {
   );
 
   tool(
+    "update_case_args",
+    "Update the stored RoutineArgs for an evolution case, then refresh scores and conditions in memory.",
+    {
+      caseId: z.string().describe("Case id to update."),
+      args: argsSchema.describe("New argument values to merge into the stored case args."),
+    },
+    async (input: any) => toJsonText(updateCaseArgsHandler(input)),
+  );
+
+  tool(
     "advance_cycle",
     "Advance the cycle one beat forward or return it one beat backward.",
     {
       caseId: z.string().describe("Case id to advance."),
-      direction: z.enum(["forward", "return"]).describe("Direction to move: 'forward' or 'return'."),
+      direction: z
+        .enum(["forward", "return"])
+        .describe("Direction to move: 'forward' or 'return'."),
       reason: z.string().optional().describe("Optional reason for the advance."),
     },
     async (input: any) => toJsonText(advanceCycleHandler(input)),
@@ -517,7 +537,7 @@ export function buildServer(): McpServer {
     {},
     async () => {
       const result = checkTheLine();
-      void emitEligibilityAudit("check_the_line", result.clean ? "success" : "failure", {
+      void emitEligibilityAudit("check_the_line", result.errorCount === 0 ? "success" : "failure", {
         errorCount: result.errorCount,
         warningCount: result.warningCount,
         fixableCount: result.fixableCount,
@@ -532,7 +552,7 @@ export function buildServer(): McpServer {
     {},
     async () => {
       const result = holdTheLine();
-      void emitEligibilityAudit("hold_the_line", result.clean ? "success" : "failure", {
+      void emitEligibilityAudit("hold_the_line", result.errorCount === 0 ? "success" : "failure", {
         errorCount: result.errorCount,
         warningCount: result.warningCount,
         fixedCount: result.fixedCount,

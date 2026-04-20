@@ -306,7 +306,9 @@ export class PatternRegistry {
    * Generate stable dataset ID for caching
    */
   generateDatasetId(context) {
-    const key = `${context.profile?.recordCount || 0}-${context.profile?.columns?.length || 0}-${context.entities?.length || 0}`;
+    const key = `${context.profile?.recordCount || 0}-${context.profile?.columns?.length || 0}-${
+      context.entities?.length || 0
+    }`;
     return slugify(key);
   }
 

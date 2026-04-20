@@ -287,7 +287,9 @@ export function statusTable(items, opts = {}) {
     const ico = item.icon || icon(item.status || item.health || item.mood);
     const detail = item.detail ? ` ${item.detail}` : "";
     console.log(
-      `  ${ico} ${(item.name || "").padEnd(maxName + 2)} ${(item.status || "").padEnd(14)} ${item.health || ""}${detail}`,
+      `  ${ico} ${(item.name || "").padEnd(maxName + 2)} ${(item.status || "").padEnd(14)} ${
+        item.health || ""
+      }${detail}`,
     );
   });
 }

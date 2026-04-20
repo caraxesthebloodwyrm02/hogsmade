@@ -103,7 +103,9 @@ registerSignal("churn_accelerating", "file", (ctx, args) => {
     value: accelerating.length,
     reason:
       accelerating.length > 0
-        ? `${accelerating.length} file${accelerating.length > 1 ? "s" : ""} with accelerating churn (${accelerating
+        ? `${accelerating.length} file${
+            accelerating.length > 1 ? "s" : ""
+          } with accelerating churn (${accelerating
             .slice(0, 2)
             .map((f) => f.name)
             .join(", ")})`
@@ -137,7 +139,9 @@ registerSignal("consecutive_file", "file", (ctx, args) => {
     value: streakFiles.length,
     reason:
       streakFiles.length > 0
-        ? `${streakFiles.length} file${streakFiles.length > 1 ? "s" : ""} in ${Object.values(fileStreaks)[0]}+ consecutive sessions`
+        ? `${streakFiles.length} file${streakFiles.length > 1 ? "s" : ""} in ${
+            Object.values(fileStreaks)[0]
+          }+ consecutive sessions`
         : "no consecutive file streaks",
     payload: { streaks: fileStreaks },
   };
@@ -156,7 +160,9 @@ registerSignal("file_vector_shift", "file", (ctx, args) => {
     value: shifted.length,
     reason:
       shifted.length > 0
-        ? `${shifted.length} file${shifted.length > 1 ? "s" : ""} shifted vector (e.g. ${shifted[0]?.name}: was ${topKey(fileIndex[shifted[0]?.path]?.vectors)}, now ${shifted[0]?.vector})`
+        ? `${shifted.length} file${shifted.length > 1 ? "s" : ""} shifted vector (e.g. ${
+            shifted[0]?.name
+          }: was ${topKey(fileIndex[shifted[0]?.path]?.vectors)}, now ${shifted[0]?.vector})`
         : "file vectors are consistent with history",
     payload: {
       files: shifted.map((f) => ({
@@ -189,7 +195,9 @@ registerSignal("home_turf", "directory", (ctx, args) => {
     value: familiar.length,
     reason:
       familiar.length > 0
-        ? `${familiar.length} dir${familiar.length > 1 ? "s" : ""} are home turf (${familiar.slice(0, 3).join(", ")})`
+        ? `${familiar.length} dir${familiar.length > 1 ? "s" : ""} are home turf (${familiar
+            .slice(0, 3)
+            .join(", ")})`
         : "no familiar directories",
     payload: { dirs: familiar },
   };
@@ -233,7 +241,9 @@ registerSignal("abandoned_zone", "directory", (ctx, args) => {
     value: returning.length,
     reason:
       returning.length > 0
-        ? `returning to ${returning.length} abandoned area${returning.length > 1 ? "s" : ""} (${returning.join(", ")})`
+        ? `returning to ${returning.length} abandoned area${
+            returning.length > 1 ? "s" : ""
+          } (${returning.join(", ")})`
         : "no abandoned zones revisited",
     payload: { dirs: returning },
   };
@@ -328,8 +338,12 @@ registerSignal("project_hopping", "project", (ctx, args) => {
     value: projects.size,
     reason:
       projects.size >= minProjects
-        ? `${projects.size} different projects in last ${windowSize} sessions (${[...projects].join(", ")})`
-        : `staying focused: ${projects.size} project${projects.size > 1 ? "s" : ""} in last ${windowSize} sessions`,
+        ? `${projects.size} different projects in last ${windowSize} sessions (${[...projects].join(
+            ", ",
+          )})`
+        : `staying focused: ${projects.size} project${
+            projects.size > 1 ? "s" : ""
+          } in last ${windowSize} sessions`,
     payload: { projects: [...projects] },
   };
 });
@@ -371,7 +385,9 @@ registerSignal("is_deep", "shape", (ctx, args) => {
     matched: deep,
     value: dirs.length,
     reason: deep
-      ? `deep session: ${ctx.records.length} files in ${dirs.length} dir${dirs.length > 1 ? "s" : ""}`
+      ? `deep session: ${ctx.records.length} files in ${dirs.length} dir${
+          dirs.length > 1 ? "s" : ""
+        }`
       : "not a deep session",
   };
 });

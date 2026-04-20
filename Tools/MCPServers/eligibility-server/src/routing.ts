@@ -9,8 +9,11 @@
  * Follows the same patterns as grid-server, lots-server, maintain-server.
  */
 
+import type { AuditEvent } from "@cascade/shared-types/audit-client";
 import { emitAudit } from "@cascade/shared-types/audit-client";
-import type { AuditEvent } from "@cascade/shared-types";
+import type { TraceContext } from "@cascade/shared-types/trace-context";
+import { createChildSpan, createRootSpan, extractTrace } from "@cascade/shared-types/trace-context";
+import { MAX_METADATA_VALUE_LENGTH, sanitizeAuditMetadata } from "./sanitize.js";
 
 // ── Constants ──
 
@@ -38,6 +41,10 @@ export interface EligibilityAuditMetadata {
   weight?: number;
   durationMs?: number;
   error?: string;
+  /** W3C trace-id for cross-service correlation (populated when trace propagation is active). */
+  traceId?: TraceContext["traceId"];
+  /** W3C span-id for cross-service correlation (populated when trace propagation is active). */
+  spanId?: TraceContext["spanId"];
 }
 
 // ── Audit Helpers ──
@@ -50,11 +57,14 @@ export async function emitEligibilityAudit(
   tool: string,
   status: AuditEvent["status"],
   metadata?: EligibilityAuditMetadata,
+  trace?: { traceId: string; spanId: string },
 ): Promise<void> {
   const event: Omit<AuditEvent, "timestamp"> = {
     source: SERVER_NAME,
     tool,
     status,
+    traceId: trace?.traceId,
+    spanId: trace?.spanId,
     metadata: metadata as Record<string, unknown> | undefined,
   };
   await emitAudit(event);
@@ -72,23 +82,41 @@ export function withAudit(
 ): (...args: unknown[]) => Promise<unknown> {
   return async (...args: unknown[]) => {
     const startTime = Date.now();
+    // Extract W3C trace context from tool arguments (if provided by caller)
+    const rawArgs = (args[0] as Record<string, unknown>) ?? {};
+    const incomingTrace: TraceContext | null = extractTrace(rawArgs);
+    const span = incomingTrace ? createChildSpan(incomingTrace) : createRootSpan();
+    const trace = { traceId: span.traceId, spanId: span.spanId };
     try {
       const result = await handler(...args);
       const durationMs = Date.now() - startTime;
-      const metadata = args[0] as Record<string, unknown> | undefined;
-      await emitEligibilityAudit(toolName, "success", {
-        ...(metadata ?? {}),
-        durationMs,
-      });
+      const metadata = sanitizeAuditMetadata(rawArgs);
+      await emitEligibilityAudit(
+        toolName,
+        "success",
+        {
+          ...(metadata ?? {}),
+          durationMs,
+        },
+        trace,
+      );
       return result;
     } catch (error) {
       const durationMs = Date.now() - startTime;
-      const metadata = args[0] as Record<string, unknown> | undefined;
-      await emitEligibilityAudit(toolName, "failure", {
-        ...(metadata ?? {}),
-        durationMs,
-        error: error instanceof Error ? error.message : String(error),
-      });
+      const metadata = sanitizeAuditMetadata(rawArgs);
+      await emitEligibilityAudit(
+        toolName,
+        "failure",
+        {
+          ...(metadata ?? {}),
+          durationMs,
+          error:
+            error instanceof Error
+              ? error.message
+              : String(error).slice(0, MAX_METADATA_VALUE_LENGTH),
+        },
+        trace,
+      );
       throw error;
     }
   };

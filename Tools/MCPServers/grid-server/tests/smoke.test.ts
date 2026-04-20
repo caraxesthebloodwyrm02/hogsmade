@@ -71,12 +71,17 @@ describe("grid-server smoke", () => {
       isError?: boolean;
       content?: Array<{ type: string; text?: string }>;
     };
-    expect(health.isError).toBe(true);
-    expect(targets.isError).toBe(true);
+    // Merit guard wraps successful handler results — no isError on success
+    expect(health.isError).not.toBe(true);
+    expect(targets.isError).not.toBe(true);
     const healthPayload = JSON.parse(health.content?.[0]?.text ?? "{}");
     const targetsPayload = JSON.parse(targets.content?.[0]?.text ?? "{}");
-    expect(healthPayload.code).toBe("NO_GRID_API");
-    expect(targetsPayload.code).toBe("NO_GRID_API");
+    // Merit guard nests the handler return under .result
+    expect(healthPayload.result).toBeDefined();
+    expect(healthPayload.result.server).toBe("grid-server");
+    expect(healthPayload._meta).toBeDefined();
+    expect(targetsPayload.result).toBeDefined();
+    expect(targetsPayload._meta).toBeDefined();
   });
 
   it("admission_compliance_check falls back locally on SAFETY_UNAVAILABLE", async () => {

@@ -1,6 +1,6 @@
 # Bangladesh Revenue Cycle — Tables & Mermaid View
 
-**Scope:** Revenue generation cycle and gestures that define when revenue is generated. Operations from Dhaka; last 6 months (Jul–Dec 2025 / FY2025-26 H1).  
+**Scope:** Revenue generation cycle and gestures that define when revenue is generated. Operations from Dhaka; last 6 months (Jul–Dec 2025 / FY2025-26 H1).
 **Focus:** Revenue streams where **you can be the direct beneficiary** (remittance, export, e‑commerce, FDI, domestic business). Government tax (NBR) is excluded — you are not the sole beneficiary of the state.
 
 ---
@@ -109,7 +109,7 @@ _Not in scope: NBR tax — government revenue; you are not the sole beneficiary.
 
 ## 6. Simple explanations (like you’re 19) — direct-beneficiary only
 
-**Revenue** = money that actually comes in **to you** and gets counted. It’s not “we might get paid” — it’s “the money hit **your** account” or “**your** sale is done.”  
+**Revenue** = money that actually comes in **to you** and gets counted. It’s not “we might get paid” — it’s “the money hit **your** account” or “**your** sale is done.”
 _Government tax (NBR) doesn’t apply as “your” revenue — you’re not the sole beneficiary of the state._
 
 **Revenue sources that can apply to you (what brings in the money)**

@@ -20,7 +20,9 @@ export function field_pattern(context, args) {
     value: matches.length,
     score: clamp(matches.length / Math.max(descriptors.length, 1), 0, 1),
     reason: matches.length
-      ? `${matches.length} field(s) match pattern /${args.pattern}/: ${matches.map((m) => m.name).join(", ")}.`
+      ? `${matches.length} field(s) match pattern /${args.pattern}/: ${matches
+          .map((m) => m.name)
+          .join(", ")}.`
       : `No fields match pattern /${args.pattern}/.`,
     payload: { matchedFields: matches.map((m) => m.name) },
   };
@@ -110,7 +112,9 @@ export function temporal_distance(context, args) {
     matched: clusteringScore > 0.3,
     value: closePairs,
     score: clusteringScore,
-    reason: `${closePairs} temporal pairs within ${args.max_gap || 10} years (clustering: ${(clusteringScore * 100).toFixed(1)}%).`,
+    reason: `${closePairs} temporal pairs within ${args.max_gap || 10} years (clustering: ${(
+      clusteringScore * 100
+    ).toFixed(1)}%).`,
   };
 }
 
@@ -260,7 +264,9 @@ export function record_range(context, args) {
     matched: n >= min && n <= max,
     value: n,
     score: clamp(n / Math.max(max, 1), 0, 1),
-    reason: `Record count ${n} is ${n >= min && n <= max ? "within" : "outside"} range [${min}, ${max}].`,
+    reason: `Record count ${n} is ${
+      n >= min && n <= max ? "within" : "outside"
+    } range [${min}, ${max}].`,
     payload: { recordCount: n, min, max, inRange: n >= min && n <= max },
   };
 }
@@ -284,7 +290,9 @@ export function data_shape(context, args) {
     matched: n >= Number(args.min_records || 1),
     value: n,
     score: complexity,
-    reason: `Dataset has ${n} records, ${totalDims} fields (${numericCount} numeric, ${stringCount} categorical). Complexity: ${complexity.toFixed(2)}.`,
+    reason: `Dataset has ${n} records, ${totalDims} fields (${numericCount} numeric, ${stringCount} categorical). Complexity: ${complexity.toFixed(
+      2,
+    )}.`,
     payload: {
       recordCount: n,
       dimensions: totalDims,

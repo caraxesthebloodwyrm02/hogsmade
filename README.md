@@ -21,13 +21,13 @@ This root repo is the dedicated local repository for the workspace. It tracks sh
 
 ### Key Versions (April 2026)
 
-| Component | Version | Notes |
-|-----------|---------|-------|
-| GRID (Python) | 2.8.0 | `Projects/GRID-main` submodule |
-| TypeScript | ~6.0.2 | All TS packages + GRID frontend |
-| Node.js | 22 | CI and local |
-| Python | 3.13 | All Python projects |
-| MCP SDK | ^1.28.0 | TypeScript MCP servers |
+| Component     | Version | Notes                           |
+| ------------- | ------- | ------------------------------- |
+| GRID (Python) | 2.8.0   | `Projects/GRID-main` submodule  |
+| TypeScript    | ~6.0.2  | All TS packages + GRID frontend |
+| Node.js       | 22      | CI and local                    |
+| Python        | 3.13    | All Python projects             |
+| MCP SDK       | ^1.28.0 | TypeScript MCP servers          |
 
 No packages are published to npm (monorepo is private). See [Documentation/docs/NPM_RELEASE_STRATEGY.md](Documentation/docs/NPM_RELEASE_STRATEGY.md).
 
@@ -35,51 +35,51 @@ No packages are published to npm (monorepo is private). See [Documentation/docs/
 
 ### First-Party Servers
 
-| Project | Type | Location | Notes |
-| --- | --- | --- | --- |
-| `afloat-server` | MCP server | `Tools/MCPServers/afloat-server/` | Workflow orchestration and scheduled diagnostics |
-| `echoes-server` | MCP server | `Tools/MCPServers/echoes-server/` | Audit and telemetry persistence |
-| `grid-server` | MCP server | `Tools/MCPServers/grid-server/` | GRID/GATE integration helpers |
-| `lots-server` | MCP server | `Tools/MCPServers/lots-server/` | Experiment catalog, runner, suggestions |
-| `maintain-server` | MCP server | `Tools/MCPServers/maintain-server/` | Diagnostics, cleanup, maintenance flows |
-| `pulse-server` | MCP server | `Tools/MCPServers/pulse-server/` | Briefings, focus, journal, prioritization |
-| `seeds-server` | MCP server | `Tools/MCPServers/seeds-server/` | Ecosystem snapshots and scans |
-| `glimpse-server` | MCP server | `Tools/MCPServers/glimpse-server/` | Glimpse MCP tools (analyze, compress, similarity, confidence) |
-| `eligibility-server` | MCP server | `Tools/MCPServers/eligibility-server/` | Promotion gates, hierarchy, evolution cycles |
-| `overview-server` | MCP server | `Tools/MCPServers/overview-server/` | Session checkpoints, health monitoring |
-| `mangrove-server` | MCP server | `Tools/MCPServers/mangrove-server/` | DIO bridge, security audit, skill routing |
+| Project              | Type       | Location                               | Notes                                                         |
+| -------------------- | ---------- | -------------------------------------- | ------------------------------------------------------------- |
+| `afloat-server`      | MCP server | `Tools/MCPServers/afloat-server/`      | Workflow orchestration and scheduled diagnostics              |
+| `echoes-server`      | MCP server | `Tools/MCPServers/echoes-server/`      | Audit and telemetry persistence                               |
+| `grid-server`        | MCP server | `Tools/MCPServers/grid-server/`        | GRID/GATE integration helpers                                 |
+| `lots-server`        | MCP server | `Tools/MCPServers/lots-server/`        | Experiment catalog, runner, suggestions                       |
+| `maintain-server`    | MCP server | `Tools/MCPServers/maintain-server/`    | Diagnostics, cleanup, maintenance flows                       |
+| `pulse-server`       | MCP server | `Tools/MCPServers/pulse-server/`       | Briefings, focus, journal, prioritization                     |
+| `seeds-server`       | MCP server | `Tools/MCPServers/seeds-server/`       | Ecosystem snapshots and scans                                 |
+| `glimpse-server`     | MCP server | `Tools/MCPServers/glimpse-server/`     | Glimpse MCP tools (analyze, compress, similarity, confidence) |
+| `eligibility-server` | MCP server | `Tools/MCPServers/eligibility-server/` | Promotion gates, hierarchy, evolution cycles                  |
+| `overview-server`    | MCP server | `Tools/MCPServers/overview-server/`    | Session checkpoints, health monitoring                        |
+| `mangrove-server`    | MCP server | `Tools/MCPServers/mangrove-server/`    | DIO bridge, security audit, skill routing                     |
 
 ### Shared Packages
 
-| Project | Type | Location | Notes |
-| --- | --- | --- | --- |
-| `shared-types` | Shared package | `Components/shared-types/` | Shared types and audit client; build first |
+| Project             | Type           | Location                        | Notes                                       |
+| ------------------- | -------------- | ------------------------------- | ------------------------------------------- |
+| `shared-types`      | Shared package | `Components/shared-types/`      | Shared types and audit client; build first  |
 | `shared-resilience` | Shared package | `Components/shared-resilience/` | Circuit breaker, rate limit, retry patterns |
-| `shared-pipeline` | Shared package | `Components/shared-pipeline/` | Shared build/deploy pipeline utilities |
+| `shared-pipeline`   | Shared package | `Components/shared-pipeline/`   | Shared build/deploy pipeline utilities      |
 
 ### Applications and Engines
 
-| Project | Type | Location | Notes |
-| --- | --- | --- | --- |
-| `glimpse-artifact` | App/library | `Applications/glimpse-artifact/` | React UI and components |
-| `glimpse-engine` | Engine | `Applications/glimpse-engine/` | JavaScript ES modules cognitive engine |
-| `DIO` | Control room | `Projects/DIO/` | Airflow/light coordination plus episode tool |
-| `GATE` | Operational store | `Projects/GATE/` | Envelopes, contracts, results, nonce registry |
-| `pi-mangrove` | Workspace package | `Applications/pi-mangrove/` | Skills, prompts, extensions for pi agent |
-| `projects/viz` | Standalone workspace | `Projects/projects/viz/` | Visualizations and research experiments |
-| `Hogwarts` | Governance sim | `Hogwarts/` | Board UI, houses, arena, governors |
+| Project            | Type                 | Location                         | Notes                                         |
+| ------------------ | -------------------- | -------------------------------- | --------------------------------------------- |
+| `glimpse-artifact` | App/library          | `Applications/glimpse-artifact/` | React UI and components                       |
+| `glimpse-engine`   | Engine               | `Applications/glimpse-engine/`   | JavaScript ES modules cognitive engine        |
+| `DIO`              | Control room         | `Projects/DIO/`                  | Airflow/light coordination plus episode tool  |
+| `GATE`             | Operational store    | `Projects/GATE/`                 | Envelopes, contracts, results, nonce registry |
+| `pi-mangrove`      | Workspace package    | `Applications/pi-mangrove/`      | Skills, prompts, extensions for pi agent      |
+| `projects/viz`     | Standalone workspace | `Projects/projects/viz/`         | Visualizations and research experiments       |
+| `Hogwarts`         | Governance sim       | `Hogwarts/`                      | Board UI, houses, arena, governors            |
 
 ### Nested Repos
 
-| Project | Managed in | Notes |
-| --- | --- | --- |
+| Project     | Managed in    | Notes                                                                                                   |
+| ----------- | ------------- | ------------------------------------------------------------------------------------------------------- |
 | `GRID-main` | Git submodule | Python 3.13, FastAPI, uv; points to [GRID-INTELLIGENCE/GRID](https://github.com/GRID-INTELLIGENCE/GRID) |
 
 ### Workspace Infrastructure
 
-| Project | Type | Location | Notes |
-| --- | --- | --- | --- |
-| `Documentation` | Docs | `Documentation/` | Shared documentation, audits, and archive |
-| `experiments` | Experiments | `experiments/` | Lots-server experiment catalog |
+| Project         | Type        | Location         | Notes                                     |
+| --------------- | ----------- | ---------------- | ----------------------------------------- |
+| `Documentation` | Docs        | `Documentation/` | Shared documentation, audits, and archive |
+| `experiments`   | Experiments | `experiments/`   | Lots-server experiment catalog            |
 
 Use each project's README plus [CLAUDE.md](CLAUDE.md) and [AGENTS.md](AGENTS.md) for build, test, and run instructions.

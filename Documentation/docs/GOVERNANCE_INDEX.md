@@ -92,16 +92,16 @@ Config: `/home/caraxes/CascadeProjects/.pre-commit-config.yaml`
 
 ## MCP Server Config
 
-| File                                           | Authority     | Purpose                                                                        |
-| ---------------------------------------------- | ------------- | ------------------------------------------------------------------------------ |
-| `CascadeProjects/mcp_config.json`              | **Canonical** | Single source of truth for all MCP servers across all editors                  |
+| File                                           | Authority     | Purpose                                                                                           |
+| ---------------------------------------------- | ------------- | ------------------------------------------------------------------------------------------------- |
+| `CascadeProjects/mcp_config.json`              | **Canonical** | Single source of truth for all MCP servers across all editors                                     |
 | `CascadeProjects/mcp_inventory.manifest.json`  | Canonical     | Bootstrap contracts, excluded servers, inventory for `Components/scripts/verify_mcp_inventory.py` |
-| `CascadeProjects/claude_code_config.json`      | Derived       | Claude Code format (cwd supported, 15 servers)                                 |
-| `CascadeProjects/zed_config.jsonc`             | Derived       | Zed format (absolutized paths, 15 servers)                                     |
-| `~/.codeium/windsurf/windsurf/mcp_config.json` | Derived       | Windsurf (absolutized, no cwd) — verify for drift                              |
-| `~/.codeium/windsurf-next/mcp_config.json`     | Derived       | Windsurf-Next — verify for drift                                               |
-| `CascadeProjects/.cursor/mcp.json`             | Derived       | Cursor (cwd supported) — verify for drift                                      |
-| `~/.config/opencode/config.json`               | Derived       | OpenCode (absolutized) — verify for drift                                      |
+| `CascadeProjects/claude_code_config.json`      | Derived       | Claude Code format (cwd supported, 15 servers)                                                    |
+| `CascadeProjects/zed_config.jsonc`             | Derived       | Zed format (absolutized paths, 15 servers)                                                        |
+| `~/.codeium/windsurf/windsurf/mcp_config.json` | Derived       | Windsurf (absolutized, no cwd) — verify for drift                                                 |
+| `~/.codeium/windsurf-next/mcp_config.json`     | Derived       | Windsurf-Next — verify for drift                                                                  |
+| `CascadeProjects/.cursor/mcp.json`             | Derived       | Cursor (cwd supported) — verify for drift                                                         |
+| `~/.config/opencode/config.json`               | Derived       | OpenCode (absolutized) — verify for drift                                                         |
 
 Verification: `python3 CascadeProjects/Components/scripts/verify_mcp_inventory.py`
 

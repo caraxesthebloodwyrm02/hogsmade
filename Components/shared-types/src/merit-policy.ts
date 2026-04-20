@@ -123,6 +123,12 @@ export interface PermissionCheckResult {
 /**
  * Merit policy decision for audit logging
  */
+/** Noise classification for audit filtering */
+export type NoiseClassification = "synthetic" | "test_fixture" | "stale" | "cascading" | null;
+
+/** Permission resolution semantic */
+export type PermissionSemantic = "local" | "remote" | "degraded";
+
 export interface MeritAuditEntry {
   timestamp: string;
   entity_id: string;
@@ -135,6 +141,8 @@ export interface MeritAuditEntry {
   score: number;
   source: "http" | "mcp";
   session_id?: string;
+  semantic?: PermissionSemantic;
+  noise?: NoiseClassification;
 }
 
 /**

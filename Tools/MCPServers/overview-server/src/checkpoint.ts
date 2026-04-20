@@ -122,7 +122,9 @@ function computeTrajectory(data: AggregatedData): Trajectory {
   if (totalEvents > 0) {
     const failRate = failures / totalEvents;
     evidence.push(
-      `${totalEvents} audit events, ${failures} failures (${Math.round(failRate * 100)}% fail rate)`,
+      `${totalEvents} audit events, ${failures} failures (${Math.round(
+        failRate * 100,
+      )}% fail rate)`,
     );
     if (failRate > 0.2 && direction !== "degrading") {
       direction = "degrading";

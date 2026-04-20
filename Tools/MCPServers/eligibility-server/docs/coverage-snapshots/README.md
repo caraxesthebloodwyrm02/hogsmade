@@ -4,32 +4,32 @@ Point-in-time copies of Vitest `json-summary` output for trend tracking and CI b
 
 ## Latest snapshot
 
-| Field | Value |
-| --- | --- |
-| **Date** | 2026-04-06 |
-| **Artifact** | [2026-04-06.json](./2026-04-06.json) |
-| **Command** | `npm run test:coverage` (from package root) |
-| **Commit** | `fa4c4f48d0e662c9826ad73daf4b8d7759019a74` (CascadeProjects repo at snapshot time) |
-| **Vitest** | 3.2.4 |
-| **Coverage provider** | `@vitest/coverage-v8` 3.2.4 (`v8`) |
+| Field                 | Value                                                                              |
+| --------------------- | ---------------------------------------------------------------------------------- |
+| **Date**              | 2026-04-06                                                                         |
+| **Artifact**          | [2026-04-06.json](./2026-04-06.json)                                               |
+| **Command**           | `npm run test:coverage` (from package root)                                        |
+| **Commit**            | `fa4c4f48d0e662c9826ad73daf4b8d7759019a74` (CascadeProjects repo at snapshot time) |
+| **Vitest**            | 3.2.4                                                                              |
+| **Coverage provider** | `@vitest/coverage-v8` 3.2.4 (`v8`)                                                 |
 
 ### Totals (from snapshot `total`)
 
-| Metric | Covered |
-| --- | ---: |
-| Lines | 93.7% |
-| Statements | 93.7% |
-| Functions | 92.95% |
-| Branches | 85.93% |
+| Metric     | Covered |
+| ---------- | ------: |
+| Lines      |   93.7% |
+| Statements |   93.7% |
+| Functions  |  92.95% |
+| Branches   |  85.93% |
 
 ### Enforced thresholds (`vitest.config.ts`)
 
-| Metric | Minimum % |
-| --- | ---: |
-| Lines | 55 |
-| Statements | 55 |
-| Functions | 50 |
-| Branches | 45 |
+| Metric     | Minimum % |
+| ---------- | --------: |
+| Lines      |        55 |
+| Statements |        55 |
+| Functions  |        50 |
+| Branches   |        45 |
 
 ### Line-audit fixture hook
 

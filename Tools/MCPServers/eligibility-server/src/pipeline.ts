@@ -68,12 +68,37 @@ function normalizeTableScope(
   return value === "attributes" || value === "dimensions" || value === "all" ? value : "all";
 }
 
+const MAX_SEED_LENGTH = 256;
+const SEED_PATTERN = /^[a-zA-Z0-9_\-:.\/]+$/;
+
 function sanitizeSeed(value: string | undefined): string | undefined {
   const trimmed = value?.trim();
-  return trimmed ? trimmed : undefined;
+  if (!trimmed) return undefined;
+  if (trimmed.length > MAX_SEED_LENGTH) return trimmed.slice(0, MAX_SEED_LENGTH);
+  if (!SEED_PATTERN.test(trimmed)) {
+    // Return base64-alike encoding of invalid chars to preserve determinism without injection risk
+    return trimmed
+      .split("")
+      .map((c) => (SEED_PATTERN.test(c) ? c : `_`))
+      .join("")
+      .slice(0, MAX_SEED_LENGTH);
+  }
+  return trimmed;
 }
 
+const VALID_DIMENSIONS: readonly IntegrationDimension[] = [
+  "governance",
+  "usability",
+  "integration",
+  "observability",
+  "operational_fit",
+] as const;
+
 function getArgValue(args: RoutineArgs, dimension: IntegrationDimension): number {
+  // Runtime validation: dimension must be in known set
+  if (!VALID_DIMENSIONS.includes(dimension)) {
+    throw new Error(`Invalid dimension: ${dimension}`);
+  }
   if (dimension === "operational_fit") return args.operationalFit;
   return args[dimension];
 }
@@ -399,7 +424,9 @@ function deriveObservations(hierarchy: HierarchySlice[]): ObservationNote[] {
         id: `${candidateId}:overall:observation`,
         candidateId,
         dimension: "overall",
-        message: `Overall score ${overall.score.toFixed(3)} holds rank ${overall.rank} in the current analog hierarchy.`,
+        message: `Overall score ${overall.score.toFixed(3)} holds rank ${
+          overall.rank
+        } in the current analog hierarchy.`,
         surfaceHint: observationHint("overall"),
         sourceSliceIds: [overall.id],
       });
@@ -421,7 +448,9 @@ function summarizeResult(candidates: EligibilityCandidate[], hierarchy: Hierarch
   }
 
   const dominant = leadingDimension(candidate.id, hierarchy);
-  return `${candidate.label} leads the current hierarchy with overall score ${top.score.toFixed(3)}. The dominant vertical dimension is ${dominant?.dimension ?? "unknown"}.`;
+  return `${candidate.label} leads the current hierarchy with overall score ${top.score.toFixed(
+    3,
+  )}. The dominant vertical dimension is ${dominant?.dimension ?? "unknown"}.`;
 }
 
 // ── Struggle point derivation ──
@@ -452,9 +481,7 @@ function deriveStrugglePoints(
 
   for (const candidateId of candidateIds) {
     for (const dim of DIMENSIONS) {
-      const slice = hierarchy.find(
-        (s) => s.candidateId === candidateId && s.dimension === dim,
-      );
+      const slice = hierarchy.find((s) => s.candidateId === candidateId && s.dimension === dim);
       if (!slice) continue;
 
       const threshold = STRUGGLE_THRESHOLDS[dim];
@@ -469,17 +496,27 @@ function deriveStrugglePoints(
 
       // G: grounding score based on how directly measured the struggle is
       const g = condition
-        ? (condition.severity === "priority" ? 1.0 : condition.severity === "watch" ? 0.8 : 0.6)
-        : (distance < 0 ? 0.7 : 0.5);
+        ? condition.severity === "priority"
+          ? 1.0
+          : condition.severity === "watch"
+            ? 0.8
+            : 0.6
+        : distance < 0
+          ? 0.7
+          : 0.5;
 
       // Trace opacity from G
       const traceOpacity = g >= 0.9 ? 0 : g >= 0.7 ? 1 : g >= 0.5 ? 2 : g >= 0.3 ? 3 : 4;
 
       // State from distance to threshold
-      const state = distance < -0.15 ? "sealed" as const
-        : distance < 0 ? "active" as const
-        : distance < 0.05 ? "transitioning" as const
-        : "dormant" as const;
+      const state =
+        distance < -0.15
+          ? ("sealed" as const)
+          : distance < 0
+            ? ("active" as const)
+            : distance < 0.05
+              ? ("transitioning" as const)
+              : ("dormant" as const);
 
       // Cool step from G (high G = well-attested struggle = warm/open, low G = speculative = deep/closed)
       const coolStep = g >= 0.9 ? 100 : g >= 0.7 ? 300 : g >= 0.5 ? 500 : g >= 0.3 ? 700 : 900;
@@ -489,8 +526,11 @@ function deriveStrugglePoints(
         candidateId,
         dimension: dim,
         severity: condition?.severity ?? "info",
-        message: condition?.message
-          ?? `${dim} score ${slice.score.toFixed(3)} is within struggle range of threshold ${threshold}.`,
+        message:
+          condition?.message ??
+          `${dim} score ${slice.score.toFixed(
+            3,
+          )} is within struggle range of threshold ${threshold}.`,
         seed,
         g,
         score: slice.score,
@@ -876,4 +916,4 @@ export function latestDeposit(
   return findResidue(residue, passId)?.data as Record<string, unknown> | undefined;
 }
 
-export { ROUTINE_PIPELINE_ID, buildArgvSignature, buildDeterministicTimestamp };
+export { buildArgvSignature, buildDeterministicTimestamp, ROUTINE_PIPELINE_ID };

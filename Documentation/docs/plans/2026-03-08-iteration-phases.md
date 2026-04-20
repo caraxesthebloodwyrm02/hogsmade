@@ -470,7 +470,9 @@ server.tool(
 
       if (recentFailures.length > 3) {
         alerts.push(
-          `[ALERT] ${recentFailures.length} failures in last 24h across ${[...new Set(recentFailures.map((f) => f.source))].join(", ")}`,
+          `[ALERT] ${recentFailures.length} failures in last 24h across ${[
+            ...new Set(recentFailures.map((f) => f.source)),
+          ].join(", ")}`,
         );
       }
     }

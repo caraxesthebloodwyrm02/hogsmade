@@ -154,22 +154,22 @@ OVERALL:                  ████░░  ░░░░░░  ░░░░�
 
 #### Gap A: No Real File System Testing
 
-**Impact**: Mocked tests don't catch real-world file I/O issues  
+**Impact**: Mocked tests don't catch real-world file I/O issues
 **Mitigation**: Add temp directory tests with real fs operations
 
 #### Gap B: No Pipeline Integration
 
-**Impact**: Can't verify DriftGuard actually works with Glimpse pipeline  
+**Impact**: Can't verify DriftGuard actually works with Glimpse pipeline
 **Mitigation**: Create `tests/drift-guard/integration/pipeline.test.js`
 
 #### Gap C: Missing Error Boundaries
 
-**Impact**: Uncaught exceptions in production  
+**Impact**: Uncaught exceptions in production
 **Mitigation**: Test all `catch` blocks and error paths
 
 #### Gap D: No Concurrency Testing
 
-**Impact**: Race conditions undetected  
+**Impact**: Race conditions undetected
 **Mitigation**: Parallel guard execution tests
 
 ---
@@ -235,7 +235,7 @@ OVERALL:                  ████░░  ░░░░░░  ░░░░�
 
 #### 1. Split `index.js` into modules
 
-**Why**: Reduces cognitive load, enables parallel testing, improves tree-shaking  
+**Why**: Reduces cognitive load, enables parallel testing, improves tree-shaking
 **How**:
 
 ```
@@ -252,7 +252,7 @@ core/drift-guard/
 
 #### 2. Add CI coverage gate
 
-**Why**: Prevents coverage regression  
+**Why**: Prevents coverage regression
 **How**:
 
 ```yaml
@@ -265,7 +265,7 @@ core/drift-guard/
 
 #### 3. Integration test file
 
-**Why**: Validates real-world operation  
+**Why**: Validates real-world operation
 **What**:
 
 ```javascript
@@ -432,6 +432,6 @@ test("pipeline with drift protection works end-to-end");
 
 ---
 
-**Document Version**: 1.0  
-**Next Review**: 2026-04-07  
+**Document Version**: 1.0
+**Next Review**: 2026-04-07
 **Owner**: Architecture Team

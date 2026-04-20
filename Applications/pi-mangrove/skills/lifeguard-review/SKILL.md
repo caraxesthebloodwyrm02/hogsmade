@@ -15,10 +15,12 @@ description: "Production API code review checklist with 11 validation rules cove
 ## Steps
 
 1. **Identify the API surface**
+
    - Locate routes, handlers, middleware, auth boundaries, and external integrations
    - Confirm which public endpoints, sensitive operations, and data stores are affected
 
 2. **Apply the 11 review rules**
+
    - Check response format consistency across success and error paths
    - Verify retention/deletion coverage for new or changed data stores
    - Verify ownership authorization, not just session presence
@@ -32,6 +34,7 @@ description: "Production API code review checklist with 11 validation rules cove
    - Validate OpenAI API response/error handling where applicable
 
 3. **Report only failures and near-misses**
+
    - Use concise pass/fail findings with file location, issue, and fix guidance
    - Do not clutter the review with rules that already pass
 

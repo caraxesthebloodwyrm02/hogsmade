@@ -1,6 +1,6 @@
 ---
 description: Output budget, request-type routing, anti-patterns, credit conservation
-globs: 
+globs:
 alwaysApply: true
 ---
 

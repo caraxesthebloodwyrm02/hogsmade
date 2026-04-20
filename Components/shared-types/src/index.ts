@@ -7,26 +7,32 @@ export type { HealthCheckResponse } from "./health.js";
 export {
   ACTION_CLASS_BADGE_REQUIREMENTS,
   ACTION_CLASS_SCOPE_REQUIREMENTS,
-  BADGE_THRESHOLDS,
-  MERIT_CONSTANTS,
-  Badge,
   ActionClass,
+  BADGE_THRESHOLDS,
+  Badge,
+  MERIT_CONSTANTS,
   Scope,
   generateMcpIdentity,
   parseMcpIdentity,
 } from "./merit-policy.js";
-export type { MeritStandingDTO, PermissionCheckResult, MeritAuditEntry } from "./merit-policy.js";
+export type {
+  MeritAuditEntry,
+  MeritStandingDTO,
+  NoiseClassification,
+  PermissionCheckResult,
+  PermissionSemantic,
+} from "./merit-policy.js";
 
 // Hardened MCP guard (recommended)
 export { HardenedMcpMeritGuard, createHardenedMeritGuard } from "./mcp-guard-hardened.js";
 export type {
-  HardenedMeritGuardConfig,
   GuardedToolOptions as HardenedGuardedToolOptions,
+  HardenedMeritGuardConfig,
 } from "./mcp-guard-hardened.js";
 
 // Legacy/Standard MCP guard
-export { createMeritGuard, McpMeritGuard } from "./mcp-guard.js";
-export type { MeritGuardConfig, GuardedToolOptions } from "./mcp-guard.js";
+export { McpMeritGuard, createMeritGuard } from "./mcp-guard.js";
+export type { GuardedToolOptions, MeritGuardConfig } from "./mcp-guard.js";
 
 export { TelemetrySnapshotSchema } from "./telemetry.js";
 export type { TelemetrySnapshot } from "./telemetry.js";
@@ -36,6 +42,17 @@ export { emitAudit } from "./audit-client.js";
 export { generateId } from "./id.js";
 
 export { McpLogger } from "./mcp-logger.js";
+
+export {
+  createChildSpan,
+  createRootSpan,
+  extractTrace,
+  formatTraceparent,
+  generateSpanId,
+  generateTraceId,
+  parseTraceparent,
+} from "./trace-context.js";
+export type { TraceContext } from "./trace-context.js";
 
 export {
   ARCHIVE_THRESHOLD_MS,
@@ -93,13 +110,13 @@ export type { Alert, AlertLevel, MonitoringConfig } from "./monitoring.js";
 
 // Circuit Breaker
 export {
-  CircuitState,
-  GuardCircuitBreaker,
   CircuitBreakerOpenError,
+  CircuitState,
   DEFAULT_CIRCUIT_BREAKER_CONFIG,
+  GuardCircuitBreaker,
+  getAllCircuitBreakerStats,
   getCircuitBreaker,
   resetAllCircuitBreakers,
-  getAllCircuitBreakerStats,
 } from "./circuit-breaker.js";
 export type { CircuitBreakerConfig, CircuitBreakerStats } from "./circuit-breaker.js";
 
@@ -107,37 +124,37 @@ export type { CircuitBreakerConfig, CircuitBreakerStats } from "./circuit-breake
 export {
   DEFAULT_RUNTIME_CONFIG,
   MITIGATION_SCOPES,
-  loadRuntimeConfig,
-  validateRuntimeConfig,
   createScopedConfig,
+  loadRuntimeConfig,
   validateGuardStartup,
+  validateRuntimeConfig,
 } from "./guard-config.js";
 export type {
-  MitigationScope,
-  PrintTarget,
   GuardFeatures,
   GuardRuntimeConfig,
+  MitigationScope,
+  PrintTarget,
 } from "./guard-config.js";
 
 // Guard Logger
 export {
-  PrintLevel,
   GuardLogWriter,
-  createGuardLogger,
+  PrintLevel,
   createConsoleLogger,
-  createSilentLogger,
-  createLogger,
-  shouldPrint,
   createCorrelationId,
+  createGuardLogger,
+  createLogger,
+  createSilentLogger,
+  shouldPrint,
 } from "./guard-logger.js";
-export type { GuardPrintEvent, GuardLogger } from "./guard-logger.js";
+export type { GuardLogger, GuardPrintEvent } from "./guard-logger.js";
 
 // Void Pattern Mitigation Guards (from mcp-guard.ts)
 export {
   createGuardConfig,
-  guardedOperation,
   guardedAuditEmit,
   guardedFileWrite,
+  guardedOperation,
   guardedServerStartup,
 } from "./mcp-guard.js";
 export type { GuardConfig, OperationResult } from "./mcp-guard.js";

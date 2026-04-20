@@ -1,0 +1,1297 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ode to the Signal Router</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Inter:wght@300;400;600;700&display=swap");
+
+      :root {
+        --bg: #0a0e14;
+        --surface: #111820;
+        --surface-2: #1a2230;
+        --border: #1e2a3a;
+        --text: #c5cdd8;
+        --text-dim: #556677;
+        --text-bright: #e8eef5;
+        --accent: #39bae6;
+        --accent-dim: #1a3a50;
+        --critical: #ff6b6b;
+        --critical-dim: #3a1a1a;
+        --warning: #e6b450;
+        --warning-dim: #3a2e1a;
+        --info: #7ec699;
+        --info-dim: #1a3a2a;
+        --trend: #c695e6;
+        --trend-dim: #2a1a3a;
+        --glow-accent: 0 0 30px rgba(57, 186, 230, 0.15);
+        --glow-critical: 0 0 30px rgba(255, 107, 107, 0.15);
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: "Inter", system-ui, sans-serif;
+        overflow-x: hidden;
+        min-height: 100vh;
+      }
+
+      /* --- Signal Canvas (background particles) --- */
+      #signal-canvas {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 0;
+        pointer-events: none;
+      }
+
+      /* --- Main Content --- */
+      .content {
+        position: relative;
+        z-index: 1;
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 60px 24px 120px;
+      }
+
+      /* --- Hero --- */
+      .hero {
+        text-align: center;
+        padding: 80px 0 60px;
+        position: relative;
+      }
+
+      .hero-pre {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 13px;
+        color: var(--accent);
+        letter-spacing: 4px;
+        text-transform: uppercase;
+        opacity: 0;
+        animation: fadeUp 0.8s ease forwards 0.3s;
+      }
+
+      .hero h1 {
+        font-size: clamp(32px, 6vw, 56px);
+        font-weight: 700;
+        color: var(--text-bright);
+        line-height: 1.15;
+        margin: 16px 0 24px;
+        opacity: 0;
+        animation: fadeUp 0.8s ease forwards 0.5s;
+      }
+
+      .hero h1 .glow {
+        background: linear-gradient(135deg, var(--accent), var(--trend));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .hero-sub {
+        font-size: 17px;
+        color: var(--text-dim);
+        max-width: 560px;
+        margin: 0 auto;
+        line-height: 1.6;
+        opacity: 0;
+        animation: fadeUp 0.8s ease forwards 0.7s;
+      }
+
+      .commit-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 32px;
+        padding: 8px 16px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 13px;
+        color: var(--accent);
+        opacity: 0;
+        animation: fadeUp 0.8s ease forwards 0.9s;
+      }
+
+      .commit-badge .dot {
+        width: 8px;
+        height: 8px;
+        background: var(--info);
+        border-radius: 50%;
+        animation: pulse 2s ease infinite;
+      }
+
+      /* --- Section --- */
+      .section {
+        margin: 80px 0;
+        opacity: 0;
+        transform: translateY(30px);
+        transition: all 0.8s ease;
+      }
+
+      .section.visible {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      .section-label {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 11px;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        color: var(--text-dim);
+        margin-bottom: 12px;
+      }
+
+      .section h2 {
+        font-size: 28px;
+        font-weight: 600;
+        color: var(--text-bright);
+        margin-bottom: 20px;
+      }
+
+      .section p {
+        color: var(--text);
+        line-height: 1.75;
+        font-size: 15px;
+        max-width: 680px;
+      }
+
+      /* --- The Verse (Ode) --- */
+      .verse-container {
+        position: relative;
+        padding: 48px 40px;
+        background: linear-gradient(135deg, var(--surface), var(--surface-2));
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        margin: 48px 0;
+        overflow: hidden;
+      }
+
+      .verse-container::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 3px;
+        height: 100%;
+        background: linear-gradient(
+          to bottom,
+          var(--accent),
+          var(--trend),
+          var(--warning),
+          var(--critical)
+        );
+        border-radius: 3px 0 0 3px;
+      }
+
+      .verse {
+        font-size: 16px;
+        line-height: 2;
+        color: var(--text);
+      }
+
+      .verse .line {
+        display: block;
+        opacity: 0;
+        transform: translateX(-10px);
+        transition: all 0.5s ease;
+      }
+
+      .verse .line.revealed {
+        opacity: 1;
+        transform: translateX(0);
+      }
+
+      .verse .line.accent {
+        color: var(--accent);
+      }
+      .verse .line.bright {
+        color: var(--text-bright);
+        font-weight: 500;
+      }
+      .verse .line.dim {
+        color: var(--text-dim);
+        font-style: italic;
+      }
+      .verse .line.critical {
+        color: var(--critical);
+      }
+      .verse .line.warning {
+        color: var(--warning);
+      }
+      .verse .line.info {
+        color: var(--info);
+      }
+      .verse .line.trend {
+        color: var(--trend);
+      }
+      .verse .stanza {
+        margin-bottom: 24px;
+        display: block;
+      }
+
+      /* --- Route Cards (Interactive) --- */
+      .routes-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 16px;
+        margin: 32px 0;
+      }
+
+      .route-card {
+        position: relative;
+        padding: 24px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        overflow: hidden;
+      }
+
+      .route-card::after {
+        content: "";
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 3px;
+        transform: scaleX(0);
+        transform-origin: left;
+        transition: transform 0.4s ease;
+      }
+
+      .route-card:hover {
+        border-color: var(--text-dim);
+        transform: translateY(-2px);
+      }
+      .route-card:hover::after {
+        transform: scaleX(1);
+      }
+      .route-card.active {
+        border-color: var(--accent);
+        box-shadow: var(--glow-accent);
+      }
+
+      .route-card.warning-route::after {
+        background: var(--warning);
+      }
+      .route-card.critical-route::after {
+        background: var(--critical);
+      }
+      .route-card.surge-route::after {
+        background: var(--trend);
+      }
+      .route-card.correlation-route::after {
+        background: var(--accent);
+      }
+
+      .route-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        margin-bottom: 12px;
+      }
+
+      .warning-route .route-icon {
+        background: var(--warning-dim);
+      }
+      .critical-route .route-icon {
+        background: var(--critical-dim);
+      }
+      .surge-route .route-icon {
+        background: var(--trend-dim);
+      }
+      .correlation-route .route-icon {
+        background: var(--accent-dim);
+      }
+
+      .route-card h3 {
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--text-bright);
+        margin-bottom: 6px;
+      }
+
+      .route-card .route-desc {
+        font-size: 13px;
+        color: var(--text-dim);
+        line-height: 1.5;
+      }
+
+      .route-card .route-threshold {
+        display: inline-block;
+        margin-top: 12px;
+        padding: 4px 10px;
+        background: var(--bg);
+        border-radius: 6px;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 11px;
+        color: var(--text-dim);
+      }
+
+      /* --- Route Detail Panel --- */
+      .route-detail {
+        max-height: 0;
+        overflow: hidden;
+        transition:
+          max-height 0.5s ease,
+          padding 0.3s ease;
+        background: var(--surface);
+        border: 1px solid transparent;
+        border-radius: 12px;
+        margin-top: -8px;
+      }
+
+      .route-detail.open {
+        max-height: 400px;
+        padding: 24px;
+        border-color: var(--border);
+        margin-top: 8px;
+      }
+
+      .route-detail .detail-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 6px 0;
+        font-size: 13px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .route-detail .detail-row:last-child {
+        border-bottom: none;
+      }
+      .route-detail .detail-label {
+        color: var(--text-dim);
+      }
+      .route-detail .detail-value {
+        color: var(--text-bright);
+        font-family: "JetBrains Mono", monospace;
+      }
+
+      /* --- Signal Simulation --- */
+      .sim-container {
+        position: relative;
+        padding: 32px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        margin: 32px 0;
+        min-height: 280px;
+      }
+
+      .sim-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+      }
+
+      .sim-title {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 13px;
+        color: var(--accent);
+      }
+
+      .sim-btn {
+        padding: 8px 20px;
+        background: var(--accent-dim);
+        border: 1px solid var(--accent);
+        border-radius: 8px;
+        color: var(--accent);
+        font-family: "JetBrains Mono", monospace;
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      .sim-btn:hover {
+        background: var(--accent);
+        color: var(--bg);
+      }
+
+      .threshold-bar {
+        position: relative;
+        height: 40px;
+        background: var(--bg);
+        border-radius: 8px;
+        margin: 16px 0;
+        overflow: hidden;
+      }
+
+      .threshold-fill {
+        height: 100%;
+        width: 0%;
+        border-radius: 8px;
+        transition:
+          width 0.4s ease,
+          background 0.3s ease;
+        background: var(--accent);
+        display: flex;
+        align-items: center;
+        padding-left: 12px;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 12px;
+        color: var(--bg);
+        font-weight: 600;
+        min-width: fit-content;
+      }
+
+      .threshold-fill.warning-level {
+        background: var(--warning);
+      }
+      .threshold-fill.critical-level {
+        background: var(--critical);
+      }
+      .threshold-fill.fired {
+        animation: firePulse 0.6s ease;
+        background: var(--info);
+      }
+
+      .threshold-label {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-family: "JetBrains Mono", monospace;
+        font-size: 11px;
+        color: var(--text-dim);
+      }
+
+      .sim-log {
+        margin-top: 16px;
+        max-height: 160px;
+        overflow-y: auto;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 12px;
+        line-height: 1.8;
+        padding: 12px;
+        background: var(--bg);
+        border-radius: 8px;
+      }
+
+      .sim-log .log-entry {
+        opacity: 0;
+        animation: logAppear 0.3s ease forwards;
+      }
+      .sim-log .ts {
+        color: var(--text-dim);
+      }
+      .sim-log .sig {
+        color: var(--warning);
+      }
+      .sim-log .fire {
+        color: var(--critical);
+        font-weight: 600;
+      }
+      .sim-log .action {
+        color: var(--info);
+      }
+      .sim-log .cool {
+        color: var(--trend);
+      }
+
+      /* --- Layer Architecture --- */
+      .layers {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        margin: 32px 0;
+      }
+
+      .layer {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        padding: 20px 24px;
+        border-radius: 10px;
+        transition: all 0.3s ease;
+        cursor: default;
+      }
+
+      .layer:hover {
+        transform: translateX(4px);
+      }
+
+      .layer-1 {
+        background: linear-gradient(90deg, var(--info-dim), transparent);
+        border-left: 3px solid var(--info);
+      }
+      .layer-2 {
+        background: linear-gradient(90deg, var(--warning-dim), transparent);
+        border-left: 3px solid var(--warning);
+        opacity: 0.6;
+      }
+      .layer-3 {
+        background: linear-gradient(90deg, var(--trend-dim), transparent);
+        border-left: 3px solid var(--trend);
+        opacity: 0.4;
+      }
+
+      .layer-num {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 24px;
+        font-weight: 700;
+        min-width: 40px;
+      }
+
+      .layer-1 .layer-num {
+        color: var(--info);
+      }
+      .layer-2 .layer-num {
+        color: var(--warning);
+      }
+      .layer-3 .layer-num {
+        color: var(--trend);
+      }
+
+      .layer-info h4 {
+        font-size: 15px;
+        color: var(--text-bright);
+        margin-bottom: 4px;
+      }
+      .layer-info p {
+        font-size: 13px;
+        color: var(--text-dim);
+      }
+
+      .layer-status {
+        margin-left: auto;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 11px;
+      }
+
+      .layer-1 .layer-status {
+        background: var(--info-dim);
+        color: var(--info);
+      }
+      .layer-2 .layer-status {
+        background: var(--warning-dim);
+        color: var(--warning);
+      }
+      .layer-3 .layer-status {
+        background: var(--trend-dim);
+        color: var(--trend);
+      }
+
+      /* --- Commit Timeline --- */
+      .timeline {
+        position: relative;
+        padding-left: 32px;
+        margin: 32px 0;
+      }
+
+      .timeline::before {
+        content: "";
+        position: absolute;
+        left: 7px;
+        top: 0;
+        width: 2px;
+        height: 100%;
+        background: var(--border);
+      }
+
+      .timeline-entry {
+        position: relative;
+        padding: 12px 0 24px;
+      }
+
+      .timeline-entry::before {
+        content: "";
+        position: absolute;
+        left: -29px;
+        top: 16px;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: var(--surface);
+        border: 2px solid var(--text-dim);
+      }
+
+      .timeline-entry.highlight::before {
+        border-color: var(--accent);
+        background: var(--accent-dim);
+        box-shadow: 0 0 12px rgba(57, 186, 230, 0.3);
+      }
+
+      .timeline-hash {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 12px;
+        color: var(--accent);
+      }
+
+      .timeline-msg {
+        font-size: 14px;
+        color: var(--text-bright);
+        margin-top: 4px;
+      }
+
+      .timeline-detail {
+        font-size: 12px;
+        color: var(--text-dim);
+        margin-top: 4px;
+      }
+
+      /* --- Stats Bar --- */
+      .stats-bar {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 16px;
+        margin: 40px 0;
+      }
+
+      .stat {
+        text-align: center;
+        padding: 20px 16px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+      }
+
+      .stat-num {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--accent);
+      }
+
+      .stat-label {
+        font-size: 12px;
+        color: var(--text-dim);
+        margin-top: 4px;
+      }
+
+      /* --- Footer --- */
+      .footer {
+        text-align: center;
+        padding: 60px 0 40px;
+        border-top: 1px solid var(--border);
+        margin-top: 80px;
+      }
+
+      .footer p {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 12px;
+        color: var(--text-dim);
+        line-height: 2;
+      }
+
+      .footer .mangrove {
+        color: var(--info);
+      }
+
+      /* --- Animations --- */
+      @keyframes fadeUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+          transform: scale(1);
+        }
+        50% {
+          opacity: 0.5;
+          transform: scale(1.5);
+        }
+      }
+
+      @keyframes firePulse {
+        0% {
+          box-shadow: 0 0 0 0 rgba(126, 198, 153, 0.4);
+        }
+        70% {
+          box-shadow: 0 0 0 20px rgba(126, 198, 153, 0);
+        }
+        100% {
+          box-shadow: 0 0 0 0 rgba(126, 198, 153, 0);
+        }
+      }
+
+      @keyframes logAppear {
+        from {
+          opacity: 0;
+          transform: translateX(-8px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+
+      @keyframes drift {
+        0%,
+        100% {
+          transform: translateY(0px);
+        }
+        50% {
+          transform: translateY(-8px);
+        }
+      }
+
+      /* Scrollbar */
+      ::-webkit-scrollbar {
+        width: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: var(--bg);
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--border);
+        border-radius: 3px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: var(--text-dim);
+      }
+
+      /* Responsive */
+      @media (max-width: 640px) {
+        .content {
+          padding: 32px 16px 80px;
+        }
+        .hero {
+          padding: 48px 0 40px;
+        }
+        .verse-container {
+          padding: 32px 24px;
+        }
+        .sim-container {
+          padding: 20px;
+        }
+        .route-card {
+          padding: 20px;
+        }
+        .stats-bar {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="signal-canvas"></canvas>
+
+    <div class="content">
+      <!-- Hero -->
+      <div class="hero">
+        <div class="hero-pre">Session Artifact</div>
+        <h1>Ode to the<br /><span class="glow">Signal Router</span></h1>
+        <p class="hero-sub">
+          From pull-only watcher to auto-reactive nerve ending. A threshold engine born across
+          sessions, built with discipline, shipped with care.
+        </p>
+        <div class="commit-badge">
+          <span class="dot"></span>
+          <span>9168e15 &mdash; hogsmade</span>
+        </div>
+      </div>
+
+      <!-- The Verse -->
+      <div class="section" data-observe>
+        <div class="section-label">The Verse</div>
+        <div class="verse-container">
+          <div class="verse" id="verse">
+            <span class="stanza">
+              <span class="line bright">Before, you listened &mdash; still and mute,</span>
+              <span class="line">a notebook open, pen unused,</span>
+              <span class="line dim">waiting for someone to ask the question.</span>
+            </span>
+            <span class="stanza">
+              <span class="line accent">Now signals arrive like tides through roots,</span>
+              <span class="line">each line classified, each pattern weighed,</span>
+              <span class="line warning">three warnings in thirty minutes &mdash;</span>
+              <span class="line bright">and the mangrove stirs.</span>
+            </span>
+            <span class="stanza">
+              <span class="line critical">One critical signal &mdash; no waiting.</span>
+              <span class="line">The escalator fires: note, probe, recommend, audit.</span>
+              <span class="line dim">Cooldown breathes. Five minutes of silence.</span>
+              <span class="line">Then the window reopens.</span>
+            </span>
+            <span class="stanza">
+              <span class="line trend">Five of the same pattern surging &mdash;</span>
+              <span class="line">not an anomaly but a trend,</span>
+              <span class="line">and the notebook writes itself:</span>
+              <span class="line accent">"something is building."</span>
+            </span>
+            <span class="stanza">
+              <span class="line">Three sources, same hour, same shape &mdash;</span>
+              <span class="line info">cross-source correlation fires,</span>
+              <span class="line">because the signal was never about one place.</span>
+              <span class="line bright">It was about the pattern between places.</span>
+            </span>
+            <span class="stanza">
+              <span class="line dim">This is Layer 1.</span>
+              <span class="line dim">The roots now feel the water.</span>
+              <span class="line accent">Layers 2 and 3 will teach them to grow.</span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="section" data-observe>
+        <div class="stats-bar">
+          <div class="stat">
+            <div class="stat-num" data-count="1134">0</div>
+            <div class="stat-label">Lines Added</div>
+          </div>
+          <div class="stat">
+            <div class="stat-num" data-count="8">0</div>
+            <div class="stat-label">Files Touched</div>
+          </div>
+          <div class="stat">
+            <div class="stat-num" data-count="109">0</div>
+            <div class="stat-label">Tests Passing</div>
+          </div>
+          <div class="stat">
+            <div class="stat-num" data-count="25">0</div>
+            <div class="stat-label">MCP Tools</div>
+          </div>
+          <div class="stat">
+            <div class="stat-num" data-count="4">0</div>
+            <div class="stat-label">Default Routes</div>
+          </div>
+          <div class="stat">
+            <div class="stat-num" data-count="11">0</div>
+            <div class="stat-label">Hooks Passed</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- The Four Routes -->
+      <div class="section" data-observe>
+        <div class="section-label">The Four Routes</div>
+        <h2>Threshold-Driven Reactions</h2>
+        <p>
+          Click a route to see its configuration. Each one watches a different shape of signal
+          accumulation and fires a different combination of actions.
+        </p>
+
+        <div class="routes-grid">
+          <div class="route-card warning-route" data-route="warning">
+            <div class="route-icon">&#x26A0;</div>
+            <h3>Warning Accumulator</h3>
+            <p class="route-desc">
+              Catches gradual degradation &mdash; the kind that hides in noise until it's too late.
+            </p>
+            <span class="route-threshold">3+ signals / 30 min</span>
+          </div>
+          <div class="route-card critical-route" data-route="critical">
+            <div class="route-icon">&#x2622;</div>
+            <h3>Critical Escalator</h3>
+            <p class="route-desc">
+              Immediate response. One critical signal is one too many. No accumulation needed.
+            </p>
+            <span class="route-threshold">1 signal / immediate</span>
+          </div>
+          <div class="route-card surge-route" data-route="surge">
+            <div class="route-icon">&#x2191;</div>
+            <h3>Pattern Surge Detector</h3>
+            <p class="route-desc">
+              Same pattern, repeating. Not an error &mdash; a trend. The notebook captures what code
+              cannot.
+            </p>
+            <span class="route-threshold">5+ same pattern / 60 min</span>
+          </div>
+          <div class="route-card correlation-route" data-route="correlation">
+            <div class="route-icon">&#x2727;</div>
+            <h3>Cross-Source Correlation</h3>
+            <p class="route-desc">
+              Different sources, same signal. The pattern between places is the real finding.
+            </p>
+            <span class="route-threshold">3+ sources / 60 min</span>
+          </div>
+        </div>
+
+        <div class="route-detail" id="route-detail"></div>
+      </div>
+
+      <!-- Live Simulation -->
+      <div class="section" data-observe>
+        <div class="section-label">Interactive</div>
+        <h2>Signal Simulation</h2>
+        <p>
+          Watch the Warning Accumulator in action. Each click sends a signal. At 3, the route fires.
+        </p>
+
+        <div class="sim-container">
+          <div class="sim-header">
+            <span class="sim-title">WARNING ACCUMULATOR &mdash; 30min WINDOW</span>
+            <button class="sim-btn" id="sim-send">Send Signal</button>
+          </div>
+          <div class="threshold-bar">
+            <div class="threshold-fill" id="sim-fill"></div>
+            <span class="threshold-label">threshold: 3</span>
+          </div>
+          <div class="sim-log" id="sim-log"></div>
+        </div>
+      </div>
+
+      <!-- Architecture -->
+      <div class="section" data-observe>
+        <div class="section-label">Architecture</div>
+        <h2>The Three Layers</h2>
+        <p>
+          The signal router is Layer 1. Two more layers will complete the feedback loop from passive
+          observation to active ecosystem intelligence.
+        </p>
+
+        <div class="layers">
+          <div class="layer layer-1">
+            <span class="layer-num">01</span>
+            <div class="layer-info">
+              <h4>Ori's Internal Threshold Engine</h4>
+              <p>Evaluate signals on ingest, fire routes when thresholds cross</p>
+            </div>
+            <span class="layer-status">SHIPPED</span>
+          </div>
+          <div class="layer layer-2">
+            <span class="layer-num">02</span>
+            <div class="layer-info">
+              <h4>Ecosystem Signal Wiring</h4>
+              <p>Eligibility hooks + shared-resilience callbacks feeding Ori</p>
+            </div>
+            <span class="layer-status">NEXT</span>
+          </div>
+          <div class="layer layer-3">
+            <span class="layer-num">03</span>
+            <div class="layer-info">
+              <h4>Session Synthesis</h4>
+              <p>Cluster notes, detect spikes, polymorphic output</p>
+            </div>
+            <span class="layer-status">FUTURE</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Commit Timeline -->
+      <div class="section" data-observe>
+        <div class="section-label">Provenance</div>
+        <h2>Commit Trail</h2>
+        <p>Every step a commit point. If something breaks, we know exactly where.</p>
+
+        <div class="timeline">
+          <div class="timeline-entry highlight">
+            <span class="timeline-hash">9168e15</span>
+            <div class="timeline-msg">
+              feat(ori-server): add signal router with threshold-driven auto-reactions
+            </div>
+            <div class="timeline-detail">8 files, 1134 insertions &mdash; the one that matters</div>
+          </div>
+          <div class="timeline-entry">
+            <span class="timeline-hash">f4971a0</span>
+            <div class="timeline-msg">
+              style(harness-server): apply Prettier formatting to smoke test
+            </div>
+          </div>
+          <div class="timeline-entry">
+            <span class="timeline-hash">5f3d8e1</span>
+            <div class="timeline-msg">
+              fix(pre-commit): exclude JSONC tsconfig, triage detect-secrets
+            </div>
+          </div>
+          <div class="timeline-entry">
+            <span class="timeline-hash">6ef7df6</span>
+            <div class="timeline-msg">
+              chore(pre-commit): fix prettier mirror rev, migrate stage names
+            </div>
+          </div>
+          <div class="timeline-entry">
+            <span class="timeline-hash">b9de7f2</span>
+            <div class="timeline-msg">feat(eligibility-server): add update_case_args tool</div>
+          </div>
+          <div class="timeline-entry">
+            <span class="timeline-hash">3459de6</span>
+            <div class="timeline-msg">
+              chore(gitignore): ignore nested repos Vision and apiguard
+            </div>
+          </div>
+          <div class="timeline-entry">
+            <span class="timeline-hash">a7aa80e</span>
+            <div class="timeline-msg">
+              chore: add .gitignore for glimpse-artifact and pi-mangrove
+            </div>
+          </div>
+          <div class="timeline-entry">
+            <span class="timeline-hash">0df9ac4</span>
+            <div class="timeline-msg">
+              chore(gitignore): deduplicate rules and untrack runtime artifacts
+            </div>
+          </div>
+          <div class="timeline-entry">
+            <span class="timeline-hash">6fc76e6</span>
+            <div class="timeline-msg">fix(grid-server): align tests with merit-guard wrapping</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="footer">
+        <p>
+          Built in the <span class="mangrove">Mangrove</span> ecosystem<br />
+          ori-server &middot; CascadeProjects &middot; hogsmade branch<br />
+          <br />
+          Signals in. Threshold crossed. Routes fire.<br />
+          The roots now feel the water.
+        </p>
+      </div>
+    </div>
+
+    <script>
+      // --- Signal Canvas (floating particles) ---
+      (function () {
+        const canvas = document.getElementById("signal-canvas");
+        const ctx = canvas.getContext("2d");
+        let particles = [];
+        const colors = ["#39bae6", "#ff6b6b", "#e6b450", "#7ec699", "#c695e6"];
+
+        function resize() {
+          canvas.width = window.innerWidth;
+          canvas.height = window.innerHeight;
+        }
+        resize();
+        window.addEventListener("resize", resize);
+
+        function spawn() {
+          if (particles.length > 60) return;
+          particles.push({
+            x: Math.random() * canvas.width,
+            y: canvas.height + 10,
+            vy: -(0.3 + Math.random() * 0.6),
+            vx: (Math.random() - 0.5) * 0.3,
+            r: 1.5 + Math.random() * 2,
+            color: colors[Math.floor(Math.random() * colors.length)],
+            alpha: 0.15 + Math.random() * 0.25,
+            life: 0,
+          });
+        }
+
+        function draw() {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          for (let i = particles.length - 1; i >= 0; i--) {
+            const p = particles[i];
+            p.x += p.vx;
+            p.y += p.vy;
+            p.life++;
+            const fade = Math.max(0, p.alpha - p.life * 0.0003);
+            if (p.y < -20 || fade <= 0) {
+              particles.splice(i, 1);
+              continue;
+            }
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+            ctx.fillStyle = p.color;
+            ctx.globalAlpha = fade;
+            ctx.fill();
+          }
+          ctx.globalAlpha = 1;
+          if (Math.random() < 0.15) spawn();
+          requestAnimationFrame(draw);
+        }
+        draw();
+      })();
+
+      // --- Intersection Observer (section fade-in) ---
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((e) => {
+            if (e.isIntersecting) {
+              e.target.classList.add("visible");
+              // Count-up animation for stats
+              e.target.querySelectorAll("[data-count]").forEach((el) => {
+                const target = parseInt(el.dataset.count);
+                let current = 0;
+                const step = Math.max(1, Math.floor(target / 40));
+                const interval = setInterval(() => {
+                  current = Math.min(current + step, target);
+                  el.textContent = current;
+                  if (current >= target) clearInterval(interval);
+                }, 30);
+              });
+            }
+          });
+        },
+        { threshold: 0.2 },
+      );
+      document.querySelectorAll("[data-observe]").forEach((s) => observer.observe(s));
+
+      // --- Verse line reveal on scroll ---
+      const verseObs = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((e) => {
+            if (e.isIntersecting) {
+              const lines = document.querySelectorAll("#verse .line");
+              lines.forEach((line, i) => {
+                setTimeout(() => line.classList.add("revealed"), i * 120);
+              });
+              verseObs.unobserve(e.target);
+            }
+          });
+        },
+        { threshold: 0.3 },
+      );
+      verseObs.observe(document.getElementById("verse"));
+
+      // --- Route Card Detail ---
+      const routeData = {
+        warning: {
+          "Severity Filter": "warning",
+          Threshold: "3 signals",
+          Window: "30 minutes",
+          Cooldown: "15 minutes",
+          Actions: "probe -> note (anomaly) -> recommend",
+          Template: '"{{count}} warning signals from {{source}} in {{window}}min window"',
+        },
+        critical: {
+          "Severity Filter": "critical",
+          Threshold: "1 signal (immediate)",
+          Window: "5 minutes",
+          Cooldown: "5 minutes",
+          Actions: "note (anomaly) -> probe -> recommend -> audit",
+          Template: '"Critical signal detected: {{topLine}}"',
+        },
+        surge: {
+          "Pattern Match": "any single pattern ID",
+          Threshold: "5 occurrences",
+          Window: "60 minutes",
+          Cooldown: "30 minutes",
+          Actions: "note (trend)",
+          Template: '"Pattern surge: {{patterns}} fired {{count}} times in {{window}}min"',
+        },
+        correlation: {
+          "Source Count": "3+ distinct sources",
+          Threshold: "3 sources",
+          Window: "60 minutes",
+          Cooldown: "60 minutes",
+          Actions: "note (cross-run-context) -> probe",
+          Template: '"Cross-source correlation: {{count}} sources in {{window}}min"',
+        },
+      };
+
+      document.querySelectorAll(".route-card").forEach((card) => {
+        card.addEventListener("click", () => {
+          const route = card.dataset.route;
+          const detail = document.getElementById("route-detail");
+          const wasOpen = card.classList.contains("active");
+
+          document.querySelectorAll(".route-card").forEach((c) => c.classList.remove("active"));
+
+          if (wasOpen) {
+            detail.classList.remove("open");
+            detail.innerHTML = "";
+            return;
+          }
+
+          card.classList.add("active");
+          const data = routeData[route];
+          detail.innerHTML = Object.entries(data)
+            .map(
+              ([k, v]) =>
+                `<div class="detail-row"><span class="detail-label">${k}</span><span class="detail-value">${v}</span></div>`,
+            )
+            .join("");
+          detail.classList.add("open");
+        });
+      });
+
+      // --- Signal Simulation ---
+      (function () {
+        const btn = document.getElementById("sim-send");
+        const fill = document.getElementById("sim-fill");
+        const log = document.getElementById("sim-log");
+        let count = 0;
+        const threshold = 3;
+        let cooldown = false;
+
+        function ts() {
+          const d = new Date();
+          return d.toTimeString().split(" ")[0];
+        }
+
+        function addLog(html) {
+          const div = document.createElement("div");
+          div.className = "log-entry";
+          div.innerHTML = html;
+          log.prepend(div);
+        }
+
+        btn.addEventListener("click", () => {
+          if (cooldown) {
+            addLog(
+              `<span class="ts">${ts()}</span> <span class="cool">  COOLDOWN active - signal ignored</span>`,
+            );
+            return;
+          }
+
+          count++;
+          const pct = Math.min((count / threshold) * 100, 100);
+          fill.style.width = pct + "%";
+          fill.textContent = `${count}/${threshold}`;
+
+          if (count >= 2 && count < threshold) fill.classList.add("warning-level");
+
+          addLog(
+            `<span class="ts">${ts()}</span> <span class="sig">  WARN signal received (${count}/${threshold})</span>`,
+          );
+
+          if (count >= threshold) {
+            fill.classList.remove("warning-level");
+            fill.classList.add("fired");
+            addLog(
+              `<span class="ts">${ts()}</span> <span class="fire">  ROUTE FIRED: Warning Accumulator</span>`,
+            );
+            addLog(
+              `<span class="ts">${ts()}</span> <span class="action">  -> probe initiated</span>`,
+            );
+            addLog(
+              `<span class="ts">${ts()}</span> <span class="action">  -> notebook: anomaly note written</span>`,
+            );
+            addLog(
+              `<span class="ts">${ts()}</span> <span class="action">  -> recommendations generated</span>`,
+            );
+            addLog(
+              `<span class="ts">${ts()}</span> <span class="cool">  COOLDOWN: 15 min started</span>`,
+            );
+
+            cooldown = true;
+            setTimeout(() => {
+              cooldown = false;
+              count = 0;
+              fill.style.width = "0%";
+              fill.textContent = "";
+              fill.classList.remove("fired", "warning-level", "critical-level");
+              addLog(
+                `<span class="ts">${ts()}</span> <span class="cool">  COOLDOWN expired - window reset</span>`,
+              );
+            }, 4000);
+          }
+        });
+      })();
+    </script>
+  </body>
+</html>

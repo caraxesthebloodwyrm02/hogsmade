@@ -340,7 +340,9 @@ export function suggestImprovements(history, refinement, currentDefaults = {}) {
         field: "evidence_confidence_floor",
         from: currentFloor,
         to: newFloor,
-        reason: `Avg confidence ${(recentAvg * 100).toFixed(0)}% over last 5 runs — tightening floor`,
+        reason: `Avg confidence ${(recentAvg * 100).toFixed(
+          0,
+        )}% over last 5 runs — tightening floor`,
       });
     }
     // If confidence is dropping, loosen
@@ -371,7 +373,9 @@ export function suggestImprovements(history, refinement, currentDefaults = {}) {
         field: "secondary_lens_threshold",
         from: currentThreshold,
         to: newThreshold,
-        reason: `${lensCount} lenses each appearing ${avgAppearance.toFixed(0)}/${history.runs} runs — widening lens capture`,
+        reason: `${lensCount} lenses each appearing ${avgAppearance.toFixed(0)}/${
+          history.runs
+        } runs — widening lens capture`,
       });
     }
   }
@@ -524,7 +528,9 @@ export function buildSessionRecap(
   const adds = records.reduce((s, r) => s + (r.additions || 0), 0);
   const dels = records.reduce((s, r) => s + (r.deletions || 0), 0);
   lines.push(
-    `  ${records.length} files  +${adds} -${dels}  (${meta.elapsed || "?"}ms, ${result.modeSettings?.passCount || 1}-pass)`,
+    `  ${records.length} files  +${adds} -${dels}  (${meta.elapsed || "?"}ms, ${
+      result.modeSettings?.passCount || 1
+    }-pass)`,
   );
 
   // Line 3: Domains touched — which conceptual areas
@@ -692,13 +698,17 @@ function buildNudge(records, result, refinement, comparison) {
 
   // Novel areas detected (comparison available)
   if (novelAreas > 0 && comparison?.details?.hasHistory) {
-    return `touching ${novelAreas} area${novelAreas > 1 ? "s" : ""} you haven't been in recently — check for stale assumptions`;
+    return `touching ${novelAreas} area${
+      novelAreas > 1 ? "s" : ""
+    } you haven't been in recently — check for stale assumptions`;
   }
 
   // High churn single file (specific > generic)
   const maxChurnFile = records.reduce((best, r) => (r.churn > (best?.churn || 0) ? r : best), null);
   if (maxChurnFile && maxChurnFile.churn > totalChurn * 0.6 && records.length > 3) {
-    return `${maxChurnFile.name} holds ${Math.round((maxChurnFile.churn / totalChurn) * 100)}% of the churn — might be doing too much in one file`;
+    return `${maxChurnFile.name} holds ${Math.round(
+      (maxChurnFile.churn / totalChurn) * 100,
+    )}% of the churn — might be doing too much in one file`;
   }
 
   // Scattered with many vectors

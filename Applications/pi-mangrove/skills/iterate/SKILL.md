@@ -14,16 +14,19 @@ description: "Framework for delivering freelance projects from start to finish. 
 ## Steps
 
 1. **Understand**
+
    - Extract requirements, deliverables, constraints, and explicit scope boundaries
    - Clarify ambiguities before implementation
    - State assumptions explicitly if anything remains uncertain
 
 2. **Plan**
+
    - Design the structure before building
    - Define modules, responsibilities, interfaces, and implementation order
    - Sequence work from foundation to dependent features
 
 3. **Implement**
+
    - Complete one module at a time
    - Write tests alongside implementation
    - Verify locally as you go instead of deferring all checks to the end

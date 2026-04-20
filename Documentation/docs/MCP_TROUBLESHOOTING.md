@@ -9,11 +9,13 @@
 **What you can do:**
 
 1. **Re-authenticate GitHub in Cursor**
+
    - Open **Cursor Settings** (e.g. File → Preferences → Cursor Settings, or the gear icon).
    - Go to **Features** or **Tools** / **Integrations** and find **GitHub** or **MCP**.
    - Disconnect or sign out of GitHub, then connect/sign in again so Cursor gets a fresh token and sends a valid header.
 
 2. **Turn off the GitHub MCP integration**
+
    - If you don’t need GitHub MCP, disable it in Cursor Settings (Features → Tools / MCP, or the Integrations panel). Disabling via `~/.cursor/settings.json` plugin keys does not affect the GitHub MCP; use the UI.
 
 3. **Update Cursor**

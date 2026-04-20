@@ -10,25 +10,32 @@
 
 This is a **multi-project workspace**. Each subdirectory is an independent project with its own toolchain and lockfile. Always `cd` into the project root before running any commands. Do not mix package managers across projects.
 
+Canonical shared rules (TUV-001, coding standards, safety invariants): `/home/caraxes/.dev-rules.md`. Follow that file if anything here drifts from it.
+
 ## Workspace layout
 
-| Project                | Stack                       | Notes                                        |
-| ---------------------- | --------------------------- | -------------------------------------------- |
-| `afloat-server/`       | TypeScript, MCP SDK, Vitest | Workflow orchestration                       |
-| `echoes-server/`       | TypeScript, MCP SDK, Vitest | Audit/telemetry persistence                  |
-| `grid-server/`         | TypeScript, MCP SDK, Vitest | GRID/GATE integration                        |
-| `lots-server/`         | TypeScript, MCP SDK, Vitest | Experiment catalog and runner                |
-| `maintain-server/`     | TypeScript, MCP SDK, Vitest | Diagnostics and cleanup                      |
-| `pulse-server/`        | TypeScript, MCP SDK, Vitest | Briefings, focus, journaling                 |
-| `seeds-server/`        | TypeScript, MCP SDK, Vitest | Ecosystem snapshots                          |
-| `shared-types/`        | TypeScript                  | Shared types + audit client; **build first** |
-| `glimpse-artifact/`    | React 18, Vite, TailwindCSS | Component library                            |
-| `glimpse-engine/`      | JavaScript (ES modules)     | Browser-only viz engine; no package.json     |
-| `GRID-main/`           | Python 3.13+, FastAPI, uv   | Nested repo — manage in its own git root     |
+| Project               | Stack                       | Notes                                        |
+| --------------------- | --------------------------- | -------------------------------------------- |
+| `afloat-server/`      | TypeScript, MCP SDK, Vitest | Workflow orchestration                       |
+| `echoes-server/`      | TypeScript, MCP SDK, Vitest | Audit/telemetry persistence                  |
+| `eligibility-server/` | TypeScript, MCP SDK, Vitest | Promotion gates and eligibility              |
+| `glimpse-server/`     | TypeScript, MCP SDK, Vitest | Glimpse rendering bridge                     |
+| `grid-server/`        | TypeScript, MCP SDK, Vitest | GRID/GATE integration                        |
+| `lots-server/`        | TypeScript, MCP SDK, Vitest | Experiment catalog and runner                |
+| `maintain-server/`    | TypeScript, MCP SDK, Vitest | Diagnostics and cleanup                      |
+| `mangrove-server/`    | TypeScript, MCP SDK, Vitest | Ecosystem coordination                       |
+| `ori-server/`         | TypeScript, MCP SDK, Vitest | Orientation and onboarding                   |
+| `overview-server/`    | TypeScript, MCP SDK, Vitest | Checkpoint and health check                  |
+| `pulse-server/`       | TypeScript, MCP SDK, Vitest | Briefings, focus, journaling                 |
+| `seeds-server/`       | TypeScript, MCP SDK, Vitest | Ecosystem snapshots                          |
+| `shared-types/`       | TypeScript                  | Shared types + audit client; **build first** |
+| `glimpse-artifact/`   | React 18, Vite, TailwindCSS | Component library                            |
+| `glimpse-engine/`     | JavaScript (ES modules)     | Browser-only viz engine; no package.json     |
+| `GRID-main/`          | Python 3.13+, FastAPI, uv   | Nested repo — manage in its own git root     |
 
 ## Build and test commands
 
-### TypeScript MCP servers (afloat, echoes, grid, lots, maintain, pulse, seeds)
+### TypeScript MCP servers (afloat, echoes, eligibility, glimpse, grid, lots, maintain, mangrove, ori, overview, pulse, seeds)
 
 ```bash
 cd <server-name>
@@ -113,7 +120,7 @@ Follow shadcn-style conventions: CVA + clsx + tailwind-merge for variants. Icons
 - **Package managers**: `npm` for first-party TS servers, `pnpm` for `mcp-tool-experiment/typescript-sdk`, `uv` for `GRID-main`. Never mix.
 - **Commit scope**: Messages are scoped to the project changed, e.g. `pulse-server: add health check`, `docs: update data contracts`, `afloat-server: fix task registration`.
 - **Nested repos**: `GRID-main/` and `mcp-tool-experiment/` are git submodules. Commit changes inside their own git roots; only update the submodule ref in the root repo when intentionally recording a new commit.
-- **shared-types exports**: Three export paths — `.` (types), `./audit-client` (emitAudit), `./security-policy`. Build with `npm run build` before any dependent server.
+- **shared-types exports**: Seven export paths — `.` (types), `./audit-client` (emitAudit), `./security-policy`, `./session-rate-limit`, `./id`, `./mcp-logger`, `./precedent`. Build with `npm run build` before any dependent server.
 - **mcp-tool-experiment JSDoc examples**: Live in companion `.examples.ts` files, not inline. Middleware packages (`express`, `hono`, `node`) are thin adapters — MCP logic goes in core packages only.
 - **`prompt.md`** at workspace root is a scratch/notes file — not configuration.
 - **Secrets**: Never commit `.env*` files. Use `.env.example` as template. `mcp_config.json` and `claude_code_config.json` at root must not contain secrets.

@@ -15,6 +15,12 @@ import { emitAudit } from "@cascade/shared-types/audit-client";
 import { generateId } from "@cascade/shared-types/id";
 import { McpLogger } from "@cascade/shared-types/mcp-logger";
 import { SessionRateLimiter } from "@cascade/shared-types/session-rate-limit";
+import {
+  type TraceContext,
+  createChildSpan,
+  createRootSpan,
+  extractTrace,
+} from "@cascade/shared-types/trace-context";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { execFile } from "child_process";
@@ -39,44 +45,46 @@ const DATA_DIR = config.dataDir;
 const BOOKMARKS_PATH = path.join(DATA_DIR, "bookmarks.json");
 const SNAPSHOTS_DIR = path.join(DATA_DIR, "snapshots");
 
+// Derive workspace paths from config — never hardcode user home
+const CASCADE = config.seedsRoots?.[0] || config.seedsRoot;
+const HOME = path.resolve(CASCADE, "..");
+
 // Known repos in Seeds ecosystem — path overrides SEEDS_ROOT join when present
 const KNOWN_REPOS: Record<string, { description: string; stack: string; path?: string }> = {
   GRID: {
     description: "Full-stack AI framework",
     stack: "Python 3.13+, FastAPI, ChromaDB",
-    path: "/home/caraxes/CascadeProjects/Projects/GRID-main",
+    path: `${CASCADE}/Projects/GRID-main`,
   },
   afloat: {
     description: "Next.js workflow app",
     stack: "TypeScript, Next.js, Stripe",
-    path: "/home/caraxes/CascadeProjects/Tools/MCPServers/afloat-server",
+    path: `${CASCADE}/Tools/MCPServers/afloat-server`,
   },
   echoes: {
     description: "Audit & observability platform",
     stack: "Python 3.12+, FastAPI",
-    path: "/home/caraxes/CascadeProjects/Tools/MCPServers/echoes-server",
+    path: `${CASCADE}/Tools/MCPServers/echoes-server`,
   },
   "glimpse-engine": {
     description: "Cognitive rendering engine",
     stack: "JavaScript",
-    path: "/home/caraxes/CascadeProjects/Applications/glimpse-engine",
+    path: `${CASCADE}/Applications/glimpse-engine`,
   },
   apiguard: {
     description: "API security gateway",
     stack: "Python 3.13+",
-    // Legacy external repo: retained until a canonical in-workspace path exists.
-    path: "/home/caraxes/roots/apiguard",
+    path: path.join(CASCADE, "Projects", "apiguard"),
   },
   Vision: {
     description: "AI vision project",
     stack: "Python",
-    // Legacy external repo: retained until a canonical in-workspace path exists.
-    path: "/home/caraxes/grove/Vision",
+    path: path.join(CASCADE, "Projects", "Vision"),
   },
   hogsmade: {
     description: "MCP server monorepo",
     stack: "TypeScript, Node.js",
-    path: "/home/caraxes/CascadeProjects",
+    path: CASCADE,
   },
 };
 
@@ -90,11 +98,18 @@ function checkScanRateLimit(scanType: string): string | null {
   const last = lastScanTimes.get(scanType);
   if (last && now - last < SCAN_COOLDOWN_MS) {
     const waitSec = Math.ceil((SCAN_COOLDOWN_MS - (now - last)) / 1000);
-    return `Rate limited: ${scanType} was run ${Math.round((now - last) / 1000)}s ago. Wait ${waitSec}s.`;
+    return `Rate limited: ${scanType} was run ${Math.round(
+      (now - last) / 1000,
+    )}s ago. Wait ${waitSec}s.`;
   }
   lastScanTimes.set(scanType, now);
   return null;
 }
+
+// Map alternate names to KNOWN_REPOS keys (path overrides), not necessarily SEEDS_ROOT dirs.
+const KNOWN_REPO_ALIASES: Record<string, string> = {
+  "GRID-main": "GRID",
+};
 
 // Alias repo names to actual directory names under SEEDS_ROOT (e.g. "grid" -> "GRID" for health checks)
 const REPO_PATH_ALIASES: Record<string, string> = {
@@ -128,7 +143,8 @@ function getRepoCandidates(repoName: string): string[] {
 }
 
 async function resolveRepoPath(repoName: string): Promise<string> {
-  const knownInfo = KNOWN_REPOS[repoName];
+  const knownKey = KNOWN_REPO_ALIASES[repoName] ?? repoName;
+  const knownInfo = KNOWN_REPOS[knownKey];
   if (knownInfo?.path) {
     return knownInfo.path;
   }
@@ -150,7 +166,11 @@ async function getDiscoveredRepoNames(): Promise<string[]> {
       const entries = await fs.readdir(root, { withFileTypes: true });
       for (const entry of entries as { isDirectory(): boolean; name: string }[]) {
         if (!entry.isDirectory()) continue;
-        if (KNOWN_REPOS[entry.name] || entry.name.startsWith(".") || REPO_SKIP_LIST.has(entry.name)) {
+        if (
+          KNOWN_REPOS[entry.name] ||
+          entry.name.startsWith(".") ||
+          REPO_SKIP_LIST.has(entry.name)
+        ) {
           continue;
         }
 
@@ -240,7 +260,8 @@ async function findGitRoot(repoPath: string): Promise<string | null> {
 }
 
 async function checkRepoHealth(repoName: string): Promise<RepoHealth> {
-  const knownInfo = KNOWN_REPOS[repoName];
+  const knownKey = KNOWN_REPO_ALIASES[repoName] ?? repoName;
+  const knownInfo = KNOWN_REPOS[knownKey];
   const repoPath = await resolveRepoPath(repoName);
   const health: RepoHealth = {
     name: repoName,
@@ -454,6 +475,8 @@ export function buildServer(): McpServer {
     },
   );
 
+  // NEXT: RepoHealthSignal → anticipation activation threshold
+
   // Scan all repos
   registerTool(
     "ecosystem_scan",
@@ -470,6 +493,8 @@ export function buildServer(): McpServer {
       }),
     },
     async (args: { saveSnapshot?: boolean }) => {
+      const incomingTrace: TraceContext | null = extractTrace(args as Record<string, unknown>);
+      const span = incomingTrace ? createChildSpan(incomingTrace) : createRootSpan();
       const rlMsg = readLimiter.check("ecosystem_scan");
       if (rlMsg)
         return {
@@ -501,8 +526,8 @@ export function buildServer(): McpServer {
       const overallScore =
         existingRepos.length > 0
           ? Math.round(
-            existingRepos.reduce((sum, r) => sum + r.healthScore, 0) / existingRepos.length,
-          )
+              existingRepos.reduce((sum, r) => sum + r.healthScore, 0) / existingRepos.length,
+            )
           : 0;
       const activeCount = existingRepos.filter((r) => r.healthScore >= 60).length;
       const staleCount = existingRepos.filter((r) => r.healthScore < 40 && r.exists).length;
@@ -523,6 +548,8 @@ export function buildServer(): McpServer {
       }
 
       emitAudit({
+        traceId: span.traceId,
+        spanId: span.spanId,
         source: SERVER_NAME,
         tool: "ecosystem_scan",
         status: overallScore >= 50 ? "success" : "failure",
@@ -584,6 +611,8 @@ export function buildServer(): McpServer {
       }),
     },
     async (args: { repoName: string }) => {
+      const incomingTrace: TraceContext | null = extractTrace(args as Record<string, unknown>);
+      const span = incomingTrace ? createChildSpan(incomingTrace) : createRootSpan();
       const rlMsg = readLimiter.check("repo_detail");
       if (rlMsg)
         return {
@@ -591,9 +620,12 @@ export function buildServer(): McpServer {
           isError: true,
         };
       const health = await checkRepoHealth(args.repoName);
-      const knownInfo = KNOWN_REPOS[args.repoName];
+      const knownKey = KNOWN_REPO_ALIASES[args.repoName] ?? args.repoName;
+      const knownInfo = KNOWN_REPOS[knownKey];
 
       emitAudit({
+        traceId: span.traceId,
+        spanId: span.spanId,
         source: SERVER_NAME,
         tool: "repo_detail",
         status: health.exists ? "success" : "failure",

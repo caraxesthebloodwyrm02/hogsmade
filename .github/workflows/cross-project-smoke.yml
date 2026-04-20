@@ -15,48 +15,39 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v6
+        with:
+          submodules: true
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "22"
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install monorepo
+        run: npm ci
 
       - name: Build shared-types
-        run: |
-          cd Components/shared-types
-          npm ci
-          npm run build
+        run: npm run build -w @cascade/shared-types
 
       - name: Build shared-resilience
-        run: |
-          cd Components/shared-resilience
-          npm ci
-          npm run build
+        run: npm run build -w @cascade/shared-resilience
 
       - name: Build shared-pipeline
-        run: |
-          cd Components/shared-pipeline
-          npm ci
-          npm run build
+        run: npm run build -w @cascade/shared-pipeline
 
       - name: Build eligibility-server
         env:
           NODE_OPTIONS: "--max-old-space-size=8192"
-        run: |
-          cd Tools/MCPServers/eligibility-server
-          npm ci
-          npm run build
+        run: npm run build -w eligibility-server
 
       - name: Build MCP servers
         run: |
           FAILED=0
           for dir in afloat-server echoes-server glimpse-server grid-server lots-server maintain-server mangrove-server overview-server pulse-server seeds-server; do
             echo "== ${dir} =="
-            (
-              cd "Tools/MCPServers/$dir"
-              npm ci
-              npm run build
-            ) || {
+            npm run build -w "$dir" || {
               echo "::error::Build failed for ${dir}"
               FAILED=$((FAILED + 1))
             }
@@ -68,10 +59,7 @@ jobs:
           fi
 
       - name: Build glimpse-artifact
-        run: |
-          cd Applications/glimpse-artifact
-          npm ci
-          npm run build
+        run: npm run build -w glimpse-artifact
 
   test-servers:
     name: Test MCP Servers
@@ -80,48 +68,39 @@ jobs:
     needs: [typescript-build]
     steps:
       - uses: actions/checkout@v6
+        with:
+          submodules: true
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "22"
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install monorepo
+        run: npm ci
 
       - name: Build shared-types
-        run: |
-          cd Components/shared-types
-          npm ci
-          npm run build
+        run: npm run build -w @cascade/shared-types
 
       - name: Build shared-resilience
-        run: |
-          cd Components/shared-resilience
-          npm ci
-          npm run build
+        run: npm run build -w @cascade/shared-resilience
 
       - name: Build shared-pipeline
-        run: |
-          cd Components/shared-pipeline
-          npm ci
-          npm run build
+        run: npm run build -w @cascade/shared-pipeline
 
       - name: Build eligibility-server
         env:
           NODE_OPTIONS: "--max-old-space-size=8192"
-        run: |
-          cd Tools/MCPServers/eligibility-server
-          npm ci
-          npm run build
+        run: npm run build -w eligibility-server
 
       - name: Test MCP servers
         run: |
           FAILED=0
           for dir in afloat-server echoes-server glimpse-server grid-server lots-server maintain-server mangrove-server overview-server pulse-server seeds-server; do
             echo "== ${dir} =="
-            (
-              cd "Tools/MCPServers/$dir"
-              npm ci
-              npm test
-            ) || {
+            npm test -w "$dir" || {
               echo "::warning::Tests failed for ${dir}"
               FAILED=$((FAILED + 1))
             }

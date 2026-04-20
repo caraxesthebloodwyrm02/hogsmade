@@ -105,7 +105,20 @@ export function createAsyncPipeline<TState>(
           pipelineId: id,
         };
 
-        const output = await pass.execute(input);
+        // Propagate the error with pass context so callers can identify
+        // which step failed and at what residue depth.
+        let output: Awaited<ReturnType<typeof pass.execute>>;
+        try {
+          output = await pass.execute(input);
+        } catch (err) {
+          const cause = err instanceof Error ? err : new Error(String(err));
+          const wrapped = new Error(
+            `[pipeline:${id}] pass "${pass.id}" (index ${i}) threw: ${cause.message}`,
+          );
+          wrapped.cause = cause;
+          throw wrapped;
+        }
+
         state = output.state;
         residue.push(buildEntry(pass.id, output.deposit));
       }

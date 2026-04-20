@@ -10,14 +10,18 @@
  * Port: 8000 (per GATE/agent_schema.json)
  */
 
-import { AuditIntegrityGuard } from "@cascade/shared-types/security-policy";
 import { generateId } from "@cascade/shared-types/id";
 import { McpLogger } from "@cascade/shared-types/mcp-logger";
-import { DEFAULT_COOLDOWN_MS, PRECEDENT_TRIGGER_STATUSES } from "@cascade/shared-types/precedent";
 import type { RecurrenceCheckResult } from "@cascade/shared-types/precedent";
+import { PRECEDENT_TRIGGER_STATUSES } from "@cascade/shared-types/precedent";
+import { AuditIntegrityGuard } from "@cascade/shared-types/security-policy";
 import { SessionRateLimiter } from "@cascade/shared-types/session-rate-limit";
-import { PrecedentStore } from "./precedent-store.js";
-import { applySuccessDeescalation, applyTimeDecay, checkRecurrence } from "./recurrence.js";
+import {
+  type TraceContext,
+  createChildSpan,
+  createRootSpan,
+  extractTrace,
+} from "@cascade/shared-types/trace-context";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { promises as fs } from "fs";
@@ -27,6 +31,8 @@ import { pathToFileURL } from "url";
 import * as z from "zod";
 import { CHARACTER_QUERY_CLUSTERS, findRelevantClusters } from "./character-clusters.js";
 import { getConfig } from "./config.js";
+import { PrecedentStore } from "./precedent-store.js";
+import { applySuccessDeescalation, applyTimeDecay, checkRecurrence } from "./recurrence.js";
 
 // ── Constants ──
 
@@ -50,6 +56,8 @@ interface AuditEntry {
   tool: string;
   status: "success" | "failure" | "blocked" | "dry_run" | "error";
   durationMs?: number;
+  traceId?: string;
+  spanId?: string;
   metadata?: Record<string, unknown>;
 }
 
@@ -199,7 +207,9 @@ async function readAuditLog(
     const stat = await fs.stat(AUDIT_LOG_PATH);
     if (stat.size > MAX_AUDIT_FILE_BYTES) {
       throw new Error(
-        `Audit log too large (${Math.round(stat.size / (1024 * 1024))}MB) — refusing to load into memory`,
+        `Audit log too large (${Math.round(
+          stat.size / (1024 * 1024),
+        )}MB) — refusing to load into memory`,
       );
     }
     content = await fs.readFile(AUDIT_LOG_PATH, "utf-8");
@@ -294,9 +304,7 @@ async function readCharacterLog(
   try {
     const stat = await fs.stat(CHARACTER_LOG_PATH);
     if (stat.size > MAX_CHARACTER_FILE_BYTES) {
-      throw new Error(
-        `Character log too large (${Math.round(stat.size / (1024 * 1024))}MB)`,
-      );
+      throw new Error(`Character log too large (${Math.round(stat.size / (1024 * 1024))}MB)`);
     }
     content = await fs.readFile(CHARACTER_LOG_PATH, "utf-8");
   } catch {
@@ -458,6 +466,8 @@ export function buildServer(): McpServer {
     },
   );
 
+  // NEXT: AuditEvent → anticipation_signal attribution chain
+
   // Record audit entry
   registerTool(
     "record_audit",
@@ -470,7 +480,7 @@ export function buildServer(): McpServer {
           .enum(["success", "failure", "blocked", "dry_run", "error"])
           .describe("Execution result status"),
         durationMs: z.number().optional().describe("Execution duration in milliseconds"),
-        metadata: z.record(z.unknown()).optional().describe("Additional context"),
+        metadata: z.record(z.string(), z.unknown()).optional().describe("Additional context"),
         runMode: runModeSchema,
       }),
     },
@@ -481,6 +491,10 @@ export function buildServer(): McpServer {
         precedentStore.storePath,
       ]);
       const now = new Date().toISOString();
+
+      // Extract W3C trace context from _trace arg (if provided by caller)
+      const incomingTrace: TraceContext | null = extractTrace(args);
+      const span = incomingTrace ? createChildSpan(incomingTrace) : createRootSpan();
 
       // P-INT-001 + P-INT-002: Validate source and timestamp integrity
       const integrityCheck = AuditIntegrityGuard.validateEntry(args.source, now);
@@ -506,6 +520,8 @@ export function buildServer(): McpServer {
         tool: args.tool,
         status: normalizeAuditStatus(args.status) ?? "failure",
         durationMs: args.durationMs,
+        traceId: span.traceId,
+        spanId: span.spanId,
         metadata: args.metadata as Record<string, unknown> | undefined,
       };
       await appendAuditEntry(entry);
@@ -535,6 +551,118 @@ export function buildServer(): McpServer {
             text: JSON.stringify({
               recorded: true,
               id: entry.id,
+              ...(recurrence ? { recurrence } : {}),
+            }),
+          },
+        ],
+      };
+    },
+  );
+
+  // Record a Glimpse preflight result — mandatory safety check before message commit.
+  // Writes a structured audit entry so graph_compiler can compile PREFLIGHT entities.
+  registerTool(
+    "record_glimpse_preflight",
+    {
+      description:
+        "Record a Glimpse preflight alignment result from canopy/echoes. " +
+        "Preflight checks are mandatory (the rearview mirror before merging to the highway). " +
+        "Results are written to the audit log so graph_compiler can compile them as PREFLIGHT entities.",
+      inputSchema: z.object({
+        source: z
+          .string()
+          .min(1)
+          .default("echoes-canopy")
+          .describe('Source identifier (e.g. "echoes-canopy")'),
+        session_id: z.string().describe("EchoesAssistantV2 session_id"),
+        aligned: z.boolean().describe("Whether the preflight alignment check passed"),
+        status: z.string().describe('Glimpse status string (e.g. "aligned", "misaligned")'),
+        sample: z.string().optional().describe("Sample text from Glimpse result"),
+        essence: z.string().optional().describe("Essence summary from Glimpse engine"),
+        delta: z.number().optional().describe("Trajectory delta from Glimpse result"),
+        attempt: z.number().optional().describe("Attempt number from Glimpse engine"),
+        stale: z.boolean().optional().describe("Whether the Glimpse result is stale"),
+        probability_score: z
+          .number()
+          .min(0)
+          .max(1)
+          .optional()
+          .describe("Probability score from preflight trajectory analysis (0–1)"),
+        trajectory_delta: z
+          .number()
+          .optional()
+          .describe("Trajectory delta between current and prior alignment"),
+        runMode: runModeSchema,
+      }),
+    },
+    async (args: any) => {
+      await ensureDataDir();
+      assertMutablePathsAllowed(args.runMode as RunMode, [AUDIT_LOG_PATH]);
+      const now = new Date().toISOString();
+
+      const integrityCheck = AuditIntegrityGuard.validateEntry(args.source, now);
+      if (integrityCheck.verdict === "deny") {
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: JSON.stringify({
+                recorded: false,
+                error: integrityCheck.reason,
+                policyId: integrityCheck.policyId,
+              }),
+            },
+          ],
+        };
+      }
+
+      const entry: AuditEntry = {
+        id: generateId("aud"),
+        timestamp: now,
+        source: args.source ?? "echoes-canopy",
+        tool: "glimpse_preflight",
+        status: args.aligned ? "success" : "failure",
+        metadata: {
+          session_id: args.session_id,
+          aligned: args.aligned,
+          glimpse_status: args.status,
+          sample: args.sample,
+          essence: args.essence,
+          delta: args.delta,
+          attempt: args.attempt,
+          stale: args.stale,
+          probability_score: args.probability_score,
+          trajectory_delta: args.trajectory_delta,
+        },
+      };
+      await appendAuditEntry(entry);
+
+      // Feed recurrence detector on misalignment
+      let recurrence: RecurrenceCheckResult | null = null;
+      if (!args.aligned) {
+        recurrence = checkRecurrence(
+          precedentStore,
+          {
+            source: entry.source,
+            tool: entry.tool,
+            status: entry.status,
+            metadata: entry.metadata,
+          },
+          false,
+          true,
+        );
+      } else {
+        precedentStore.recordSuccess(entry.source, entry.tool);
+      }
+
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify({
+              recorded: true,
+              id: entry.id,
+              aligned: args.aligned,
               ...(recurrence ? { recurrence } : {}),
             }),
           },
@@ -631,7 +759,7 @@ export function buildServer(): McpServer {
         projects: z.number().describe("Number of projects scanned"),
         activeServers: z.array(z.string()).describe("List of active MCP server names"),
         metrics: z
-          .record(z.number())
+          .record(z.string(), z.number())
           .describe("Key-value numeric metrics (e.g. healthScore, commitCount)"),
         characterState: z
           .object({
@@ -640,7 +768,7 @@ export function buildServer(): McpServer {
             gateConfidence: z.number().min(0).max(1).describe("Last GateVerdict confidence"),
             entityCount: z.number().min(0).describe("Compiled entity count"),
             dominantTraits: z
-              .record(z.number())
+              .record(z.string(), z.number())
               .describe("Top personality trait levels"),
             consentType: z.string().optional().describe("Active consent type"),
             provenanceId: z.string().optional().describe("Latest provenance chain ID"),
@@ -720,7 +848,7 @@ export function buildServer(): McpServer {
           .enum(["enthusiastic", "curious", "supportive", "playful", "focused", "calm", "creative"])
           .describe("Current Mood enum value from PersonalityEngine"),
         traits: z
-          .record(z.number().min(0).max(1))
+          .record(z.string(), z.number().min(0).max(1))
           .describe("PersonalityTrait levels (0.0–1.0), keyed by trait name"),
         rulePack: z
           .enum(["base", "exploratory", "restricted"])
@@ -747,7 +875,7 @@ export function buildServer(): McpServer {
           .optional()
           .default([])
           .describe("ClusterNote observations from knowledge_graph"),
-        metadata: z.record(z.unknown()).optional().describe("Additional context"),
+        metadata: z.record(z.string(), z.unknown()).optional().describe("Additional context"),
         runMode: runModeSchema,
       }),
     },
@@ -887,7 +1015,9 @@ export function buildServer(): McpServer {
         query: z
           .string()
           .optional()
-          .describe("Free-text query to match against cluster content. Omit to return all clusters."),
+          .describe(
+            "Free-text query to match against cluster content. Omit to return all clusters.",
+          ),
         axis: z
           .enum(["mood", "governance", "personality", "graph", "cluster", "coherence"])
           .optional()
@@ -944,7 +1074,10 @@ export function buildServer(): McpServer {
         status: z
           .enum(["success", "failure", "blocked", "dry_run", "error"])
           .describe("Status to check"),
-        metadata: z.record(z.unknown()).optional().describe("Metadata for fingerprint matching"),
+        metadata: z
+          .record(z.string(), z.unknown())
+          .optional()
+          .describe("Metadata for fingerprint matching"),
         isMutating: z
           .boolean()
           .optional()

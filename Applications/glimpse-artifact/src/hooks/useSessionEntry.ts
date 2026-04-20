@@ -112,7 +112,9 @@ function generateNarrative(
 
   if (driftCount > 0) {
     parts.push(
-      `${driftCount} item${driftCount === 1 ? "" : "s"} need${driftCount === 1 ? "s" : ""} tending.`,
+      `${driftCount} item${driftCount === 1 ? "" : "s"} need${
+        driftCount === 1 ? "s" : ""
+      } tending.`,
     );
   }
 

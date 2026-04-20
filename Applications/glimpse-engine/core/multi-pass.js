@@ -134,7 +134,9 @@ function crossReferencePass(state, entities, relations) {
           scope: "entity",
           targetId: entityId,
           affects: ["context_lens", "diagnostics"],
-          reason: `${entity?.name || entityId} has competing lens assignments: ${primaryLens} vs ${secondaryLens}.`,
+          reason: `${
+            entity?.name || entityId
+          } has competing lens assignments: ${primaryLens} vs ${secondaryLens}.`,
           payload: {
             lens: primaryLens,
             entityId,
@@ -198,7 +200,9 @@ export function detectContradictions(evidences, entityLensScores) {
       if (nextScore > 0 && topScore > 0 && topScore < nextScore * 1.1) {
         contradictions.push({
           entityId,
-          description: `Entity ${entityId}: lens ${topLens} (${topScore.toFixed(2)}) barely leads ${nextLens} (${nextScore.toFixed(2)}) — near-contradiction.`,
+          description: `Entity ${entityId}: lens ${topLens} (${topScore.toFixed(
+            2,
+          )}) barely leads ${nextLens} (${nextScore.toFixed(2)}) — near-contradiction.`,
           a: topLens,
           b: nextLens,
         });

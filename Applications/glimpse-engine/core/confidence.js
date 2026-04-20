@@ -107,7 +107,9 @@ export function detectGaps(frame, ctx) {
   if (orphans.length > 0 && entities.length > 2) {
     recordGap(frame, {
       type: GAP_TYPES.ORPHAN_ENTITY,
-      description: `${orphans.length} entit${orphans.length === 1 ? "y has" : "ies have"} no relations.`,
+      description: `${orphans.length} entit${
+        orphans.length === 1 ? "y has" : "ies have"
+      } no relations.`,
       severity: orphans.length / entities.length > 0.5 ? 0.7 : 0.4,
       affectedIds: orphans.map((e) => e.id),
     });

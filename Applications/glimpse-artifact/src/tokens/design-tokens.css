@@ -151,8 +151,7 @@ body::before {
   content: "";
   position: fixed;
   inset: 0;
-  background:
-    var(--gradient-depth),
+  background: var(--gradient-depth),
     radial-gradient(ellipse at 70% 80%, rgba(240, 168, 48, 0.03) 0%, transparent 50%),
     radial-gradient(circle at 50% 50%, rgba(78, 205, 196, 0.02) 0%, transparent 70%);
   pointer-events: none;
@@ -541,6 +540,270 @@ body::after {
 ::selection {
   background: rgba(78, 205, 196, 0.22);
   color: var(--ink);
+}
+
+/* ════════════════════════════════════════════════════════════════
+ * Warm Presets — Earth Axis
+ *
+ * Four themes on the warm side of the spectrum.
+ * Apply via <html data-theme="DARK|ZEN|DARK_ALT|ZEN_ALT">.
+ *
+ *   DARK     — dusk-to-ember  (amber/earth dark)
+ *   ZEN      — morning parchment (warm light)
+ *   DARK_ALT — wine-to-clay  (terracotta dark)
+ *   ZEN_ALT  — overcast sage (moss light)
+ * ════════════════════════════════════════════════════════════════ */
+
+/* ── DARK — amber earth, deep warm charcoal ───────────────────── */
+[data-theme="DARK"] {
+  --canvas-bg: #1a1410;
+  --canvas-bg-rgb: 26 20 16;
+  --surface: #2d2318;
+  --surface-rgb: 45 35 24;
+  --surface-raised: #3d2f1e;
+  --surface-raised-rgb: 61 47 30;
+  --surface-shallow: #4e3c26;
+
+  --sediment-dark: #5a4230;
+  --sediment-mid: #7a6040;
+  --sediment-light: #9a8060;
+
+  --ink: #f0e6d3;
+  --ink-muted: #c8a87a;
+  --ink-tertiary: #9a7a50;
+  --ink-ghost: #6a5035;
+
+  --teal-50: rgba(200, 149, 74, 0.06);
+  --teal-100: rgba(200, 149, 74, 0.12);
+  --teal-200: rgba(200, 149, 74, 0.2);
+  --teal-500: #c8954a;
+  --teal-600: #a07038;
+  --teal-700: #7a5228;
+  --biolum-cyan-ghost: rgba(200, 149, 74, 0.08);
+  --biolum-cyan-glow: rgba(200, 149, 74, 0.25);
+
+  --amber-100: rgba(200, 149, 74, 0.12);
+  --amber-400: #e8c070;
+  --amber-600: #c09040;
+
+  --rose-100: rgba(176, 90, 74, 0.12);
+  --rose-500: #c8705a;
+  --rose-600: #a05040;
+
+  --emerald-100: rgba(200, 149, 74, 0.12);
+  --emerald-500: #c8954a;
+  --emerald-600: #a07038;
+  --emerald-700: #7a5228;
+
+  --border-color: #5a4230;
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(200, 149, 74, 0.05);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(200, 149, 74, 0.06);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(200, 149, 74, 0.08);
+  --shadow-glow: 0 0 20px rgba(200, 149, 74, 0.15), 0 0 60px rgba(200, 149, 74, 0.05);
+
+  --glass-fill: rgba(45, 35, 24, 0.65);
+  --glass-border: rgba(200, 149, 74, 0.12);
+
+  --gradient-surface: linear-gradient(145deg, #2d2318 0%, #3d2f1e 100%);
+  --gradient-accent: linear-gradient(135deg, #c8954a 0%, #a07038 50%, #7a5228 100%);
+  --gradient-depth: radial-gradient(
+    ellipse at 30% 20%,
+    rgba(200, 149, 74, 0.06) 0%,
+    transparent 60%
+  );
+
+  --glow-emerald: 0 0 20px rgba(200, 149, 74, 0.15), 0 0 8px rgba(200, 149, 74, 0.08);
+  --glow-amber: 0 0 20px rgba(232, 192, 112, 0.12), 0 0 8px rgba(232, 192, 112, 0.08);
+  --glow-rose: 0 0 20px rgba(200, 112, 90, 0.12), 0 0 8px rgba(200, 112, 90, 0.08);
+}
+
+/* ── ZEN — warm parchment, morning light ──────────────────────── */
+[data-theme="ZEN"] {
+  --canvas-bg: #f5f0e8;
+  --canvas-bg-rgb: 245 240 232;
+  --surface: #ede5d8;
+  --surface-rgb: 237 229 216;
+  --surface-raised: #e4d8c8;
+  --surface-raised-rgb: 228 216 200;
+  --surface-shallow: #d8c8b0;
+
+  --sediment-dark: #c8b090;
+  --sediment-mid: #b09070;
+  --sediment-light: #907050;
+
+  --ink: #2d2318;
+  --ink-muted: #6a5035;
+  --ink-tertiary: #907050;
+  --ink-ghost: #b09070;
+
+  --teal-50: rgba(139, 99, 64, 0.06);
+  --teal-100: rgba(139, 99, 64, 0.12);
+  --teal-200: rgba(139, 99, 64, 0.2);
+  --teal-500: #8b6340;
+  --teal-600: #6a4c30;
+  --teal-700: #4a3520;
+  --biolum-cyan-ghost: rgba(139, 99, 64, 0.08);
+  --biolum-cyan-glow: rgba(139, 99, 64, 0.25);
+
+  --amber-100: rgba(139, 99, 64, 0.12);
+  --amber-400: #c89060;
+  --amber-600: #a07040;
+
+  --rose-100: rgba(160, 80, 64, 0.12);
+  --rose-500: #a05040;
+  --rose-600: #804030;
+
+  --emerald-100: rgba(139, 99, 64, 0.12);
+  --emerald-500: #8b6340;
+  --emerald-600: #6a4c30;
+  --emerald-700: #4a3520;
+
+  --border-color: #c8b090;
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(139, 99, 64, 0.08);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(139, 99, 64, 0.08);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(139, 99, 64, 0.1);
+  --shadow-glow: 0 0 20px rgba(139, 99, 64, 0.1), 0 0 60px rgba(139, 99, 64, 0.04);
+
+  --glass-fill: rgba(237, 229, 216, 0.75);
+  --glass-border: rgba(139, 99, 64, 0.15);
+
+  --gradient-surface: linear-gradient(145deg, #ede5d8 0%, #e4d8c8 100%);
+  --gradient-accent: linear-gradient(135deg, #8b6340 0%, #6a4c30 50%, #4a3520 100%);
+  --gradient-depth: radial-gradient(
+    ellipse at 30% 20%,
+    rgba(139, 99, 64, 0.04) 0%,
+    transparent 60%
+  );
+
+  --glow-emerald: 0 0 20px rgba(139, 99, 64, 0.1), 0 0 8px rgba(139, 99, 64, 0.06);
+  --glow-amber: 0 0 20px rgba(200, 144, 96, 0.12), 0 0 8px rgba(200, 144, 96, 0.06);
+  --glow-rose: 0 0 20px rgba(160, 80, 64, 0.1), 0 0 8px rgba(160, 80, 64, 0.06);
+}
+
+/* ── DARK_ALT — wine-black, terracotta accent ─────────────────── */
+[data-theme="DARK_ALT"] {
+  --canvas-bg: #18100f;
+  --canvas-bg-rgb: 24 16 15;
+  --surface: #2a1a18;
+  --surface-rgb: 42 26 24;
+  --surface-raised: #3a2220;
+  --surface-raised-rgb: 58 34 32;
+  --surface-shallow: #4e2c28;
+
+  --sediment-dark: #5a3830;
+  --sediment-mid: #7a5048;
+  --sediment-light: #9a6858;
+
+  --ink: #eeddd5;
+  --ink-muted: #c8988a;
+  --ink-tertiary: #9a7060;
+  --ink-ghost: #6a4840;
+
+  --teal-50: rgba(176, 90, 74, 0.06);
+  --teal-100: rgba(176, 90, 74, 0.12);
+  --teal-200: rgba(176, 90, 74, 0.2);
+  --teal-500: #b05a4a;
+  --teal-600: #8a4038;
+  --teal-700: #6a2c28;
+  --biolum-cyan-ghost: rgba(176, 90, 74, 0.08);
+  --biolum-cyan-glow: rgba(176, 90, 74, 0.25);
+
+  --amber-100: rgba(232, 122, 80, 0.12);
+  --amber-400: #e87a50;
+  --amber-600: #c05a38;
+
+  --rose-100: rgba(176, 90, 74, 0.12);
+  --rose-500: #b05a4a;
+  --rose-600: #8a4038;
+
+  --emerald-100: rgba(176, 90, 74, 0.12);
+  --emerald-500: #b05a4a;
+  --emerald-600: #8a4038;
+  --emerald-700: #6a2c28;
+
+  --border-color: #5a3830;
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(176, 90, 74, 0.05);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(176, 90, 74, 0.06);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(176, 90, 74, 0.08);
+  --shadow-glow: 0 0 20px rgba(176, 90, 74, 0.15), 0 0 60px rgba(176, 90, 74, 0.05);
+
+  --glass-fill: rgba(42, 26, 24, 0.65);
+  --glass-border: rgba(176, 90, 74, 0.12);
+
+  --gradient-surface: linear-gradient(145deg, #2a1a18 0%, #3a2220 100%);
+  --gradient-accent: linear-gradient(135deg, #b05a4a 0%, #8a4038 50%, #6a2c28 100%);
+  --gradient-depth: radial-gradient(
+    ellipse at 30% 20%,
+    rgba(176, 90, 74, 0.06) 0%,
+    transparent 60%
+  );
+
+  --glow-emerald: 0 0 20px rgba(176, 90, 74, 0.15), 0 0 8px rgba(176, 90, 74, 0.08);
+  --glow-amber: 0 0 20px rgba(232, 122, 80, 0.12), 0 0 8px rgba(232, 122, 80, 0.08);
+  --glow-rose: 0 0 20px rgba(176, 90, 74, 0.12), 0 0 8px rgba(176, 90, 74, 0.08);
+}
+
+/* ── ZEN_ALT — overcast sage, green-warm light ────────────────── */
+[data-theme="ZEN_ALT"] {
+  --canvas-bg: #eef0e8;
+  --canvas-bg-rgb: 238 240 232;
+  --surface: #e2e6d8;
+  --surface-rgb: 226 230 216;
+  --surface-raised: #d5dac8;
+  --surface-raised-rgb: 213 218 200;
+  --surface-shallow: #c4cab4;
+
+  --sediment-dark: #aab08a;
+  --sediment-mid: #8a9870;
+  --sediment-light: #6a7850;
+
+  --ink: #252c1e;
+  --ink-muted: #4a5838;
+  --ink-tertiary: #6a7a50;
+  --ink-ghost: #8a9870;
+
+  --teal-50: rgba(94, 122, 69, 0.06);
+  --teal-100: rgba(94, 122, 69, 0.12);
+  --teal-200: rgba(94, 122, 69, 0.2);
+  --teal-500: #5e7a45;
+  --teal-600: #486030;
+  --teal-700: #304820;
+  --biolum-cyan-ghost: rgba(94, 122, 69, 0.08);
+  --biolum-cyan-glow: rgba(94, 122, 69, 0.25);
+
+  --amber-100: rgba(94, 122, 69, 0.12);
+  --amber-400: #8a9e72;
+  --amber-600: #6a7850;
+
+  --rose-100: rgba(160, 80, 64, 0.12);
+  --rose-500: #a05040;
+  --rose-600: #804030;
+
+  --emerald-100: rgba(94, 122, 69, 0.12);
+  --emerald-500: #5e7a45;
+  --emerald-600: #486030;
+  --emerald-700: #304820;
+
+  --border-color: #aab08a;
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(94, 122, 69, 0.08);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(94, 122, 69, 0.08);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(94, 122, 69, 0.1);
+  --shadow-glow: 0 0 20px rgba(94, 122, 69, 0.1), 0 0 60px rgba(94, 122, 69, 0.04);
+
+  --glass-fill: rgba(226, 230, 216, 0.75);
+  --glass-border: rgba(94, 122, 69, 0.15);
+
+  --gradient-surface: linear-gradient(145deg, #e2e6d8 0%, #d5dac8 100%);
+  --gradient-accent: linear-gradient(135deg, #5e7a45 0%, #486030 50%, #304820 100%);
+  --gradient-depth: radial-gradient(
+    ellipse at 30% 20%,
+    rgba(94, 122, 69, 0.04) 0%,
+    transparent 60%
+  );
+
+  --glow-emerald: 0 0 20px rgba(94, 122, 69, 0.1), 0 0 8px rgba(94, 122, 69, 0.06);
+  --glow-amber: 0 0 20px rgba(138, 158, 114, 0.12), 0 0 8px rgba(138, 158, 114, 0.06);
+  --glow-rose: 0 0 20px rgba(160, 80, 64, 0.1), 0 0 8px rgba(160, 80, 64, 0.06);
 }
 
 /* ── Reduced motion ──────────────────────────────────────────── */

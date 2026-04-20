@@ -152,12 +152,16 @@ async function main() {
 
         if (contractReport.missing.length) {
           console.error(
-            `      Missing implementations: ${contractReport.missing.slice(0, 5).join(", ")}${contractReport.missing.length > 5 ? "..." : ""}`,
+            `      Missing implementations: ${contractReport.missing.slice(0, 5).join(", ")}${
+              contractReport.missing.length > 5 ? "..." : ""
+            }`,
           );
         }
         if (contractReport.orphaned.length) {
           console.error(
-            `      Orphaned implementations: ${contractReport.orphaned.slice(0, 5).join(", ")}${contractReport.orphaned.length > 5 ? "..." : ""}`,
+            `      Orphaned implementations: ${contractReport.orphaned.slice(0, 5).join(", ")}${
+              contractReport.orphaned.length > 5 ? "..." : ""
+            }`,
           );
         }
         if (contractReport.mismatched.length) {

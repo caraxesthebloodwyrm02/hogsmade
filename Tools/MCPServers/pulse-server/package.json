@@ -1,7 +1,7 @@
 {
   "name": "pulse-server",
   "version": "1.0.0",
-  "description": "Developer dashboard MCP server \u2014 morning briefings, cross-server status aggregation, session journals, and focus tracking",
+  "description": "Developer dashboard MCP server — morning briefings, cross-server status aggregation, session journals, and focus tracking",
   "type": "module",
   "main": "src/server.ts",
   "scripts": {
@@ -15,13 +15,13 @@
   "dependencies": {
     "@cascade/shared-types": "file:../../../Components/shared-types",
     "@modelcontextprotocol/sdk": "^1.28.0",
-    "zod": "^3.25.0"
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
-    "@vitest/coverage-v8": "4.1.2",
+    "@vitest/coverage-v8": "4.1.4",
     "tsx": "^4.6.0",
-    "typescript": "~5.9.3",
-    "vitest": "4.1.2"
+    "typescript": "~6.0.2",
+    "vitest": "4.1.4"
   }
 }

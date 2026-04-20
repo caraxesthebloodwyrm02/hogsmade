@@ -246,7 +246,9 @@ export class ActivityTracker {
     return {
       totalSessions: this.metrics.totalSessions,
       avgProcessingTime: `${this.metrics.avgProcessingTime.toFixed(2)}ms`,
-      successRate: `${((this.metrics.successCount / this.metrics.totalSessions) * 100).toFixed(1)}%`,
+      successRate: `${((this.metrics.successCount / this.metrics.totalSessions) * 100).toFixed(
+        1,
+      )}%`,
       activeStreak: this.metrics.activeStreak,
       mostActiveDay,
       mostActiveHour,

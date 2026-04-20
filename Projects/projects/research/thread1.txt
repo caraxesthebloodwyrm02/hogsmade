@@ -1,7 +1,7 @@
 
 These tasks run locally and aren't synced across devices
 
-synthesize the key points from these documents summarized into a concise digestable chunk. im preparing to quickly review the documents and get an idea of what im working with. these are some focused strategic market placement early at it's brainstorming phase. my plan is to manually review the strategy and quickly get a 
+synthesize the key points from these documents summarized into a concise digestable chunk. im preparing to quickly review the documents and get an idea of what im working with. these are some focused strategic market placement early at it's brainstorming phase. my plan is to manually review the strategy and quickly get a
 /glimpse of the playbook. my primary focus is to maintain presentation standards and make calculated placement of my portfolio so that i can put my profile in front of an audience group with precisely curated demographics that will be relevant and more likely to be interested. once i have correctly placed the portfolio in front of the right audience.. the second aim is to make my portfolio practical and flexible enough  that looks and feels like something approachable and real. the criteria which i DONT want to fall under is something like.. sounding too mechanical or appearing too confident. how i primarily thought it can be achieved is having the right words mentioned in the right phrases that directly reference the scope of work the employer is looking for. most of the viewers will not read everything. but having the right set of words phrased correctly even in a couple of sentence can define a listing to be approachable vs skipped. so, keeping it simple and realistic is the approach and method im locking in with. however, for the simplicity to work, first we need to go through a very methodical and calculative routine of market and data analysis. so here is a scope to start with.
 
 platform: UPWORK
@@ -68,7 +68,7 @@ Loaded tools
 Loaded tools
 You're out of extra usage · resets 12am (Asia/Dhaka)
 
-good read, great idea. approved. but before you start anything else, here is my review on the three docs. please read, understand, edit & finalize then resume with the workflow you were about to execute. 
+good read, great idea. approved. but before you start anything else, here is my review on the three docs. please read, understand, edit & finalize then resume with the workflow you were about to execute.
 
 @UPWORK_CHROME_HANDOFF.md#L6 - this claim was conceptually attractive but practically unaligned. the correct approach: session goal - isolate carefully selected very specific scopes of the process synthesized and listed as an item in the pending list of todos.. hand pick based on relevant candidates for "Computer Use" and have Sonnet 4.6 in chrome take ownership of that. this should cover no more than 25%.. 1/4th of the whole process. equally breaking down the whole process into 4 digestable chunks and claude sonnet 4.6 in chrome is delegated the responsibility of a quarter of the process to execute autonomously.
 
@@ -244,4 +244,3 @@ Which one do you want to hit next?
 im going to be right back. giving this a late night pen-paper study. let me see what the voice in my head thinks about it all... getting back to you shortly
 
 Take your time. The docs will be here when you're ready.
-

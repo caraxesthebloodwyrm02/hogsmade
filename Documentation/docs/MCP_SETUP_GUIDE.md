@@ -6,31 +6,31 @@ This guide documents the current MCP layout for CascadeProjects. The active conf
 
 ### First-party TypeScript MCP servers
 
-| Server | Purpose | Entry |
-| --- | --- | --- |
-| `echoes-server` | Persistent audit and telemetry | `Tools/MCPServers/echoes-server/src/server.ts` |
-| `grid-server` | GATE validation and target checks | `Tools/MCPServers/grid-server/src/server.ts` |
-| `afloat-server` | Workflow orchestration | `Tools/MCPServers/afloat-server/src/server.ts` |
-| `lots-server` | Experiment catalog and runner | `Tools/MCPServers/lots-server/src/server.ts` |
-| `maintain-server` | Cleanup and diagnostics | `Tools/MCPServers/maintain-server/src/server.ts` |
-| `pulse-server` | Briefings, focus, and journal tools | `Tools/MCPServers/pulse-server/src/server.ts` |
-| `seeds-server` | Ecosystem snapshots and scans | `Tools/MCPServers/seeds-server/src/server.ts` |
-| `overview-server` | Workspace health and checkpoint summaries | `Tools/MCPServers/overview-server/src/server.ts` |
-| `eligibility-server` | Promotion-gate and cycle tools | `Tools/MCPServers/eligibility-server/src/server.ts` |
-| `mangrove-server` | DIO bridge and security helpers | `Tools/MCPServers/mangrove-server/src/server.ts` |
-| `glimpse-server` | Glimpse cognitive-engine tools | `Tools/MCPServers/glimpse-server/src/server.ts` |
+| Server               | Purpose                                   | Entry                                               |
+| -------------------- | ----------------------------------------- | --------------------------------------------------- |
+| `echoes-server`      | Persistent audit and telemetry            | `Tools/MCPServers/echoes-server/src/server.ts`      |
+| `grid-server`        | GATE validation and target checks         | `Tools/MCPServers/grid-server/src/server.ts`        |
+| `afloat-server`      | Workflow orchestration                    | `Tools/MCPServers/afloat-server/src/server.ts`      |
+| `lots-server`        | Experiment catalog and runner             | `Tools/MCPServers/lots-server/src/server.ts`        |
+| `maintain-server`    | Cleanup and diagnostics                   | `Tools/MCPServers/maintain-server/src/server.ts`    |
+| `pulse-server`       | Briefings, focus, and journal tools       | `Tools/MCPServers/pulse-server/src/server.ts`       |
+| `seeds-server`       | Ecosystem snapshots and scans             | `Tools/MCPServers/seeds-server/src/server.ts`       |
+| `overview-server`    | Workspace health and checkpoint summaries | `Tools/MCPServers/overview-server/src/server.ts`    |
+| `eligibility-server` | Promotion-gate and cycle tools            | `Tools/MCPServers/eligibility-server/src/server.ts` |
+| `mangrove-server`    | DIO bridge and security helpers           | `Tools/MCPServers/mangrove-server/src/server.ts`    |
+| `glimpse-server`     | Glimpse cognitive-engine tools            | `Tools/MCPServers/glimpse-server/src/server.ts`     |
 
 ### GRID Python MCP servers
 
-| Server | Purpose | Entry |
-| --- | --- | --- |
-| `grid-rag` | Core GRID RAG server | `Projects/GRID-main/mcp-setup/server/rag_mcp_server.py` |
-| `grid-rag-enhanced` | Enhanced RAG server | `Projects/GRID-main` module `grid.mcp.enhanced_rag_server` |
-| `grid-enhanced-tools` | GRID tools server | `Projects/GRID-main/mcp-setup/server/enhanced_tools_mcp_server.py` |
-| `grid-intelligence` | GRID intelligence server | `Projects/GRID-main` module `grid.mcp.intelligence_server` |
-| `code-analysis` | Code analysis server | `Projects/GRID-main/mcp-setup/server/code_analysis_mcp_server.py` |
-| `test-runner` | Test runner server | `Projects/GRID-main/mcp-setup/server/test_runner_mcp_server.py` |
-| `portfolio-safety-lens` | Portfolio safety server | `Projects/GRID-main/mcp-setup/server/portfolio_safety_mcp_server.py` |
+| Server                  | Purpose                  | Entry                                                                |
+| ----------------------- | ------------------------ | -------------------------------------------------------------------- |
+| `grid-rag`              | Core GRID RAG server     | `Projects/GRID-main/mcp-setup/server/rag_mcp_server.py`              |
+| `grid-rag-enhanced`     | Enhanced RAG server      | `Projects/GRID-main` module `grid.mcp.enhanced_rag_server`           |
+| `grid-enhanced-tools`   | GRID tools server        | `Projects/GRID-main/mcp-setup/server/enhanced_tools_mcp_server.py`   |
+| `grid-intelligence`     | GRID intelligence server | `Projects/GRID-main` module `grid.mcp.intelligence_server`           |
+| `code-analysis`         | Code analysis server     | `Projects/GRID-main/mcp-setup/server/code_analysis_mcp_server.py`    |
+| `test-runner`           | Test runner server       | `Projects/GRID-main/mcp-setup/server/test_runner_mcp_server.py`      |
+| `portfolio-safety-lens` | Portfolio safety server  | `Projects/GRID-main/mcp-setup/server/portfolio_safety_mcp_server.py` |
 
 Historical references to `mcp-tool-experiment` are archival only and are not active checkout paths in the current tree.
 

@@ -86,25 +86,29 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22"
-          cache: "npm"
+          cache: npm
+          cache-dependency-path: package-lock.json
 
-      - name: Install Dependencies
+      - name: Install monorepo
+        run: npm ci
+
+      - name: Build shared packages
         run: |
-          cd Components/shared-types && npm ci && npm run build
-          cd ../../Components/shared-resilience && npm ci && npm run build
-          cd ../../Components/shared-pipeline && npm ci && npm run build
+          npm run build -w @cascade/shared-types
+          npm run build -w @cascade/shared-resilience
+          npm run build -w @cascade/shared-pipeline
 
       - name: Build eligibility-server
         env:
           NODE_OPTIONS: "--max-old-space-size=8192"
-        run: cd Tools/MCPServers/eligibility-server && npm ci && npm run build
+        run: npm run build -w eligibility-server
 
       - name: Build MCP Servers
         run: |
           FAILED=0
           for dir in afloat-server echoes-server glimpse-server grid-server lots-server maintain-server mangrove-server overview-server pulse-server seeds-server; do
             echo "== Building ${dir} =="
-            (cd "Tools/MCPServers/$dir" && npm ci && npm run build) || FAILED=$((FAILED + 1))
+            npm run build -w "$dir" || FAILED=$((FAILED + 1))
           done
           if [ "$FAILED" -gt 0 ]; then
             echo "::error::${FAILED} server(s) failed to build"
@@ -112,8 +116,7 @@ jobs:
           fi
 
       - name: Build Applications
-        run: |
-          cd Applications/glimpse-artifact && npm ci && npm run build || true
+        run: npm run build -w glimpse-artifact || true
 
   release:
     name: Create GitHub Release
@@ -148,7 +151,7 @@ jobs:
           fi
 
       - name: Create Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ needs.prepare.outputs.tag }}
           name: "hogsmade ${{ needs.prepare.outputs.tag }}"

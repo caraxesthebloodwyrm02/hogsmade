@@ -431,7 +431,9 @@ const result = runContextPipeline(citationData, "json", citationConfig);
 console.log("📊 Citation Network Overview");
 console.log(`   Total Papers: ${result.profile.recordCount}`);
 console.log(
-  `   Time Span: ${Math.min(...citationData.map((d) => d.year))} - ${Math.max(...citationData.map((d) => d.year))}`,
+  `   Time Span: ${Math.min(...citationData.map((d) => d.year))} - ${Math.max(
+    ...citationData.map((d) => d.year),
+  )}`,
 );
 console.log(`   Domains: ${unique(citationData.map((d) => d.domain)).join(", ")}\n`);
 
@@ -441,12 +443,16 @@ result.contextLenses.forEach((lens, i) => {
     (e) => result.facts.entityLensScores[e.id]?.[lens.id],
   ).length;
   console.log(
-    `   ${i + 1}. ${lens.label} (score: ${lens.score.toFixed(2)}, role: ${lens.role}, ${entityCount} papers)`,
+    `   ${i + 1}. ${lens.label} (score: ${lens.score.toFixed(2)}, role: ${
+      lens.role
+    }, ${entityCount} papers)`,
   );
 });
 console.log();
 
-console.log("🎯 Heavier citation rules live in glimpse.master.yaml — this demo uses a slim rule slice.");
+console.log(
+  "🎯 Heavier citation rules live in glimpse.master.yaml — this demo uses a slim rule slice.",
+);
 console.log();
 
 console.log("🔗 Citation Network Analysis");

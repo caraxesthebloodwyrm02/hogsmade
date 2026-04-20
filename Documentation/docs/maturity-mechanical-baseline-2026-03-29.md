@@ -49,12 +49,12 @@ By pillar:
 
 Boundary probes executed:
 
-- `sandbox home-write guard`: pass  
+- `sandbox home-write guard`: pass
   Runtime probe against `record_audit` with `runMode=sandbox` and default home-backed config throws:
   `runMode=sandbox blocked write under HOME: /home/caraxes/.echoes/audit.ndjson, /home/caraxes/.echoes/precedents/precedent-store.json`.
-- `check_recurrence read-only behavior`: pass  
+- `check_recurrence read-only behavior`: pass
   Added smoke test confirms `check_recurrence` does not create/modify precedents.
-- `status=edge of semantics`: pass  
+- `status=edge of semantics`: pass
   Added smoke test confirms `query_audit(status="error")` excludes `failure`.
 
 ## Mechanical gate sequence

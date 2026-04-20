@@ -1,8 +1,8 @@
 # Subtractive Analysis: afloat-server & shared-types
 
-**Date**: 2026-03-09  
-**Scope**: afloat-server, shared-types; MCP configuration and inventory optimization.  
-**Sources**: Direct analysis (afloat, shared-types, MCP config) + subtractive-analyst subagent (cross-workspace candidates).  
+**Date**: 2026-03-09
+**Scope**: afloat-server, shared-types; MCP configuration and inventory optimization.
+**Sources**: Direct analysis (afloat, shared-types, MCP config) + subtractive-analyst subagent (cross-workspace candidates).
 **Todo file**: [SUBTRACTIVE_ANALYSIS_TODOS.md](SUBTRACTIVE_ANALYSIS_TODOS.md)
 
 ---

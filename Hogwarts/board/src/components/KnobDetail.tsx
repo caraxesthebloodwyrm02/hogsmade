@@ -176,7 +176,9 @@ export function KnobDetail({ knob, onClose }: KnobDetailProps) {
             <div className="flex justify-between items-center py-0.5">
               <span>GOV-01 desc ≤ 120</span>
               <span
-                className={`tabular-nums font-medium ${knob.description.length <= 120 ? "text-led-green" : "text-led-yellow"}`}
+                className={`tabular-nums font-medium ${
+                  knob.description.length <= 120 ? "text-led-green" : "text-led-yellow"
+                }`}
               >
                 {knob.description.length}/120
               </span>
@@ -184,7 +186,11 @@ export function KnobDetail({ knob, onClose }: KnobDetailProps) {
             <div className="flex justify-between items-center py-0.5">
               <span>GOV-02 param types</span>
               <span
-                className={`font-medium ${knob.parameters.every((p) => p.type && p.description) ? "text-led-green" : "text-led-yellow"}`}
+                className={`font-medium ${
+                  knob.parameters.every((p) => p.type && p.description)
+                    ? "text-led-green"
+                    : "text-led-yellow"
+                }`}
               >
                 {knob.parameters.every((p) => p.type && p.description) ? "pass" : "warn"}
               </span>
@@ -192,7 +198,11 @@ export function KnobDetail({ knob, onClose }: KnobDetailProps) {
             <div className="flex justify-between items-center py-0.5">
               <span>GOV-04 snake_case ≤ 40</span>
               <span
-                className={`tabular-nums font-medium ${knob.id.length <= 40 && /^[a-z][a-z0-9_]*$/.test(knob.id) ? "text-led-green" : "text-led-yellow"}`}
+                className={`tabular-nums font-medium ${
+                  knob.id.length <= 40 && /^[a-z][a-z0-9_]*$/.test(knob.id)
+                    ? "text-led-green"
+                    : "text-led-yellow"
+                }`}
               >
                 {knob.id.length}/40
               </span>

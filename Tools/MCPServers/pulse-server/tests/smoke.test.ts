@@ -380,4 +380,143 @@ describe("pulse-server smoke", () => {
     expect(Array.isArray(payload.highlights)).toBe(true);
     expect(Array.isArray(payload.tomorrowSuggestions)).toBe(true);
   });
+
+  it("filters synthetic noise from work queue and morning briefing", async () => {
+    const auditPath = process.env.ECHOES_AUDIT_PATH!;
+    const now = new Date().toISOString();
+
+    // Inject a mix of noise (9 entries) + real failure (1 entry)
+    const entries = [
+      // Noise: metadata.noise emitter tag (heuristic #1 — standalone)
+      JSON.stringify({
+        id: "aud-emitter-noise-1",
+        timestamp: now,
+        source: "grid-server",
+        tool: "validate_envelope",
+        status: "failure",
+        metadata: {
+          noise: "test-harness-probe",
+          envelopePath: "/home/caraxes/GATE/incoming/e.json",
+        },
+      }),
+      // Noise: synth- prefix (heuristic #2)
+      JSON.stringify({
+        id: "synth-noise-1",
+        timestamp: now,
+        source: "grid-server",
+        tool: "validate_envelope",
+        status: "failure",
+        metadata: { envelopePath: "/home/caraxes/GATE/incoming/envelope_bad.json" },
+      }),
+      // Noise: known probe tool (heuristic #3)
+      JSON.stringify({
+        id: "aud-probe-1",
+        timestamp: now,
+        source: "echoes-server",
+        tool: "tool_b",
+        status: "failure",
+        durationMs: 200,
+      }),
+      // Noise: /tmp/ envelopePath with normal id (heuristic #4 — isolated)
+      JSON.stringify({
+        id: "aud-tmp-path-1",
+        timestamp: now,
+        source: "grid-server",
+        tool: "validate_envelope",
+        status: "failure",
+        metadata: { envelopePath: "/tmp/grid-server-xyz/GATE/incoming/envelope_test.json" },
+      }),
+      // Noise: GRID_BACKEND_UNAVAILABLE (reason_code variant)
+      JSON.stringify({
+        id: "aud-unavail-1",
+        timestamp: now,
+        source: "grid-server",
+        tool: "admission_stats",
+        status: "blocked",
+        metadata: { reason_code: "GRID_BACKEND_UNAVAILABLE" },
+      }),
+      // Noise: instant mock scan
+      JSON.stringify({
+        id: "aud-scan-1",
+        timestamp: now,
+        source: "seeds-server",
+        tool: "ecosystem_scan",
+        status: "failure",
+        durationMs: 0,
+        metadata: { overallScore: 35 },
+      }),
+      // Noise: error message variant (no reason_code, older format)
+      JSON.stringify({
+        id: "aud-fetchfail-1",
+        timestamp: now,
+        source: "grid-server",
+        tool: "admission_bannered_entities",
+        status: "blocked",
+        metadata: { error: "TypeError: fetch failed" },
+      }),
+      // Noise: merit_check pre-fix NO_GRID_API (score=0, verdict=denied)
+      JSON.stringify({
+        id: "aud-merit-stale-1",
+        timestamp: now,
+        source: "grid-server-merit-guard",
+        tool: "merit_check",
+        status: "blocked",
+        metadata: { score: 0, verdict: "denied", actual_badge: "B0_RESTRICTED" },
+      }),
+      // Noise: evolution_promotion_blocked (cycle management, not defect)
+      JSON.stringify({
+        id: "aud-evo-1",
+        timestamp: now,
+        source: "eligibility-server",
+        tool: "evolution_promotion_blocked",
+        status: "blocked",
+        metadata: { caseId: "test-cycle", beat: "balance" },
+      }),
+      // REAL: actual failure without noise markers
+      JSON.stringify({
+        id: "aud-real-1",
+        timestamp: now,
+        source: "lots-server",
+        tool: "experiment_run",
+        status: "failure",
+        metadata: { relatedRepo: "GRID-main", name: "real-failure" },
+      }),
+    ];
+    writeFileSync(auditPath, entries.join("\n") + "\n", "utf-8");
+
+    const server = buildServer() as TestServer;
+
+    // Test what_should_i_work_on
+    const priorities = (await invokeTool(server, "what_should_i_work_on", {})) as {
+      content: Array<{ text: string }>;
+    };
+    const pPayload = parseToolJson(priorities);
+    expect(pPayload.noiseFiltered).toBe(9);
+    // The 1 real failure should appear in items
+    expect(pPayload.items.length).toBeGreaterThan(0);
+    const realItem = pPayload.items.find(
+      (item: Record<string, unknown>) =>
+        typeof item.title === "string" && item.title.includes("experiment_run"),
+    );
+    expect(realItem).toBeDefined();
+
+    // Test morning_briefing
+    const briefing = (await invokeTool(server, "morning_briefing", {})) as {
+      content: Array<{ text: string }>;
+    };
+    const bPayload = parseToolJson(briefing);
+    // Noise count should be reported in warnings
+    const noiseWarning = bPayload.warnings?.find(
+      (w: string) => typeof w === "string" && w.includes("noise"),
+    );
+    expect(noiseWarning).toBeDefined();
+    expect(noiseWarning).toContain("9");
+
+    // Test check_alerts surfaces noise count
+    const alerts = (await invokeTool(server, "check_alerts", {
+      healthThreshold: 70,
+    })) as { content: Array<{ text: string }> };
+    const aPayload = parseToolJson(alerts);
+    expect(aPayload.noiseFiltered).toBe(9);
+  });
 });

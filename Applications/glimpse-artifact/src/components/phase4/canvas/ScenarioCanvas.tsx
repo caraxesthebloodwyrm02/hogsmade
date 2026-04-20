@@ -103,7 +103,7 @@ export function ScenarioCanvas({ children, className }: ScenarioCanvasProps) {
       </div>
 
       <div
-        className="absolute bottom-3 right-3 font-body text-xs text-ink-muted bg-canvas-surface/80 
+        className="absolute bottom-3 right-3 font-body text-xs text-ink-muted bg-canvas-surface/80
                     backdrop-blur-sm px-2 py-1 rounded-md pointer-events-none"
         aria-live="polite"
       >

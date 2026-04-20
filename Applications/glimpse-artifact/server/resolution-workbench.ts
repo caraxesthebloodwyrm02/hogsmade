@@ -634,8 +634,9 @@ function scoreEndpointCandidates(
     let score = 0;
     const matchedTerms = new Set<string>();
     const reasons: string[] = [];
-    const haystack =
-      `${endpoint.label} ${endpoint.route ?? ""} ${endpoint.filePath} ${endpoint.snippet}`.toLowerCase();
+    const haystack = `${endpoint.label} ${endpoint.route ?? ""} ${endpoint.filePath} ${
+      endpoint.snippet
+    }`.toLowerCase();
 
     for (const keyword of keywords.accepted) {
       const terms = [keyword.term, keyword.canonicalTerm, ...keyword.expansions];
@@ -746,8 +747,10 @@ function scoreFileSurfaces(
     let score = 0;
     const matchedTerms = new Set<string>();
     const reasons: string[] = [];
-    const haystack =
-      `${source.title} ${source.path} ${source.content.slice(0, 3000)}`.toLowerCase();
+    const haystack = `${source.title} ${source.path} ${source.content.slice(
+      0,
+      3000,
+    )}`.toLowerCase();
 
     for (const keyword of keywords.accepted) {
       const terms = [keyword.term, keyword.canonicalTerm, ...keyword.expansions];
@@ -1057,7 +1060,9 @@ export function buildQuestionQueue(
     questions.push({
       id: "q-unknown-terms",
       kind: "focused",
-      question: `These terms are still ungrounded: ${keywords.unknownTerms.slice(0, 4).join(", ")}. Which subsystem or artifact are they closest to?`,
+      question: `These terms are still ungrounded: ${keywords.unknownTerms
+        .slice(0, 4)
+        .join(", ")}. Which subsystem or artifact are they closest to?`,
       rationale: "Unknown terms are currently visible but not trusted by deterministic scoring.",
       affects: candidates.slice(0, 3).map((candidate) => candidate.id),
     });
@@ -1118,7 +1123,9 @@ function buildArtifacts(
       title: "Resolution summary",
       kind: "summary",
       content: topCandidate
-        ? `${observation.dominantCandidate} leads the current field in ${observation.dominantCluster ?? "mixed"} with ${Math.round(observation.confidenceScore * 100)}% confidence.`
+        ? `${observation.dominantCandidate} leads the current field in ${
+            observation.dominantCluster ?? "mixed"
+          } with ${Math.round(observation.confidenceScore * 100)}% confidence.`
         : "No grounded endpoint candidate is leading yet.",
       evidenceRefs: topCandidate?.evidenceRefs ?? [],
     },
@@ -1169,7 +1176,9 @@ function buildTranscript(
     {
       id: "turn-planner",
       speaker: "planner",
-      text: `The workbench grounded the prompt, ranked candidate endpoints, and mapped the strongest cluster field as ${observation.dominantCluster ?? "none"}.`,
+      text: `The workbench grounded the prompt, ranked candidate endpoints, and mapped the strongest cluster field as ${
+        observation.dominantCluster ?? "none"
+      }.`,
       evidenceRefs: candidates.slice(0, 2).flatMap((candidate) => candidate.evidenceRefs),
     },
     {
@@ -1184,7 +1193,9 @@ function buildTranscript(
       id: "turn-skeptic",
       speaker: "skeptic",
       text: secondCandidate
-        ? `The main ambiguity is between ${topCandidate?.label ?? "none"} and ${secondCandidate.label}.`
+        ? `The main ambiguity is between ${topCandidate?.label ?? "none"} and ${
+            secondCandidate.label
+          }.`
         : "The main risk is over-reading a thin evidence field.",
       evidenceRefs: secondCandidate?.evidenceRefs ?? [],
     },

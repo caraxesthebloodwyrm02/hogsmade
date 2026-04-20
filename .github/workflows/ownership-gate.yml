@@ -21,13 +21,15 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22"
+          cache: npm
+          cache-dependency-path: package-lock.json
 
       - name: Build shared-types
         run: npm ci -w @cascade/shared-types && npm run build -w @cascade/shared-types
 
       - name: Collect PR metadata
         id: pr_meta
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -117,7 +119,7 @@ jobs:
 
       - name: Annotate PR on deny
         if: failure() && steps.governance.outcome == 'failure'
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -154,7 +156,7 @@ jobs:
 
       - name: Annotate PR on escalation (advisory)
         if: success()
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
