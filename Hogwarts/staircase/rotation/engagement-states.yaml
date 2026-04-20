@@ -1,0 +1,38 @@
+# rotation/engagement-states.yaml
+# Models the internal state of the agent traversing the staircase.
+# Based on interface definitions from output-0.3.0- (e.g., CognitiveLoad, LogicStyle)
+# and the fundamental essence from concept.git
+
+states:
+  - id: probing
+    title: "Probing"
+    description: "Low cognitive load, high curiosity. Agent is actively seeking context and exploring domains."
+    metadata:
+      cognitive_load: "low"
+      emotional_state: "curious"
+      intent: "context_gathering"
+
+  - id: integrated
+    title: "Integrated"
+    description: "High cognitive load, focused on execution. Agent is writing code or directly modifying state."
+    metadata:
+      cognitive_load: "high"
+      emotional_state: "focused"
+      intent: "execution"
+
+  - id: arkhipov_hold
+    title: "Arkhipov Hold"
+    description: "High risk awareness. Paused for verification, requiring explicit user override."
+    metadata:
+      cognitive_load: "medium"
+      emotional_state: "cautious"
+      intent: "verification"
+      reversibility: "low"
+
+  - id: graduation
+    title: "Graduation"
+    description: "Synthesizing knowledge. Ready to translate findings into library or canon."
+    metadata:
+      cognitive_load: "medium"
+      emotional_state: "reflective"
+      intent: "synthesis"

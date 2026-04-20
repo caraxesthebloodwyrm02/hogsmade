@@ -1,0 +1,67 @@
+# Floor registry for the school's staircase primitive.
+# Each entry declares a domain territory (floor) that staircases may connect.
+# Paths are absolute, anchored at the workspace root.
+#
+# Schema:
+#   id: stable identifier (kebab-case)
+#   name: human-readable label
+#   path: absolute disk path of the territory
+#   kind: one of [lens, track, profile, governance, library, canon, surface-ref]
+#   summary: one-line description
+#
+# This file is declarative. Agents read it directly.
+
+floors:
+  - id: patterns
+    name: Patterns
+    path: /home/irfankabir/workspace/racks/patterns
+    kind: lens
+    summary: Nine pattern lenses — cause, color, combination, deviation, flow, repetition, rhythm, spatial, time.
+
+  - id: routines
+    name: Routines
+    path: /home/irfankabir/workspace/racks/routines
+    kind: track
+    summary: Practice tracks — attention, gate-contrast, gitignore-safety, governance, mcp-maintenance, mcp-server-remediation, phases, unified-360.
+
+  - id: profiles
+    name: Profiles
+    path: /home/irfankabir/workspace/racks/profiles
+    kind: profile
+    summary: Agent profiles — cascade, claude, gemini, prince.
+
+  - id: learning
+    name: Learning
+    path: /home/irfankabir/workspace/racks/learning
+    kind: track
+    summary: Studied notes and derivations; currently a stub — populated as agents graduate library material into practice.
+
+  - id: governors
+    name: Governors
+    path: /home/irfankabir/workspace/CascadeProjects/Hogwarts/governors
+    kind: governance
+    summary: Governing contracts and interface specifications that bind the school's operations.
+
+  - id: library
+    name: Library
+    path: /home/irfankabir/workspace/CascadeProjects/Documentation
+    kind: library
+    summary: Architecture notes, audits, and workflow references — the school's reading stacks.
+
+  - id: design-canon
+    name: Design Canon
+    path: /home/irfankabir/workspace/design-system
+    kind: canon
+    summary: Read-only visual canon — colors, type, UI kits, preview references.
+
+  - id: hogsmade-canon
+    name: Hogsmade Canon
+    path: /home/irfankabir/workspace/hogsmade-design
+    kind: canon
+    summary: Read-only design references — cockpit and audit HTML artifacts.
+
+  - id: design
+    name: Design
+    path: /home/irfankabir/workspace/design
+    kind: track
+    summary: Character implementation, brand identity discovery, and theme/style/ambiance design.
