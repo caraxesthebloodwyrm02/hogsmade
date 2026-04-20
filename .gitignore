@@ -410,3 +410,6 @@ glimpse-server/dist/
 
 # Session handoff notes (ephemeral, per-session)
 docs/session-handoff-*.md
+
+# Local triage snapshot (machine/session generated)
+.dirty-state-report.md
