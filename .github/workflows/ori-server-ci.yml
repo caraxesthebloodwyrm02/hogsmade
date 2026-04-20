@@ -5,10 +5,12 @@ on:
   push:
     paths:
       - "Tools/MCPServers/ori-server/**"
+      - "Components/shared-types/**"
       - ".github/workflows/ori-server-ci.yml"
   pull_request:
     paths:
       - "Tools/MCPServers/ori-server/**"
+      - "Components/shared-types/**"
       - ".github/workflows/ori-server-ci.yml"
   schedule:
     # Monday 06:00 UTC — keeps toolchain + registry-related tests in muscle memory
@@ -36,6 +38,13 @@ jobs:
           node-version: "22"
           cache: npm
           cache-dependency-path: Tools/MCPServers/ori-server/package.json
+
+      # ori-server depends on @cascade/shared-types via file: — dist/ must exist before tsc resolves exports.
+      - name: Build @cascade/shared-types
+        working-directory: Components/shared-types
+        run: |
+          npm install
+          npm run build
 
       - name: Install
         run: npm install
