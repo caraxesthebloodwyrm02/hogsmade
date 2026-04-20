@@ -24,6 +24,9 @@ concurrency:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    env:
+      # Default config resolves threat model under ~/CascadeProjects; CI checkout lives in GITHUB_WORKSPACE.
+      CASCADE_WORKSPACE_ROOT: ${{ github.workspace }}
     defaults:
       run:
         working-directory: Tools/MCPServers/ori-server
