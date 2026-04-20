@@ -6,8 +6,8 @@ Single checklist for tagging a release from `main`. Update the **Recorded** rows
 
 | Item                                              | Recorded                                   |
 | ------------------------------------------------- | ------------------------------------------ |
-| `Projects/GRID-main` commit (pinned in this repo) | `0a62c4b1ea95d8f571556465976ab5ab9fc58b97` |
-| Matches ultrareview merge target                  | Yes (GRID PR #116 line)                    |
+| `Projects/GRID-main` commit (pinned in this repo) | `1c486b844264ca18ba88879e59f5dc141d852d65` |
+| Matches ultrareview merge target                  | Yes (includes GRID PR #118 test-alignment) |
 
 Upstream GRID `main` may advance independently; bump the submodule when you intend to ship newer GRID work.
 
@@ -27,7 +27,7 @@ Recorded on this tree with `Projects/GRID-main` at the SHA above.
 | ori-server | `cd Tools/MCPServers/ori-server && npm test`           | ~2 s                |
 | GRID unit  | `cd Projects/GRID-main && uv run pytest tests/unit -q` | ~75 s               |
 
-Full GRID `pytest` (including integration) reported failures in a subset of integration/cognitive tests in this environment; treat unit-only as the green baseline until those are triaged.
+Full GRID `pytest` requires optional services where tests are not skipped (e.g. Ollama embedding model for some RAG tests — they `skip` if the model is not pulled). Run `uv run pytest` on a machine with CI-like services for a complete green run.
 
 ## Next steps for a version tag
 
