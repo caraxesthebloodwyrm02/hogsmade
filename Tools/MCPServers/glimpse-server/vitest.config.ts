@@ -9,6 +9,7 @@ export default defineConfig({
       provider: "v8",
       reporter: ["text", "json-summary"],
       include: ["src/**/*.ts"],
+      // TODO: raise to fleet standard (40/35/30) after first coverage run confirms baseline
       thresholds: {
         lines: 10,
         functions: 3,
