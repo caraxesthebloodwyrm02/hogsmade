@@ -5,10 +5,12 @@ on:
   push:
     paths:
       - "Tools/MCPServers/ori-server/**"
+      - "Components/shared-types/**"
       - ".github/workflows/ori-server-ci.yml"
   pull_request:
     paths:
       - "Tools/MCPServers/ori-server/**"
+      - "Components/shared-types/**"
       - ".github/workflows/ori-server-ci.yml"
   schedule:
     # Monday 06:00 UTC — keeps toolchain + registry-related tests in muscle memory
@@ -22,9 +24,12 @@ concurrency:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    # Default is ~/CascadeProjects — CI checkout lives at $GITHUB_WORKSPACE (hogsmade root).
     env:
+      # Default config resolves threat model under ~/CascadeProjects; CI checkout lives in GITHUB_WORKSPACE.
       CASCADE_WORKSPACE_ROOT: ${{ github.workspace }}
+    defaults:
+      run:
+        working-directory: Tools/MCPServers/ori-server
 
     steps:
       - name: Checkout
@@ -37,23 +42,20 @@ jobs:
           cache: npm
           cache-dependency-path: Tools/MCPServers/ori-server/package.json
 
-      # @cascade/shared-types is a file: dependency; ori-server resolves ./dist exports — build it first.
-      - name: Install and build shared-types
+      # ori-server depends on @cascade/shared-types via file: — dist/ must exist before tsc resolves exports.
+      - name: Build @cascade/shared-types
         working-directory: Components/shared-types
         run: |
           npm install
           npm run build
 
-      - name: Install (ori-server)
-        working-directory: Tools/MCPServers/ori-server
+      - name: Install
         run: npm install
 
-      - name: Build (ori-server)
-        working-directory: Tools/MCPServers/ori-server
+      - name: Build
         run: npm run build
 
-      - name: Test (ori-server)
-        working-directory: Tools/MCPServers/ori-server
+      - name: Test
         run: npm test
 
       - name: GRUFF snapshot (dated SVG artifact)

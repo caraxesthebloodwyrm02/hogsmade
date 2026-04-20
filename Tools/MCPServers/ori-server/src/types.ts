@@ -137,6 +137,12 @@ export interface RouteState {
   hits: string[];
   /** ISO timestamp of last route fire, if any */
   lastFiredAt?: string;
+  /**
+   * Per-source timestamp lists for cross-source correlation routes.
+   * Key: source identifier; value: ISO timestamps within the window.
+   * Maintained in-memory; cleared on route fire.
+   */
+  sourcesInWindow?: Map<string, string[]>;
 }
 
 /**
@@ -171,6 +177,57 @@ export interface RouteFiring {
   matchedSources: string[];
   actionsExecuted: string[];
   topLine?: string;
+}
+
+// ── Anti-pattern detection types (Protocol level) ──
+
+/**
+ * Machine-readable codes for protocol-level anti-patterns.
+ *
+ * AP_ prefix = anti-pattern; detected across the signal *sequence*,
+ * not against individual lines.
+ */
+export type AntiPatternCode =
+  | "AP_RETRY_STORM"        // same source, same pattern, ≥3 hits in tight temporal bracket
+  | "AP_ONSET_MASK"         // warnings immediately preceding a critical from same source
+  | "AP_REJECTION_CHAIN"    // unhandled_rejection → type_error from same source (null-deref cascade)
+  | "AP_SOURCE_OSCILLATION" // alternating critical/warning between exactly 2 sources
+  | "AP_PATTERN_CONVERGENCE"// single entry matches ≥4 patterns (panic/crash message)
+  | "AP_TEMPORAL_BURST"     // ≥5 entries within 500 ms (loop flood or ingestion spike)
+  | "AP_SILENT_REGRESSION"; // source transitions from critical/warning-active to info-only
+
+/**
+ * A single protocol-level anti-pattern finding.
+ *
+ * `window` is the deterministically narrowed slice of LogEntry IDs
+ * that produced the finding — the minimum sufficient evidence set.
+ */
+export interface AntiPatternFinding {
+  /** Deterministic machine code */
+  code: AntiPatternCode;
+  /** Human label */
+  label: string;
+  /** Severity of the finding itself */
+  severity: "critical" | "warning";
+  /** Narrowed evidence window — IDs of the LogEntries that triggered this */
+  windowIds: string[];
+  /** First line from the evidence window */
+  topLine: string;
+  /** Source(s) involved */
+  sources: string[];
+  /** Patterns involved */
+  patterns: string[];
+  /** Precise, imperative action to take */
+  action: string;
+}
+
+/**
+ * Full result of a signal evaluation pass, combining route firings
+ * with protocol-level anti-pattern findings.
+ */
+export interface EvaluationResult {
+  routeFirings: RouteFiring[];
+  antiPatterns: AntiPatternFinding[];
 }
 
 // ── Execution types (Phase 2) ──
