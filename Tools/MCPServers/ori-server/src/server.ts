@@ -61,7 +61,7 @@ import {
   removeRoute,
   resetRoutes,
 } from "./router-config.js";
-import type { LogEntry, RouteFiring } from "./types.js";
+import type { AntiPatternFinding, EvaluationResult, LogEntry, RouteFiring } from "./types.js";
 
 const SERVER_NAME = "ori-server";
 const VERSION = "1.0.0";
@@ -154,11 +154,11 @@ export function buildServer(): McpServer {
       const signalEntries = entries.filter((e) => e.matchedPatterns.length > 0);
       const signalCount = signalEntries.length;
 
-      // Evaluate signal-bearing entries against router
-      let routeFirings: RouteFiring[] = [];
+      // Evaluate signal-bearing entries against router + anti-pattern scanner
+      let evalResult: EvaluationResult = { routeFirings: [], antiPatterns: [] };
       if (signalCount > 0) {
         try {
-          routeFirings = await evaluateSignals(signalEntries);
+          evalResult = await evaluateSignals(signalEntries);
         } catch (err) {
           process.stderr.write(
             `[ori-server] router evaluation failed: ${
@@ -167,6 +167,7 @@ export function buildServer(): McpServer {
           );
         }
       }
+      const { routeFirings, antiPatterns } = evalResult;
 
       emitAudit({
         traceId: span.traceId,
@@ -179,6 +180,7 @@ export function buildServer(): McpServer {
           signalsDetected: signalCount,
           source,
           routeFirings: routeFirings.length,
+          antiPatterns: antiPatterns.length,
         },
       });
 
@@ -202,6 +204,19 @@ export function buildServer(): McpServer {
                         routeName: f.routeName,
                         matchedCount: f.matchedCount,
                         actionsExecuted: f.actionsExecuted,
+                      }))
+                    : undefined,
+                antiPatterns:
+                  antiPatterns.length > 0
+                    ? antiPatterns.map((ap: AntiPatternFinding) => ({
+                        code: ap.code,
+                        label: ap.label,
+                        severity: ap.severity,
+                        sources: ap.sources,
+                        patterns: ap.patterns,
+                        topLine: ap.topLine,
+                        action: ap.action,
+                        windowIds: ap.windowIds,
                       }))
                     : undefined,
               },
@@ -766,12 +781,11 @@ export function buildServer(): McpServer {
           filter: args.filter,
         });
 
-        // Evaluate router on entries created by this run
-        let routeFirings: RouteFiring[] = [];
+        // Evaluate router + anti-pattern scanner on entries created by this run
+        let runEval: EvaluationResult = { routeFirings: [], antiPatterns: [] };
         if (result.logEntriesCreated > 0) {
           try {
             const allLogs = await readAllLogs();
-            // Get entries matching this project from recent logs
             const recentEntries = allLogs
               .filter(
                 (e) =>
@@ -781,7 +795,7 @@ export function buildServer(): McpServer {
               )
               .slice(-200);
             if (recentEntries.length > 0) {
-              routeFirings = await evaluateSignals(recentEntries);
+              runEval = await evaluateSignals(recentEntries);
             }
           } catch (err) {
             process.stderr.write(
@@ -791,6 +805,7 @@ export function buildServer(): McpServer {
             );
           }
         }
+        const { routeFirings: runFirings, antiPatterns: runAntiPatterns } = runEval;
 
         emitAudit({
           traceId: span.traceId,
@@ -807,7 +822,8 @@ export function buildServer(): McpServer {
             skipped: result.summary.skipped,
             runStatus: result.status,
             logEntriesCreated: result.logEntriesCreated,
-            routeFirings: routeFirings.length,
+            routeFirings: runFirings.length,
+            antiPatterns: runAntiPatterns.length,
           },
         });
 
@@ -824,12 +840,25 @@ export function buildServer(): McpServer {
                   logEntriesCreated: result.logEntriesCreated,
                   errorMessage: result.errorMessage,
                   routeFirings:
-                    routeFirings.length > 0
-                      ? routeFirings.map((f) => ({
+                    runFirings.length > 0
+                      ? runFirings.map((f) => ({
                           routeId: f.routeId,
                           routeName: f.routeName,
                           matchedCount: f.matchedCount,
                           actionsExecuted: f.actionsExecuted,
+                        }))
+                      : undefined,
+                  antiPatterns:
+                    runAntiPatterns.length > 0
+                      ? runAntiPatterns.map((ap: AntiPatternFinding) => ({
+                          code: ap.code,
+                          label: ap.label,
+                          severity: ap.severity,
+                          sources: ap.sources,
+                          patterns: ap.patterns,
+                          topLine: ap.topLine,
+                          action: ap.action,
+                          windowIds: ap.windowIds,
                         }))
                       : undefined,
                 },
@@ -906,8 +935,8 @@ export function buildServer(): McpServer {
       const failed = results.filter((r) => r.status !== "passed").length;
       const totalLogEntries = results.reduce((sum, r) => sum + r.logEntriesCreated, 0);
 
-      // Evaluate router on all entries created during this batch
-      let routeFirings: RouteFiring[] = [];
+      // Evaluate router + anti-pattern scanner on all entries created during this batch
+      let batchEval: EvaluationResult = { routeFirings: [], antiPatterns: [] };
       if (totalLogEntries > 0) {
         try {
           const allLogs = await readAllLogs();
@@ -915,7 +944,7 @@ export function buildServer(): McpServer {
             .filter((e) => e.timestamp >= runStartedAt && e.matchedPatterns.length > 0)
             .slice(-500);
           if (recentEntries.length > 0) {
-            routeFirings = await evaluateSignals(recentEntries);
+            batchEval = await evaluateSignals(recentEntries);
           }
         } catch (err) {
           process.stderr.write(
@@ -925,6 +954,7 @@ export function buildServer(): McpServer {
           );
         }
       }
+      const { routeFirings: batchFirings, antiPatterns: batchAntiPatterns } = batchEval;
 
       emitAudit({
         traceId: span.traceId,
@@ -937,7 +967,8 @@ export function buildServer(): McpServer {
           passed,
           failed,
           projectIds: args.projectIds ?? "all",
-          routeFirings: routeFirings.length,
+          routeFirings: batchFirings.length,
+          antiPatterns: batchAntiPatterns.length,
         },
       });
 
@@ -961,12 +992,25 @@ export function buildServer(): McpServer {
                   errorMessage: r.errorMessage,
                 })),
                 routeFirings:
-                  routeFirings.length > 0
-                    ? routeFirings.map((f) => ({
+                  batchFirings.length > 0
+                    ? batchFirings.map((f) => ({
                         routeId: f.routeId,
                         routeName: f.routeName,
                         matchedCount: f.matchedCount,
                         actionsExecuted: f.actionsExecuted,
+                      }))
+                    : undefined,
+                antiPatterns:
+                  batchAntiPatterns.length > 0
+                    ? batchAntiPatterns.map((ap: AntiPatternFinding) => ({
+                        code: ap.code,
+                        label: ap.label,
+                        severity: ap.severity,
+                        sources: ap.sources,
+                        patterns: ap.patterns,
+                        topLine: ap.topLine,
+                        action: ap.action,
+                        windowIds: ap.windowIds,
                       }))
                     : undefined,
               },
