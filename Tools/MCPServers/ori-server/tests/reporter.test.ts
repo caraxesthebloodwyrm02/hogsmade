@@ -471,4 +471,81 @@ describe("report generator", () => {
     const content = readFileSync(result.reportPath, "utf-8");
     expect(content).toContain("# CascadeProjects Research Report");
   });
+
+  it("writes GRUFF svg and appends section when includeGruffSvg and threat data exist", async () => {
+    const projects: ProjectEntry[] = [
+      { ...baseProjects[0], threatModelIds: ["TM-001", "TM-002"] },
+      { ...baseProjects[1], threatModelIds: ["TM-001"] },
+    ];
+    const data: ReportData = {
+      projects,
+      runs: baseRuns,
+      threatModel: {
+        threats: [
+          {
+            id: "TM-001",
+            source: "Ext",
+            prerequisites: "",
+            action: "Exploit",
+            impact: "Loss",
+            impactedAssets: "API",
+            existingControls: "Auth",
+            gaps: "lag",
+            mitigations: "Rate limit",
+            detectionIdeas: "Logs",
+            likelihood: "High",
+            impactSeverity: "Critical",
+            priority: "High",
+          },
+          {
+            id: "TM-002",
+            source: "Int",
+            prerequisites: "",
+            action: "Config",
+            impact: "Outage",
+            impactedAssets: "Config",
+            existingControls: "RBAC",
+            gaps: "",
+            mitigations: "Review",
+            detectionIdeas: "Alert",
+            likelihood: "Medium",
+            impactSeverity: "High",
+            priority: "Medium",
+          },
+        ],
+        focusPaths: [],
+        parsedAt: "2026-04-08T10:00:00.000Z",
+      },
+      coverageReport: {
+        mappings: [
+          {
+            threatId: "TM-001",
+            priority: "High",
+            coveredByProjects: ["proj-alpha"],
+            uncoveredGaps: ["proj-alpha failing"],
+          },
+          {
+            threatId: "TM-002",
+            priority: "Medium",
+            coveredByProjects: ["proj-alpha"],
+            uncoveredGaps: [],
+          },
+        ],
+        totalThreats: 2,
+        threatsWithCoverage: 2,
+        threatsWithoutCoverage: 0,
+        generatedAt: "2026-04-08T10:00:00.000Z",
+      },
+    };
+
+    const result = await generateReport(data, { includeGruffSvg: true });
+    expect(result.gruffSvgPath).toBeDefined();
+    const svg = readFileSync(result.gruffSvgPath!, "utf-8");
+    expect(svg).toContain("<svg");
+    expect(svg).toContain("xmlns=");
+
+    const md = readFileSync(result.reportPath, "utf-8");
+    expect(md).toContain("## Threat × project (GRUFF)");
+    expect(md).toMatch(/!\[GRUFF threat×project grid]\([^)]+-gruff\.svg\)/);
+  });
 });

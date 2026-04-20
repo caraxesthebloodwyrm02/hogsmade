@@ -1411,12 +1411,19 @@ export function buildServer(): McpServer {
           .optional()
           .default(false)
           .describe("Include cross-server ecosystem context (Echoes, Seeds)"),
+        includeGruffSvg: z
+          .boolean()
+          .optional()
+          .describe(
+            "Append GRUFF SVG threat×project grid (default: ORI_REPORT_GRUFF_SVG env, else off)",
+          ),
       }),
     },
     async (args: {
       projectIds?: string[];
       publish?: boolean;
       includeEcosystemContext?: boolean;
+      includeGruffSvg?: boolean;
     }) => {
       const incomingTrace: TraceContext | null = extractTrace(args as Record<string, unknown>);
       const span = incomingTrace ? createChildSpan(incomingTrace) : createRootSpan();
@@ -1480,7 +1487,10 @@ export function buildServer(): McpServer {
         ecosystemContext,
       };
 
-      const result = await generateReport(data, { publish: args.publish });
+      const result = await generateReport(data, {
+        publish: args.publish,
+        includeGruffSvg: args.includeGruffSvg,
+      });
 
       emitAudit({
         traceId: span.traceId,
@@ -1503,6 +1513,7 @@ export function buildServer(): McpServer {
             text: JSON.stringify(
               {
                 reportPath: result.reportPath,
+                gruffSvgPath: result.gruffSvgPath ?? null,
                 sections: result.sections,
                 totalLines: result.totalLines,
                 projectCount: projects.length,

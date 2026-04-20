@@ -10,7 +10,8 @@
     "lint": "tsc --noEmit -p tsconfig.json",
     "dev": "tsx --watch src/server.ts",
     "test": "vitest run",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "gruff-ci-snapshot": "tsx scripts/gruff-ci-snapshot.ts"
   },
   "dependencies": {
     "@cascade/shared-types": "file:../../../Components/shared-types",

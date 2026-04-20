@@ -1,0 +1,24 @@
+{
+  "name": "school-server",
+  "version": "1.0.0",
+  "description": "Foundational Cognitive Node for AI-Assisted Learning and Research",
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "build": "tsc",
+    "lint": "tsc --noEmit",
+    "dev": "tsx --watch src/index.ts",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.1",
+    "typescript": "~5.9.3",
+    "vitest": "4.1.4"
+  }
+}

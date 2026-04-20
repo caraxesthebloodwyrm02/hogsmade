@@ -1,0 +1,89 @@
+# Staircase registry — the edge primitives of the school.
+# Each staircase declares its origin floor and the set of floors it may land on.
+# Which specific landing is active at any moment is computed by the rotation
+# layer (deferred to the next pass). At foundation, a staircase simply asserts
+# which destinations are *lawful* from its origin.
+#
+# Schema:
+#   id: stable identifier (kebab-case)
+#   description: what this connection is for
+#   from: floor id (must exist in floors.yaml)
+#   to: list of possible landing floor ids
+#   rotation_inputs: which inputs rotation will consult to pick the active
+#                    landing; one or more of [engagement, signals]
+#
+# The set of staircases below is a seed, not a closure. Additional staircases
+# are added as new traversal intents are named.
+
+staircases:
+  - id: lens-to-practice
+    description: Move from observing a pattern to applying it in a routine or to studying an agent's disposition toward it.
+    from: patterns
+    to:
+      - routines
+      - profiles
+      - learning
+    rotation_inputs:
+      - engagement
+      - signals
+
+  - id: routine-to-ground
+    description: Move from a routine back to the material it references — the lens it applies, the governing contract, or the library source.
+    from: routines
+    to:
+      - patterns
+      - governors
+      - library
+    rotation_inputs:
+      - engagement
+      - signals
+
+  - id: profile-self-walk
+    description: Move from an agent profile to the lenses or routines most salient to that agent's current engagement.
+    from: profiles
+    to:
+      - patterns
+      - routines
+      - learning
+    rotation_inputs:
+      - engagement
+
+  - id: library-ladder
+    description: Move from the library stacks outward — into studied notes, into a governing contract, or into the lens used to read the material.
+    from: library
+    to:
+      - learning
+      - governors
+      - patterns
+    rotation_inputs:
+      - engagement
+      - signals
+
+  - id: governors-stair
+    description: Move from a governing contract into the routine that enacts it or the library source that founds it.
+    from: governors
+    to:
+      - routines
+      - library
+    rotation_inputs:
+      - signals
+
+  - id: canon-consult
+    description: Move from design canon into the lens or surface that consumes it. Read-only origin; traversal never writes back.
+    from: design-canon
+    to:
+      - patterns
+      - hogsmade-canon
+    rotation_inputs:
+      - engagement
+
+  - id: learning-return
+    description: Move from studied notes back to the library source, to a lens, or forward into a routine. The graduation edge.
+    from: learning
+    to:
+      - library
+      - patterns
+      - routines
+    rotation_inputs:
+      - engagement
+      - signals

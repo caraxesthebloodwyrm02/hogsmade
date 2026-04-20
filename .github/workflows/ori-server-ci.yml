@@ -57,3 +57,16 @@ jobs:
 
       - name: Test
         run: npm test
+
+      - name: GRUFF snapshot (dated SVG artifact)
+        working-directory: Tools/MCPServers/ori-server
+        env:
+          ORI_DATA_DIR: ${{ github.workspace }}/.ori-ci
+        run: npm run gruff-ci-snapshot
+
+      - name: Upload GRUFF SVG
+        uses: actions/upload-artifact@v4
+        with:
+          name: gruff-ci-snapshot
+          path: .ori-ci/reports/*-ci-gruff.svg
+          if-no-files-found: error

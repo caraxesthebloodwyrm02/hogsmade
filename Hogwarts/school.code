@@ -1,0 +1,75 @@
+# SCHOOL CHARTER: THE HOGWARTS CODE
+# Version: 1.0.0
+# Status: FOUNDATIONAL POUR
+
+## 1. MISSION STATEMENT
+The School exists as a "Campus" side to the Workspace. While the Workspace is for action and execution, the School is for **study**, **reflection**, and **pattern-discovery**. It transforms Input into Output via the Lambda Function (Output = λ × Input).
+
+## 2. GOVERNING BODY: THE BOARD OF GOVERNORS
+The School is overseen by the Board of Governors, who enforce the Tool Interface Governance Contract (TOOL-GOV-001).
+
+### The Four Houses
+- **Observation:** "See clearly." Focus on monitoring, context, and vision.
+    - **GRID Role:** Advisor (Pattern Analysis, Risk Assessment)
+    - **Agent:** `caraxes` (Scouting & Research)
+    - **Systems:** Glimpse, Pulse, GRID-RAG
+- **Enforcement:** "Hold the line." Focus on safety, security, and rule compliance.
+    - **GRID Role:** Learning (Validation, Success Factors)
+    - **Agent:** `prince-runtime-intel` (Auditor Mode)
+    - **Systems:** Echoes, GRID, API-Guard
+- **Experimentation:** "Try, measure, learn." Focus on new tools, testing, and labs.
+    - **GRID Role:** Executor (Plan, Execute, Task Performance)
+    - **Agent:** `prince-runtime-intel` (Primary Dev)
+    - **Systems:** LOTS, Test-Runner
+- **Orchestration:** "Coordinate and flow." Focus on infrastructure, finance, and pipeline management.
+    - **GRID Role:** Receptionist (Intake, Classification, Priority)
+    - **Agent:** `hermes` (Coordination & Mediation)
+    - **Systems:** Afloat, Mangrove, Dispatcher
+
+
+## 3. RULES OF CONDUCT (THE CODE)
+Every Agent entering the School grounds must adhere to the following rules:
+
+### RULE 0: THE UNBREAKABLE VOW (TUV-001)
+Fidelity to the workspace architecture and safety of the source is paramount. No write without read. No action without context.
+
+### RULE 1: THE BORROW METHODOLOGY (KNOWLEDGE SAFETY)
+Agents do not own knowledge; they **borrow** it.
+- **Immutable Borrow:** Agents may borrow knowledge for consultation. Multiple borrows are allowed.
+- **Mutable Borrow:** Only one agent may borrow a domain for modification at a time.
+- **Lifetimes:** A borrow is valid only for the duration of the current task. Return all "books" to the library upon task completion.
+- **Delivery:** Managed via the **Attention Delivery Chain** (Drone-based allocation from Fulfillment Centers to Workspace).
+
+### RULE 2: LAWFUL TRAVERSAL
+Agents must move through the school via the **Staircase Primitive**.
+- Movement is driven by **Engagement State** and **Workspace Signals**.
+- Bypassing the staircase (e.g., hard-coding paths) is a violation of school conduct.
+
+### RULE 3: GRADUATION
+Findings discovered during study (in Racks/Patterns or Racks/Routines) must be synthesized and "graduated" back into the Workspace Library or Design Canon via the appropriate staircase.
+
+## 4. THE STAIRCASE PRIMITIVE
+The staircase connects **Floors** (domain territories) to **Landings** (computed destinations).
+- **Rotation:** The staircase rotates automatically based on the Lambda (λ) function: `active_landing = λ(engagement, signals)`.
+
+## 5. FORM FACTORS: THE DUALITY OF ACTION
+The School and Workspace operate in distinct "Form Factors" to ensure the integrity of the transformation loop.
+
+### A. SCHOOL (Learning / Study / Read)
+**Mode:** READ-ONLY
+**Territories:** `Documentation/`, `racks/`, `Hogwarts/`
+**Objective:** Context gathering, pattern discovery, and mental modeling.
+**Constraint:** No modification of source artifacts is permitted while in School mode. Agents must "Read twice, Model once."
+
+### B. WORKSPACE (Practice / Application / Exercise / Write)
+**Mode:** READ/WRITE
+**Territories:** `CascadeProjects/`, `planes/`
+**Objective:** Execution, implementation, and rigorous practice.
+**Requirement:** Every write operation must be justified by a "Borrow" from the School side. No "blind writes."
+
+## 6. HYPERSPACE TRANSIT
+Transit through the rotation layer happens in **Hyperspace**. This medium ensures that the transition between context-gathering (School) and execution (Workspace) is seamless, rule-bound, and gated.
+
+---
+*Signed,*
+*The Board of Governors*
