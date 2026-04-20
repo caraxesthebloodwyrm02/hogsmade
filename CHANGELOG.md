@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [2.0.0-tracing] - 2026-04-14
+
+### Added
+
+- Pre-release tracing tag `v2.0.0-tracing` (release workflow validates this section).
+
 ## [1.0.0] - 2026-03-21
 
 ### Added
