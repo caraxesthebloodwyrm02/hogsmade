@@ -11,6 +11,8 @@
 import { promises as fs } from "fs";
 import path from "path";
 import { getConfig } from "./config.js";
+import { buildThreatProjectHeatmap } from "./heatmap.js";
+import { renderGruffGeometrySvg } from "./geometry-box.js";
 import type { ProjectEntry, TestRunResult } from "./types.js";
 import type { CoverageReport, ThreatModel } from "./threat-model.js";
 import type { EcosystemContext } from "./interop.js";
@@ -23,6 +25,11 @@ export interface ReportOptions {
   includeEcosystemContext?: boolean;
   publish?: boolean;
   outputPath?: string;
+  /**
+   * When true, writes a companion `-gruff.svg` next to the report and appends a GRUFF section.
+   * Default: `ORI_REPORT_GRUFF_SVG` env (`1` / `true` / `yes`) or false.
+   */
+  includeGruffSvg?: boolean;
 }
 
 export interface ReportData {
@@ -42,6 +49,37 @@ export interface ReportData {
 
 function todayDate(): string {
   return new Date().toISOString().slice(0, 10);
+}
+
+function wantGruffSvg(options?: ReportOptions): boolean {
+  if (options?.includeGruffSvg !== undefined) return options.includeGruffSvg;
+  const v = process.env.ORI_REPORT_GRUFF_SVG?.toLowerCase();
+  return v === "1" || v === "true" || v === "yes";
+}
+
+/** Markdown fragment + SVG filename (basename) written beside the report. */
+function buildGruffAppend(
+  data: ReportData,
+  reportBasename: string,
+): { fragment: string; svg: string; svgBasename: string } | null {
+  if (!data.threatModel || !data.coverageReport || data.projects.length === 0) {
+    return null;
+  }
+  const heatmap = buildThreatProjectHeatmap(data.threatModel, data.projects, data.coverageReport);
+  const svg = renderGruffGeometrySvg(heatmap, {
+    title: `GRUFF — ${data.threatModel.threats.length} threats × ${data.projects.length} projects`,
+  });
+  const stem = reportBasename.replace(/\.md$/i, "");
+  const svgBasename = `${stem}-gruff.svg`;
+  const fragment = `
+
+## Threat × project (GRUFF)
+
+![GRUFF threat×project grid](${svgBasename})
+
+*Companion vector file: \`${svgBasename}\` (same directory as this report).*
+`;
+  return { fragment, svg, svgBasename };
 }
 
 // ── Section generators ──
@@ -400,20 +438,37 @@ export function renderReport(data: ReportData): string {
   return sections.filter((s) => s.length > 0).join("\n\n") + "\n";
 }
 
+function countH2Sections(markdown: string): number {
+  return (markdown.match(/^## /gm) ?? []).length;
+}
+
 /**
  * Generate and save a report.
  */
 export async function generateReport(
   data: ReportData,
   options?: ReportOptions,
-): Promise<{ reportPath: string; sections: number; totalLines: number }> {
-  const markdown = renderReport(data);
-  const lines = markdown.split("\n").length;
-  const sections = (markdown.match(/^## /gm) ?? []).length;
-
+): Promise<{ reportPath: string; sections: number; totalLines: number; gruffSvgPath?: string }> {
   await fs.mkdir(config.reportsDir, { recursive: true });
   const filename = options?.outputPath ?? `${todayDate()}-report.md`;
   const reportPath = path.join(config.reportsDir, filename);
+
+  let markdown = renderReport(data);
+  let gruffSvgPath: string | undefined;
+
+  if (wantGruffSvg(options)) {
+    const gruff = buildGruffAppend(data, filename);
+    if (gruff) {
+      const svgFullPath = path.join(config.reportsDir, gruff.svgBasename);
+      await fs.writeFile(svgFullPath, gruff.svg, "utf-8");
+      gruffSvgPath = svgFullPath;
+      markdown += gruff.fragment;
+    }
+  }
+
+  const lines = markdown.split("\n").length;
+  const sections = countH2Sections(markdown);
+
   await fs.writeFile(reportPath, markdown, "utf-8");
 
   if (options?.publish) {
@@ -422,10 +477,14 @@ export async function generateReport(
       await fs.access(docsDir);
       const pubPath = path.join(docsDir, `ORI_RESEARCH_REPORT_${todayDate()}.md`);
       await fs.writeFile(pubPath, markdown, "utf-8");
+      if (gruffSvgPath) {
+        const pubSvg = path.join(docsDir, path.basename(gruffSvgPath));
+        await fs.copyFile(gruffSvgPath, pubSvg);
+      }
     } catch {
       // Docs dir doesn't exist — skip publish
     }
   }
 
-  return { reportPath, sections, totalLines: lines };
+  return { reportPath, sections, totalLines: lines, gruffSvgPath };
 }
