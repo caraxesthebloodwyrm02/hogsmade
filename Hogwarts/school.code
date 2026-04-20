@@ -9,10 +9,23 @@ The School exists as a "Campus" side to the Workspace. While the Workspace is fo
 The School is overseen by the Board of Governors, who enforce the Tool Interface Governance Contract (TOOL-GOV-001).
 
 ### The Four Houses
-- **Observation:** "See clearly." Focus on monitoring, context, and vision. (Glimpse, Pulse, GRID-RAG).
-- **Enforcement:** "Hold the line." Focus on safety, security, and rule compliance. (Echoes, GRID, API-Guard).
-- **Experimentation:** "Try, measure, learn." Focus on new tools, testing, and labs. (LOTS, Test-Runner).
-- **Orchestration:** "Coordinate and flow." Focus on infrastructure, finance, and pipeline management. (Afloat, Mangrove).
+- **Observation:** "See clearly." Focus on monitoring, context, and vision.
+    - **GRID Role:** Advisor (Pattern Analysis, Risk Assessment)
+    - **Agent:** `caraxes` (Scouting & Research)
+    - **Systems:** Glimpse, Pulse, GRID-RAG
+- **Enforcement:** "Hold the line." Focus on safety, security, and rule compliance.
+    - **GRID Role:** Learning (Validation, Success Factors)
+    - **Agent:** `prince-runtime-intel` (Auditor Mode)
+    - **Systems:** Echoes, GRID, API-Guard
+- **Experimentation:** "Try, measure, learn." Focus on new tools, testing, and labs.
+    - **GRID Role:** Executor (Plan, Execute, Task Performance)
+    - **Agent:** `prince-runtime-intel` (Primary Dev)
+    - **Systems:** LOTS, Test-Runner
+- **Orchestration:** "Coordinate and flow." Focus on infrastructure, finance, and pipeline management.
+    - **GRID Role:** Receptionist (Intake, Classification, Priority)
+    - **Agent:** `hermes` (Coordination & Mediation)
+    - **Systems:** Afloat, Mangrove, Dispatcher
+
 
 ## 3. RULES OF CONDUCT (THE CODE)
 Every Agent entering the School grounds must adhere to the following rules:
