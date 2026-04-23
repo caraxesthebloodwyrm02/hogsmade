@@ -158,6 +158,8 @@ export async function runScenario(
     metadata: {
       scenario: scenario.name,
       cycle,
+      stepsExecuted:
+        getZoneRange(scenario.quantizationZone)[1] - getZoneRange(scenario.quantizationZone)[0],
       transistorsFired,
       decoratedVarsFired,
       signalsEmitted: signals.length,

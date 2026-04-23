@@ -58,7 +58,7 @@ export async function armAgent(
     source: SERVER_NAME,
     tool: "agent_arm",
     status: "success",
-    metadata: { intervalSeconds, maxCycles },
+    metadata: { intervalSeconds, maxCycles, armedAt: state.armedAt },
   });
 
   return state;
