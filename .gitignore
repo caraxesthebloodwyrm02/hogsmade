@@ -228,7 +228,7 @@ security-logs/
 .antigravity/
 .opencode/
 .claude/
-.zed/
+.zed/AGENTS.md
 .agents/skills/
 
 # ==========================
