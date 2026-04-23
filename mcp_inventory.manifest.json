@@ -115,18 +115,6 @@
       "gridPythonScript": "mcp-setup/server/memory_mcp_server.py"
     },
     {
-      "mcpServerKey": "glimpse-server",
-      "runtime": "typescript",
-      "bootstrapType": "mcp_sdk_stdio_ts",
-      "entryRelative": "glimpse-server/src/server.ts"
-    },
-    {
-      "mcpServerKey": "mangrove-server",
-      "runtime": "typescript",
-      "bootstrapType": "mcp_sdk_stdio_ts",
-      "entryRelative": "mangrove-server/src/server.ts"
-    },
-    {
       "mcpServerKey": "grid-intelligence",
       "runtime": "python",
       "bootstrapType": "mcp_sdk_stdio_python",
@@ -157,13 +145,6 @@
       "runtime": "typescript",
       "bootstrapType": "mcp_sdk_stdio_ts",
       "entryRelative": "harness-server/src/server.ts"
-    },
-    {
-      "mcpServerKey": "craft-server",
-      "runtime": "typescript",
-      "bootstrapType": "mcp_sdk_stdio_ts",
-      "entryRelative": "craft-server/src/server.ts",
-      "note": "Bridges python-craft (~/roots/python-craft) via uv run. Env: CRAFT_ROOT."
     },
     {
       "mcpServerKey": "nexus-server",
