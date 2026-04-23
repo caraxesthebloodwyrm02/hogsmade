@@ -29,11 +29,13 @@
     "Applications/glimpse-engine"
   ],
   "scripts": {
+    "postinstall": "node Components/scripts/init-submodules.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint:all": "npm run --workspaces lint",
     "build:all": "npm run --workspaces build",
     "test:all": "npm run --workspaces test",
+    "bootstrap:submodules": "node Components/scripts/init-submodules.mjs",
     "clean": "rm -rf */dist */build */coverage */.coverage */node_modules/.cache",
     "clean:deep": "npm run clean && rm -rf node_modules */node_modules",
     "version:bump": "node Components/scripts/version-bump.mjs",

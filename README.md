@@ -75,6 +75,8 @@ No packages are published to npm (monorepo is private). See [Documentation/docs/
 | ----------- | ------------- | ------------------------------------------------------------------------------------------------------- |
 | `GRID-main` | Git submodule | Python 3.13, FastAPI, uv; points to [GRID-INTELLIGENCE/GRID](https://github.com/GRID-INTELLIGENCE/GRID) |
 
+`npm install` runs a `postinstall` hook (`Components/scripts/init-submodules.mjs`) that bootstraps the `Projects/GRID-main` submodule automatically on a fresh clone. The hook is fail-soft: it never breaks install. To opt out (e.g. in CI that already checked out submodules, or in an offline environment), set `CASCADE_SKIP_SUBMODULES=1`. To re-run manually after a clone: `npm run bootstrap:submodules` or `git submodule update --init --recursive`.
+
 ### Workspace Infrastructure
 
 | Project         | Type        | Location         | Notes                                     |
