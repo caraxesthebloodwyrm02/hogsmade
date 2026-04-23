@@ -233,6 +233,8 @@ security-logs/
 .agents/skills/
 !.agents/skills/mcp-health-check/
 !.agents/skills/mcp-health-check/**
+!.agents/skills/pr-body-edit/
+!.agents/skills/pr-body-edit/**
 
 # ==========================
 # OS FILES
