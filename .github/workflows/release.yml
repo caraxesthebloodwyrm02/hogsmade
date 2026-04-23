@@ -106,7 +106,7 @@ jobs:
       - name: Build MCP Servers
         run: |
           FAILED=0
-          for dir in afloat-server echoes-server glimpse-server grid-server lots-server maintain-server mangrove-server overview-server pulse-server seeds-server; do
+          for dir in afloat-server echoes-server grid-server lots-server maintain-server overview-server pulse-server seeds-server; do
             echo "== Building ${dir} =="
             npm run build -w "$dir" || FAILED=$((FAILED + 1))
           done

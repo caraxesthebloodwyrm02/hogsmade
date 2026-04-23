@@ -45,7 +45,7 @@ jobs:
       - name: Build MCP servers
         run: |
           FAILED=0
-          for dir in afloat-server echoes-server glimpse-server grid-server lots-server maintain-server mangrove-server overview-server pulse-server seeds-server; do
+          for dir in afloat-server echoes-server grid-server lots-server maintain-server overview-server pulse-server seeds-server; do
             echo "== ${dir} =="
             npm run build -w "$dir" || {
               echo "::error::Build failed for ${dir}"
@@ -98,7 +98,7 @@ jobs:
       - name: Test MCP servers
         run: |
           FAILED=0
-          for dir in afloat-server echoes-server glimpse-server grid-server lots-server maintain-server mangrove-server overview-server pulse-server seeds-server; do
+          for dir in afloat-server echoes-server grid-server lots-server maintain-server overview-server pulse-server seeds-server; do
             echo "== ${dir} =="
             npm test -w "$dir" || {
               echo "::warning::Tests failed for ${dir}"
