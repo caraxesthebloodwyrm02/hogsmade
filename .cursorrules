@@ -1,0 +1,21 @@
+# Cursor Rules
+
+The canonical source of truth for AI-assistant behavior in this repository is **`AGENTS.md`** at the repo root. Read it first.
+
+Operational rule files live in `.cursor/rules/` and are loaded automatically by Cursor:
+
+- `.cursor/rules/coding-standards.mdc` — Python / TypeScript / commit standards.
+- `.cursor/rules/git-sequence.mdc` — session-start/-end git workflow.
+- `.cursor/rules/response-discipline.mdc` — output budget, response routing, anti-patterns.
+- `.cursor/rules/development-contract.mdc` — TUV-001 governance contract.
+- `.cursor/rules/eligibility-routine.mdc` — eligibility-server operational rules.
+
+If anything in this directory contradicts `AGENTS.md`, `AGENTS.md` wins.
+
+## Workspace reminders (see AGENTS.md for the full version)
+
+- Build order: `Components/shared-types` → `Components/shared-resilience` → dependent servers.
+- Package manager: `npm` for everything in this repo; `uv` for `Projects/GRID-main` Python work.
+- Local-first AI: prefer Ollama / ChromaDB; do not call external APIs without explicit approval.
+- Never weaken validation in `safety/`, `security/`, or `boundaries/` modules.
+- Never commit secrets — `detect-secrets` is a backstop, not a substitute for review.
