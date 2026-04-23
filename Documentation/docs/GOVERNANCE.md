@@ -190,3 +190,21 @@ Transit through the rotation layer happens in **Hyperspace**. This medium ensure
 Applying surgical edits (e.g. `jq 'del(.mcpServers["old-server"])'`) is only safe for single-key removals where the rest of the file is known-clean. After a host migration or any bulk path change, always prefer full regeneration.
 
 See `Documentation/docs/mcp-config-sync.md` for the reusable regeneration reference and `Components/scripts/sync-mcp-configs.sh` (Session C) for the automated version.
+
+### Pattern — Per-Consumer Drift
+
+**Lesson (2026-04-23, PR #127 RCA):** When a config bug is fixed in one consumer of canonical (e.g. `.vscode/mcp.json`) without back-propagating the fix to the canonical source (`mcp_config.example.json`), the patched consumer looks healthy while every other consumer silently inherits the defect on the next regeneration.
+
+**Concrete instance:** PR #107 added `cwd` fields to `.vscode/mcp.json` for 5 Python-backed MCP servers without updating canonical. Windsurf and Claude Code kept regenerating from the (still-broken) canonical for weeks and spawned those servers with an undefined working directory. The defect only surfaced when someone actually tried to invoke those servers end-to-end in Windsurf.
+
+**Why the existing defense stack missed it:**
+
+- `mcp-config-sync-smoke` (PR #126) catches canonical → live drift. It does not catch live → canonical drift.
+- `verify_mcp_inventory.py` validates the server-key set matches, not per-server field shape.
+- `verify_tool_consolidation.py` validates topic-to-tool ownership, not field shape.
+
+**Rules:**
+
+1. Any per-consumer config fix (`.vscode/mcp.json`, `~/.codeium/windsurf/mcp_config.json`, `~/.claude.json`, `.cursor/mcp.json`) must also update canonical `mcp_config.example.json` in the same PR.
+2. PR reviewers for any MCP-consumer-config change must check whether the corresponding shape exists in canonical. If the fix is intentionally consumer-specific, document the divergence in the PR body.
+3. A follow-up verification script (Task 3.4, `verify_mcp_canonical.py` or an extension to `verify_tool_consolidation.py`) should diff per-consumer field shape against canonical and fail CI on drift. Queued.
