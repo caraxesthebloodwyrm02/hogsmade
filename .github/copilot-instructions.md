@@ -10,7 +10,7 @@
 
 This is a **multi-project workspace**. Each subdirectory is an independent project with its own toolchain and lockfile. Always `cd` into the project root before running any commands. Do not mix package managers across projects.
 
-Canonical shared rules (TUV-001, coding standards, safety invariants): `/home/caraxes/.dev-rules.md`. Follow that file if anything here drifts from it.
+Canonical shared rules (TUV-001, coding standards, safety invariants): `AGENTS.md` at the repo root. Follow that file if anything here drifts from it.
 
 ## Workspace layout
 

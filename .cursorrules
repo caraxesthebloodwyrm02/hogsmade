@@ -1,135 +1,21 @@
-# CascadeProjects — Cursor Rules
+# Cursor Rules
 
-Canonical shared rules sources:
-- `/home/caraxes/seed/templates/development-contract.md`
-- `/home/caraxes/.dev-rules.md`
+The canonical source of truth for AI-assistant behavior in this repository is **`AGENTS.md`** at the repo root. Read it first.
 
-This file and `.cursor/rules/*.mdc` are the Cursor adapters for the shared Mangrove development rules. If a summary here drifts from `/home/caraxes/.dev-rules.md`, follow `/home/caraxes/.dev-rules.md`.
+Operational rule files live in `.cursor/rules/` and are loaded automatically by Cursor:
 
-## OS Guardrails Adapter
+- `.cursor/rules/coding-standards.mdc` — Python / TypeScript / commit standards.
+- `.cursor/rules/git-sequence.mdc` — session-start/-end git workflow.
+- `.cursor/rules/response-discipline.mdc` — output budget, response routing, anti-patterns.
+- `.cursor/rules/development-contract.mdc` — TUV-001 governance contract.
+- `.cursor/rules/eligibility-routine.mdc` — eligibility-server operational rules.
 
-When the task involves Arch Linux workstation hardening, sysctl tuning, nftables/firewall rules, auditd, service exposure, suspicious network activity, or reboot-persistence verification, load and follow:
+If anything in this directory contradicts `AGENTS.md`, `AGENTS.md` wins.
 
-- `/home/caraxes/skills/os-guardrails/SKILL.md`
-- `/home/caraxes/skills/os-guardrails/references/guardrail-baseline.md`
+## Workspace reminders (see AGENTS.md for the full version)
 
-Apply the `os-guardrails` workflow:
-
-1. **Inspect first** — begin with read-only inspection across kernel/sysctl, firewall/network, and service/audit posture.
-2. **Classify risk** — separate findings into:
-   - 🟢 Safe: persistence, backups, already-active settings
-   - 🟡 Low risk: reversible runtime changes requiring approval
-   - 🔴 Excluded: `linux-hardened`, lockdown, `module.sig_enforce=1`, `hidepid=2`, `hardened_malloc`, AppArmor/SELinux, LKRG unless the user explicitly names the item
-3. **Harden in order** — sysctl → nftables → service posture → audit reserve layer.
-4. **Verify live state** — prefer runtime verification over config-only review.
-5. **Report by layer** — kernel, firewall, logging, filesystem, services, reserve/auditd.
-
-### Nftables Rule Discipline
-
-When editing `/home/caraxes/config/firewall-audit.nft` or related firewall audit rules:
-
-- Exclude loopback first: `oifname "lo" accept` / `iifname "lo" accept`
-- Whitelist known-good traffic before catch-all logging:
-  - `tcp dport { 80, 443 }`
-  - DNS to known resolvers
-  - DHCP / NTP
-  - LAN broadcast / multicast
-  - `ct state established,related`
-- Rate-limit every log rule
-- Use positive priority so audit rules run after the base firewall
-- Treat noisy journals as broken rules, not proof of attack
-
-Under normal operation, audit logs should be silent or near-silent. If HTTPS, DNS, loopback, or LAN discovery traffic is generating alerts, the rules need to be tightened.
-
-### Verification Targets
-
-Target references live in `/home/caraxes/skills/os-guardrails/references/guardrail-baseline.md`.
-
-Key expectations:
-- `kernel.randomize_va_space = 2`
-- `kernel.kptr_restrict = 2`
-- `kernel.yama.ptrace_scope = 2`
-- `kernel.unprivileged_bpf_disabled = 1`
-- `fs.protected_hardlinks = 1`
-- `fs.protected_symlinks = 1`
-- `fs.protected_fifos = 2`
-- `fs.protected_regular = 2`
-- `fs.suid_dumpable = 0`
-- `nftables` enabled
-- base `inet filter` input policy `drop`
-- audit table `inet audit_log` present when audit firewall logging is enabled
-- `sshd` disabled unless explicitly required
-- no externally-bound TCP listeners for local developer services
-
-### Constraints
-
-- Never weaken existing security controls without explicit request
-- Never touch excluded Tier 3 items unless the user names the exact item
-- Always prefer idempotent, reversible changes
-- Always back up before modifying system-facing config
-- Respect TUV-001 and tie every action to the stated security objective
-
-## The Unbreakable Vow (TUV-001)
-
-1. **Fidelity** — watch over the work.
-   - Clause I.1: trace every change and recommendation to the stated objective.
-   - Clause I.2: flag compressed, stale, or incomplete context.
-   - Clause I.3: flag scope expansion before acting.
-2. **Integrity** — protect the work from harm.
-   - Clause II.1: ask instead of guessing.
-   - Clause II.2: signal output or context degradation explicitly.
-   - Clause II.3: realign on objectives at natural breakpoints.
-3. **Accountability** — carry the breach if it fails.
-   - Clause III.1: self-report violations immediately.
-   - Clause III.2: honor human override after noting concerns once.
-   - Clause III.3: do not amend the contract without explicit versioned agreement.
-
-**Never-Rules**: Never silently discard context. Never produce known-incorrect output without flagging. Never resist human override. Never amend contract unilaterally. Never conceal violations.
-
-**Activation & Recovery**: If `Unbreakable Vow is active` or `TUV-001 applies`, restate the three conditions. If Integrity breaks, invoke `/shield-break`. If a never-rule or formal breach occurs, invoke `/breach-state`.
-
-## Workspace
-
-This is a namespaced multi-project monorepo. Key areas:
-- `Components/shared-types/` — build first (`npm install && npm run build`)
-- `Components/shared-resilience/` — build after shared-types
-- `Tools/MCPServers/` — 12 TypeScript MCP servers (afloat, echoes, eligibility, glimpse, grid, lots, maintain, mangrove, ori, overview, pulse, seeds)
-- `Projects/GRID-main/` — git submodule → GRID-INTELLIGENCE/GRID (Python, `uv sync`)
-- `Applications/glimpse-artifact/` — React component library
-- `Applications/glimpse-engine/` — Browser visualization engine
-
-## Standards
-
-- **Python**: 3.13+, ruff formatter, 120 char lines, type hints, structlog, Pydantic v2, `uv run` only
-- **TypeScript**: strict mode, ESLint + Prettier
-- **Line endings**: LF
-- **Trailing whitespace**: trim on save
-- **Final newline**: insert on save
-- **Commits**: conventional — `feat(scope):`, `fix(scope):`, `test(scope):`
-- **Package managers**: npm (Components + MCP servers), uv (GRID/Python)
-
-## MCP Servers
-
-19 servers defined in `mcp_config.json` (12 TypeScript + 7 Python GRID servers). Python servers use GRID venv at `/home/caraxes/CascadeProjects/Projects/GRID-main/.venv/bin/python`.
-
-## Safety
-
-- Never weaken validation in safety/, security/, boundaries/ modules
-- Never add bypass paths or dev-mode shortcuts
-- Always maintain audit trail integrity
-- Local-first AI: Ollama + ChromaDB (no external APIs unless asked)
-
-## Network Isolation (UNPROVISIONED MODE)
-
-**Status**: UNPROVISIONED — All external network access blocked until further notice.
-
-**Allowed**: localhost only (127.0.0.1, ::1, localhost)
-**Blocked**: All external APIs, LAN traffic, cloud services
-
-**Rate Limits**: 10 req/sec per endpoint, 30s timeout
-**Circuit Breaker**: 5 failures = 60s cooldown
-
-**Never**:
-- Make external API calls without explicit approval
-- Bypass localhost-only enforcement
-- Disable rate limiting or circuit breakers
+- Build order: `Components/shared-types` → `Components/shared-resilience` → dependent servers.
+- Package manager: `npm` for everything in this repo; `uv` for `Projects/GRID-main` Python work.
+- Local-first AI: prefer Ollama / ChromaDB; do not call external APIs without explicit approval.
+- Never weaken validation in `safety/`, `security/`, or `boundaries/` modules.
+- Never commit secrets — `detect-secrets` is a backstop, not a substitute for review.
