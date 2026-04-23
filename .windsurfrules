@@ -1,100 +1,23 @@
-# CascadeProjects — Windsurf Rules
+# Windsurf Rules — Cascade Workspace
 
-Canonical shared rules source: `/home/caraxes/.dev-rules.md`
+> **Canonical source of truth:** `AGENTS.md` at the repo root. This file is the Windsurf adapter — it points to the shared repository guidelines for behavior, build commands, coding standards, and governance (TUV-001).
 
-This file is the Windsurf adapter for the shared Mangrove development rules. If a summary here drifts from `/home/caraxes/.dev-rules.md`, follow `/home/caraxes/.dev-rules.md`.
+## Behavior and Governance
 
-## The Unbreakable Vow (TUV-001)
+- See `AGENTS.md` for the repository guidelines and the **Unbreakable Vow (TUV-001)**.
+- See `Documentation/docs/GOVERNANCE.md` for full governance context.
 
-1. **Fidelity** — Every output traces to a stated objective. No fabrication, no silent context loss.
-2. **Integrity** — Fail closed on ambiguity. Signal degradation. Realign periodically.
-3. **Accountability** — Self-report violations. Human override is absolute.
+## Build and Development
 
-**Never-Rules**: Never silently discard context. Never produce known-incorrect output without flagging. Never resist human override. Never amend contract unilaterally. Never conceal violations.
+- See `AGENTS.md § Build, test, and development commands` for canonical shell commands.
+- See `CLAUDE.md` for per-project shortcuts.
 
-## Workspace
+## OS Guardrails
 
-This is a namespaced multi-project monorepo. Key areas:
-- `Components/shared-types/` — build first (`npm install && npm run build`)
-- `Components/shared-resilience/` — build after shared-types
-- `Tools/MCPServers/` — 12 TypeScript MCP servers (afloat, echoes, eligibility, glimpse, grid, lots, maintain, mangrove, ori, overview, pulse, seeds)
-- `Projects/GRID-main/` — git submodule → GRID-INTELLIGENCE/GRID (Python, `uv sync`)
-- `Applications/glimpse-artifact/` — React component library
-- `Applications/glimpse-engine/` — Browser visualization engine
-
-## Standards
-
-- **Python**: 3.13+, ruff formatter, 120 char lines, type hints, structlog, Pydantic v2, `uv run` only
-- **TypeScript**: strict mode, ESLint + Prettier
-- **Line endings**: LF
-- **Trailing whitespace**: trim on save
-- **Final newline**: insert on save
-- **Commits**: conventional — `feat(scope):`, `fix(scope):`, `test(scope):`
-- **Package managers**: npm (Components + MCP servers), uv (GRID/Python)
-
-## MCP Servers
-
-19 servers defined in `mcp_config.json` (12 TypeScript + 7 Python GRID servers). Python servers use GRID venv at `/home/caraxes/CascadeProjects/Projects/GRID-main/.venv/bin/python`.
-
-## OS Guardrails Adapter
-
-Use the `os-guardrails` workflow for any OS-level security or workstation hardening task, especially:
-- sysctl kernel hardening
-- nftables or firewall audit rule review
-- auditd enable/disable and audit rules review
-- service exposure checks (`sshd`, loopback-only listeners, open ports)
-- post-update security verification after `pacman -Syu`
-- investigation of suspicious `AUDIT-*` journal entries
-
-When handling these tasks:
-1. Start with a **read-only inspection** first.
-2. Classify findings into:
-   - **Tier 1** — safe persistence / verification only
-   - **Tier 2** — low-risk, reversible changes requiring approval
-   - **Tier 3** — excluded/high-risk changes that must not be applied unless explicitly requested by name
-3. Prefer the existing workstation artifacts:
-   - `/home/caraxes/skills/os-guardrails/SKILL.md`
-   - `/home/caraxes/skills/os-guardrails/references/guardrail-baseline.md`
-   - `/home/caraxes/config/firewall-audit.nft`
-   - `/home/caraxes/config/finalize-guardrails.sh`
-   - `/home/caraxes/config/audit.rules`
-   - `/home/caraxes/docs/security-hardening-guide.md`
+Use the `os-guardrails` workflow for any OS-level security or workstation hardening task.
 
 ### Guardrail Constraints
-
-Never propose or apply the following unless the user explicitly requests the exact item:
-- `linux-hardened`
-- kernel lockdown mode
-- `module.sig_enforce=1`
-- `hidepid=2` on `/proc`
-- `hardened_malloc` preload
-- AppArmor/SELinux rollout
-- LKRG
-
-Reason: this workstation uses NVIDIA and KVM, and those items can break graphics, modules, virtualization, or developer tooling.
-
-### nftables Rules Discipline
-
-When reviewing or editing firewall audit rules:
-- Exclude loopback first
-- Whitelist normal traffic before catch-all logging
-- Rate-limit every log rule
-- Use positive priority, not negative priority
-- Treat a noisy journal as a rule bug, not evidence of compromise
-
-Normal traffic that should usually be excluded from audit alerts:
-- loopback traffic
-- HTTPS/HTTP
-- DNS to known resolvers
-- LAN broadcast/multicast
-- established/related connections
-
-## Safety
-
-- Never weaken validation in safety/, security/, boundaries/ modules
-- Never add bypass paths or dev-mode shortcuts
-- Always maintain audit trail integrity
-- Local-first AI: Ollama + ChromaDB (no external APIs unless asked)
+Never propose or apply the following unless the user explicitly requests the exact item: `linux-hardened`, kernel lockdown mode, `module.sig_enforce=1`, `hidepid=2` on `/proc`, `hardened_malloc` preload, AppArmor/SELinux rollout, LKRG.
 
 ## Network Isolation (UNPROVISIONED MODE)
 
@@ -102,11 +25,3 @@ Normal traffic that should usually be excluded from audit alerts:
 
 **Allowed**: localhost only (127.0.0.1, ::1, localhost)
 **Blocked**: All external APIs, LAN traffic, cloud services
-
-**Rate Limits**: 10 req/sec per endpoint, 30s timeout
-**Circuit Breaker**: 5 failures = 60s cooldown
-
-**Never**:
-- Make external API calls without explicit approval
-- Bypass localhost-only enforcement
-- Disable rate limiting or circuit breakers
