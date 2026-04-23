@@ -89,7 +89,7 @@ echo "=== W7: Lockfile deltas (last 7 days) ==="
 for lockfile in \
   /home/caraxes/CascadeProjects/package-lock.json \
   /home/caraxes/canopy/afloat/package-lock.json \
-  /home/caraxes/CascadeProjects/Hogwarts/nuke/package-lock.json \
+
   /home/caraxes/canopy/echoes/uv.lock \
   /home/caraxes/CascadeProjects/Projects/GRID-main/uv.lock; do
     if [ -f "$lockfile" ]; then
@@ -111,7 +111,7 @@ echo "=== W7: Dep delta for modified lockfiles ==="
 for lockfile in \
   /home/caraxes/CascadeProjects/package-lock.json \
   /home/caraxes/canopy/afloat/package-lock.json \
-  /home/caraxes/CascadeProjects/Hogwarts/nuke/package-lock.json; do
+; do
     if [ -f "$lockfile" ]; then
       dir="$(dirname $lockfile)"
       last_commit=$(git -C "$dir" log -1 --format="%H" --since="7 days ago" -- "$(basename $lockfile)" 2>/dev/null)
@@ -164,7 +164,7 @@ echo "=== W30: Lockfile commit history (last 30 days) ==="
 for lockfile in \
   /home/caraxes/CascadeProjects/package-lock.json \
   /home/caraxes/canopy/afloat/package-lock.json \
-  /home/caraxes/CascadeProjects/Hogwarts/nuke/package-lock.json \
+
   /home/caraxes/canopy/echoes/uv.lock \
   /home/caraxes/CascadeProjects/Projects/GRID-main/uv.lock; do
     if [ -f "$lockfile" ]; then
@@ -227,7 +227,7 @@ echo "=== W90: Lockfile age (last touched) ==="
 for lockfile in \
   /home/caraxes/CascadeProjects/package-lock.json \
   /home/caraxes/canopy/afloat/package-lock.json \
-  /home/caraxes/CascadeProjects/Hogwarts/nuke/package-lock.json \
+
   /home/caraxes/canopy/echoes/uv.lock \
   /home/caraxes/CascadeProjects/Projects/GRID-main/uv.lock; do
     if [ -f "$lockfile" ]; then

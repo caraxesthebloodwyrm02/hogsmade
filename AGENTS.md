@@ -15,8 +15,7 @@ This repository is a Node workspaces monorepo for the Cascade ecosystem. It cont
 | `Components/`       | Shared packages         | `shared-types`, `shared-resilience`, `shared-pipeline` (published as `@cascade/shared-*`).                                                                                                           |
 | `Applications/`     | Apps and engines        | `glimpse-artifact`, `glimpse-engine`, `pi-mangrove`.                                                                                                                                                 |
 | `Projects/`         | Operational projects    | `GRID-main` (git submodule), `DIO`, `GATE`, `projects/viz`.                                                                                                                                          |
-| `Hogwarts/`         | Governance simulation   | Board UI, governors, staircase, school code.                                                                                                                                                         |
-| `Documentation/`    | Shared docs and audits  | Workspace guides, audits, conventions.                                                                                                                                                               |
+| `Documentation/`    | Shared docs and audits  | Workspace guides, audits, conventions. Governance docs in `Documentation/docs/GOVERNANCE.md`.                                                                                                        |
 
 Keep changes scoped to the relevant workspace; avoid unrelated edits across directories.
 
