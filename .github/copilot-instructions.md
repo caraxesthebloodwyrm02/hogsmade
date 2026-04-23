@@ -1,136 +1,20 @@
-# Copilot Instructions
+# Copilot Instructions — Cascade Workspace
 
-## Copilot Code Review Guardrails (TL;DR)
+> **Canonical source of truth:** `AGENTS.md` at the repo root. This file is the Copilot adapter — it points to the shared repository guidelines for behavior, build commands, coding standards, and governance (TUV-001).
 
-- TypeScript strictness: do not introduce `any`; prefer `unknown` + runtime narrowing with Zod.
-- Shared-types: import only from the published export paths; keep dependent servers compiling after changes.
-- Zod schemas + tests: schema updates must preserve the runtime contract and TypeScript inference.
-- Audit emission: verify emitted fields match the shared audit contract.
-- Secrets: never add real tokens/keys to tracked files; use env/credential references only.
+## Behavior and Governance
 
-This is a **multi-project workspace**. Each subdirectory is an independent project with its own toolchain and lockfile. Always `cd` into the project root before running any commands. Do not mix package managers across projects.
+- See `AGENTS.md` for the repository guidelines and the **Unbreakable Vow (TUV-001)**.
+- Follow `AGENTS.md` if any project-specific instruction drifts from it.
 
-Canonical shared rules (TUV-001, coding standards, safety invariants): `AGENTS.md` at the repo root. Follow that file if anything here drifts from it.
+## Workspace and Commands
 
-## Workspace layout
+- See `AGENTS.md § Repository at a glance` for the directory map and project roles.
+- See `AGENTS.md § Build, test, and development commands` for canonical Node (npm) and Python (uv) commands.
 
-| Project               | Stack                       | Notes                                        |
-| --------------------- | --------------------------- | -------------------------------------------- |
-| `afloat-server/`      | TypeScript, MCP SDK, Vitest | Workflow orchestration                       |
-| `echoes-server/`      | TypeScript, MCP SDK, Vitest | Audit/telemetry persistence                  |
-| `eligibility-server/` | TypeScript, MCP SDK, Vitest | Promotion gates and eligibility              |
-| `glimpse-server/`     | TypeScript, MCP SDK, Vitest | Glimpse rendering bridge                     |
-| `grid-server/`        | TypeScript, MCP SDK, Vitest | GRID/GATE integration                        |
-| `lots-server/`        | TypeScript, MCP SDK, Vitest | Experiment catalog and runner                |
-| `maintain-server/`    | TypeScript, MCP SDK, Vitest | Diagnostics and cleanup                      |
-| `mangrove-server/`    | TypeScript, MCP SDK, Vitest | Ecosystem coordination                       |
-| `ori-server/`         | TypeScript, MCP SDK, Vitest | Orientation and onboarding                   |
-| `overview-server/`    | TypeScript, MCP SDK, Vitest | Checkpoint and health check                  |
-| `pulse-server/`       | TypeScript, MCP SDK, Vitest | Briefings, focus, journaling                 |
-| `seeds-server/`       | TypeScript, MCP SDK, Vitest | Ecosystem snapshots                          |
-| `shared-types/`       | TypeScript                  | Shared types + audit client; **build first** |
-| `glimpse-artifact/`   | React 18, Vite, TailwindCSS | Component library                            |
-| `glimpse-engine/`     | JavaScript (ES modules)     | Browser-only viz engine; no package.json     |
-| `GRID-main/`          | Python 3.13+, FastAPI, uv   | Nested repo — manage in its own git root     |
+## Review Guardrails
 
-## Build and test commands
-
-### TypeScript MCP servers (afloat, echoes, eligibility, glimpse, grid, lots, maintain, mangrove, ori, overview, pulse, seeds)
-
-```bash
-cd <server-name>
-npm install
-npm run build           # tsc
-npm test                # vitest run
-npm run dev             # tsx --watch src/server.ts
-```
-
-Run a single test file:
-
-```bash
-npx vitest run tests/my-test.test.ts
-```
-
-**Build order**: `shared-types` must be built before any server that depends on it:
-
-```bash
-cd shared-types && npm run build
-```
-
-### glimpse-artifact
-
-```bash
-cd glimpse-artifact
-npm install
-npm run dev     # Vite dev server
-npm run build   # TypeScript + Vite build
-npm run lint
-```
-
-### glimpse-engine
-
-No build step — runs directly in browser via `glimpse-engine.html`. To sync YAML config into the engine:
-
-```bash
-node scripts/sync-default-master.mjs
-```
-
-### GRID-main (Python — nested repo)
-
-```bash
-cd GRID-main
-uv sync --group dev --group test
-uv run pytest tests/unit/ -q --tb=short   # fast unit tests
-uv run pytest tests/ --cov=src            # full suite with coverage
-uv run ruff check .                       # lint
-uv run python -m application.mothership.main  # API server (port 8080)
-```
-
-- Package manager: `uv` only — never `pip` directly.
-- `PYTHONPATH=src`
-- Test env: `MOTHERSHIP_ENVIRONMENT=test`, `MOTHERSHIP_DATABASE_URL=sqlite:///:memory:`, `MOTHERSHIP_USE_DATABRICKS=false`
-
-## Architecture
-
-### MCP server pattern
-
-All first-party servers follow the same shape: `src/server.ts` (entry point) + `src/config.ts`. They use `@modelcontextprotocol/sdk` and `zod` for tool schema validation. Each server is independent and stateless between calls.
-
-### Cross-server data contracts
-
-Servers share two runtime data contracts (see `docs/DATA_CONTRACTS.md`):
-
-- **Echoes audit log** (`~/.echoes/audit.ndjson`): Producers (lots-server, maintain-server, others) append `AuditEvent` objects (timestamp, source, tool, status, optional durationMs/metadata) using `@cascade/shared-types` `emitAudit`. echoes-server reads and queries this file.
-- **Seeds snapshots** (`~/.seeds-server/snapshots/snapshot-{timestamp}.json`): seeds-server writes; pulse-server reads the latest by filename sort. Each snapshot must have `overallScore` (number) and `repos[].healthScore` (number) — do not rename these fields.
-
-### GRID-main architecture
-
-Strict one-way dependency chain: `Application → Service → Database → Core`. Safety modules (`safety/`, `security/`, `boundaries/`) have their own rules — read `GRID-main/.claude/rules/safety.md` before modifying them.
-
-### glimpse-engine pipeline
-
-`glimpse-engine/engine.js` runs: ingest → profile → rules → articulate. Config source of truth is `glimpse.master.yaml`. View specs live in `glimpse-engine/view-specs.js` (constellation, timeline, clusters, matrix, flow, map, explorer).
-
-### glimpse-artifact components
-
-Follow shadcn-style conventions: CVA + clsx + tailwind-merge for variants. Icons: `lucide-react` only.
-
-## Key conventions
-
-- **Package managers**: `npm` for first-party TS servers, `pnpm` for `mcp-tool-experiment/typescript-sdk`, `uv` for `GRID-main`. Never mix.
-- **Commit scope**: Messages are scoped to the project changed, e.g. `pulse-server: add health check`, `docs: update data contracts`, `afloat-server: fix task registration`.
-- **Nested repos**: `GRID-main/` and `mcp-tool-experiment/` are git submodules. Commit changes inside their own git roots; only update the submodule ref in the root repo when intentionally recording a new commit.
-- **shared-types exports**: Seven export paths — `.` (types), `./audit-client` (emitAudit), `./security-policy`, `./session-rate-limit`, `./id`, `./mcp-logger`, `./precedent`. Build with `npm run build` before any dependent server.
-- **mcp-tool-experiment JSDoc examples**: Live in companion `.examples.ts` files, not inline. Middleware packages (`express`, `hono`, `node`) are thin adapters — MCP logic goes in core packages only.
-- **`prompt.md`** at workspace root is a scratch/notes file — not configuration.
-- **Secrets**: Never commit `.env*` files. Use `.env.example` as template. `mcp_config.json` and `claude_code_config.json` at root must not contain secrets.
-- **GATE directory**: Runtime envelopes, contracts, and results live in `GATE/`. This is operational data — do not restructure it without checking `GATE/README.md`.
-
-## Copilot Code Review Guardrails
-
-- TypeScript strictness: do not introduce `any`; prefer `unknown` + runtime narrowing with Zod, and keep types aligned with validation.
-- Shared-types imports: use the published export paths (no deep/internal paths) and ensure dependent servers compile after changes.
-- Zod schemas: schema updates must come with tests and preserve the runtime contract/inference consistency.
-- Audit emission: if logic affects audit logging, verify the emitted fields match the shared contract.
-- Secrets in config: never add real credentials/tokens/keys to repo files; reference env/credential manager only.
-- Risk management: if a change expands scope, require a rollback plan and tests that cover the affected boundaries.
+- TypeScript: avoid `any`; prefer `unknown` + runtime narrowing (e.g. Zod).
+- Shared-types: ensure dependent servers compile after changes to `@cascade/shared-*`.
+- Audit: verify emitted fields match the shared audit contract in `Documentation/docs/DATA_CONTRACTS.md`.
+- Secrets: never add real credentials to tracked files; reference env vars only.
