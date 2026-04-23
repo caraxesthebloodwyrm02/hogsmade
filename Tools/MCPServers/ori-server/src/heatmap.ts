@@ -30,6 +30,8 @@ export interface HeatmapCell {
   col: string;
   score: number | null;
   label: string;
+  /** harnessRunId that confirmed this cell, if any. */
+  confirmedVia?: string;
 }
 
 export interface ThreatProjectHeatmapPayload {
@@ -51,6 +53,12 @@ export interface BuildThreatProjectHeatmapOptions {
   projectIds?: string[];
   maxThreats?: number;
   maxProjects?: number;
+  /**
+   * Confirmation overlay: maps "threatId:projectId" → harnessRunId.
+   * Built by confirmations.buildConfirmationMap(). Cells whose key is present
+   * receive confirmedVia; their label gains a "confirmed" suffix.
+   */
+  confirmationMap?: Map<string, string>;
 }
 
 const DEFAULT_MAX_THREATS = 80;
@@ -140,10 +148,21 @@ export function buildThreatProjectHeatmap(
   const colSet = new Set(colIds);
   const projectsForGrid = projectPool.filter((p) => colSet.has(p.id));
 
+  const confirmationMap = options?.confirmationMap;
   const cells: HeatmapCell[] = [];
   for (const tid of rowIds) {
     for (const proj of projectsForGrid) {
-      cells.push(scoreThreatProjectCell(proj, tid));
+      const cell = scoreThreatProjectCell(proj, tid);
+      if (confirmationMap) {
+        const runId = confirmationMap.get(`${tid}:${proj.id}`) ?? confirmationMap.get(`${tid}:`);
+        if (runId) {
+          cell.confirmedVia = runId;
+          if (cell.label && !cell.label.startsWith("unmapped")) {
+            cell.label = `${cell.label}_confirmed`;
+          }
+        }
+      }
+      cells.push(cell);
     }
   }
 

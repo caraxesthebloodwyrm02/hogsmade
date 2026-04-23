@@ -9,6 +9,7 @@
 import { generateId } from "@cascade/shared-types/id";
 import { emitAudit } from "@cascade/shared-types/audit-client";
 import * as child_process from "node:child_process";
+import * as os from "node:os";
 import * as path from "node:path";
 import * as fs from "node:fs/promises";
 import type {
@@ -22,6 +23,28 @@ import type {
 import { zoneForStep, intensityForStep, SILENCE_RANGE } from "./types.js";
 import { readScenarios, upsertScenario, appendSignals, appendManifestRef } from "./storage.js";
 import { getConfig } from "./config.js";
+import { bridgeSignalsToOri } from "./ori-bridge.js";
+
+/**
+ * Write a confirmation entry to ori's confirmations store.
+ * Direct filesystem write — no MCP hop needed since both servers share the host.
+ * Path mirrors ori-server/src/confirmations.ts → confirmationsPath().
+ */
+async function postConfirmationToOri(runId: string, scenario: HarnessScenario): Promise<void> {
+  if (!scenario.threatIds || scenario.threatIds.length === 0) return;
+  const oriDir = process.env.ORI_DATA_DIR?.trim() || path.join(os.homedir(), ".ori");
+  const confirmFile = path.join(oriDir, "confirmations", "heatmap-confirmations.ndjson");
+  const entry = {
+    harnessRunId: runId,
+    scenarioId: scenario.id,
+    scenarioName: scenario.name,
+    threatIds: scenario.threatIds,
+    projectId: scenario.projectId ?? "grid-main",
+    confirmedAt: new Date().toISOString(),
+  };
+  await fs.mkdir(path.dirname(confirmFile), { recursive: true });
+  await fs.appendFile(confirmFile, JSON.stringify(entry) + "\n", "utf-8");
+}
 
 const SERVER_NAME = "harness-server";
 const config = getConfig();
@@ -42,6 +65,7 @@ export async function runScenario(
     throw new Error(`Scenario "${scenarioNameOrId}" not found`);
   }
 
+  const runId = generateId("harness-run");
   const startTime = Date.now();
 
   // Mark as running
@@ -156,6 +180,7 @@ export async function runScenario(
     status: "success",
     durationMs,
     metadata: {
+      runId,
       scenario: scenario.name,
       cycle,
       stepsExecuted:
@@ -167,7 +192,26 @@ export async function runScenario(
     },
   });
 
+  // Post confirmation to ori's heatmap-confirmations store (fire-and-forget)
+  postConfirmationToOri(runId, scenario).catch((err) => {
+    console.error(
+      `[harness-server] postConfirmationToOri failed: ${
+        err instanceof Error ? err.message : String(err)
+      }`,
+    );
+  });
+
+  // Bridge harness signals into ori's log store so the signal router can evaluate them
+  bridgeSignalsToOri(signals).catch((err) => {
+    console.error(
+      `[harness-server] bridgeSignalsToOri failed: ${
+        err instanceof Error ? err.message : String(err)
+      }`,
+    );
+  });
+
   return {
+    runId,
     scenarioId: scenario.id,
     scenarioName: scenario.name,
     cycle,

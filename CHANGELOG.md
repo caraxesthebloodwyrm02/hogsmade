@@ -6,6 +6,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-04-23
+
+### Added — Hogsmade Agentic Notebook Plugin (v0.1.0)
+
+Plugin scaffold (`.claude-plugin/plugin.json`, `.mcp.json`, `commands/`, `agents/`, `hooks/`):
+
+- Four domain agents: software-engineering-pilot, enterprise-search-pilot, data-pilot, product-management-pilot
+- Notebook pilot agent as primary cross-domain interface
+- Commands: `/grid`, `/echoes`, `/7pm`, `/notebook-query`, `/notebook-summary`, `/notebook-replay`, `/seeds-trend`, `/harness-status`, `/stage6`
+- Stop hook (`hooks/stop.sh`): captures Stage 6 report fences → ori notebook `decision` entries
+- SessionStart hook (`hooks/session-start.sh`): notebook welcome summary
+- CHAIN structured contract: `~/.claude/registry/chain.yaml` + JSON Schema + `scripts/registry-build.mjs` validator + `~/.claude/CHAIN.md` rendered view
+
+Signal wiring:
+
+- Harness → Ori bridge (`harness-server/src/ori-bridge.ts`): converts HarnessSignal → ori LogEntry after each scenario run
+- Threat heatmap confirmation (`ori-server/src/confirmations.ts`): harness run results overlay `confirmedVia` on (threatId, projectId) cells
+- Seeds-snapshot-drift SignalRoute added to ori router DEFAULT_ROUTES (24h window, recommend + note actions)
+- Scheduled driver (`scripts/hogsmade-driver.sh`): systemd user timers for twice-daily ecosystem_scan and once-daily harness_run
+
+Infrastructure:
+
+- MCP config parity: nexus-server and school-server promoted to claude_code_config.json (zero drift)
+- `/notebook-replay` command mapped to `mcp__ori-server__get_run_result`
+
 ## [2.0.0-tracing] - 2026-04-14
 
 ### Added

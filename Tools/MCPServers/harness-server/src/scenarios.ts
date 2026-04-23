@@ -39,6 +39,8 @@ function makeBastiodon(): HarnessScenario {
     currentStep: 0,
     currentCycle: 0,
     signals: [],
+    threatIds: ["TM-001", "TM-002"],
+    projectId: "grid-main",
   };
 }
 
@@ -81,6 +83,8 @@ function makeTalonflame(): HarnessScenario {
     currentStep: 0,
     currentCycle: 0,
     signals: [],
+    threatIds: ["TM-003", "TM-004"],
+    projectId: "grid-main",
   };
 }
 
@@ -123,6 +127,8 @@ function makeExeggutorA(): HarnessScenario {
     currentStep: 0,
     currentCycle: 0,
     signals: [],
+    threatIds: ["TM-005", "TM-006"],
+    projectId: "grid-main",
   };
 }
 

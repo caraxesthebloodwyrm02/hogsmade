@@ -39,6 +39,7 @@ import {
   routeThreatToTests,
 } from "./threat-model.js";
 import { buildThreatProjectHeatmap } from "./heatmap.js";
+import { buildConfirmationMap } from "./confirmations.js";
 import { generateReport, renderReport } from "./reporter.js";
 import type { ReportData } from "./reporter.js";
 import { appendNote, queryNotes, getNotebookSummary } from "./notebook.js";
@@ -1361,11 +1362,13 @@ export function buildServer(): McpServer {
       const threatModel = await loadThreatModel();
       const projects = await listProjects();
       const coverageReport = buildCoverageMap(projects, threatModel);
+      const confirmationMap = await buildConfirmationMap();
       const heatmap = buildThreatProjectHeatmap(threatModel, projects, coverageReport, {
         threatIdPrefix: args.threatIdPrefix,
         projectIds: args.projectIds,
         maxThreats: args.maxThreats,
         maxProjects: args.maxProjects,
+        confirmationMap,
       });
 
       emitAudit({
@@ -2109,6 +2112,116 @@ export function buildServer(): McpServer {
               null,
               2,
             ),
+          },
+        ],
+      };
+    },
+  );
+
+  // ── Chain Update Proposal ──
+
+  registerTool(
+    "chain_update_proposal",
+    {
+      description:
+        "Read recent notebook 'decision' entries and propose a unified diff against " +
+        "~/.claude/registry/chain.yaml. The output is a patch that adds or updates " +
+        "workstream routing rules based on observed decisions. The diff is NOT applied " +
+        "automatically — Prince reviews and merges it.",
+      inputSchema: z.object({
+        limit: z
+          .number()
+          .int()
+          .positive()
+          .max(50)
+          .optional()
+          .default(10)
+          .describe("Number of recent decision entries to analyse (default 10)"),
+      }),
+    },
+    async (args: { limit?: number }) => {
+      const incomingTrace: TraceContext | null = extractTrace(args as Record<string, unknown>);
+      const span = incomingTrace ? createChildSpan(incomingTrace) : createRootSpan();
+
+      await ensureDataDirs();
+      const decisions = await queryNotes({
+        category: "decision",
+        limit: args.limit ?? 10,
+      });
+
+      if (decisions.length === 0) {
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: "No decision entries found in the notebook. Write some Stage 6 reports and try again.",
+            },
+          ],
+        };
+      }
+
+      // Extract workstream signals from decision titles and tags
+      const workstreamMentions: Record<string, string[]> = {};
+      for (const note of decisions) {
+        for (const tag of note.tags) {
+          if (tag.startsWith("cmd-")) {
+            const cmd = tag.slice(4);
+            if (!workstreamMentions[cmd]) workstreamMentions[cmd] = [];
+            workstreamMentions[cmd].push(note.title);
+          }
+          // Also catch row-N tags which associate with the current implementation
+          if (tag.startsWith("row-")) {
+            const rowNum = tag.slice(4);
+            const ws = "implementation";
+            if (!workstreamMentions[ws]) workstreamMentions[ws] = [];
+            workstreamMentions[ws].push(`row-${rowNum}: ${note.title}`);
+          }
+        }
+      }
+
+      const chainYamlPath = `${process.env.HOME ?? config.cascadeRoot}/.claude/registry/chain.yaml`;
+
+      const mentionLines = Object.entries(workstreamMentions)
+        .map(([cmd, titles]) => `  # ${cmd}: ${titles.slice(0, 2).join(" | ")}`)
+        .join("\n");
+
+      const proposal = [
+        `--- a/${chainYamlPath}`,
+        `+++ b/${chainYamlPath}`,
+        `@@ -# chain_update_proposal output (review before applying) @@`,
+        ``,
+        `# Signals extracted from ${decisions.length} notebook decision entries:`,
+        mentionLines || "  # (no workstream tags found — add cmd-* tags to notebook entries)",
+        ``,
+        `# Proposed additions (copy into chain.yaml after review):`,
+        `#`,
+        `# If a new workstream pattern emerged, add a new entry to the`,
+        `# workstreams array in ~/.claude/registry/chain.yaml following`,
+        `# the schema, then run: node scripts/registry-build.mjs`,
+        `#`,
+        `# Most recent decision entries referenced:`,
+        ...decisions
+          .slice(0, 5)
+          .map((n) => `#   [${n.timestamp.slice(0, 10)}] ${n.title} (${n.tags.join(", ")})`),
+      ].join("\n");
+
+      emitAudit({
+        traceId: span.traceId,
+        spanId: span.spanId,
+        source: SERVER_NAME,
+        tool: "chain_update_proposal",
+        status: "success",
+        metadata: {
+          decisionsAnalysed: decisions.length,
+          workstreamSignals: Object.keys(workstreamMentions).length,
+        },
+      });
+
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: proposal,
           },
         ],
       };

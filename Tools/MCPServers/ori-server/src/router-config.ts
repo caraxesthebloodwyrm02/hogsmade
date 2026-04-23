@@ -134,6 +134,34 @@ export const DEFAULT_ROUTES: SignalRoute[] = [
       { type: "probe" },
     ],
   },
+  {
+    id: "seeds-snapshot-drift",
+    name: "Seeds Snapshot Drift",
+    enabled: true,
+    trigger: {
+      patternIds: [],
+      severities: ["critical", "warning", "info"],
+      sources: ["seeds-server"],
+      threshold: 1,
+      windowMinutes: 1440, // 24-hour window — one signal per day triggers
+      cooldownMinutes: 60,
+    },
+    actions: [
+      { type: "recommend", save: true },
+      {
+        type: "note",
+        category: "trend",
+        titleTemplate: "Seeds snapshot drift detected ({{count}} signals in {{window}}min)",
+        bodyTemplate:
+          "Seeds-server emitted {{count}} signal(s) within a {{window}}-minute window, " +
+          "indicating score drift across ecosystem snapshots.\n\n" +
+          "Sources: {{source}}\n" +
+          "Top signal: {{topLine}}\n\n" +
+          "Review recent seeds snapshots at ~/.seeds-server/snapshots/ for score deltas.",
+        tags: ["auto-router", "seeds-drift", "ecosystem-health"],
+      },
+    ],
+  },
 ];
 
 // ── Persistence ──

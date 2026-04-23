@@ -107,6 +107,10 @@ export interface HarnessScenario {
   completedAt?: string;
   signals: HarnessSignal[];
   errorMessage?: string;
+  /** Threat model IDs confirmed by a successful run of this scenario. */
+  threatIds?: string[];
+  /** Project registry ID this scenario tests against (defaults to "grid-main"). */
+  projectId?: string;
 }
 
 // ── Manifest Reference ──
@@ -156,6 +160,8 @@ export interface AgentLoopState {
 // ── Run Result ──
 
 export interface HarnessRunResult {
+  /** Unique run ID generated at the start of runScenario. */
+  runId: string;
   scenarioId: string;
   scenarioName: string;
   cycle: number;

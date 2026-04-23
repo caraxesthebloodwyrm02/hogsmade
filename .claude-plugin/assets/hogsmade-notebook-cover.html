@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" data-density="normal">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>hogsmade-notebook — plugin cover</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="tokens.css" />
+  <style>
+    body { max-width: 900px; margin: 0 auto; }
+
+    /* ── Chrome ── */
+    .chrome {
+      position: sticky; top: 0; z-index: 10;
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 20px; background: var(--bg);
+      border-bottom: 1px solid var(--line);
+      font-family: var(--mono); font-size: 12px;
+    }
+    .chrome-brand { display: flex; align-items: center; gap: 8px; }
+    .chrome-version { color: var(--ink-faint); }
+    .chrome-install {
+      margin-left: auto; background: var(--panel-2);
+      border: 1px solid var(--line); border-radius: var(--radius);
+      padding: 4px 12px; font-family: var(--mono); font-size: 11px;
+      color: var(--accent); white-space: nowrap;
+    }
+    .theme-btn {
+      background: transparent; border: 1px solid var(--line);
+      border-radius: var(--radius); padding: 4px 8px;
+      font-family: var(--mono); font-size: 10px; color: var(--ink-dim);
+      cursor: pointer;
+    }
+    .theme-btn:hover { color: var(--ink); }
+
+    /* ── Hero ── */
+    .hero {
+      padding: 40px 20px 24px; border-bottom: 1px solid var(--line);
+    }
+    .hero h1 {
+      font-family: var(--mono); font-size: 22px; font-weight: 700;
+      color: var(--ink); margin: 0 0 6px;
+    }
+    .hero p {
+      font-size: 14px; color: var(--ink-dim); margin: 0; line-height: 1.6;
+      max-width: 600px;
+    }
+
+    /* ── Domain grid ── */
+    .domain-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr);
+      gap: var(--gap); padding: var(--pad) 20px;
+      border-bottom: 1px solid var(--line);
+    }
+    .domain-card {
+      background: var(--panel); border: 1px solid var(--line);
+      border-radius: var(--radius); padding: 14px;
+    }
+    .domain-label {
+      font-family: var(--mono); font-size: 9px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.12em;
+      color: var(--ink-faint); margin-bottom: 6px;
+    }
+    .domain-name {
+      font-size: 13px; font-weight: 600; color: var(--ink);
+      margin-bottom: 8px;
+    }
+    .cmd-list { display: flex; flex-direction: column; gap: 4px; }
+    .cmd {
+      font-family: var(--mono); font-size: 11px; color: var(--accent);
+    }
+    .cmd-desc { color: var(--ink-dim); font-size: 11px; margin-left: 8px; }
+    .domain-servers {
+      margin-top: 10px; font-family: var(--mono); font-size: 10px;
+      color: var(--ink-faint); border-top: 1px solid var(--line);
+      padding-top: 8px; line-height: 1.6;
+    }
+
+    /* ── Run row sample ── */
+    .run-section {
+      padding: var(--pad) 20px; border-bottom: 1px solid var(--line);
+    }
+    .section-label {
+      font-family: var(--mono); font-size: 10px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.12em;
+      color: var(--ink-faint); margin-bottom: 10px;
+    }
+    .run-row {
+      display: flex; align-items: center; gap: 10px;
+      background: var(--panel); border: 1px solid var(--line);
+      border-radius: var(--radius); padding: 10px 14px;
+      font-family: var(--mono); font-size: 11px;
+    }
+    .run-status {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--ok); flex-shrink: 0;
+      animation: pulse 2s infinite;
+    }
+    .run-id { color: var(--ink-faint); }
+    .run-name { color: var(--ink); font-weight: 500; flex: 1; }
+    .run-meta { color: var(--ink-dim); }
+    .run-confirm {
+      font-size: 10px; color: var(--ok);
+      border: 1px solid color-mix(in oklch, var(--ok) 40%, var(--line));
+      border-radius: 3px; padding: 2px 6px;
+    }
+
+    /* ── Footer ── */
+    .footer {
+      padding: 16px 20px; display: flex; align-items: center; gap: 16px;
+      font-family: var(--mono); font-size: 10px; color: var(--ink-faint);
+    }
+    .footer a { color: var(--ink-faint); text-decoration: none; }
+    .footer a:hover { color: var(--ink); }
+    .footer-sha { margin-left: auto; }
+  </style>
+</head>
+<body>
+
+<div class="chrome">
+  <div class="chrome-brand">
+    <span class="brand-dot"></span>
+    <span style="font-weight:600;color:var(--ink)">hogsmade-notebook</span>
+    <span class="chrome-version">v0.1.0</span>
+  </div>
+  <code class="chrome-install">/plugin marketplace add hogsmade-notebook</code>
+  <button class="theme-btn" onclick="document.documentElement.dataset.theme=document.documentElement.dataset.theme==='dark'?'light':'dark'">theme</button>
+</div>
+
+<div class="hero">
+  <h1>A modern agentic notebook for Claude Code</h1>
+  <p>Four domains — software-engineering, enterprise-search, data, product-management — unified in one append-only notebook. Signals flow in automatically; patterns surface through structured routing; every session contributes a decision entry.</p>
+</div>
+
+<div class="domain-grid">
+  <div class="domain-card">
+    <div class="domain-label">Domain</div>
+    <div class="domain-name">Software Engineering</div>
+    <div class="cmd-list">
+      <div><span class="cmd">/grid</span><span class="cmd-desc">GRID debt-chain execution</span></div>
+      <div><span class="cmd">/echoes</span><span class="cmd-desc">audit trail & enforcement</span></div>
+    </div>
+    <div class="domain-servers">grid-server · echoes-server · eligibility-server · maintain-server</div>
+  </div>
+
+  <div class="domain-card">
+    <div class="domain-label">Domain</div>
+    <div class="domain-name">Enterprise Search</div>
+    <div class="cmd-list">
+      <div><span class="cmd">/notebook-query</span><span class="cmd-desc">search notebook entries</span></div>
+      <div><span class="cmd">/notebook-summary</span><span class="cmd-desc">category summary</span></div>
+      <div><span class="cmd">/notebook-replay</span><span class="cmd-desc">replay a harness run</span></div>
+    </div>
+    <div class="domain-servers">ori-server (notebook + heatmap) · glimpse-engine</div>
+  </div>
+
+  <div class="domain-card">
+    <div class="domain-label">Domain</div>
+    <div class="domain-name">Data</div>
+    <div class="cmd-list">
+      <div><span class="cmd">/seeds-trend</span><span class="cmd-desc">ecosystem health scores</span></div>
+      <div><span class="cmd">/harness-status</span><span class="cmd-desc">scenario run results</span></div>
+    </div>
+    <div class="domain-servers">seeds-server · pulse-server · harness-server</div>
+  </div>
+
+  <div class="domain-card">
+    <div class="domain-label">Domain</div>
+    <div class="domain-name">Product Management</div>
+    <div class="cmd-list">
+      <div><span class="cmd">/7pm</span><span class="cmd-desc">evening session review</span></div>
+      <div><span class="cmd">/stage6</span><span class="cmd-desc">generate Stage 6 report</span></div>
+    </div>
+    <div class="domain-servers">overview-server · lots-server · ori-server</div>
+  </div>
+</div>
+
+<div class="run-section">
+  <div class="section-label">Automated signal loop — sample harness run</div>
+  <div class="run-row">
+    <div class="run-status"></div>
+    <span class="run-id">harness-run-1714000800-a3f1</span>
+    <span class="run-name">bastiodon · boundary enforcement</span>
+    <span class="run-meta">03:00 · 4 signals · 2 threats</span>
+    <span class="run-confirm">TM-001 TM-002 confirmed</span>
+  </div>
+</div>
+
+<div class="footer">
+  <span>category: development</span>
+  <span>13 TS + 7 Python MCP servers</span>
+  <a href="https://github.com/caraxesthebloodwyrm02/hogsmade-marketplace">marketplace</a>
+  <span class="footer-sha">sha-pinned · MIT</span>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" data-density="normal" data-layout="sidebar">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hogsmade Notebook</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="tokens.css" />
+  <style>
+    /* ── Layout ── */
+    .app { display: flex; height: 100vh; overflow: hidden; }
+
+    /* Chrome */
+    .chrome {
+      display: flex; align-items: center; gap: var(--gap);
+      padding: 10px 18px; background: var(--bg);
+      border-bottom: 1px solid var(--line);
+      font-family: var(--mono); font-size: 12px;
+      flex-shrink: 0; position: fixed; top: 0; left: 0; right: 0; z-index: 10;
+      height: 42px;
+    }
+    .chrome-brand { display: flex; align-items: center; gap: 8px; }
+    .chrome-brand span { color: var(--ink); font-weight: 600; }
+    .chrome-brand small { color: var(--ink-dim); font-weight: 400; }
+    .chrome-status { display: flex; gap: 14px; color: var(--ink-dim); margin-left: auto; }
+    .chrome-status b { color: var(--ink); font-weight: 500; }
+
+    /* Below chrome */
+    .below-chrome { display: flex; flex: 1; margin-top: 42px; overflow: hidden; }
+
+    /* Sidebar */
+    .sidebar {
+      width: 220px; min-width: 220px; background: var(--panel);
+      border-right: 1px solid var(--line); overflow-y: auto;
+      padding: var(--pad) 0; flex-shrink: 0;
+    }
+    .sidebar-label {
+      color: var(--ink-faint); margin: 16px 0 4px; font-weight: 500;
+      font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em;
+      padding: 0 14px;
+    }
+    .side-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 7px 14px; cursor: pointer; font-size: 12px;
+      color: var(--ink-dim); border-left: 2px solid transparent;
+      font-family: var(--mono);
+    }
+    .side-item:hover { background: var(--panel-2); color: var(--ink); }
+    .side-item.active {
+      background: var(--panel-2); color: var(--ink);
+      border-left-color: var(--accent);
+    }
+    .side-item .count {
+      margin-left: auto; color: var(--ink-faint);
+      font-variant-numeric: tabular-nums; font-size: 11px;
+    }
+
+    /* Main content */
+    .main { flex: 1; overflow-y: auto; padding: var(--pad); }
+    .entry-list { display: flex; flex-direction: column; gap: 8px; }
+
+    /* Entry card */
+    .entry-card {
+      background: var(--panel); border: 1px solid var(--line);
+      border-radius: var(--radius); padding: 12px 14px;
+      cursor: pointer; transition: border-color 0.1s;
+    }
+    .entry-card:hover { border-color: var(--line-2); }
+    .entry-card.selected { border-color: var(--accent); }
+    .entry-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .entry-cat {
+      font-family: var(--mono); font-size: 9px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.1em;
+      padding: 2px 6px; border-radius: 3px;
+    }
+    .cat-decision  { background: color-mix(in oklch, var(--accent)   20%, var(--panel)); color: var(--accent); }
+    .cat-trend     { background: color-mix(in oklch, var(--accent-2)  20%, var(--panel)); color: var(--accent-2); }
+    .cat-recommendation { background: color-mix(in oklch, var(--ok)   20%, var(--panel)); color: var(--ok); }
+    .cat-observation { background: color-mix(in oklch, var(--ink-dim) 20%, var(--panel)); color: var(--ink-dim); }
+    .cat-anomaly   { background: color-mix(in oklch, var(--bad)       20%, var(--panel)); color: var(--bad); }
+    .cat-cross-run-context { background: color-mix(in oklch, var(--warn) 20%, var(--panel)); color: var(--warn); }
+    .entry-ts { color: var(--ink-faint); font-family: var(--mono); font-size: 10px; margin-left: auto; }
+    .entry-title { font-size: 13px; font-weight: 600; color: var(--ink); margin-bottom: 4px; }
+    .entry-body {
+      font-size: 12px; color: var(--ink-dim); white-space: pre-wrap;
+      max-height: 3em; overflow: hidden; line-height: 1.5;
+    }
+    .entry-tags { display: flex; gap: 4px; margin-top: 8px; flex-wrap: wrap; }
+    .tag {
+      font-family: var(--mono); font-size: 9px; font-weight: 500;
+      color: var(--ink-faint); background: var(--panel-2);
+      border: 1px solid var(--line); border-radius: 3px;
+      padding: 1px 5px;
+    }
+
+    /* Rail — detail */
+    .rail {
+      width: 320px; min-width: 320px; background: var(--panel);
+      border-left: 1px solid var(--line); overflow-y: auto;
+      flex-shrink: 0;
+    }
+    .rail-head {
+      padding: 10px 14px; border-bottom: 1px solid var(--line);
+      font-family: var(--mono); font-size: 10px;
+      color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.1em;
+    }
+    .rail-json {
+      padding: 12px 14px; font-family: var(--mono); font-size: 11px;
+      color: var(--ink); white-space: pre-wrap; word-break: break-all;
+      line-height: 1.6;
+    }
+    .rail-empty {
+      display: flex; align-items: center; justify-content: center;
+      height: 100%; color: var(--ink-faint); font-family: var(--mono);
+      font-size: 11px; padding: var(--pad);
+    }
+
+    /* Controls */
+    .controls {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px var(--pad); border-bottom: 1px solid var(--line);
+      font-family: var(--mono); font-size: 11px;
+    }
+    .controls input {
+      flex: 1; background: var(--panel); border: 1px solid var(--line);
+      border-radius: var(--radius); padding: 5px 8px;
+      color: var(--ink); font-family: var(--mono); font-size: 11px;
+      outline: none;
+    }
+    .controls input:focus { border-color: var(--accent); }
+    .controls .count-label { color: var(--ink-faint); white-space: nowrap; }
+
+    .theme-btn {
+      background: var(--panel-2); border: 1px solid var(--line);
+      border-radius: var(--radius); padding: 4px 10px;
+      color: var(--ink-dim); font-family: var(--mono); font-size: 10px;
+      cursor: pointer;
+    }
+    .theme-btn:hover { color: var(--ink); }
+
+    .empty-state {
+      display: flex; align-items: center; justify-content: center;
+      height: 200px; color: var(--ink-faint); font-family: var(--mono);
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="chrome">
+  <div class="chrome-brand">
+    <span class="brand-dot"></span>
+    <span>hogsmade-notebook</span>
+    <small>viewer</small>
+  </div>
+  <div class="chrome-status" id="chrome-status">
+    <span><b id="stat-total">0</b> entries</span>
+    <span>loaded: <b id="stat-newest">—</b></span>
+  </div>
+  <button class="theme-btn" onclick="toggleTheme()">theme</button>
+</div>
+
+<div class="app">
+  <div class="below-chrome">
+    <div class="sidebar">
+      <div class="sidebar-label">Category</div>
+      <div class="side-item active" data-filter="all" onclick="setFilter(this,'all')">
+        All <span class="count" id="count-all">0</span>
+      </div>
+      <div class="side-item" data-filter="decision" onclick="setFilter(this,'decision')">
+        Decision <span class="count" id="count-decision">0</span>
+      </div>
+      <div class="side-item" data-filter="trend" onclick="setFilter(this,'trend')">
+        Trend <span class="count" id="count-trend">0</span>
+      </div>
+      <div class="side-item" data-filter="recommendation" onclick="setFilter(this,'recommendation')">
+        Recommendation <span class="count" id="count-recommendation">0</span>
+      </div>
+      <div class="side-item" data-filter="observation" onclick="setFilter(this,'observation')">
+        Observation <span class="count" id="count-observation">0</span>
+      </div>
+      <div class="side-item" data-filter="anomaly" onclick="setFilter(this,'anomaly')">
+        Anomaly <span class="count" id="count-anomaly">0</span>
+      </div>
+      <div class="side-item" data-filter="cross-run-context" onclick="setFilter(this,'cross-run-context')">
+        Cross-run <span class="count" id="count-cross-run-context">0</span>
+      </div>
+    </div>
+
+    <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
+      <div class="controls">
+        <input type="text" id="search" placeholder="filter entries…" oninput="renderList()" />
+        <span class="count-label" id="visible-count">0 shown</span>
+      </div>
+      <div class="main">
+        <div class="entry-list" id="entry-list"></div>
+      </div>
+    </div>
+
+    <div class="rail" id="rail">
+      <div class="rail-empty">select an entry</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  /* ── State ── */
+  let all = [];
+  let activeFilter = "all";
+  let selectedId = null;
+
+  /* ── Load notebook ── */
+  async function load() {
+    const params = new URLSearchParams(location.search);
+    const path = params.get("path") || "notebook.ndjson";
+    try {
+      const r = await fetch(path);
+      if (!r.ok) throw new Error(r.statusText);
+      const text = await r.text();
+      all = text.trim().split("\n").filter(Boolean).map(l => {
+        try { return JSON.parse(l); } catch { return null; }
+      }).filter(Boolean).reverse(); // newest first
+    } catch (e) {
+      all = [];
+      document.getElementById("entry-list").innerHTML =
+        `<div class="empty-state">Could not load ${path} — serve via HTTP: python3 -m http.server</div>`;
+    }
+    updateCounts();
+    renderList();
+    updateStats();
+  }
+
+  function updateCounts() {
+    const cats = ["decision","trend","recommendation","observation","anomaly","cross-run-context"];
+    document.getElementById("count-all").textContent = all.length;
+    cats.forEach(c => {
+      const el = document.getElementById("count-" + c);
+      if (el) el.textContent = all.filter(e => e.category === c).length;
+    });
+  }
+
+  function updateStats() {
+    document.getElementById("stat-total").textContent = all.length;
+    if (all.length) {
+      const ts = all[0].timestamp ?? "";
+      document.getElementById("stat-newest").textContent = ts.slice(0, 10) || "—";
+    }
+  }
+
+  function getFiltered() {
+    const q = document.getElementById("search").value.toLowerCase();
+    return all.filter(e => {
+      const catOk = activeFilter === "all" || e.category === activeFilter;
+      if (!catOk) return false;
+      if (!q) return true;
+      return (e.title || "").toLowerCase().includes(q) ||
+             (e.body  || "").toLowerCase().includes(q) ||
+             (e.tags  || []).some(t => t.toLowerCase().includes(q)) ||
+             (e.source || "").toLowerCase().includes(q);
+    });
+  }
+
+  function renderList() {
+    const filtered = getFiltered();
+    document.getElementById("visible-count").textContent = filtered.length + " shown";
+    const list = document.getElementById("entry-list");
+    if (!filtered.length) {
+      list.innerHTML = '<div class="empty-state">no entries match</div>';
+      return;
+    }
+    list.innerHTML = filtered.map(e => {
+      const cat = e.category || "observation";
+      const ts  = (e.timestamp || "").slice(0, 16).replace("T", " ");
+      const tags = (e.tags || []).map(t => `<span class="tag">${esc(t)}</span>`).join("");
+      const selected = e.id === selectedId ? " selected" : "";
+      return `<div class="entry-card${selected}" onclick="selectEntry('${e.id}')">
+        <div class="entry-header">
+          <span class="entry-cat cat-${cat.replace(/[^a-z-]/g,"-")}">${cat}</span>
+          <span class="entry-ts">${ts}</span>
+        </div>
+        <div class="entry-title">${esc(e.title || "(untitled)")}</div>
+        <div class="entry-body">${esc(e.body || "")}</div>
+        ${tags ? `<div class="entry-tags">${tags}</div>` : ""}
+      </div>`;
+    }).join("");
+  }
+
+  function selectEntry(id) {
+    selectedId = id;
+    renderList();
+    const e = all.find(x => x.id === id);
+    const rail = document.getElementById("rail");
+    if (!e) { rail.innerHTML = '<div class="rail-empty">not found</div>'; return; }
+    rail.innerHTML = `<div class="rail-head">Entry JSON</div>
+      <div class="rail-json">${esc(JSON.stringify(e, null, 2))}</div>`;
+  }
+
+  function setFilter(el, cat) {
+    document.querySelectorAll(".side-item").forEach(i => i.classList.remove("active"));
+    el.classList.add("active");
+    activeFilter = cat;
+    renderList();
+  }
+
+  function toggleTheme() {
+    const html = document.documentElement;
+    html.dataset.theme = html.dataset.theme === "dark" ? "light" : "dark";
+  }
+
+  function esc(s) {
+    return String(s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  load();
+</script>
+</body>
+</html>
