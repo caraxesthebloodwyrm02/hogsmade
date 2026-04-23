@@ -104,6 +104,29 @@ jq '.mcpServersDisabled // {} | keys | length' ~/.claude.json
 
 **Expected:** `0`. A non-zero count means servers were disabled rather than removed from the canonical set; run regeneration to restore them.
 
+### Check 6 — Running count < configured count is not a failure
+
+Windsurf's MCP panel shows **running processes**, not configured entries. With `"Automatically start MCP servers when sending"` enabled (default), servers spawn on first tool invocation, not at IDE startup.
+
+```bash
+# Count unique running MCP servers
+RUNNING=$(pgrep -af "tsx|\.venv/bin/python" 2>/dev/null \
+  | grep -oE "MCPServers/[a-z-]+|mcp-setup/server/[a-z_]+\.py|grid\.mcp\.[a-z_]+" \
+  | sort -u | wc -l)
+CONFIGURED=$(jq '.mcpServers | keys | length' ~/.codeium/windsurf/mcp_config.json)
+echo "running: $RUNNING  configured: $CONFIGURED"
+```
+
+**Expected interpretation:**
+
+- `RUNNING < CONFIGURED` with **zero errors in the Windsurf MCP log** → lazy-spawn working as designed, not a failure. The unspawned servers simply haven't been invoked yet.
+- `RUNNING < CONFIGURED` with **errors in the log** → real spawn failure, go to remediation below.
+- `RUNNING == CONFIGURED` → all servers have been triggered (either by eager-start setting or by prior tool invocations).
+
+**To confirm lazy-spawn (not failure):** invoke a tool from one of the non-running servers via the Windsurf chat/UI. If the server appears in `pgrep` and the panel after invocation, it's lazy-spawn. If invocation fails with a spawn-time error, it's a real failure.
+
+Cross-check: when lazy-spawn is the explanation, **agent-session tool bindings + spawned processes + panel tool-count badges** all agree on the same subset (not canonical). When it's a failure, these three counters diverge.
+
 ---
 
 ## If any check fails
