@@ -1,0 +1,70 @@
+name: mcp-config-sync-smoke
+
+on:
+  push:
+    branches: ["**"]
+    paths:
+      - "mcp_config.example.json"
+      - "Components/scripts/sync-mcp-configs.sh"
+      - "Components/scripts/fixtures/mcp-config-sync/**"
+      - ".github/workflows/mcp-config-sync-smoke.yml"
+  pull_request:
+    paths:
+      - "mcp_config.example.json"
+      - "Components/scripts/sync-mcp-configs.sh"
+      - "Components/scripts/fixtures/mcp-config-sync/**"
+      - ".github/workflows/mcp-config-sync-smoke.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    name: sync-mcp-configs dry-run
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install jq
+        run: sudo apt-get install -y jq
+
+      - name: Dry-run against canonical (no live configs present)
+        run: |
+          bash Components/scripts/sync-mcp-configs.sh \
+            --dry-run \
+            --cascade-root="${GITHUB_WORKSPACE}" \
+            --windsurf-config="/tmp/nonexistent-windsurf.json" \
+            --claude-config="/tmp/nonexistent-claude.json"
+
+      - name: Dry-run with fixture Windsurf config
+        run: |
+          bash Components/scripts/sync-mcp-configs.sh \
+            --dry-run \
+            --cascade-root="${GITHUB_WORKSPACE}" \
+            --windsurf-config="${GITHUB_WORKSPACE}/Components/scripts/fixtures/mcp-config-sync/fake_windsurf_config.json" \
+            --claude-config="/tmp/nonexistent-claude.json"
+
+      - name: Structural check — substitution produces clean mcpServers block
+        run: |
+          # Simulate what the script does: substitute $HOME/CascadeProjects → GITHUB_WORKSPACE,
+          # then $HOME → HOME, and extract mcpServers. This tests that canonical stays parseable
+          # and produces 0 legacy path refs after substitution — without requiring real binaries.
+          GENERATED=$(sed \
+            -e "s|\$HOME/CascadeProjects|${GITHUB_WORKSPACE}|g" \
+            -e "s|\$HOME|${HOME}|g" \
+            mcp_config.example.json | jq '{mcpServers: .mcpServers}')
+
+          echo "$GENERATED" | jq empty
+
+          CARAXES=$(echo "$GENERATED" | jq '[.mcpServers | to_entries[]
+            | select((.value | tostring) | contains("caraxes"))] | length')
+          echo "caraxes refs after substitution: $CARAXES"
+          test "$CARAXES" -eq 0
+
+          EXPECTED=$(jq '.mcpServers | keys | length' mcp_config.example.json)
+          ACTUAL=$(echo "$GENERATED" | jq '.mcpServers | keys | length')
+          echo "server count — expected: $EXPECTED, actual: $ACTUAL"
+          test "$EXPECTED" -eq "$ACTUAL"
+
+          echo "Structural validation: PASS"
