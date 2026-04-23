@@ -9,13 +9,13 @@
 
 This repository is a Node workspaces monorepo for the Cascade ecosystem. It contains first-party MCP servers, shared TypeScript packages, application surfaces, and the `Projects/GRID-main` git submodule.
 
-| Path                | Type                    | Notes                                                                                                                                                       |
-| ------------------- | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Tools/MCPServers/` | First-party MCP servers | TypeScript servers (`afloat`, `echoes`, `eligibility`, `grid`, `lots`, `maintain`, `ori`, `overview`, `pulse`, `seeds`, plus `harness`, `nexus`, `school`). |
-| `Components/`       | Shared packages         | `shared-types`, `shared-resilience`, `shared-pipeline` (published as `@cascade/shared-*`).                                                                  |
-| `Applications/`     | Apps and engines        | `glimpse-artifact`, `glimpse-engine`, `pi-mangrove`.                                                                                                        |
-| `Projects/`         | Operational projects    | `GRID-main` (git submodule), `DIO`, `GATE`, `projects/viz`.                                                                                                 |
-| `Documentation/`    | Shared docs and audits  | Workspace guides, audits, conventions. Governance docs in `Documentation/docs/GOVERNANCE.md`.                                                               |
+| Path                | Type                    | Notes                                                                                                                                                                                                |
+| ------------------- | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Tools/MCPServers/` | First-party MCP servers | TypeScript servers (`afloat`, `craft`, `echoes`, `eligibility`, `glimpse`, `grid`, `lots`, `maintain`, `mangrove`, `ori`, `overview`, `pulse`, `seeds`, plus optional `harness`, `nexus`, `school`). |
+| `Components/`       | Shared packages         | `shared-types`, `shared-resilience`, `shared-pipeline` (published as `@cascade/shared-*`).                                                                                                           |
+| `Applications/`     | Apps and engines        | `glimpse-artifact`, `glimpse-engine`, `pi-mangrove`.                                                                                                                                                 |
+| `Projects/`         | Operational projects    | `GRID-main` (git submodule), `DIO`, `GATE`, `projects/viz`.                                                                                                                                          |
+| `Documentation/`    | Shared docs and audits  | Workspace guides, audits, conventions. Governance docs in `Documentation/docs/GOVERNANCE.md`.                                                                                                        |
 
 Keep changes scoped to the relevant workspace; avoid unrelated edits across directories.
 
