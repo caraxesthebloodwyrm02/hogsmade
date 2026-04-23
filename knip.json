@@ -3,7 +3,6 @@
   "ignore": [
     "Projects/**",
     "Documentation/**",
-    "Hogwarts/**",
     ".cursor/**",
     ".agents/**",
     "Applications/glimpse-engine/**"

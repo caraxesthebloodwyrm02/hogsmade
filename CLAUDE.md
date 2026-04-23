@@ -34,7 +34,7 @@ This file provides Claude-Code-specific guidance for the Cascade workspace.
 | GATE            | `Projects/GATE` - envelopes, contracts, and runtime data        |
 | CascadeProjects | `$CASCADE_WORKSPACE_ROOT` (default: `~/CascadeProjects`)        |
 | Components      | `Components/` - current shared package location                 |
-| Hogwarts        | `Hogwarts/` - governance simulation and board UI                |
+| Governance docs | `Documentation/docs/GOVERNANCE.md` - TUV-001 and TOOL-GOV-001   |
 
 ### Active Workspace Areas
 
@@ -70,8 +70,7 @@ This is a multi-project workspace. The current layout is namespaced rather than 
 | `Tools/MCPServers/` | First-party MCP servers | TS (`afloat-server`, `craft-server`, `echoes-server`, `eligibility-server`, `glimpse-server`, `grid-server`, `lots-server`, `maintain-server`, `mangrove-server`, `ori-server`, `overview-server`, `pulse-server`, `seeds-server`) plus optional `harness-server`, `nexus-server`, `school-server` (see `mcp_inventory.manifest.json` for the authoritative list) |
 | `Projects/`         | Operational projects    | `GRID-main`, `DIO`, `GATE`, `projects/viz`                                                                                                                                                                                                                                                                                                                        |
 | `Components/`       | Shared packages         | `shared-types`, `shared-resilience`, `shared-pipeline`                                                                                                                                                                                                                                                                                                            |
-| `Documentation/`    | Shared docs and audits  | Workspace guides, audits, and conventions                                                                                                                                                                                                                                                                                                                         |
-| `Hogwarts/`         | Governance sim          | Board UI, houses, arena, governors                                                                                                                                                                                                                                                                                                                                |
+| `Documentation/`    | Shared docs and audits  | Workspace guides, audits, and conventions. Governance: `docs/GOVERNANCE.md` (TUV-001 + TOOL-GOV-001)                                                                                                                                                                                                                                                              |
 
 ## Per-Project Guidance
 

@@ -7,7 +7,6 @@ CascadeProjects is a multi-project local workspace. The current layout is namesp
 - `Projects/` for operational projects such as `GRID-main`, `DIO`, and `GATE`
 - `Documentation/` for shared docs and audits
 - `Components/` for shared package code currently in this tree
-- `Hogwarts/` for the governance simulation and board UI
 
 - **Where things live**: [Documentation/docs/STRUCTURE.md](Documentation/docs/STRUCTURE.md) - directory map, attention taxonomy, and ownership.
 - **AI / agents**: See [CLAUDE.md](CLAUDE.md) and [AGENTS.md](AGENTS.md) for workspace guidance, project commands, and coding rules.
@@ -67,7 +66,6 @@ No packages are published to npm (monorepo is private). See [Documentation/docs/
 | `GATE`             | Operational store    | `Projects/GATE/`                 | Envelopes, contracts, results, nonce registry |
 | `pi-mangrove`      | Workspace package    | `Applications/pi-mangrove/`      | Skills, prompts, extensions for pi agent      |
 | `projects/viz`     | Standalone workspace | `Projects/projects/viz/`         | Visualizations and research experiments       |
-| `Hogwarts`         | Governance sim       | `Hogwarts/`                      | Board UI, houses, arena, governors            |
 
 ### Nested Repos
 
