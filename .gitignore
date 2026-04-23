@@ -194,7 +194,8 @@ security-logs/
 # ==========================
 # EDITOR STATE (track selective config only)
 # ==========================
-.vscode/
+.vscode/*
+!.vscode/mcp.json
 .idea/
 *.iml
 *.iws
