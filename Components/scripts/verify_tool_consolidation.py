@@ -27,7 +27,7 @@ def main():
         # Map tool names to their expected files
         tool_files = {
             "Windsurf": ".windsurfrules",
-            "VS Code": ".vscode/settings.json", # settings.json associations
+            "VS Code": ".vscode/settings.json", # settings.json is not tracked (ignored); skip check if missing
             "Cursor": ".cursorrules",
             "Zed": ".zed/AGENTS.md",
             "Claude Code": "CLAUDE.md",
@@ -38,24 +38,20 @@ def main():
             if i >= len(parts): break
             cell = parts[i]
 
-            if cell == "pointer":
+            if cell == "pointer" or cell == "delta":
                 file_path = os.path.join(root, tool_files[tool_name])
                 if not os.path.exists(file_path):
+                    # Skip VS Code settings.json as it is intentionally not tracked
+                    if tool_name == "VS Code" and tool_files[tool_name] == ".vscode/settings.json":
+                        continue
                     print(f"ERROR: Expected file {file_path} for tool {tool_name} (topic: {topic}) missing.")
                     errors += 1
                 else:
                     with open(file_path, 'r') as f:
                         file_content = f.read()
                     if "AGENTS.md" not in file_content:
-                        print(f"ERROR: File {file_path} (tool: {tool_name}, topic: {topic}) marked as 'pointer' but does not reference AGENTS.md.")
+                        print(f"ERROR: File {file_path} (tool: {tool_name}, topic: {topic}) marked as '{cell}' but does not reference AGENTS.md.")
                         errors += 1
-
-            elif cell == "delta":
-                 # Similar to pointer but allowed to have extra content
-                 file_path = os.path.join(root, tool_files[tool_name])
-                 if not os.path.exists(file_path):
-                    print(f"ERROR: Expected file {file_path} for tool {tool_name} (topic: {topic}) missing.")
-                    errors += 1
 
     if errors > 0:
         print(f"FAILURE: Found {errors} consolidation violations.")
