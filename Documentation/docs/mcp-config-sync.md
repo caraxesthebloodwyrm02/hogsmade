@@ -95,6 +95,35 @@ print("FAIL:", fail if fail else "none")
 EOF
 ```
 
-## Automated sync (Session C)
+## Automated sync
 
-`Components/scripts/sync-mcp-configs.sh` will automate all of the above with `--dry-run` support and non-zero exit on validation failure. Until that script is available, use this document as the runbook.
+`Components/scripts/sync-mcp-configs.sh` automates all of the above. Dry-run first:
+
+```bash
+bash ~/gruff/workspace/CascadeProjects/Components/scripts/sync-mcp-configs.sh --dry-run
+```
+
+If the diff looks correct, run without the flag to write. See the script's `--help` output for `--cascade-root`, `--skip-windsurf`, `--skip-claude`, and per-tool config path overrides.
+
+## CI fixture maintenance
+
+`Components/scripts/fixtures/mcp-config-sync/fake_windsurf_config.json` is the stale-config fixture used by the `mcp-config-sync-smoke` CI job. It exists to confirm that the substitution logic in `sync-mcp-configs.sh` produces the correct structural shape regardless of whether Windsurf or Claude Code are installed on the runner.
+
+**If the smoke job fails on a PR that doesn't touch the script or `mcp_config.example.json`**, the most likely cause is a new server was added to canonical without refreshing the fixture. The fixture intentionally has a subset of servers (stale caraxes paths) — the smoke job validates that after regeneration the key count matches canonical, so adding a server without updating the fixture will break the count check.
+
+Fix — regenerate the fixture from canonical in the same PR that adds the new server:
+
+```bash
+# Run from the CascadeProjects root
+jq '{
+  "_fixture": "Stale config used by mcp-config-sync-smoke CI job. Contains legacy caraxes paths to simulate pre-regen state.",
+  "mcpServers": (
+    .mcpServers | to_entries | .[0:2] | map(
+      .value.args[-1] |= gsub("/home/irfankabir/"; "/home/caraxes/")
+    ) | from_entries
+  )
+}' mcp_config.example.json \
+  > Components/scripts/fixtures/mcp-config-sync/fake_windsurf_config.json
+```
+
+This slices the first two servers from canonical and rewrites their paths back to the legacy hostname, preserving the fixture's purpose (a stale-path file the smoke test can regenerate from).
