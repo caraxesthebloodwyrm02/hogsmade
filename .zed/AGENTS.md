@@ -1,14 +1,17 @@
-# Zed Agent Rules
+# Zed Rules — Cascade Workspace
 
-The canonical source of truth for AI-assistant behavior in this repository is `AGENTS.md` at the repo root. Read it first; this file is intentionally thin.
+> **Canonical source of truth:** `AGENTS.md` at the repo root. This file is the Zed adapter — it points to the shared repository guidelines for behavior, build commands, coding standards, and governance (TUV-001).
 
-The repo-root `AGENTS.md` covers:
+## Behavior and Governance
 
-- Repository layout and per-directory ownership.
-- Build, test, and development commands (npm + uv).
-- Coding style, naming, testing, commit, and PR guidelines.
-- Security and git-hygiene baseline.
-- The Unbreakable Vow (TUV-001) governance contract.
-- Cross-references to the operational `.cursor/rules/*.mdc` files.
+- See `AGENTS.md` for the repository guidelines and the **Unbreakable Vow (TUV-001)**.
+- See `Documentation/docs/GOVERNANCE.md` for full governance context.
 
-There are no Zed-specific overrides in this repository.
+## Build and Development
+
+- See `AGENTS.md § Build, test, and development commands` for canonical shell commands.
+- See `CLAUDE.md` for per-project shortcuts.
+
+## Personal Agent Personas
+
+Owner personal agent personas (`prince-runtime-intel`, `hermes`, `caraxes`) are defined in `~/.claude/agents/` and are not tracked in this repository.
