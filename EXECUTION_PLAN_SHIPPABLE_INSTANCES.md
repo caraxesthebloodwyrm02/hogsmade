@@ -1,6 +1,6 @@
 # Execution Plan — Shippable Instances
 
-**Objective:** Ship 5 instances for ~33 merit lift (42 → ~75)
+**Objective:** Ship 5 shippable instances; track progress with outcome metrics (Move 8), not a vanity score.
 
 **G Constraints (from terminal output analysis):**
 
@@ -13,13 +13,13 @@
 
 ## Scoped Execution Matrix
 
-| #   | Instance                          | Type | Repo      | Risk   | Merit Lift | Status                     |
+| #   | Instance                          | Type | Repo      | Risk   | Stack rank | Status                     |
 | --- | --------------------------------- | ---- | --------- | ------ | ---------- | -------------------------- |
-| 1   | Push GRID-main                    | Git  | GRID-main | Low    | +8         | Ready                      |
-| 2   | Commit inference_gap_ledger.jsonl | Git  | GRID-main | Low    | +2         | Modified (4 new lines)     |
-| 3   | Push CascadeProjects              | Git  | hogsmade  | Medium | +10        | Feature branch (2 commits) |
-| 4   | Track lumos skill                 | Git  | hogsmade  | Low    | +1         | Untracked (6307B)          |
-| 5   | Session-mute safety function      | Code | GRID-main | Medium | +12        | New file                   |
+| 1   | Push GRID-main                    | Git  | GRID-main | Low    | 1          | Ready                      |
+| 2   | Commit inference_gap_ledger.jsonl | Git  | GRID-main | Low    | 2          | Modified (4 new lines)     |
+| 3   | Push CascadeProjects              | Git  | hogsmade  | Medium | 3          | Feature branch (2 commits) |
+| 4   | Track lumos skill                 | Git  | hogsmade  | Low    | 4          | Untracked (6307B)          |
+| 5   | Session-mute safety function      | Code | GRID-main | Medium | 5          | New file                   |
 
 ---
 
@@ -133,11 +133,28 @@
 
 ---
 
-## Success Metrics
+## Outcome Metrics
+
+We track two metrics that reference reality outside the repo:
+
+### Primary — Audit Event Rate
+
+- **Definition:** audit events emitted per day.
+- **Source:** `wc -l ~/.echoes/audit.ndjson` divided by days observed.
+- **Baseline (2026-04-23):** ~42 events/day (296 events over 7 days).
+- **Target direction:** increasing means more real tool invocations.
+
+### Gate — Secrets Exposure Count
+
+- **Definition:** count of files with secret-bearing names (`*_token*`, `*credential*`, `*secret*`, `.env`) that are tracked in git.
+- **Source:** `git ls-files | grep -iE 'token|credential|secret|\.env$' | wc -l`.
+- **Baseline (2026-04-23):** 3 (all in `Projects/GRID-main/`).
+- **Target:** 0. Any increase blocks release.
+
+### Operational hygiene (this plan)
 
 | Metric               | Target | Current | Delta |
 | -------------------- | ------ | ------- | ----- |
-| Merit Score          | ~75    | 42      | +33   |
 | Unpushed Commits     | 0      | 15      | -15   |
 | Untracked Files      | 0      | 1       | -1    |
 | New Safety Functions | 1      | 0       | +1    |
