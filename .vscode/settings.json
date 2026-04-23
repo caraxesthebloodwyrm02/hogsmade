@@ -1,0 +1,7 @@
+{
+  "files.associations": {
+    "AGENTS.md": "markdown",
+    "CLAUDE.md": "markdown"
+  },
+  "markdown.extension.toc.omittedFromToc": true
+}
