@@ -1,0 +1,70 @@
+---
+description: Signal-IO hardening — EQ spec compiled into runtime. Activates goal context for cursor/signal-io-hardening-d896 work.
+globs: "**/harness-server/**,**/eligibility-server/**,**/shared-types/src/signal-model*"
+alwaysApply: false
+---
+
+# Signal-IO hardening
+
+The goal here is simple: the EQ visual spec (six token types, three zones, one signal-strength formula) should be the **single source of truth** for every runtime calculation that touches signal quality. Right now pieces of it are wired, pieces aren't. This branch closes those gaps.
+
+Think of it as the EQ becoming a compiled spec — `signal-model.ts` is the canon, everything else derives.
+
+## Where things stand
+
+Closed:
+- **Gap 1** — `TOKEN_TYPE_WEIGHTS` in `signal-model.ts` matches the EQ exactly. No divergence.
+- **Gap 2** — `HarnessRunResult` now carries `signalStrength`, `stability`, `anomalyDrift`. `CycleSignal` carries `intrinsicWeight`. The bridge is wired.
+- **Gap 5** — `classifyStability` drives the tighten→verify gate in `advanceCycle`. Beat gating is live.
+
+Open:
+- **Gap 4** — `anomalyDrift` is emitted in harness-server audit metadata and in `HarnessRunResult`. The admission penalty in grid-server (`admission_apply_penalty`) doesn't yet consume it automatically.
+
+Closed (this branch):
+- **Gap 3** — `signalStrength` → eligibility via `signalKindFromHarnessStability(run.stability)` → `record_cycle_signal`. Two new kinds: `harness_run_passed` (transistor, 0.2) and `harness_run_degraded` (anomaly, 0.35). Re-exported from `index.ts`. Agent flow: call `harness_run`, map stability, call `record_cycle_signal`.
+
+## Key files and what they own
+
+| File | Role |
+|---|---|
+| `shared-types/src/signal-model.ts` | **The EQ in code.** Touch this only to fix spec drift. |
+| `shared-types/package.json` | `./signal-model` subpath registered. Import from there, not main. |
+| `harness-server/src/runner.ts` | Computes `signalStrength`/`stability` post-run via `computeSignalStrength`. |
+| `harness-server/src/types.ts` | `HarnessRunResult` — `anomalyDrift`, `signalStrength?`, `stability?` live here. |
+| `eligibility-server/src/evolution.ts` | `recordCycleSignal` stamps `intrinsicWeight`. Stability gate in `advanceCycle` uses `classifyStability`. |
+| `eligibility-server/src/types.ts` | `CycleSignal.intrinsicWeight?: number`; `harness_run_passed` / `harness_run_degraded` kinds. |
+| `eligibility-server/src/evolution.ts` | `signalKindFromHarnessStability` — maps `"HIGH"\|"MED"\|"LOW"` → `CycleSignalKind`. |
+| `eligibility-server/src/line-audit.ts` | `CANONICAL_PACKAGES` — `signal-model` subpath registered here too. Keep in sync with package.json. |
+
+## Rules
+
+- Import signal-model symbols from `@cascade/shared-types/signal-model`, not the main entry. The line-audit enforces this.
+- `anomalyDrift` formula is `anomalyCount / signals.length`. Don't recompute it differently elsewhere.
+- `signalStrength` uses `fireRate` as momentum proxy in harness-server (`transistorsFired / hooks.length`). Score is `1.0` (harness runs don't have quality scores). Don't change these defaults without a reason.
+- The `advanceCycle` stability gate (`tighten → verify` requires `classifyStability(momentum) === "HIGH"`) is intentional. Tests need to build HIGH stability before the third advance — endpoint (0.45) + accepted handoff (0.30) = 0.75 gets you there.
+- `computeHarnessSignalStrength` was deleted. It's gone for good — the harness computes strength directly in runner.ts, the eligibility side uses `signalIntrinsicWeight` per-signal instead.
+
+## When you open a file in this area
+
+If it's `runner.ts` — check whether `anomalyDrift` and `signalStrength` are making it into the return value and audit metadata. They should both be there.
+
+If it's `evolution.ts` — the import block should read `@cascade/shared-types/signal-model` and `@cascade/shared-types/audit-client`. No main-entry `@cascade/shared-types` import should appear in the value imports.
+
+If it's `signal-model.ts` — you're touching the spec. Confirm any weight or formula change matches the EQ exactly before proceeding.
+
+## Gap 4 — what's actually open
+
+`admission_apply_penalty` targets **entities** (agents, callers) for admission gate violations. It is not a signal-quality sink. Routing raw `anomalyDrift` into it would be a category error.
+
+The bridge math is **already written** in grid-server/src/server.ts:
+- `anomalyDriftToPenalty(drift)` → penalty delta (0–21 pts, anomaly/transistor weight-adjusted)
+- `tokenTypeToViolation(tokenType)` → violation string
+
+Both are exported, neither has a caller yet.
+
+The open question before writing any code: **which entity_id gets penalized?** Harness scenarios have no owner field. Options:
+- The agent that called `harness_run` (requires passing caller identity into the run)
+- The scenario name treated as a virtual entity (non-standard, may not match GRID entity model)
+- Nothing — `anomalyDrift` feeds back into eligibility only (via `harness_run_degraded` signal), admission stays out of it
+
+Resolve the entity question first, then the call site writes itself.
