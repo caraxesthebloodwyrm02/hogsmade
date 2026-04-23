@@ -196,6 +196,7 @@ security-logs/
 # ==========================
 .vscode/*
 !.vscode/mcp.json
+!.vscode/settings.json
 .idea/
 *.iml
 *.iws
