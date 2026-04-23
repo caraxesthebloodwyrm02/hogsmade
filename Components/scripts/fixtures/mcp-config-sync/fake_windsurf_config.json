@@ -1,0 +1,21 @@
+{
+  "_fixture": "Stale config used by mcp-config-sync-smoke CI job. Contains legacy caraxes paths to simulate pre-regen state.",
+  "mcpServers": {
+    "echoes-server": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "tsx",
+        "/home/caraxes/CascadeProjects/Tools/MCPServers/echoes-server/src/server.ts"
+      ]
+    },
+    "craft-server": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "tsx",
+        "/home/caraxes/CascadeProjects/Tools/MCPServers/craft-server/src/server.ts"
+      ]
+    }
+  }
+}

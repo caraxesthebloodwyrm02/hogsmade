@@ -231,6 +231,8 @@ security-logs/
 .claude/
 .zed/AGENTS.md
 .agents/skills/
+!.agents/skills/mcp-health-check/
+!.agents/skills/mcp-health-check/**
 
 # ==========================
 # OS FILES
