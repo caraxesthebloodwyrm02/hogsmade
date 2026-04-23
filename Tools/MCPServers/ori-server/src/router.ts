@@ -233,121 +233,123 @@ export async function evaluateSignals(newEntries: LogEntry[]): Promise<Evaluatio
   await prev;
 
   try {
-  const config = await loadRouterConfig();
-  const firings: RouteFiring[] = [];
+    const config = await loadRouterConfig();
+    const firings: RouteFiring[] = [];
 
-  for (const route of config.routes) {
-    if (!route.enabled) continue;
+    for (const route of config.routes) {
+      if (!route.enabled) continue;
 
-    const state = getState(route.id);
-    const now = new Date().toISOString();
+      const state = getState(route.id);
+      const now = new Date().toISOString();
 
-    // Collect matching entries for this route
-    const matched = newEntries.filter((e) => entryMatchesTrigger(e, route));
-    if (matched.length === 0) continue;
+      // Collect matching entries for this route
+      const matched = newEntries.filter((e) => entryMatchesTrigger(e, route));
+      if (matched.length === 0) continue;
 
-    // Record hits
-    for (const entry of matched) {
-      state.hits.push(entry.timestamp);
-    }
+      // Record hits
+      for (const entry of matched) {
+        state.hits.push(entry.timestamp);
+      }
 
-    // Prune to window
-    pruneWindow(state, route.trigger.windowMinutes);
+      // Prune to window
+      pruneWindow(state, route.trigger.windowMinutes);
 
-    // Determine if threshold is met
-    let thresholdMet = false;
+      // Determine if threshold is met
+      let thresholdMet = false;
 
-    if (isCrossSourceRoute(route)) {
-      // Cross-source: count distinct sources within the window.
-      // Use only the already-matched newEntries to avoid a full disk re-read
-      // on every evaluation cycle; the caller supplies a representative slice.
-      // The hit accumulator (`state.hits`) is timestamp-only, so we maintain
-      // a parallel source-keyed accumulator in the state.
-      if (!state.sourcesInWindow) state.sourcesInWindow = new Map<string, string[]>();
+      if (isCrossSourceRoute(route)) {
+        // Cross-source: count distinct sources within the window.
+        // Use only the already-matched newEntries to avoid a full disk re-read
+        // on every evaluation cycle; the caller supplies a representative slice.
+        // The hit accumulator (`state.hits`) is timestamp-only, so we maintain
+        // a parallel source-keyed accumulator in the state.
+        if (!state.sourcesInWindow) state.sourcesInWindow = new Map<string, string[]>();
 
-      const windowCutoff = new Date(Date.now() - route.trigger.windowMinutes * 60_000).toISOString();
+        const windowCutoff = new Date(
+          Date.now() - route.trigger.windowMinutes * 60_000,
+        ).toISOString();
 
-      // Prune stale source entries
-      for (const [src, timestamps] of state.sourcesInWindow.entries()) {
-        const fresh = timestamps.filter((ts) => ts >= windowCutoff);
-        if (fresh.length === 0) {
-          state.sourcesInWindow.delete(src);
-        } else {
-          state.sourcesInWindow.set(src, fresh);
+        // Prune stale source entries
+        for (const [src, timestamps] of state.sourcesInWindow.entries()) {
+          const fresh = timestamps.filter((ts) => ts >= windowCutoff);
+          if (fresh.length === 0) {
+            state.sourcesInWindow.delete(src);
+          } else {
+            state.sourcesInWindow.set(src, fresh);
+          }
+        }
+
+        // Record newly matched sources
+        for (const entry of matched) {
+          const existing = state.sourcesInWindow.get(entry.source) ?? [];
+          existing.push(entry.timestamp);
+          state.sourcesInWindow.set(entry.source, existing);
+        }
+
+        thresholdMet = state.sourcesInWindow.size >= route.trigger.threshold;
+      } else {
+        thresholdMet = state.hits.length >= route.trigger.threshold;
+      }
+
+      if (!thresholdMet) continue;
+
+      // Check cooldown
+      if (isInCooldown(state, route.trigger.cooldownMinutes)) continue;
+
+      // Build template context
+      const allPatterns = new Set<string>();
+      const allSources = new Set<string>();
+      for (const entry of matched) {
+        for (const p of entry.matchedPatterns) allPatterns.add(p);
+        allSources.add(entry.source);
+      }
+
+      const ctx: TemplateContext = {
+        count: state.hits.length,
+        patterns: [...allPatterns],
+        sources: [...allSources],
+        window: route.trigger.windowMinutes,
+        topLine: matched[0]?.line?.slice(0, 200) ?? "",
+      };
+
+      // Fire actions
+      const executedActions: string[] = [];
+      for (const action of route.actions) {
+        try {
+          const result = await executeAction(action, ctx, route);
+          executedActions.push(result);
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          process.stderr.write(
+            `[signal-router] action ${action.type} failed for route ${route.id}: ${msg}\n`,
+          );
+          executedActions.push(`${action.type}:ERROR`);
         }
       }
 
-      // Record newly matched sources
-      for (const entry of matched) {
-        const existing = state.sourcesInWindow.get(entry.source) ?? [];
-        existing.push(entry.timestamp);
-        state.sourcesInWindow.set(entry.source, existing);
-      }
+      // Record firing — reset all accumulators
+      state.lastFiredAt = now;
+      state.hits = [];
+      state.sourcesInWindow?.clear();
 
-      thresholdMet = state.sourcesInWindow.size >= route.trigger.threshold;
-    } else {
-      thresholdMet = state.hits.length >= route.trigger.threshold;
+      firings.push({
+        routeId: route.id,
+        routeName: route.name,
+        firedAt: now,
+        matchedCount: ctx.count,
+        matchedPatterns: ctx.patterns,
+        matchedSources: ctx.sources,
+        actionsExecuted: executedActions,
+        topLine: ctx.topLine || undefined,
+      });
     }
 
-    if (!thresholdMet) continue;
+    // Run protocol-level anti-pattern scanner over the same signal slice.
+    // Pure function — no I/O, runs inside the mutex so it shares the same
+    // serialised context as the route accumulation above.
+    const antiPatterns = detectAntiPatterns(newEntries);
 
-    // Check cooldown
-    if (isInCooldown(state, route.trigger.cooldownMinutes)) continue;
-
-    // Build template context
-    const allPatterns = new Set<string>();
-    const allSources = new Set<string>();
-    for (const entry of matched) {
-      for (const p of entry.matchedPatterns) allPatterns.add(p);
-      allSources.add(entry.source);
-    }
-
-    const ctx: TemplateContext = {
-      count: state.hits.length,
-      patterns: [...allPatterns],
-      sources: [...allSources],
-      window: route.trigger.windowMinutes,
-      topLine: matched[0]?.line?.slice(0, 200) ?? "",
-    };
-
-    // Fire actions
-    const executedActions: string[] = [];
-    for (const action of route.actions) {
-      try {
-        const result = await executeAction(action, ctx, route);
-        executedActions.push(result);
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        process.stderr.write(
-          `[signal-router] action ${action.type} failed for route ${route.id}: ${msg}\n`,
-        );
-        executedActions.push(`${action.type}:ERROR`);
-      }
-    }
-
-    // Record firing — reset all accumulators
-    state.lastFiredAt = now;
-    state.hits = [];
-    state.sourcesInWindow?.clear();
-
-    firings.push({
-      routeId: route.id,
-      routeName: route.name,
-      firedAt: now,
-      matchedCount: ctx.count,
-      matchedPatterns: ctx.patterns,
-      matchedSources: ctx.sources,
-      actionsExecuted: executedActions,
-      topLine: ctx.topLine || undefined,
-    });
-  }
-
-  // Run protocol-level anti-pattern scanner over the same signal slice.
-  // Pure function — no I/O, runs inside the mutex so it shares the same
-  // serialised context as the route accumulation above.
-  const antiPatterns = detectAntiPatterns(newEntries);
-
-  return { routeFirings: firings, antiPatterns };
+    return { routeFirings: firings, antiPatterns };
   } finally {
     releaselock();
   }

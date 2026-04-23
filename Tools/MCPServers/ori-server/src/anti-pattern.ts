@@ -62,7 +62,9 @@ function detectRetryStorm(entries: LogEntry[]): AntiPatternFinding[] {
     const sorted = [...bucket].sort((a, b) => tsMs(a.timestamp) - tsMs(b.timestamp));
     // Sliding window: find any span of ≥3 entries within 500 ms
     for (let i = 0; i <= sorted.length - 3; i++) {
-      const span = tsMs(sorted[Math.min(i + adaptiveMin - 1, sorted.length - 1)].timestamp) - tsMs(sorted[i].timestamp);
+      const span =
+        tsMs(sorted[Math.min(i + adaptiveMin - 1, sorted.length - 1)].timestamp) -
+        tsMs(sorted[i].timestamp);
       if (span <= 500) {
         const [src, pat] = key.split("::");
         const windowSlice = sorted.slice(i, i + adaptiveMin);
@@ -113,7 +115,9 @@ function detectOnsetMask(entries: LogEntry[]): AntiPatternFinding[] {
         topLine: sorted[i].line.slice(0, 200),
         sources: [src],
         patterns: uniq(window.flatMap((e) => e.matchedPatterns)),
-        action: `Escalate warning signals from "${src}" before they reach critical. Add an intermediate alert or lower the warning threshold for patterns: ${uniq(warningPre.flatMap((e) => e.matchedPatterns)).join(", ")}.`,
+        action: `Escalate warning signals from "${src}" before they reach critical. Add an intermediate alert or lower the warning threshold for patterns: ${uniq(
+          warningPre.flatMap((e) => e.matchedPatterns),
+        ).join(", ")}.`,
       });
       i++; // skip past this critical to avoid duplicate findings
     }
@@ -151,7 +155,10 @@ function detectRejectionChain(entries: LogEntry[]): AntiPatternFinding[] {
         topLine: sorted[i].line.slice(0, 200),
         sources: [src],
         patterns: ["unhandled_rejection", "type_error"],
-        action: `Guard the promise chain in "${src}": add null-checks or optional chaining before the property access that follows rejection. The TypeError at "${typeErr.line.slice(0, 100)}" is the dereference site.`,
+        action: `Guard the promise chain in "${src}": add null-checks or optional chaining before the property access that follows rejection. The TypeError at "${typeErr.line.slice(
+          0,
+          100,
+        )}" is the dereference site.`,
       });
       i += 2; // advance past the chain
     }
@@ -178,7 +185,10 @@ function detectSourceOscillation(entries: LogEntry[]): AntiPatternFinding[] {
   while (runStart <= signal.length - 4) {
     const srcA = signal[runStart].source;
     const srcB = signal[runStart + 1].source;
-    if (srcA === srcB) { runStart++; continue; }
+    if (srcA === srcB) {
+      runStart++;
+      continue;
+    }
 
     let len = 2;
     while (
@@ -224,7 +234,11 @@ function detectPatternConvergence(entries: LogEntry[]): AntiPatternFinding[] {
       topLine: e.line.slice(0, 200),
       sources: [e.source],
       patterns: e.matchedPatterns,
-      action: `Single line in "${e.source}" matches ${e.matchedPatterns.length} patterns simultaneously (${e.matchedPatterns.join(", ")}). This is a high-density crash signal. Inspect immediately — do not wait for threshold accumulation.`,
+      action: `Single line in "${e.source}" matches ${
+        e.matchedPatterns.length
+      } patterns simultaneously (${e.matchedPatterns.join(
+        ", ",
+      )}). This is a high-density crash signal. Inspect immediately — do not wait for threshold accumulation.`,
     }));
 }
 
@@ -258,7 +272,9 @@ function detectTemporalBurst(entries: LogEntry[]): AntiPatternFinding[] {
         topLine: burst[0].line.slice(0, 200),
         sources,
         patterns: uniq(burst.flatMap((e) => e.matchedPatterns)),
-        action: `${burst.length} entries from [${sources.join(", ")}] within ${windowEnd - windowStart} ms. Check for a tight error loop, log-on-every-tick pattern, or test harness without rate control.`,
+        action: `${burst.length} entries from [${sources.join(", ")}] within ${
+          windowEnd - windowStart
+        } ms. Check for a tight error loop, log-on-every-tick pattern, or test harness without rate control.`,
       });
       i = j; // skip past the burst
     } else {

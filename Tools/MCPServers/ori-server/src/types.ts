@@ -188,12 +188,12 @@ export interface RouteFiring {
  * not against individual lines.
  */
 export type AntiPatternCode =
-  | "AP_RETRY_STORM"        // same source, same pattern, ≥3 hits in tight temporal bracket
-  | "AP_ONSET_MASK"         // warnings immediately preceding a critical from same source
-  | "AP_REJECTION_CHAIN"    // unhandled_rejection → type_error from same source (null-deref cascade)
+  | "AP_RETRY_STORM" // same source, same pattern, ≥3 hits in tight temporal bracket
+  | "AP_ONSET_MASK" // warnings immediately preceding a critical from same source
+  | "AP_REJECTION_CHAIN" // unhandled_rejection → type_error from same source (null-deref cascade)
   | "AP_SOURCE_OSCILLATION" // alternating critical/warning between exactly 2 sources
-  | "AP_PATTERN_CONVERGENCE"// single entry matches ≥4 patterns (panic/crash message)
-  | "AP_TEMPORAL_BURST"     // ≥5 entries within 500 ms (loop flood or ingestion spike)
+  | "AP_PATTERN_CONVERGENCE" // single entry matches ≥4 patterns (panic/crash message)
+  | "AP_TEMPORAL_BURST" // ≥5 entries within 500 ms (loop flood or ingestion spike)
   | "AP_SILENT_REGRESSION"; // source transitions from critical/warning-active to info-only
 
 /**
