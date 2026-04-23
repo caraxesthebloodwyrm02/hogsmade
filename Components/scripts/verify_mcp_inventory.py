@@ -85,45 +85,47 @@ def main() -> int:
 
     grid_root = (cascade_root / rel).resolve()
     mcp_setup_server = grid_root / "mcp-setup" / "server"
-    if not mcp_setup_server.is_dir():
+    grid_present = mcp_setup_server.is_dir()
+    if not grid_present:
         print(
             f"verify_mcp_inventory: GRID mcp-setup/server not found at {mcp_setup_server} "
-            "(skipping filesystem discovery; OK in CI without sibling roots/GRID)",
+            "(skipping GRID filesystem discovery; OK in CI without sibling roots/GRID)",
         )
-        return 0
+        on_disk: set[str] = set()
 
-    on_disk = {p.name for p in mcp_setup_server.glob("*_mcp_server.py")}
-    # Only entries whose gridPythonScript lives under mcp-setup/ must match
-    # mcp-setup/server/*_mcp_server.py. Src-layout servers (e.g. src/grid/mcp/*.py)
-    # are validated by path existence below.
-    manifest_mcp_setup_scripts: set[str] = set()
-    for s in servers:
-        gps = s.get("gridPythonScript")
-        if gps and str(gps).replace("\\", "/").startswith("mcp-setup/"):
-            manifest_mcp_setup_scripts.add(Path(gps).name)
+    if grid_present:
+        on_disk = {p.name for p in mcp_setup_server.glob("*_mcp_server.py")}
+        # Only entries whose gridPythonScript lives under mcp-setup/ must match
+        # mcp-setup/server/*_mcp_server.py. Src-layout servers (e.g. src/grid/mcp/*.py)
+        # are validated by path existence below.
+        manifest_mcp_setup_scripts: set[str] = set()
+        for s in servers:
+            gps = s.get("gridPythonScript")
+            if gps and str(gps).replace("\\", "/").startswith("mcp-setup/"):
+                manifest_mcp_setup_scripts.add(Path(gps).name)
 
-    if on_disk != manifest_mcp_setup_scripts:
-        only_disk = sorted(on_disk - manifest_mcp_setup_scripts)
-        only_manifest_f = sorted(manifest_mcp_setup_scripts - on_disk)
-        print(
-            "verify_mcp_inventory: mcp-setup/server/*_mcp_server.py != "
-            "manifest gridPythonScript basenames (mcp-setup/* only)",
-            file=sys.stderr,
-        )
-        if only_disk:
-            print(f"  on disk, not in manifest: {only_disk}", file=sys.stderr)
-        if only_manifest_f:
-            print(f"  in manifest, missing on disk: {only_manifest_f}", file=sys.stderr)
-        return 1
-
-    for s in servers:
-        gps = s.get("gridPythonScript")
-        if not gps:
-            continue
-        full = grid_root / gps
-        if not full.is_file():
-            print(f"verify_mcp_inventory: missing file for manifest entry: {full}", file=sys.stderr)
+        if on_disk != manifest_mcp_setup_scripts:
+            only_disk = sorted(on_disk - manifest_mcp_setup_scripts)
+            only_manifest_f = sorted(manifest_mcp_setup_scripts - on_disk)
+            print(
+                "verify_mcp_inventory: mcp-setup/server/*_mcp_server.py != "
+                "manifest gridPythonScript basenames (mcp-setup/* only)",
+                file=sys.stderr,
+            )
+            if only_disk:
+                print(f"  on disk, not in manifest: {only_disk}", file=sys.stderr)
+            if only_manifest_f:
+                print(f"  in manifest, missing on disk: {only_manifest_f}", file=sys.stderr)
             return 1
+
+        for s in servers:
+            gps = s.get("gridPythonScript")
+            if not gps:
+                continue
+            full = grid_root / gps
+            if not full.is_file():
+                print(f"verify_mcp_inventory: missing file for manifest entry: {full}", file=sys.stderr)
+                return 1
 
     excluded = [s for s in servers if s.get("status") == "excluded_from_editor_canonical"]
     for s in excluded:
@@ -134,10 +136,91 @@ def main() -> int:
             )
             return 1
 
+    # ── TypeScript server triangle: filesystem ↔ package.json workspaces ↔ mcp_config ↔ manifest.
+    # The earlier check covers mcp_config ↔ manifest. Here we also catch:
+    #   * directories under Tools/MCPServers/ with a package.json that are missing
+    #     from any of: workspaces, mcp_config, manifest;
+    #   * manifest entries with runtime=typescript whose entryRelative file does not exist;
+    #   * mcp_config TS entries (server keys ending in "-server") whose source file does not exist.
+    ts_servers_root = cascade_root / "Tools" / "MCPServers"
+    if ts_servers_root.is_dir():
+        fs_ts_dirs = sorted(
+            d.name for d in ts_servers_root.iterdir() if d.is_dir() and (d / "package.json").is_file()
+        )
+
+        pkg_path = cascade_root / "package.json"
+        if not pkg_path.is_file():
+            print(f"verify_mcp_inventory: missing {pkg_path}", file=sys.stderr)
+            return 2
+        pkg = _load_json(pkg_path)
+        ts_prefix = "Tools/MCPServers/"
+        ws_ts_dirs = sorted(
+            w[len(ts_prefix) :] for w in pkg.get("workspaces", []) if w.startswith(ts_prefix)
+        )
+
+        ts_manifest_keys = sorted(
+            s["mcpServerKey"]
+            for s in servers
+            if s.get("runtime") == "typescript" and s.get("mcpServerKey")
+        )
+        ts_mcp_keys = sorted(k for k in canonical_keys if k.endswith("-server"))
+
+        fs_set = set(fs_ts_dirs)
+        ws_set = set(ws_ts_dirs)
+        man_set = set(ts_manifest_keys)
+        cfg_set = set(ts_mcp_keys)
+
+        missing_from_workspace = sorted(fs_set - ws_set)
+        missing_from_mcp = sorted(fs_set - cfg_set)
+        missing_from_manifest = sorted(fs_set - man_set)
+        orphan_workspace = sorted(ws_set - fs_set)
+        orphan_mcp = sorted(cfg_set - fs_set)
+        orphan_manifest = sorted(man_set - fs_set)
+
+        problems: list[str] = []
+        if missing_from_workspace:
+            problems.append(f"  on disk, missing from package.json workspaces: {missing_from_workspace}")
+        if missing_from_mcp:
+            problems.append(f"  on disk, missing from mcp_config: {missing_from_mcp}")
+        if missing_from_manifest:
+            problems.append(f"  on disk, missing from manifest: {missing_from_manifest}")
+        if orphan_workspace:
+            problems.append(f"  in package.json workspaces, no directory: {orphan_workspace}")
+        if orphan_mcp:
+            problems.append(f"  in mcp_config, no directory: {orphan_mcp}")
+        if orphan_manifest:
+            problems.append(f"  in manifest (runtime=typescript), no directory: {orphan_manifest}")
+
+        # Manifest entryRelative must point at a real file under Tools/MCPServers/
+        for s in servers:
+            if s.get("runtime") != "typescript":
+                continue
+            entry_rel = s.get("entryRelative")
+            if not entry_rel:
+                problems.append(f"  manifest TS entry {s.get('mcpServerKey')!r} missing entryRelative")
+                continue
+            full = ts_servers_root / entry_rel
+            if not full.is_file():
+                problems.append(
+                    f"  manifest entryRelative does not exist for {s.get('mcpServerKey')}: "
+                    f"{full.relative_to(cascade_root)}"
+                )
+
+        if problems:
+            print("verify_mcp_inventory: TypeScript server inventory drift", file=sys.stderr)
+            for p in problems:
+                print(p, file=sys.stderr)
+            return 1
+    else:
+        fs_ts_dirs = []
+        ws_ts_dirs = []
+        ts_manifest_keys = []
+
     print(
         f"verify_mcp_inventory: OK ({len(canonical_keys)} editor-canonical servers, "
         f"{len(on_disk)} mcp-setup Python artifacts, "
-        f"{sum(1 for s in servers if s.get('gridPythonScript'))} gridPythonScript paths)",
+        f"{sum(1 for s in servers if s.get('gridPythonScript'))} gridPythonScript paths, "
+        f"{len(fs_ts_dirs)} TS server directories aligned with workspaces and manifest)",
     )
     return 0
 
