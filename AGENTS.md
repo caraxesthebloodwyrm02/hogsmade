@@ -67,6 +67,7 @@ For Python work in `Projects/GRID-main`:
 - Start from `.env.example`; keep machine-specific overrides out of git.
 - Treat submodules/nested repos (notably `Projects/GRID-main`) as independent histories when contributing.
 - Local-first AI: prefer Ollama / ChromaDB flows over external API calls unless a task explicitly requires otherwise.
+- MCP live configs (Windsurf, Claude Code, Cursor) must be regenerated from `mcp_config.example.json` after any host migration or bulk path change — never repaired with surgical `jq` edits. See `Documentation/docs/mcp-config-sync.md`.
 
 ### Git hygiene
 
