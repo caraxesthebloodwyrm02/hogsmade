@@ -164,6 +164,18 @@
       "bootstrapType": "mcp_sdk_stdio_ts",
       "entryRelative": "craft-server/src/server.ts",
       "note": "Bridges python-craft (~/roots/python-craft) via uv run. Env: CRAFT_ROOT."
+    },
+    {
+      "mcpServerKey": "nexus-server",
+      "runtime": "typescript",
+      "bootstrapType": "mcp_sdk_stdio_ts",
+      "entryRelative": "nexus-server/src/index.ts"
+    },
+    {
+      "mcpServerKey": "school-server",
+      "runtime": "typescript",
+      "bootstrapType": "mcp_sdk_stdio_ts",
+      "entryRelative": "school-server/src/index.ts"
     }
   ]
 }

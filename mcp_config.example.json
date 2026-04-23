@@ -185,6 +185,14 @@
     "harness-server": {
       "command": "npx",
       "args": ["-y", "tsx", "$HOME/CascadeProjects/Tools/MCPServers/harness-server/src/server.ts"]
+    },
+    "nexus-server": {
+      "command": "npx",
+      "args": ["-y", "tsx", "$HOME/CascadeProjects/Tools/MCPServers/nexus-server/src/index.ts"]
+    },
+    "school-server": {
+      "command": "npx",
+      "args": ["-y", "tsx", "$HOME/CascadeProjects/Tools/MCPServers/school-server/src/index.ts"]
     }
   },
   "_python_mcp_audit": "grid-intelligence + grid-rag-enhanced: import-verified 2026-04-08 (GRID-main .venv); keep entries."

@@ -5,15 +5,21 @@ on:
     branches: ["**"]
     paths:
       - "mcp_config.json"
+      - "mcp_config.example.json"
       - "mcp_inventory.manifest.json"
+      - "package.json"
       - "Components/scripts/verify_mcp_inventory.py"
       - ".github/workflows/verify-mcp-inventory.yml"
+      - "Tools/MCPServers/**/package.json"
   pull_request:
     paths:
       - "mcp_config.json"
+      - "mcp_config.example.json"
       - "mcp_inventory.manifest.json"
+      - "package.json"
       - "Components/scripts/verify_mcp_inventory.py"
       - ".github/workflows/verify-mcp-inventory.yml"
+      - "Tools/MCPServers/**/package.json"
   workflow_dispatch:
 
 permissions:

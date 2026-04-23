@@ -33,11 +33,11 @@ repos:
   - repo: local
     hooks:
       - id: verify-mcp-inventory
-        name: Verify MCP manifest vs mcp_config.json
+        name: Verify MCP manifest vs mcp_config.json + TS server inventory
         entry: python3 Components/scripts/verify_mcp_inventory.py
         language: system
         pass_filenames: false
-        files: ^(mcp_config\.json|mcp_inventory\.manifest\.json|Components/scripts/verify_mcp_inventory\.py)$
+        files: ^(mcp_config\.json|mcp_config\.example\.json|mcp_inventory\.manifest\.json|package\.json|Components/scripts/verify_mcp_inventory\.py|Tools/MCPServers/[^/]+/package\.json)$
 
   # Prettier formatting (mirror stopped at v3.1.0; use local hook for newer prettier)
   - repo: https://github.com/pre-commit/mirrors-prettier
