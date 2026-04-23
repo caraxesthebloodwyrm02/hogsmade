@@ -174,3 +174,19 @@ Transit through the rotation layer happens in **Hyperspace**. This medium ensure
 *Signed,*
 *The Board of Governors*
 ```
+
+---
+
+## Config Hygiene — MCP Live Config Regeneration
+
+**Lesson (2026-04-23):** Surgical `jq` key-removal edits to live MCP configs are not durable. When a host migrates or a config drifts, removing individual keys leaves stale absolute paths and archived server entries in place. The correct pattern is full regeneration from the canonical source with backup, diff, and atomic swap:
+
+1. **Backup first:** `cp <live_config> <live_config>.pre-regen-$(date +%Y%m%d).bak`
+2. **Regenerate from canonical:** substitute `$HOME/CascadeProjects` → actual absolute path, then `$HOME` → actual home dir. Extract only the `mcpServers` block for tools that expect a bare `{ "mcpServers": ... }` format.
+3. **Diff before swapping:** review the generated `.new` file against the backup before the `mv`.
+4. **Atomic swap:** `mv <config>.new <live_config>`
+5. **Validate post-write:** `grep -c caraxes <live_config>` returns 0; server key sets match canonical.
+
+Applying surgical edits (e.g. `jq 'del(.mcpServers["old-server"])'`) is only safe for single-key removals where the rest of the file is known-clean. After a host migration or any bulk path change, always prefer full regeneration.
+
+See `Documentation/docs/mcp-config-sync.md` for the reusable regeneration reference and `Components/scripts/sync-mcp-configs.sh` (Session C) for the automated version.
