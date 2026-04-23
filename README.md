@@ -34,19 +34,17 @@ No packages are published to npm (monorepo is private). See [Documentation/docs/
 
 ### First-Party Servers
 
-| Project              | Type       | Location                               | Notes                                                         |
-| -------------------- | ---------- | -------------------------------------- | ------------------------------------------------------------- |
-| `afloat-server`      | MCP server | `Tools/MCPServers/afloat-server/`      | Workflow orchestration and scheduled diagnostics              |
-| `echoes-server`      | MCP server | `Tools/MCPServers/echoes-server/`      | Audit and telemetry persistence                               |
-| `grid-server`        | MCP server | `Tools/MCPServers/grid-server/`        | GRID/GATE integration helpers                                 |
-| `lots-server`        | MCP server | `Tools/MCPServers/lots-server/`        | Experiment catalog, runner, suggestions                       |
-| `maintain-server`    | MCP server | `Tools/MCPServers/maintain-server/`    | Diagnostics, cleanup, maintenance flows                       |
-| `pulse-server`       | MCP server | `Tools/MCPServers/pulse-server/`       | Briefings, focus, journal, prioritization                     |
-| `seeds-server`       | MCP server | `Tools/MCPServers/seeds-server/`       | Ecosystem snapshots and scans                                 |
-| `glimpse-server`     | MCP server | `Tools/MCPServers/glimpse-server/`     | Glimpse MCP tools (analyze, compress, similarity, confidence) |
-| `eligibility-server` | MCP server | `Tools/MCPServers/eligibility-server/` | Promotion gates, hierarchy, evolution cycles                  |
-| `overview-server`    | MCP server | `Tools/MCPServers/overview-server/`    | Session checkpoints, health monitoring                        |
-| `mangrove-server`    | MCP server | `Tools/MCPServers/mangrove-server/`    | DIO bridge, security audit, skill routing                     |
+| Project              | Type       | Location                               | Notes                                            |
+| -------------------- | ---------- | -------------------------------------- | ------------------------------------------------ |
+| `afloat-server`      | MCP server | `Tools/MCPServers/afloat-server/`      | Workflow orchestration and scheduled diagnostics |
+| `echoes-server`      | MCP server | `Tools/MCPServers/echoes-server/`      | Audit and telemetry persistence                  |
+| `grid-server`        | MCP server | `Tools/MCPServers/grid-server/`        | GRID/GATE integration helpers                    |
+| `lots-server`        | MCP server | `Tools/MCPServers/lots-server/`        | Experiment catalog, runner, suggestions          |
+| `maintain-server`    | MCP server | `Tools/MCPServers/maintain-server/`    | Diagnostics, cleanup, maintenance flows          |
+| `pulse-server`       | MCP server | `Tools/MCPServers/pulse-server/`       | Briefings, focus, journal, prioritization        |
+| `seeds-server`       | MCP server | `Tools/MCPServers/seeds-server/`       | Ecosystem snapshots and scans                    |
+| `eligibility-server` | MCP server | `Tools/MCPServers/eligibility-server/` | Promotion gates, hierarchy, evolution cycles     |
+| `overview-server`    | MCP server | `Tools/MCPServers/overview-server/`    | Session checkpoints, health monitoring           |
 
 ### Shared Packages
 

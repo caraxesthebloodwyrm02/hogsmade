@@ -1,6 +1,6 @@
 {
-  "_README": "Canonical MCP config — single source of truth for all editors",
-  "_inventory": "mcp_inventory.manifest.json — bootstrap types and excluded servers; run Components/scripts/verify_mcp_inventory.py",
+  "_README": "Canonical MCP config \u2014 single source of truth for all editors",
+  "_inventory": "mcp_inventory.manifest.json \u2014 bootstrap types and excluded servers; run Components/scripts/verify_mcp_inventory.py",
   "_updated": "2026-04-08",
   "_usage": {
     "windsurf": "Configured at ~/.codeium/windsurf/windsurf/mcp_config.json (absolutized Python paths, no cwd)",
@@ -10,7 +10,7 @@
     "claude-code": "See claude_code_config.json (different format: goes in ~/.claude.json under mcpServers)",
     "zed": "Configured at ~/.config/zed/settings.json under context_servers (see also zed_config.jsonc reference)",
     "opencode": "Configured at ~/.config/opencode/config.json under mcpServers (absolutized Python paths, no cwd)",
-    "antigravity": "Google VSCode fork — reads .vscode/mcp.json from workspace (same as vscode). Settings at ~/.config/Antigravity/User/settings.json",
+    "antigravity": "Google VSCode fork \u2014 reads .vscode/mcp.json from workspace (same as vscode). Settings at ~/.config/Antigravity/User/settings.json",
     "codex": "Configured at ~/.codex/config.toml under [mcp_servers.*] (TOML format, absolutized Python paths, no cwd)"
   },
   "mcpServers": {
@@ -130,18 +130,6 @@
         "GATE_DIR": "$HOME/CascadeProjects/Projects/GATE"
       }
     },
-    "mangrove-server": {
-      "command": "npx",
-      "args": ["-y", "tsx", "$HOME/CascadeProjects/Tools/MCPServers/mangrove-server/src/server.ts"],
-      "env": {
-        "MANGROVE_DIO_ROOT": "$HOME/CascadeProjects/DIO"
-      }
-    },
-    "glimpse-server": {
-      "command": "npx",
-      "args": ["-y", "tsx", "$HOME/CascadeProjects/Tools/MCPServers/glimpse-server/src/server.ts"],
-      "env": {}
-    },
     "grid-intelligence": {
       "command": "$HOME/CascadeProjects/Projects/GRID-main/.venv/bin/python",
       "args": ["-m", "grid.mcp.intelligence_server"],
@@ -173,13 +161,6 @@
       "env": {
         "ECHOES_AUDIT_PATH": "$HOME/.echoes/audit.ndjson",
         "ELIGIBILITY_DATA_DIR": "$HOME/.eligibility-server"
-      }
-    },
-    "craft-server": {
-      "command": "npx",
-      "args": ["-y", "tsx", "$HOME/CascadeProjects/Tools/MCPServers/craft-server/src/server.ts"],
-      "env": {
-        "CRAFT_ROOT": "$HOME/roots/python-craft"
       }
     },
     "harness-server": {
