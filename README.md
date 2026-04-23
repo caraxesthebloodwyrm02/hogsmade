@@ -7,7 +7,6 @@ CascadeProjects is a multi-project local workspace. The current layout is namesp
 - `Projects/` for operational projects such as `GRID-main`, `DIO`, and `GATE`
 - `Documentation/` for shared docs and audits
 - `Components/` for shared package code currently in this tree
-- `Hogwarts/` for the governance simulation and board UI
 
 - **Where things live**: [Documentation/docs/STRUCTURE.md](Documentation/docs/STRUCTURE.md) - directory map, attention taxonomy, and ownership.
 - **AI / agents**: See [CLAUDE.md](CLAUDE.md) and [AGENTS.md](AGENTS.md) for workspace guidance, project commands, and coding rules.
@@ -35,19 +34,17 @@ No packages are published to npm (monorepo is private). See [Documentation/docs/
 
 ### First-Party Servers
 
-| Project              | Type       | Location                               | Notes                                                         |
-| -------------------- | ---------- | -------------------------------------- | ------------------------------------------------------------- |
-| `afloat-server`      | MCP server | `Tools/MCPServers/afloat-server/`      | Workflow orchestration and scheduled diagnostics              |
-| `echoes-server`      | MCP server | `Tools/MCPServers/echoes-server/`      | Audit and telemetry persistence                               |
-| `grid-server`        | MCP server | `Tools/MCPServers/grid-server/`        | GRID/GATE integration helpers                                 |
-| `lots-server`        | MCP server | `Tools/MCPServers/lots-server/`        | Experiment catalog, runner, suggestions                       |
-| `maintain-server`    | MCP server | `Tools/MCPServers/maintain-server/`    | Diagnostics, cleanup, maintenance flows                       |
-| `pulse-server`       | MCP server | `Tools/MCPServers/pulse-server/`       | Briefings, focus, journal, prioritization                     |
-| `seeds-server`       | MCP server | `Tools/MCPServers/seeds-server/`       | Ecosystem snapshots and scans                                 |
-| `glimpse-server`     | MCP server | `Tools/MCPServers/glimpse-server/`     | Glimpse MCP tools (analyze, compress, similarity, confidence) |
-| `eligibility-server` | MCP server | `Tools/MCPServers/eligibility-server/` | Promotion gates, hierarchy, evolution cycles                  |
-| `overview-server`    | MCP server | `Tools/MCPServers/overview-server/`    | Session checkpoints, health monitoring                        |
-| `mangrove-server`    | MCP server | `Tools/MCPServers/mangrove-server/`    | DIO bridge, security audit, skill routing                     |
+| Project              | Type       | Location                               | Notes                                            |
+| -------------------- | ---------- | -------------------------------------- | ------------------------------------------------ |
+| `afloat-server`      | MCP server | `Tools/MCPServers/afloat-server/`      | Workflow orchestration and scheduled diagnostics |
+| `echoes-server`      | MCP server | `Tools/MCPServers/echoes-server/`      | Audit and telemetry persistence                  |
+| `grid-server`        | MCP server | `Tools/MCPServers/grid-server/`        | GRID/GATE integration helpers                    |
+| `lots-server`        | MCP server | `Tools/MCPServers/lots-server/`        | Experiment catalog, runner, suggestions          |
+| `maintain-server`    | MCP server | `Tools/MCPServers/maintain-server/`    | Diagnostics, cleanup, maintenance flows          |
+| `pulse-server`       | MCP server | `Tools/MCPServers/pulse-server/`       | Briefings, focus, journal, prioritization        |
+| `seeds-server`       | MCP server | `Tools/MCPServers/seeds-server/`       | Ecosystem snapshots and scans                    |
+| `eligibility-server` | MCP server | `Tools/MCPServers/eligibility-server/` | Promotion gates, hierarchy, evolution cycles     |
+| `overview-server`    | MCP server | `Tools/MCPServers/overview-server/`    | Session checkpoints, health monitoring           |
 
 ### Shared Packages
 
@@ -67,7 +64,6 @@ No packages are published to npm (monorepo is private). See [Documentation/docs/
 | `GATE`             | Operational store    | `Projects/GATE/`                 | Envelopes, contracts, results, nonce registry |
 | `pi-mangrove`      | Workspace package    | `Applications/pi-mangrove/`      | Skills, prompts, extensions for pi agent      |
 | `projects/viz`     | Standalone workspace | `Projects/projects/viz/`         | Visualizations and research experiments       |
-| `Hogwarts`         | Governance sim       | `Hogwarts/`                      | Board UI, houses, arena, governors            |
 
 ### Nested Repos
 

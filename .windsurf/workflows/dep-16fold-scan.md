@@ -45,13 +45,13 @@ Comprehensive dependency vulnerability audit covering all 16+ active projects in
 Set the `MAINTAIN_SCAN_ROOTS` environment variable to include all projects:
 
 ```bash
-export MAINTAIN_SCAN_ROOTS="/home/caraxes/CascadeProjects,/home/caraxes/canopy/afloat,/home/caraxes/CascadeProjects/Hogwarts/nuke,/home/caraxes/CascadeProjects/Projects/GRID-main,/home/caraxes/canopy/echoes,/home/caraxes/CascadeProjects/Projects/DIO,/home/caraxes/CascadeProjects/Projects/apiguard,/home/caraxes/CascadeProjects/Projects/Vision,/home/caraxes/CascadeProjects/Hogwarts/board,/home/caraxes/canopy/upwork-cli,/home/caraxes/roots/dep-mapper,/home/caraxes/roots/python-craft,/home/caraxes/roots/mistral-test,/home/caraxes/roots/mcp-orchestration-language"
+export MAINTAIN_SCAN_ROOTS="/home/caraxes/CascadeProjects,/home/caraxes/canopy/afloat,/home/caraxes/CascadeProjects/Projects/GRID-main,/home/caraxes/canopy/echoes,/home/caraxes/CascadeProjects/Projects/DIO,/home/caraxes/CascadeProjects/Projects/apiguard,/home/caraxes/CascadeProjects/Projects/Vision,/home/caraxes/canopy/upwork-cli,/home/caraxes/roots/dep-mapper,/home/caraxes/roots/python-craft,/home/caraxes/roots/mistral-test,/home/caraxes/roots/mcp-orchestration-language"
 ```
 
 Or add to `~/.config/maintain-server/env` or `.env`:
 
 ```env
-MAINTAIN_SCAN_ROOTS=/home/caraxes/CascadeProjects,/home/caraxes/canopy/afloat,/home/caraxes/CascadeProjects/Hogwarts/nuke,/home/caraxes/CascadeProjects/Projects/GRID-main,/home/caraxes/canopy/echoes,/home/caraxes/CascadeProjects/Projects/DIO,/home/caraxes/CascadeProjects/Projects/apiguard,/home/caraxes/CascadeProjects/Projects/Vision,/home/caraxes/CascadeProjects/Hogwarts/board,/home/caraxes/canopy/upwork-cli,/home/caraxes/roots/dep-mapper,/home/caraxes/roots/python-craft,/home/caraxes/roots/mistral-test,/home/caraxes/roots/mcp-orchestration-language
+MAINTAIN_SCAN_ROOTS=/home/caraxes/CascadeProjects,/home/caraxes/canopy/afloat,/home/caraxes/CascadeProjects/Projects/GRID-main,/home/caraxes/canopy/echoes,/home/caraxes/CascadeProjects/Projects/DIO,/home/caraxes/CascadeProjects/Projects/apiguard,/home/caraxes/CascadeProjects/Projects/Vision,/home/caraxes/canopy/upwork-cli,/home/caraxes/roots/dep-mapper,/home/caraxes/roots/python-craft,/home/caraxes/roots/mistral-test,/home/caraxes/roots/mcp-orchestration-language
 ```
 
 ---

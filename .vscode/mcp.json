@@ -137,18 +137,6 @@
         "GATE_DIR": "${workspaceFolder}/Projects/GATE"
       }
     },
-    "mangrove-server": {
-      "command": "npx",
-      "args": ["-y", "tsx", "${workspaceFolder}/Tools/MCPServers/mangrove-server/src/server.ts"],
-      "env": {
-        "MANGROVE_DIO_ROOT": "${workspaceFolder}/DIO"
-      }
-    },
-    "glimpse-server": {
-      "command": "npx",
-      "args": ["-y", "tsx", "${workspaceFolder}/Tools/MCPServers/glimpse-server/src/server.ts"],
-      "env": {}
-    },
     "grid-intelligence": {
       "command": "${workspaceFolder}/Projects/GRID-main/.venv/bin/python",
       "args": ["-m", "grid.mcp.intelligence_server"],
@@ -172,13 +160,6 @@
         "GATE_DIR": "${workspaceFolder}/Projects/GATE",
         "ECHOES_AUDIT_PATH": "${env:HOME}/.echoes/audit.ndjson",
         "GRID_API_URL": "http://localhost:8080"
-      }
-    },
-    "craft-server": {
-      "command": "npx",
-      "args": ["-y", "tsx", "${workspaceFolder}/Tools/MCPServers/craft-server/src/server.ts"],
-      "env": {
-        "CRAFT_ROOT": "${env:HOME}/roots/python-craft"
       }
     }
   }
