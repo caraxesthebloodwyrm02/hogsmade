@@ -21,6 +21,8 @@ This file provides Claude-Code-specific guidance for the Cascade workspace.
 
 > Source of truth for layout recovery: `Documentation/docs/LAYOUT_RECOVERY_AUDIT_2026-04-04.md`
 
+> **Host OS note:** The canonical host is **Ubuntu 25.10**. Historical references to Arch Linux / `pacman` in this file and in `.cursor/rules/` apply to prior host configurations; current commands use `apt` / `dpkg` on Ubuntu and `uv` / `npm` for language tooling. System hardening rules in `.cursor/rules/` are advisory on Ubuntu, not enforced.
+
 ### Quick Decode
 
 | Shorthand       | Meaning                                                         |
