@@ -27,7 +27,7 @@ jobs:
 
           CUTOFF=$(date -d "90 days ago" +%s 2>/dev/null || date -v-90d +%s)
           STALE_COUNT=0
-          PROTECTED="main master hogsmade"
+          PROTECTED="main master"
 
           for branch in $(git branch -r --format='%(refname:short)' | sed 's|origin/||' | sort); do
             # Skip protected branches

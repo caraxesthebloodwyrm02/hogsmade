@@ -1,8 +1,8 @@
 {
-  "name": "@mangrove/hogsmade",
+  "name": "@cascade/root",
   "version": "1.0.0",
   "private": true,
-  "description": "Mangrove monorepo — MCP servers, shared packages, and tooling",
+  "description": "Cascade monorepo — MCP servers, shared packages, and tooling",
   "type": "module",
   "workspaces": [
     "Components/shared-types",

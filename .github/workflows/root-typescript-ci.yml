@@ -28,7 +28,7 @@ on:
       - "sample-cross-context-demo.json"
   push:
     branches:
-      - hogsmade
+      - main
     paths: *root-ts-ci-paths
   workflow_dispatch:
 

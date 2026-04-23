@@ -1,6 +1,6 @@
-# @mangrove/pi-mangrove
+# @cascade/pi-mangrove
 
-Mangrove ecosystem integration for pi — DIO bridge tools, security automation, canonical skills, and trust-oriented prompts for the `CascadeProjects` workspace.
+Cascade integration for pi — DIO bridge tools, security automation, canonical skills, and trust-oriented prompts for the `CascadeProjects` workspace.
 
 ## Install
 

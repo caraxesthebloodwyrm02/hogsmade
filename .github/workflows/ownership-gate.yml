@@ -2,7 +2,7 @@ name: Ownership Governance Gate
 
 on:
   pull_request:
-    branches: [main, hogsmade]
+    branches: [main]
 
 permissions:
   pull-requests: write

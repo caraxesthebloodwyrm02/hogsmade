@@ -154,7 +154,7 @@ jobs:
         uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ needs.prepare.outputs.tag }}
-          name: "hogsmade ${{ needs.prepare.outputs.tag }}"
+          name: "cascade ${{ needs.prepare.outputs.tag }}"
           body_path: RELEASE_NOTES.md
           draft: false
           prerelease: ${{ github.event.inputs.prerelease == 'true' }}
@@ -170,7 +170,7 @@ jobs:
     steps:
       - name: Output Summary
         run: |
-          echo "## hogsmade Release Complete" >> $GITHUB_STEP_SUMMARY
+          echo "## cascade Release Complete" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Version:** ${{ needs.prepare.outputs.version }}" >> $GITHUB_STEP_SUMMARY
           echo "**Tag:** ${{ needs.prepare.outputs.tag }}" >> $GITHUB_STEP_SUMMARY

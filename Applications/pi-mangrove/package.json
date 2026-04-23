@@ -1,11 +1,11 @@
 {
-  "name": "@mangrove/pi-mangrove",
+  "name": "@cascade/pi-mangrove",
   "version": "0.1.0",
-  "description": "Mangrove ecosystem integration for pi — DIO bridge, security automation, and canonical skills",
+  "description": "Cascade integration for pi — DIO bridge, security automation, and canonical skills",
   "type": "module",
   "keywords": [
     "pi-package",
-    "mangrove",
+    "cascade",
     "dio",
     "mcp",
     "security",

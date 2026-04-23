@@ -166,9 +166,9 @@ State "TUV-001 reviewed" and list any clauses requiring recovery actions.
 ### P5.1: Package README
 
 ````markdown
-# @mangrove/pi-mangrove
+# @cascade/pi-mangrove
 
-Mangrove ecosystem integration for pi — DIO bridge, security automation, and canonical skills.
+Cascade integration for pi — DIO bridge, security automation, and canonical skills.
 
 ## Install
 

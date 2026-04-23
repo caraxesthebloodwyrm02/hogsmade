@@ -2,7 +2,7 @@ name: root-ts-ci
 
 on:
   push:
-    branches: ["main", "hogsmade"]
+    branches: ["main"]
     paths:
       - "package-lock.json"
       - "Components/shared-types/**"
