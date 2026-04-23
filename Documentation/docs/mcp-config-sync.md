@@ -95,6 +95,20 @@ print("FAIL:", fail if fail else "none")
 EOF
 ```
 
+## Observing config health (panel count ≠ configured count)
+
+The Windsurf MCP panel shows **running processes**, not configured entries. With `"Automatically start MCP servers when sending"` enabled (default), servers spawn on first tool invocation, not at IDE startup. A count of `N < canonical` is expected until tools from the remaining servers are invoked.
+
+**Three counters converge on the running set, not the configured set:**
+
+- Agent session tool bindings (frozen at session init to already-spawned servers)
+- Windsurf spawned process count (`pgrep -af "tsx|\.venv/bin/python" | grep -iE "MCPServers|mcp-setup"` dedup'd by server name)
+- Panel's tool-count badges
+
+If all three agree on the same subset (e.g. 6/20) and MCP logs show zero errors, this is **lazy-spawn working as designed**, not a failure. Verify health by invoking a tool from a currently-non-spawned server and confirming it then appears in the panel — not by reading panel counts against canonical.
+
+Empirically observed 2026-04-23: `agent bindings = spawned processes = panel tool-count badges = 6` with no log errors. Canonical had 20 servers configured. The 14 non-running servers were correctly absent because nothing had triggered their spawn.
+
 ## Automated sync
 
 `Components/scripts/sync-mcp-configs.sh` automates all of the above. Dry-run first:
