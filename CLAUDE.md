@@ -1,6 +1,8 @@
 # CLAUDE.md
 
-This file provides guidance to Claude when working in the CascadeProjects workspace.
+This file provides Claude-Code-specific guidance for the Cascade workspace.
+
+> **Canonical source of truth:** `AGENTS.md` at the repo root. This file is the Claude-Code adapter — it covers per-project shortcuts and Claude-specific tooling notes, but governance, build commands, coding standards, and security baselines all live in `AGENTS.md`. If anything here drifts from `AGENTS.md`, `AGENTS.md` wins.
 
 ---
 
@@ -60,14 +62,14 @@ This file provides guidance to Claude when working in the CascadeProjects worksp
 
 This is a multi-project workspace. The current layout is namespaced rather than flat.
 
-| Path                | Type                    | Notes                                                                                                                                                                                                                                    |
-| ------------------- | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Applications/`     | Apps and engines        | `glimpse-artifact`, `glimpse-engine`, `pi-mangrove`                                                                                                                                                                                      |
-| `Tools/MCPServers/` | First-party MCP servers | 12 TS (`afloat-server`, `echoes-server`, `eligibility-server`, `glimpse-server`, `grid-server`, `lots-server`, `maintain-server`, `mangrove-server`, `ori-server`, `overview-server`, `pulse-server`, `seeds-server`) + 7 Python servers |
-| `Projects/`         | Operational projects    | `GRID-main`, `DIO`, `GATE`, `projects/viz`                                                                                                                                                                                               |
-| `Components/`       | Shared packages         | `shared-types`, `shared-resilience`, `shared-pipeline`                                                                                                                                                                                   |
-| `Documentation/`    | Shared docs and audits  | Workspace guides, audits, and conventions                                                                                                                                                                                                |
-| `Hogwarts/`         | Governance sim          | Board UI, houses, arena, governors                                                                                                                                                                                                       |
+| Path                | Type                    | Notes                                                                                                                                                                                                                                                                                                                                                             |
+| ------------------- | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Applications/`     | Apps and engines        | `glimpse-artifact`, `glimpse-engine`, `pi-mangrove`                                                                                                                                                                                                                                                                                                               |
+| `Tools/MCPServers/` | First-party MCP servers | TS (`afloat-server`, `craft-server`, `echoes-server`, `eligibility-server`, `glimpse-server`, `grid-server`, `lots-server`, `maintain-server`, `mangrove-server`, `ori-server`, `overview-server`, `pulse-server`, `seeds-server`) plus optional `harness-server`, `nexus-server`, `school-server` (see `mcp_inventory.manifest.json` for the authoritative list) |
+| `Projects/`         | Operational projects    | `GRID-main`, `DIO`, `GATE`, `projects/viz`                                                                                                                                                                                                                                                                                                                        |
+| `Components/`       | Shared packages         | `shared-types`, `shared-resilience`, `shared-pipeline`                                                                                                                                                                                                                                                                                                            |
+| `Documentation/`    | Shared docs and audits  | Workspace guides, audits, and conventions                                                                                                                                                                                                                                                                                                                         |
+| `Hogwarts/`         | Governance sim          | Board UI, houses, arena, governors                                                                                                                                                                                                                                                                                                                                |
 
 ## Per-Project Guidance
 
