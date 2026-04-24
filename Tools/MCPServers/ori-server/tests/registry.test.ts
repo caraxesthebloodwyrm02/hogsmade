@@ -104,7 +104,7 @@ describe("ori-server registry", () => {
     expect(tools).toEqual(
       expect.arrayContaining(["list_projects", "get_project", "discover_tests"]),
     );
-    expect(tools.length).toBe(25);
+    expect(tools.length).toBe(29);
   });
 
   // ── Registry module unit tests ──

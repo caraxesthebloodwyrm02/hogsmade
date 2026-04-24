@@ -4,6 +4,33 @@
  * Categories: observation, decision, anomaly, trend, cross-run-context
  * Auto-populated after test runs, report generation, threat model parses.
  * Queryable by category, tags, project, and time.
+ *
+ * ═══════════════════════════════════════════════════════════════
+ * TRANSFORMATION SCHEMA (Biochem-Inspired: Mystique + Hox Genes)
+ * ═══════════════════════════════════════════════════════════════
+ *
+ * File Extension Transformations:
+ * | From | To   | Tool     |
+ * | .ts  | .js  | esbuild  |
+ * | .md  | .html| marked   |
+ * | .json| .ts  | json2ts  |
+ * | .pdf | .txt | pdftotext|
+ *
+ * Dimensional Cross-Reference (Hox Colinearity):
+ *   tier0: parsing  → tier1: AST → tier2: semantics → tier3: codegen
+ *
+ * Baseline Rules (Mystique Limits):
+ *   • Mass conservation: input ≈ output
+ *   • No power mimicry: transform structure, not behavior
+ *   • Concentration required: mental effort for complex transforms
+ *   • Time limit: extreme transforms ≤2min hold
+ *   • Selector→Realizator: parse → emit pipeline
+ *
+ * Hook Architecture:
+ *   interface TransformHook<TIn, TOut> {
+ *     before?: (input: TIn) => TIn;
+ *     after?: (output: TOut) => TOut;
+ *   }
  */
 
 import { generateId } from "@cascade/shared-types/id";
@@ -13,7 +40,13 @@ import { getConfig } from "./config.js";
 
 const config = getConfig();
 
-export type NoteCategory = "observation" | "decision" | "anomaly" | "trend" | "cross-run-context";
+export type NoteCategory =
+  | "observation"
+  | "decision"
+  | "anomaly"
+  | "trend"
+  | "cross-run-context"
+  | "transformation";
 
 export interface NotebookEntry {
   id: string;
@@ -24,6 +57,18 @@ export interface NotebookEntry {
   tags: string[];
   projectId?: string;
   source: string;
+}
+
+export interface TransformationEntry extends NotebookEntry {
+  category: "transformation";
+  transformation: {
+    from: string;
+    to: string;
+    tool: string;
+    tier: 0 | 1 | 2 | 3;
+    massConserved: boolean;
+    durationMs?: number;
+  };
 }
 
 export interface NotebookQueryOptions {
@@ -170,5 +215,116 @@ export async function getNotebookSummary(): Promise<{
     newestTimestamp: notes.length > 0 ? notes[notes.length - 1].timestamp : null,
     uniqueProjects: [...projectSet],
     uniqueTags: [...tagSet],
+  };
+}
+
+/**
+ * ═══════════════════════════════════════════════════════════════════
+ * TRANSFORMATION FEATURE (Deeply Baked)
+ * ═══════════════════════════════════════════════════════════════════
+ * Phenomenon: Biochem-inspired transformation logic
+ * Sources: Mystique (psionic cell control), Hox genes (colinearity)
+ * Features: mass conservation, tier mapping, hook architecture
+ */
+
+const TRANSFORM_REGISTRY: Record<string, { to: string; tool: string; tier: 0 | 1 | 2 | 3 }> = {
+  ".ts": { to: ".js", tool: "esbuild", tier: 3 },
+  ".tsx": { to: ".js", tool: "esbuild", tier: 3 },
+  ".py": { to: ".pyc", tool: "compile", tier: 3 },
+  ".md": { to: ".html", tool: "marked", tier: 3 },
+  ".json": { to: ".ts", tool: "json2ts", tier: 2 },
+  ".yaml": { to: ".json", tool: "js-yaml", tier: 2 },
+  ".sql": { to: ".duckdb", tool: "duckdb", tier: 3 },
+  ".pdf": { to: ".txt", tool: "pdftotext", tier: 3 },
+  ".png": { to: ".txt", tool: "tesseract", tier: 3 },
+  ".mp3": { to: ".txt", tool: "whisper", tier: 3 },
+};
+
+export interface TransformRecord {
+  from: string;
+  to: string;
+  tool: string;
+  tier: 0 | 1 | 2 | 3;
+  massConserved: boolean;
+  performedAt: string;
+  durationMs?: number;
+}
+
+/**
+ * Log a transformation event to the notebook.
+ */
+export async function logTransformation(
+  fromExt: string,
+  toExt: string,
+  options?: { durationMs?: number; massConserved?: boolean },
+): Promise<NotebookEntry> {
+  const spec = TRANSFORM_REGISTRY[fromExt];
+  if (!spec) {
+    throw new Error(`No transformation registered for ${fromExt}`);
+  }
+
+  const record: TransformRecord = {
+    from: fromExt,
+    to: spec.to,
+    tool: spec.tool,
+    tier: spec.tier,
+    massConserved: options?.massConserved ?? true,
+    performedAt: new Date().toISOString(),
+    durationMs: options?.durationMs,
+  };
+
+  return appendNote({
+    category: "transformation",
+    title: `${fromExt} → ${toExt}`,
+    body: JSON.stringify(record),
+    tags: ["transform", fromExt, toExt, `tier-${spec.tier}`],
+    source: "transform-logger",
+  });
+}
+
+/**
+ * Query transformation history.
+ */
+export async function getTransformationHistory(options?: {
+  since?: string;
+  until?: string;
+  limit?: number;
+}): Promise<TransformRecord[]> {
+  const notes = await queryNotes({
+    category: "transformation",
+    since: options?.since,
+    until: options?.until,
+    limit: options?.limit ?? 20,
+  });
+
+  return notes.map((n) => JSON.parse(n.body) as TransformRecord);
+}
+
+/**
+ * Get transformation statistics.
+ */
+export async function getTransformStats(): Promise<{
+  total: number;
+  byTier: Record<number, number>;
+  byTool: Record<string, number>;
+  massConservedRate: number;
+}> {
+  const history = await getTransformationHistory({ limit: 1000 });
+
+  const byTier: Record<number, number> = { 0: 0, 1: 0, 2: 0, 3: 0 };
+  const byTool: Record<string, number> = {};
+  let conserved = 0;
+
+  for (const t of history) {
+    byTier[t.tier] = (byTier[t.tier] ?? 0) + 1;
+    byTool[t.tool] = (byTool[t.tool] ?? 0) + 1;
+    if (t.massConserved) conserved++;
+  }
+
+  return {
+    total: history.length,
+    byTier,
+    byTool,
+    massConservedRate: history.length > 0 ? conserved / history.length : 0,
   };
 }

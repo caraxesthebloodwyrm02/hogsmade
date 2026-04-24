@@ -42,7 +42,14 @@ import { buildThreatProjectHeatmap } from "./heatmap.js";
 import { buildConfirmationMap } from "./confirmations.js";
 import { generateReport, renderReport } from "./reporter.js";
 import type { ReportData } from "./reporter.js";
-import { appendNote, queryNotes, getNotebookSummary } from "./notebook.js";
+import {
+  appendNote,
+  queryNotes,
+  getNotebookSummary,
+  logTransformation,
+  getTransformationHistory,
+  getTransformStats,
+} from "./notebook.js";
 import type { NoteCategory } from "./notebook.js";
 import { collectEcosystemContext } from "./interop.js";
 import {
@@ -1598,7 +1605,14 @@ export function buildServer(): McpServer {
         "to the persistent notebook. Each note is timestamped and tagged for retrieval.",
       inputSchema: z.object({
         category: z
-          .enum(["observation", "decision", "anomaly", "trend", "cross-run-context"])
+          .enum([
+            "observation",
+            "decision",
+            "anomaly",
+            "trend",
+            "cross-run-context",
+            "transformation",
+          ])
           .describe("Note category"),
         title: z.string().min(1).describe("Short title for the note"),
         body: z.string().min(1).describe("Note content"),
@@ -1741,6 +1755,97 @@ export function buildServer(): McpServer {
             text: JSON.stringify(summary, null, 2),
           },
         ],
+      };
+    },
+  );
+
+  // ── Transformation Logger ──
+
+  registerTool(
+    "transform_log",
+    {
+      description:
+        "Log a file extension transformation event (biochem-inspired: Mystique + Hox genes). " +
+        "Records from→to extension, tool used, tier, and mass conservation.",
+      inputSchema: z.object({
+        fromExt: z.string().describe("Source extension (e.g., '.ts', '.md')"),
+        toExt: z.string().describe("Target extension (e.g., '.js', '.html')"),
+        durationMs: z.number().optional().describe("Transform duration in ms"),
+        massConserved: z.boolean().optional().default(true).describe("Was mass conserved?"),
+      }),
+    },
+    async (args: {
+      fromExt: string;
+      toExt: string;
+      durationMs?: number;
+      massConserved?: boolean;
+    }) => {
+      const incomingTrace: TraceContext | null = extractTrace(args as Record<string, unknown>);
+      const span = incomingTrace ? createChildSpan(incomingTrace) : createRootSpan();
+
+      try {
+        const note = await logTransformation(args.fromExt, args.toExt, {
+          durationMs: args.durationMs,
+          massConserved: args.massConserved,
+        });
+
+        emitAudit({
+          traceId: span.traceId,
+          spanId: span.spanId,
+          source: SERVER_NAME,
+          tool: "transform_log",
+          status: "success",
+          metadata: { from: args.fromExt, to: args.toExt },
+        });
+
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify(note) }],
+        };
+      } catch (err) {
+        emitAudit({
+          traceId: span.traceId,
+          spanId: span.spanId,
+          source: SERVER_NAME,
+          tool: "transform_log",
+          status: "error",
+        });
+        throw err;
+      }
+    },
+  );
+
+  // ── Transformation History ──
+
+  registerTool(
+    "transform_history",
+    {
+      description: "Query transformation history from the notebook.",
+      inputSchema: z.object({
+        since: z.string().optional().describe("ISO timestamp filter (start)"),
+        until: z.string().optional().describe("ISO timestamp filter (end)"),
+        limit: z.number().optional().default(20).describe("Max entries"),
+      }),
+    },
+    async (args: { since?: string; until?: string; limit?: number }) => {
+      const history = await getTransformationHistory(args);
+      return {
+        content: [{ type: "text" as const, text: JSON.stringify(history, null, 2) }],
+      };
+    },
+  );
+
+  // ── Transformation Stats ──
+
+  registerTool(
+    "transform_stats",
+    {
+      description: "Get transformation statistics: counts by tier, tool, mass conservation rate.",
+      inputSchema: z.object({}),
+    },
+    async () => {
+      const stats = await getTransformStats();
+      return {
+        content: [{ type: "text" as const, text: JSON.stringify(stats, null, 2) }],
       };
     },
   );
