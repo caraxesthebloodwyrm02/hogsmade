@@ -1,20 +1,20 @@
 import {
   appendFileSync,
   closeSync,
+  constants,
   existsSync,
   mkdirSync,
   openSync,
   statSync,
   unlinkSync,
 } from "fs";
-import { constants } from "fs";
 import { homedir } from "os";
 import { dirname, resolve } from "path";
 import type { AuditEvent } from "./audit.js";
 
 export type { AuditEvent } from "./audit.js";
 
-const ECHOES_AUDIT_PATH =
+export const ECHOES_AUDIT_PATH =
   process.env.ECHOES_AUDIT_PATH || resolve(homedir(), ".echoes", "audit.ndjson");
 
 /** Maximum number of pending write entries. Oldest entries are dropped when exceeded. */
@@ -32,7 +32,7 @@ let isWriting = false;
  * Strips newlines/carriage returns from string values so a single
  * JSON.stringify() call always produces exactly one NDJSON line.
  */
-function sanitizeForNdjson(value: unknown): unknown {
+export function sanitizeForNdjson(value: unknown): unknown {
   if (typeof value === "string") {
     return value.replace(/[\n\r]/g, " ");
   }
@@ -128,7 +128,11 @@ async function processWriteQueue(): Promise<void> {
   }
 }
 
-export function emitAudit(event: Omit<AuditEvent, "timestamp">): Promise<boolean> {
+/**
+ * Append one NDJSON line to the shared audit file using the same lock queue as {@link emitAudit}.
+ * `line` should be a single JSON value serialized with a trailing newline.
+ */
+export function appendNdjsonLine(eventLine: string): Promise<boolean> {
   return new Promise((resolve) => {
     if (!dirEnsured) {
       try {
@@ -143,15 +147,7 @@ export function emitAudit(event: Omit<AuditEvent, "timestamp">): Promise<boolean
       }
     }
 
-    const record: AuditEvent = {
-      ...event,
-      metadata: event.metadata
-        ? (sanitizeForNdjson(event.metadata) as Record<string, unknown>)
-        : undefined,
-      timestamp: new Date().toISOString(),
-    };
-
-    const eventString = JSON.stringify(record) + "\n";
+    const line = eventLine.endsWith("\n") ? eventLine : eventLine + "\n";
 
     // Enforce queue depth ceiling — shed oldest entry to make room.
     // This prevents unbounded memory growth if disk I/O stalls.
@@ -163,9 +159,21 @@ export function emitAudit(event: Omit<AuditEvent, "timestamp">): Promise<boolean
       }
     }
 
-    writeQueue.push({ event: eventString, resolve });
+    writeQueue.push({ event: line, resolve });
 
     // Trigger queue processing
     processWriteQueue();
   });
+}
+
+export function emitAudit(event: Omit<AuditEvent, "timestamp">): Promise<boolean> {
+  const record: AuditEvent = {
+    ...event,
+    metadata: event.metadata
+      ? (sanitizeForNdjson(event.metadata) as Record<string, unknown>)
+      : undefined,
+    timestamp: new Date().toISOString(),
+  };
+
+  return appendNdjsonLine(JSON.stringify(record) + "\n");
 }
