@@ -2,13 +2,13 @@
 
 | Topic \\ Tool              | AGENTS.md | Windsurf                              | VS Code            | Cursor             | Zed     | Claude Code      | Copilot |
 | -------------------------- | --------- | ------------------------------------- | ------------------ | ------------------ | ------- | ---------------- | ------- |
-| Repository layout          | canonical | pointer                               | pointer            | pointer            | pointer | pointer          | pointer |
-| Build/test commands        | canonical | pointer                               | pointer            | pointer            | pointer | pointer          | pointer |
-| Coding style               | canonical | pointer                               | pointer            | pointer            | pointer | pointer          | pointer |
-| Testing conventions        | canonical | pointer                               | pointer            | pointer            | pointer | pointer          | pointer |
-| Commits and PRs            | canonical | pointer                               | pointer            | pointer            | pointer | pointer          | pointer |
-| Security/git hygiene       | canonical | pointer                               | pointer            | pointer            | pointer | pointer          | pointer |
-| TUV-001 governance         | canonical | pointer                               | pointer            | pointer            | pointer | pointer          | pointer |
+| Repository layout          | canonical | —                                     | pointer            | —                  | pointer | pointer          | pointer |
+| Build/test commands        | canonical | —                                     | pointer            | —                  | pointer | pointer          | pointer |
+| Coding style               | canonical | —                                     | pointer            | —                  | pointer | pointer          | pointer |
+| Testing conventions        | canonical | —                                     | pointer            | —                  | pointer | pointer          | pointer |
+| Commits and PRs            | canonical | —                                     | pointer            | —                  | pointer | pointer          | pointer |
+| Security/git hygiene       | canonical | —                                     | pointer            | —                  | pointer | pointer          | pointer |
+| TUV-001 governance         | canonical | —                                     | pointer            | —                  | pointer | pointer          | pointer |
 | Output discipline          | —         | —                                     | —                  | canonical          | —       | —                | —       |
 | Git session flow           | —         | —                                     | —                  | canonical          | —       | —                | —       |
 | Windsurf workflows         | —         | canonical                             | —                  | —                  | —       | —                | —       |

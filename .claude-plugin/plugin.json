@@ -1,5 +1,0 @@
-{
-  "name": "hogsmade-notebook",
-  "description": "A modern agentic multi-domain notebook tool for software-engineering, enterprise-search, data, and product-management workflows. Powered by 13 TypeScript + 7 Python MCP servers in the Hogsmade monorepo. Every session end feeds the ori notebook; overnight drivers populate signals; the notebook is the primary UX surface across all four domains.",
-  "author": "caraxesthebloodwyrm02"
-}
