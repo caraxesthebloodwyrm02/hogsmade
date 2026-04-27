@@ -71,6 +71,11 @@ jobs:
           cache: "npm"
           cache-dependency-path: package-lock.json
 
+      - name: Install dependencies
+        env:
+          CASCADE_SKIP_SUBMODULES: "1"
+        run: npm ci
+
       - name: Run trusted repo checks
         env:
           NODE_OPTIONS: "--max-old-space-size=2048"

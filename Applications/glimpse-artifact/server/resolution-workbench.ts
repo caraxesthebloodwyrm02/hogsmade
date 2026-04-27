@@ -490,7 +490,7 @@ function extractEndpoints(source: IndexedSource): EndpointRecord[] {
   const endpoints: EndpointRecord[] = [];
   const { content, path: filePath, cluster } = source;
 
-  for (const match of content.matchAll(/server\.tool\(\s*['"`]([^'"`]+)['"`]/g)) {
+  for (const match of content.matchAll(/server\.(?:tool|registerTool)\(\s*['"`]([^'"`]+)['"`]/g)) {
     const label = match[1]?.trim();
     if (!label) continue;
     endpoints.push({
