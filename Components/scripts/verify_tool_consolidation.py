@@ -34,7 +34,7 @@ def main():
             "Copilot": ".github/copilot-instructions.md"
         }
 
-        for i, tool_name in enumerate(["Windsurf", "VS Code", "Cursor", "Zed", "Claude Code", "Copilot"], 1):
+        for i, tool_name in enumerate(["Windsurf", "VS Code", "Cursor", "Zed", "Claude Code", "Copilot"], 2):
             if i >= len(parts): break
             cell = parts[i]
 
