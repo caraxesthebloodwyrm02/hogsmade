@@ -62,7 +62,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          submodules: true
+          submodules: false
 
       - name: Set up Node 22
         uses: actions/setup-node@v4
