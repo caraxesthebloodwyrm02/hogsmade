@@ -375,6 +375,14 @@ git-usage.md
 git-usage-tag.md
 Projects/DIO/.windsurf/rules/
 
+# User-specific personal configs and dot dirs
+.claude-plugin/
+.pi/
+.codex
+.codex.md
+.cursorrules
+.windsurfrules
+
 # ==========================
 # EXPERIMENTS
 # ==========================
