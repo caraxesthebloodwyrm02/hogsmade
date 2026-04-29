@@ -82,38 +82,70 @@ generate_mcpservers() {
     | jq '.mcpServers'
 }
 
+generate_mcpservers_no_cwd() {
+  generate_mcpservers | jq 'with_entries(
+    .value |= (
+      if (.command | type == "string") and (.command | startswith("/")) and has("cwd") then
+        . as $entry
+        | .args = ((.args // []) | map(
+          if (type == "string") and (startswith("-") | not) and (startswith("/") | not) then
+            ($entry.cwd + "/" + .)
+          else
+            .
+          end
+        ))
+        | del(.cwd)
+      else
+        .
+      end
+    )
+  )'
+}
+
 # ---------------------------------------------------------------------------
 # validate_config FILE LABEL
-# Checks: 0 caraxes refs in mcpServers, key count/set match canonical,
+# Checks: 0 legacy /home/caraxes refs in mcpServers, key count/set match canonical,
 #         all referenced binary/script paths exist on disk.
 # Returns 0 on pass, 1 on any failure (does not exit).
 # ---------------------------------------------------------------------------
 validate_config() {
   local file="$1" label="$2"
+  local allow_extras="${3:-false}"
   local ok=true
 
-  # 1. No caraxes paths inside mcpServers
-  local caraxes_hits
-  caraxes_hits=$(jq '[.mcpServers | to_entries[]
-    | select((.value | tostring) | contains("caraxes"))] | length' "$file")
-  if [[ "$caraxes_hits" -gt 0 ]]; then
-    echo "  FAIL [$label] $caraxes_hits mcpServers entries contain legacy 'caraxes' path" >&2
+  # 1. No legacy /home/caraxes paths inside mcpServers
+  local legacy_hits
+  legacy_hits=$(jq '[.mcpServers | to_entries[]
+    | select((.value | tostring) | contains("\"/home/caraxes/"))] | length' "$file")
+  if [[ "$legacy_hits" -gt 0 ]]; then
+    echo "  FAIL [$label] $legacy_hits mcpServers entries contain legacy '/home/caraxes/' path" >&2
     ok=false
   fi
 
   # 2. Server count matches canonical
   local actual_count
   actual_count=$(jq '.mcpServers | keys | length' "$file")
-  if [[ "$actual_count" != "$CANONICAL_COUNT" ]]; then
+  if $allow_extras; then
+    if [[ "$actual_count" -lt "$CANONICAL_COUNT" ]]; then
+      echo "  FAIL [$label] server count: expected at least $CANONICAL_COUNT, got $actual_count" >&2
+      ok=false
+    fi
+  elif [[ "$actual_count" != "$CANONICAL_COUNT" ]]; then
     echo "  FAIL [$label] server count: expected $CANONICAL_COUNT, got $actual_count" >&2
     ok=false
   fi
 
-  # 3. Key sets identical
+  # 3. Canonical key set is present
   local key_diff
-  key_diff=$(diff \
-    <(jq -r '.mcpServers | keys[]' "$CANONICAL" | sort) \
-    <(jq -r '.mcpServers | keys[]' "$file" | sort) 2>&1) || true
+  if $allow_extras; then
+    key_diff=$(comm -23 \
+      <(jq -r '.mcpServers | keys[]' "$CANONICAL" | sort) \
+      <(jq -r '.mcpServers | keys[]' "$file" | sort) 2>&1) || true
+  else
+    key_diff=$(diff \
+      <(jq -r '.mcpServers | keys[]' "$CANONICAL" | sort) \
+      <(jq -r '.mcpServers | keys[]' "$file" | sort) 2>&1) || true
+  fi
   if [[ -n "$key_diff" ]]; then
     echo "  FAIL [$label] server key mismatch:" >&2
     echo "$key_diff" | head -10 >&2
@@ -164,7 +196,7 @@ sync_windsurf() {
   tmp=$(mktemp /tmp/mcp-sync-windsurf-XXXXXX.json)
 
   local mcp_block
-  mcp_block=$(generate_mcpservers)
+  mcp_block=$(generate_mcpservers_no_cwd)
   printf '{"mcpServers":%s}\n' "$mcp_block" | jq . > "$tmp"
 
   if $DRY_RUN; then
@@ -219,7 +251,12 @@ sync_claude() {
   local tmp
   tmp=$(mktemp /tmp/mcp-sync-claude-XXXXXX.json)
   jq --argjson mcp "$mcp_block" \
-    '.mcpServers = $mcp | .mcpServersDisabled = {}' \
+    '. as $root
+     | ($mcp | keys) as $canonicalKeys
+     | .mcpServers = (
+         $mcp + (($root.mcpServers // {}) | with_entries(select(.key as $k | ($canonicalKeys | index($k)) | not)))
+       )
+     | .mcpServersDisabled = {}' \
     "$CLAUDE_CONFIG" > "$tmp"
 
   if $DRY_RUN; then
@@ -233,7 +270,7 @@ sync_claude() {
     return 0
   fi
 
-  if ! validate_config "$tmp" "claude-new"; then
+  if ! validate_config "$tmp" "claude-new" true; then
     rm -f "$tmp"
     echo "  ABORT: validation failed, original file untouched" >&2
     return 1
@@ -244,7 +281,7 @@ sync_claude() {
   mv "$tmp" "$CLAUDE_CONFIG"
   echo "  Written: $CLAUDE_CONFIG"
 
-  if validate_config "$CLAUDE_CONFIG" "claude"; then
+  if validate_config "$CLAUDE_CONFIG" "claude" true; then
     echo "  Validation: PASS"
     return 0
   else
