@@ -50,6 +50,7 @@ describe("echoes-server smoke", () => {
         "resolve_precedent",
         "enforcement_status",
         "record_glimpse_preflight",
+        "record_gruff_proportion",
       ]),
     );
   });
@@ -327,5 +328,49 @@ describe("echoes-server smoke", () => {
     for (const entry of parsed.entries) {
       expect(entry.status).toBe("error");
     }
+  });
+
+  it("record_gruff_proportion tool records a valid payload", async () => {
+    const server = buildServer();
+    const minimalPayload = {
+      schemaVersion: "gruff-proportion-v1",
+      generatedAt: new Date().toISOString(),
+      audioDrive: 0.42,
+      theta: 0.61,
+      weights: { sound: 0.3, gesture: 0.5, calculation: 0.7 },
+      sequence: { stepName: "lo7-compass-render", stepIndex: 2 },
+      manifest: { notebookId: "nb-test-001", revisionId: "rev-abc", blockCount: 5 },
+      compass: { metrics: { density: 0.3 } },
+      provenance: {
+        boardTitle: "Test Board",
+        schemaVersion: "1.0.0",
+        renderedAt: new Date().toISOString(),
+      },
+    };
+
+    const result = (await invokeTool(server, "record_gruff_proportion", {
+      payload: minimalPayload,
+      runMode: "live",
+    })) as { content?: Array<{ type: string; text?: string }> };
+
+    expect(result.content?.[0]?.type).toBe("text");
+    const parsed = JSON.parse(result.content?.[0]?.text ?? "{}") as {
+      recorded?: boolean;
+      id?: string;
+      receivedAt?: string;
+    };
+    expect(parsed.recorded).toBe(true);
+    expect(parsed.id).toBeDefined();
+    expect(parsed.receivedAt).toBeDefined();
+
+    // Verify the sidecar file was written
+    const dataDir = process.env.ECHOES_DATA_DIR!;
+    const sidecarPath = path.join(dataDir, "gruff-proportions.ndjson");
+    const { readFileSync } = await import("fs");
+    const lines = readFileSync(sidecarPath, "utf-8").trim().split("\n");
+    const lastLine = JSON.parse(lines[lines.length - 1]) as Record<string, unknown>;
+    expect(lastLine.id).toBe(parsed.id);
+    expect(lastLine.schemaVersion).toBe("gruff-proportion-v1");
+    expect(lastLine.audioDrive).toBe(0.42);
   });
 });

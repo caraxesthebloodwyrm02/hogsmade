@@ -46,6 +46,7 @@ const TELEMETRY_DIR = config.telemetryDir;
 const CHARACTER_DIR = config.characterDir;
 const CHARACTER_LOG_PATH = path.join(CHARACTER_DIR, "snapshots.ndjson");
 const PRECEDENTS_DIR = config.precedentsDir;
+const GRUFF_PROPORTIONS_PATH = path.join(DATA_DIR, "gruff-proportions.ndjson");
 
 // ── Data Layer ──
 
@@ -1301,6 +1302,91 @@ export function buildServer(): McpServer {
               null,
               2,
             ),
+          },
+        ],
+      };
+    },
+  );
+
+  // ── Gruff Bridge ──
+
+  const gruffWeightsSchema = z.object({
+    sound: z.number().min(0).max(1),
+    gesture: z.number().min(0).max(1),
+    calculation: z.number().min(0).max(1),
+  });
+
+  const gruffSequenceSchema = z.object({
+    stepName: z.string().min(1),
+    stepIndex: z.number().int().min(0),
+  });
+
+  const gruffProportionSchema = z.object({
+    schemaVersion: z.literal("gruff-proportion-v1"),
+    generatedAt: z.string(),
+    audioDrive: z.number().min(0).max(1),
+    theta: z.number().min(0).max(1),
+    weights: gruffWeightsSchema,
+    sequence: gruffSequenceSchema,
+    manifest: z
+      .object({
+        notebookId: z.string(),
+        revisionId: z.string().nullable(),
+        blockCount: z.number().int().min(0),
+      })
+      .passthrough(),
+    compass: z.record(z.string(), z.unknown()),
+    provenance: z
+      .object({
+        boardTitle: z.string(),
+        schemaVersion: z.string(),
+        renderedAt: z.string(),
+      })
+      .passthrough(),
+  });
+
+  registerTool(
+    "record_gruff_proportion",
+    {
+      description:
+        "Record a gruff-proportion-v1 payload emitted by the gruff Python runtime (compass render bridge). " +
+        "Appends to gruff-proportions.ndjson and writes a corresponding audit entry.",
+      inputSchema: z.object({
+        payload: gruffProportionSchema.describe("Full gruff-proportion-v1 object"),
+        runMode: runModeSchema,
+      }),
+    },
+    async (args: any) => {
+      await ensureDataDir();
+      assertMutablePathsAllowed(args.runMode as RunMode, [GRUFF_PROPORTIONS_PATH, AUDIT_LOG_PATH]);
+
+      const now = new Date().toISOString();
+      const id = generateId("gruff");
+      const record = { id, receivedAt: now, ...args.payload };
+
+      await fs.appendFile(GRUFF_PROPORTIONS_PATH, JSON.stringify(record) + "\n", "utf-8");
+
+      const auditEntry: AuditEntry = {
+        id: generateId("aud"),
+        timestamp: now,
+        source: "gruff",
+        tool: "proportion",
+        status: "success",
+        metadata: {
+          proportionId: id,
+          notebookId: args.payload?.manifest?.notebookId,
+          revisionId: args.payload?.manifest?.revisionId,
+          audioDrive: args.payload?.audioDrive,
+          theta: args.payload?.theta,
+        },
+      };
+      await appendAuditEntry(auditEntry);
+
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify({ recorded: true, id, receivedAt: now }, null, 2),
           },
         ],
       };
