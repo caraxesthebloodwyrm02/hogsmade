@@ -24,6 +24,7 @@ describe("seeds-server smoke", () => {
   const secondarySeedsRoot = path.join(tempRoot, "SeedsB");
   let buildServer: () => TestServer;
   let getConfig: () => { seedsRoot: string; seedsRoots: string[]; dataDir: string };
+  let getFreshnessScore: (lastCommitAge: string) => { score: number; issue?: string };
 
   beforeAll(async () => {
     process.env.SEEDS_ROOT = primarySeedsRoot;
@@ -31,8 +32,10 @@ describe("seeds-server smoke", () => {
     process.env.SEEDS_DATA_DIR = path.join(tempRoot, ".seeds-server");
     const serverModule = (await import("../src/server.ts")) as unknown as {
       buildServer: () => TestServer;
+      getFreshnessScore: (lastCommitAge: string) => { score: number; issue?: string };
     };
     ({ buildServer } = serverModule);
+    ({ getFreshnessScore } = serverModule);
     ({ getConfig } = await import("../src/config.ts"));
   });
 
@@ -132,5 +135,13 @@ describe("seeds-server smoke", () => {
     expect(parsed.improving).toBeDefined();
     expect(parsed.degrading).toBeDefined();
     expect(parsed.stable).toBeDefined();
+  });
+
+  it("scores week-old commits as recent enough for freshness credit", () => {
+    expect(getFreshnessScore("2 weeks ago")).toEqual({ score: 10 });
+    expect(getFreshnessScore("5 weeks ago")).toEqual({
+      score: 5,
+      issue: "Last commit 5 weeks ago — may be stale",
+    });
   });
 });

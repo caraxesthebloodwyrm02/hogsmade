@@ -106,6 +106,37 @@ function checkScanRateLimit(scanType: string): string | null {
   return null;
 }
 
+export function getFreshnessScore(lastCommitAge: string): { score: number; issue?: string } {
+  if (
+    lastCommitAge.includes("hour") ||
+    lastCommitAge.includes("minute") ||
+    lastCommitAge.includes("second")
+  ) {
+    return { score: 20 };
+  }
+
+  if (lastCommitAge.includes("day")) {
+    const dayMatch = lastCommitAge.match(/(\d+)\s*day/);
+    const days = dayMatch ? parseInt(dayMatch[1]) : 999;
+    if (days <= 7) return { score: 15 };
+    if (days <= 30) return { score: 10 };
+    return { score: 5, issue: `Last commit ${lastCommitAge} — may be stale` };
+  }
+
+  if (lastCommitAge.includes("week")) {
+    const weekMatch = lastCommitAge.match(/(\d+)\s*week/);
+    const weeks = weekMatch ? parseInt(weekMatch[1]) : 999;
+    if (weeks <= 4) return { score: 10 };
+    return { score: 5, issue: `Last commit ${lastCommitAge} — may be stale` };
+  }
+
+  if (lastCommitAge.includes("month") || lastCommitAge.includes("year")) {
+    return { score: 0, issue: `Last commit ${lastCommitAge} — likely stale` };
+  }
+
+  return { score: 0 };
+}
+
 // Map alternate names to KNOWN_REPOS keys (path overrides), not necessarily SEEDS_ROOT dirs.
 const KNOWN_REPO_ALIASES: Record<string, string> = {
   "GRID-main": "GRID",
@@ -336,24 +367,9 @@ async function checkRepoHealth(repoName: string): Promise<RepoHealth> {
 
   // Freshness bonus
   if (health.lastCommitAge) {
-    if (
-      health.lastCommitAge.includes("hour") ||
-      health.lastCommitAge.includes("minute") ||
-      health.lastCommitAge.includes("second")
-    ) {
-      score += 20; // Very recent
-    } else if (health.lastCommitAge.includes("day")) {
-      const dayMatch = health.lastCommitAge.match(/(\d+)\s*day/);
-      const days = dayMatch ? parseInt(dayMatch[1]) : 999;
-      if (days <= 7) score += 15;
-      else if (days <= 30) score += 10;
-      else {
-        score += 5;
-        health.issues.push(`Last commit ${health.lastCommitAge} — may be stale`);
-      }
-    } else if (health.lastCommitAge.includes("month") || health.lastCommitAge.includes("year")) {
-      health.issues.push(`Last commit ${health.lastCommitAge} — likely stale`);
-    }
+    const freshness = getFreshnessScore(health.lastCommitAge);
+    score += freshness.score;
+    if (freshness.issue) health.issues.push(freshness.issue);
   }
 
   health.healthScore = Math.min(100, score);
