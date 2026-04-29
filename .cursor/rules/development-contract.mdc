@@ -1,0 +1,16 @@
+---
+description: Development contract adapter — defers to AGENTS.md and Documentation/docs/GOVERNANCE.md for TUV-001 governance
+globs: "**/*"
+alwaysApply: true
+---
+
+# Development contract
+
+The canonical development contract is `AGENTS.md § Governance — The Unbreakable Vow (TUV-001 v1.0.0)`.
+
+## Rules
+
+- Apply TUV-001 conditions: Fidelity, Integrity, and Accountability.
+- Apply the Never-Rules listed in `AGENTS.md`.
+- See `Documentation/docs/GOVERNANCE.md` for full governance context.
+- If this file conflicts with `AGENTS.md`, `AGENTS.md` wins.

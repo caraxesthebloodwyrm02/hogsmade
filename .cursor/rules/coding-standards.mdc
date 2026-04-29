@@ -1,0 +1,17 @@
+---
+description: Coding standards adapter — defers to AGENTS.md for language, package-manager, naming, and formatting rules
+globs: "**/*"
+alwaysApply: true
+---
+
+# Coding standards
+
+The canonical coding standards live in `AGENTS.md` at the repository root.
+
+## Rules
+
+- Follow `AGENTS.md § Coding style and naming` for TypeScript, Python, formatting, and naming.
+- Follow `AGENTS.md § Build, test, and development commands` for package-manager and command choices.
+- Use `npm` for this monorepo and `uv` for `Projects/GRID-main` Python work.
+- Keep server-specific logic inside its workspace; share common code via `Components/*`.
+- If this file conflicts with `AGENTS.md`, `AGENTS.md` wins.
