@@ -63,6 +63,7 @@ glimpse-artifact/build/
 glimpse-artifact/.cache/
 
 # Glimpse engine outputs
+Applications/glimpse-engine/.glimpse-sync-registry.json
 glimpse-engine/.glimpse-traces.jsonl
 glimpse-engine/.glimpse-history.jsonl
 glimpse-engine/.glimpse-history.json
