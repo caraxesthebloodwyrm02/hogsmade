@@ -38,7 +38,7 @@
     "autoprefixer": "^10.4.16",
     "eslint": "^10.2.0",
     "eslint-plugin-react-refresh": "^0.5.2",
-    "postcss": "^8.4.32",
+    "postcss": "^8.5.10",
     "rollup": "^4.34.9",
     "tailwindcss": "^4.2.2",
     "tsx": "^4.20.6",

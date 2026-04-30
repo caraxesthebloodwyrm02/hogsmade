@@ -21,6 +21,7 @@
     "Tools/MCPServers/harness-server",
     "Tools/MCPServers/nexus-server",
     "Tools/MCPServers/school-server",
+    "Tools/MCPServers/glimpse-server",
     "Applications/pi-mangrove",
     "Applications/glimpse-artifact",
     "Applications/glimpse-engine"
@@ -44,6 +45,12 @@
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "typescript": "~5.9.3"
+  },
+  "overrides": {
+    "protobufjs": ">=7.5.5",
+    "basic-ftp": ">=5.2.2",
+    "hono": ">=4.12.14",
+    "fast-xml-parser": ">=5.7.0"
   },
   "engines": {
     "node": ">=22.0.0"

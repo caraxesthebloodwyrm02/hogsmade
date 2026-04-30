@@ -86,6 +86,12 @@ const KNOWN_REPOS: Record<string, { description: string; stack: string; path?: s
     stack: "TypeScript, Node.js",
     path: CASCADE,
   },
+  "personal-rag": {
+    description:
+      "Personal knowledge RAG — memory, rules, skills, sessions with PRINCE accountability",
+    stack: "Python 3.13+, ChromaDB, Ollama",
+    path: path.join(process.env.HOME || "/home/irfankabir", "personal-rag"),
+  },
 };
 
 // Rate limiting for expensive scans

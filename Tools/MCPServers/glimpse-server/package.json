@@ -1,0 +1,27 @@
+{
+  "name": "glimpse-server",
+  "version": "1.0.0",
+  "description": "MCP server exposing the Glimpse cognitive engine — run pipelines, score insights, detect complexity, and query confidence from any MCP client",
+  "type": "module",
+  "main": "src/server.ts",
+  "scripts": {
+    "start": "tsx src/server.ts",
+    "build": "tsc",
+    "lint": "tsc --noEmit",
+    "dev": "tsx --watch src/server.ts",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
+  },
+  "dependencies": {
+    "@cascade/shared-types": "file:../../../Components/shared-types",
+    "@modelcontextprotocol/sdk": "^1.28.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@vitest/coverage-v8": "4.1.4",
+    "tsx": "^4.6.0",
+    "typescript": "~6.0.2",
+    "vitest": "4.1.4"
+  }
+}

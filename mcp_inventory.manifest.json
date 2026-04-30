@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "description": "Supplements mcp_config.json with bootstrap contracts and explicit status for every GRID mcp-setup Python server (TUV-001 / .dev-rules.md). Editor canonical keys must match mcp_config.json mcpServers exactly.",
+  "description": "Supplements mcp_config.json with bootstrap contracts and explicit status for all MCP servers — GRID Python, CascadeProjects TypeScript, and out-of-monorepo servers. Editor canonical keys must match mcp_config.json mcpServers exactly.",
   "transportModel": {
     "editorCanonical": "stdio \u2014 all servers launched as child processes via editor MCP config (mcp_config.json / claude_code_config.json). No exposed ports.",
     "gridStandalone": "HTTP \u2014 GRID mcp-setup/mcp_config.json defines ports 8000-8009 with /health endpoints for standalone deployment. Not used by editor configs."
@@ -157,6 +157,32 @@
       "runtime": "typescript",
       "bootstrapType": "mcp_sdk_stdio_ts",
       "entryRelative": "school-server/src/index.ts"
+    },
+    {
+      "mcpServerKey": "glimpse-server",
+      "runtime": "typescript",
+      "bootstrapType": "mcp_sdk_stdio_ts",
+      "entryRelative": "glimpse-server/src/server.ts"
+    },
+    {
+      "mcpServerKey": "personal-rag",
+      "runtime": "python",
+      "bootstrapType": "fastmcp_stdio_python",
+      "location": "out-of-monorepo",
+      "absoluteEntry": "/home/irfankabir/personal-rag/mcp_server.py",
+      "venv": "/home/irfankabir/personal-rag/.venv",
+      "tools": [
+        "get_session_digest",
+        "report_digest_use",
+        "query_personal_intel",
+        "query_federated",
+        "reindex_personal_intel",
+        "health_check"
+      ],
+      "accountabilityGate": "PRINCE — digest_sha256 (first 12 chars of sha256 from get_session_digest) required on query_personal_intel and query_federated. health_check is exempt.",
+      "auditEmit": "dual — sidecar (~/.echoes/mcp-logs/personal-rag.ndjson) + shared trail (~/.echoes/audit.ndjson). Shared trail uses @cascade/shared-types AuditEvent schema (terminal states only).",
+      "smokeVerification": "Runtime only — call health_check. Not in CI (requires local Ollama + ChromaDB).",
+      "notes": "Sovereign personal knowledge RAG (memory, rules, skills, sessions). Federation peer to grid-rag-enhanced via query_federated (JSON envelope with gravity_score for agent-level merge)."
     }
   ]
 }
