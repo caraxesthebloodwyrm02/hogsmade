@@ -1,7 +1,7 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { mkdtempSync, rmSync, mkdirSync, writeFileSync, readFileSync } from "fs";
+import { promises as fsPromises, mkdirSync, mkdtempSync, rmSync } from "fs";
 import os from "os";
 import path from "path";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 // Type assertion for testing - bypass private property access
 interface TestServer {
@@ -372,5 +372,62 @@ describe("echoes-server smoke", () => {
     expect(lastLine.id).toBe(parsed.id);
     expect(lastLine.schemaVersion).toBe("gruff-proportion-v1");
     expect(lastLine.audioDrive).toBe(0.42);
+  });
+
+  it("record_audit: retries transient EBUSY then succeeds on 3rd attempt", async () => {
+    const spy = vi
+      .spyOn(fsPromises, "appendFile")
+      .mockRejectedValueOnce(
+        Object.assign(new Error("EBUSY: resource busy or locked"), { code: "EBUSY" }),
+      )
+      .mockRejectedValueOnce(
+        Object.assign(new Error("EBUSY: resource busy or locked"), { code: "EBUSY" }),
+      )
+      .mockResolvedValueOnce(undefined as any);
+
+    const server = buildServer();
+    const result = (await invokeTool(server, "record_audit", {
+      source: "echoes-server",
+      tool: "fake_tool",
+      status: "success",
+      runMode: "live",
+    })) as { content: Array<{ text: string }>; isError?: boolean };
+
+    expect(result.isError).toBeFalsy();
+    const payload = JSON.parse(result.content[0].text) as { recorded?: boolean; id?: string };
+    expect(payload.recorded).toBe(true);
+    expect(payload.id).toBeDefined();
+    expect(spy.mock.calls.length).toBe(3);
+    spy.mockRestore();
+  });
+
+  it("record_audit: returns recorded:false and does not run recurrence when all retries exhausted", async () => {
+    const spy = vi
+      .spyOn(fsPromises, "appendFile")
+      .mockRejectedValue(
+        Object.assign(new Error("EBUSY: resource busy or locked"), { code: "EBUSY" }),
+      );
+
+    const server = buildServer();
+    const result = (await invokeTool(server, "record_audit", {
+      source: "echoes-server",
+      tool: "fake_tool",
+      status: "failure",
+      runMode: "live",
+    })) as { content: Array<{ text: string }>; isError?: boolean };
+
+    expect(result.isError).toBe(true);
+    const payload = JSON.parse(result.content[0].text) as {
+      recorded?: boolean;
+      error?: string;
+    };
+    expect(payload.recorded).toBe(false);
+    expect(payload.error).toMatch(/retries/);
+    expect(spy.mock.calls.length).toBe(3);
+    spy.mockRestore();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 });

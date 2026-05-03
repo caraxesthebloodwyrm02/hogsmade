@@ -28,6 +28,7 @@ import { promises as fs } from "fs";
 import { homedir } from "os";
 import path from "path";
 import { pathToFileURL } from "url";
+import { RetryExhaustedError, RetryPolicy } from "@cascade/shared-resilience";
 import * as z from "zod";
 import { CHARACTER_QUERY_CLUSTERS, findRelevantClusters } from "./character-clusters.js";
 import { getConfig } from "./config.js";
@@ -47,6 +48,15 @@ const CHARACTER_DIR = config.characterDir;
 const CHARACTER_LOG_PATH = path.join(CHARACTER_DIR, "snapshots.ndjson");
 const PRECEDENTS_DIR = config.precedentsDir;
 const GRUFF_PROPORTIONS_PATH = path.join(DATA_DIR, "gruff-proportions.ndjson");
+
+// ENOSPC intentionally excluded — disk-full is not transient and should fail fast.
+const auditWriteRetry = new RetryPolicy("echoes-audit-write", {
+  maxAttempts: 3,
+  initialDelayMs: 100,
+  maxDelayMs: 1000,
+  backoffMultiplier: 2,
+  retryableErrors: ["EBUSY", "EAGAIN", "EMFILE", "EIO"],
+});
 
 // ── Data Layer ──
 
@@ -156,7 +166,21 @@ async function appendAuditEntry(entry: AuditEntry): Promise<void> {
     logger.error(`REFUSING to append malformed audit entry: ${err}`);
     return;
   }
-  await fs.appendFile(AUDIT_LOG_PATH, line, "utf-8");
+  try {
+    await auditWriteRetry.execute(() => fs.appendFile(AUDIT_LOG_PATH, line, "utf-8"), {
+      serviceName: "echoes-audit-write",
+      operationName: "appendFile",
+      startTime: Date.now(),
+      attempt: 1,
+    });
+  } catch (err) {
+    process.stderr.write(
+      `[echoes-server] audit write exhausted after retries: ${
+        err instanceof RetryExhaustedError ? err.message : String(err)
+      }\n`,
+    );
+    throw err;
+  }
 }
 
 function normalizeAuditStatus(status: unknown): AuditEntry["status"] | null {
@@ -525,7 +549,23 @@ export function buildServer(): McpServer {
         spanId: span.spanId,
         metadata: args.metadata as Record<string, unknown> | undefined,
       };
-      await appendAuditEntry(entry);
+      try {
+        await appendAuditEntry(entry);
+      } catch {
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: JSON.stringify({
+                recorded: false,
+                id: entry.id,
+                error: "audit write failed after retries — check server stderr",
+              }),
+            },
+          ],
+          isError: true,
+        };
+      }
 
       // Feed recurrence detector for failure/blocked/error events
       let recurrence: RecurrenceCheckResult | null = null;
