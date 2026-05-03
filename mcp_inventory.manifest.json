@@ -169,8 +169,8 @@
       "runtime": "typescript",
       "bootstrapType": "mcp_sdk_stdio_ts",
       "entryRelative": "mangrove-server/src/server.ts",
-      "status": "skeletal",
-      "tools": ["health_check"],
+      "status": "growing",
+      "tools": ["health_check", "check_git_hygiene", "find_loose_objects"],
       "description": "Mangrove ecosystem navigation and operational awareness \u2014 path-clearing, orientation, and ecosystem-level best-practice enforcement. Forest metaphor: the hiker clearing dried leaves from the path."
     },
     {
