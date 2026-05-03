@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "description": "Supplements mcp_config.json with bootstrap contracts and explicit status for all MCP servers — GRID Python, CascadeProjects TypeScript, and out-of-monorepo servers. Editor canonical keys must match mcp_config.json mcpServers exactly.",
+  "description": "Supplements mcp_config.json with bootstrap contracts and explicit status for all MCP servers \u2014 GRID Python, CascadeProjects TypeScript, and out-of-monorepo servers. Editor canonical keys must match mcp_config.json mcpServers exactly.",
   "transportModel": {
     "editorCanonical": "stdio \u2014 all servers launched as child processes via editor MCP config (mcp_config.json / claude_code_config.json). No exposed ports.",
     "gridStandalone": "HTTP \u2014 GRID mcp-setup/mcp_config.json defines ports 8000-8009 with /health endpoints for standalone deployment. Not used by editor configs."
@@ -165,6 +165,32 @@
       "entryRelative": "glimpse-server/src/server.ts"
     },
     {
+      "mcpServerKey": "mangrove-server",
+      "runtime": "typescript",
+      "bootstrapType": "mcp_sdk_stdio_ts",
+      "entryRelative": "mangrove-server/src/server.ts",
+      "status": "skeletal",
+      "tools": ["health_check"],
+      "description": "Mangrove ecosystem navigation and operational awareness \u2014 path-clearing, orientation, and ecosystem-level best-practice enforcement. Forest metaphor: the hiker clearing dried leaves from the path."
+    },
+    {
+      "mcpServerKey": "craft-server",
+      "runtime": "typescript",
+      "bootstrapType": "mcp_sdk_stdio_ts",
+      "entryRelative": "craft-server/src/server.ts",
+      "status": "real",
+      "tools": [
+        "health_check",
+        "list_actors",
+        "route_tool",
+        "list_routines",
+        "run_routine",
+        "generate_snapshot",
+        "send_proportion"
+      ],
+      "description": "Consolidated gruff toolbelt \u2014 trust routing, routine execution, actor management, snapshot generation, and Echoes bridge integration. Wraps gruff CLI tools as MCP primitives."
+    },
+    {
       "mcpServerKey": "personal-rag",
       "runtime": "python",
       "bootstrapType": "fastmcp_stdio_python",
@@ -179,9 +205,9 @@
         "reindex_personal_intel",
         "health_check"
       ],
-      "accountabilityGate": "PRINCE — digest_sha256 (first 12 chars of sha256 from get_session_digest) required on query_personal_intel and query_federated. health_check is exempt.",
-      "auditEmit": "dual — sidecar (~/.echoes/mcp-logs/personal-rag.ndjson) + shared trail (~/.echoes/audit.ndjson). Shared trail uses @cascade/shared-types AuditEvent schema (terminal states only).",
-      "smokeVerification": "Runtime only — call health_check. Not in CI (requires local Ollama + ChromaDB).",
+      "accountabilityGate": "PRINCE \u2014 digest_sha256 (first 12 chars of sha256 from get_session_digest) required on query_personal_intel and query_federated. health_check is exempt.",
+      "auditEmit": "dual \u2014 sidecar (~/.echoes/mcp-logs/personal-rag.ndjson) + shared trail (~/.echoes/audit.ndjson). Shared trail uses @cascade/shared-types AuditEvent schema (terminal states only).",
+      "smokeVerification": "Runtime only \u2014 call health_check. Not in CI (requires local Ollama + ChromaDB).",
       "notes": "Sovereign personal knowledge RAG (memory, rules, skills, sessions). Federation peer to grid-rag-enhanced via query_federated (JSON envelope with gravity_score for agent-level merge)."
     }
   ]

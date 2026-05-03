@@ -22,6 +22,8 @@
     "Tools/MCPServers/nexus-server",
     "Tools/MCPServers/school-server",
     "Tools/MCPServers/glimpse-server",
+    "Tools/MCPServers/mangrove-server",
+    "Tools/MCPServers/craft-server",
     "Applications/pi-mangrove",
     "Applications/glimpse-artifact",
     "Applications/glimpse-engine"

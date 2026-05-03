@@ -1,7 +1,7 @@
 {
-  "name": "lots-server",
+  "name": "mangrove-server",
   "version": "1.0.0",
-  "description": "Light of the Seven — lightweight experiment runner MCP server for executing scripts, capturing output, and managing experiment lifecycle",
+  "description": "Mangrove ecosystem navigation and operational awareness MCP server — path-clearing, orientation, and ecosystem-level best-practice enforcement",
   "type": "module",
   "main": "src/server.ts",
   "scripts": {
