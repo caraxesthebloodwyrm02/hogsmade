@@ -269,6 +269,60 @@ export function buildServer(): McpServer {
     },
   );
 
+  registerTool(
+    "janitor_scan",
+    {
+      description:
+        "Aggregate read-only git hygiene and loose-object scan across Mangrove ecosystem paths. Scans both allowed roots when no targetPath is given.",
+      inputSchema: targetSchema.shape,
+    },
+    async (params: z.infer<typeof targetSchema>) => {
+      const incomingTrace: TraceContext | null = extractTrace(params as Record<string, unknown>);
+      const span = incomingTrace ?? createRootSpan();
+      const timestamp = new Date().toISOString();
+
+      const pathsToScan: string[] = params.targetPath
+        ? [resolveTargetPath(params.targetPath)]
+        : [MANGROVE_WORKSPACE_ROOT, GRUFF_WORKSPACE_PATH];
+
+      const results = await Promise.all(
+        pathsToScan.map(async (p) => {
+          const hygiene = await inspectGitHygiene(p);
+          let looseObjects: Awaited<ReturnType<typeof inspectLooseObjects>> | null = null;
+          if (hygiene.isGitRepo) {
+            try {
+              looseObjects = await inspectLooseObjects(p);
+            } catch {
+              // non-blocking if loose object check fails
+            }
+          }
+          const hasIssues = (hygiene.isGitRepo && !hygiene.clean) || looseObjects?.issue === true;
+          return { targetPath: p, gitHygiene: hygiene, looseObjects, hasIssues };
+        }),
+      );
+
+      const totalIssues = results.filter((r) => r.hasIssues).length;
+      const payload = { scanTs: timestamp, paths: results, totalIssues, clean: totalIssues === 0 };
+
+      await emitAudit({
+        traceId: span.traceId,
+        spanId: span.spanId,
+        source: SERVER_NAME,
+        tool: "janitor_scan",
+        status: "success",
+        metadata: {
+          correlationId: generateId("mangrove"),
+          scannedPaths: results.length,
+          totalIssues,
+        },
+      });
+
+      return {
+        content: [{ type: "text" as const, text: JSON.stringify(payload, null, 2) }],
+      };
+    },
+  );
+
   // NEXT: path_orient — ecosystem navigation signal collection
   // NEXT: clear_path — best-practice enforcement activation
 

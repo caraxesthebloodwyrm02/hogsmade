@@ -46,6 +46,7 @@ describe("mangrove-server smoke", () => {
       "health_check",
       "check_git_hygiene",
       "find_loose_objects",
+      "janitor_scan",
     ]);
   });
 
@@ -104,5 +105,40 @@ describe("mangrove-server smoke", () => {
     expect(parsed.looseObjects).toBeGreaterThanOrEqual(0);
     expect(parsed.looseSizeKiB).toBeGreaterThanOrEqual(0);
     expect(parsed.timestamp).toBeDefined();
+  });
+
+  it("janitor_scan aggregates hygiene + loose objects for a target path", async () => {
+    const server = buildServer();
+    const result = (await invokeTool(server, "janitor_scan", { targetPath: repoPath })) as {
+      isError?: boolean;
+      content?: Array<{ type: string; text?: string }>;
+    };
+
+    expect(result.isError).not.toBe(true);
+    const parsed = JSON.parse(result.content?.[0]?.text as string);
+    expect(parsed.scanTs).toBeDefined();
+    expect(parsed.paths).toHaveLength(1);
+    expect(parsed.paths[0].gitHygiene.isGitRepo).toBe(true);
+    expect(parsed.paths[0].looseObjects).not.toBeNull();
+    expect(typeof parsed.totalIssues).toBe("number");
+  });
+
+  it("janitor_scan scans both allowed roots when no targetPath given", async () => {
+    const server = buildServer();
+    const result = (await invokeTool(server, "janitor_scan")) as {
+      isError?: boolean;
+      content?: Array<{ type: string; text?: string }>;
+    };
+
+    expect(result.isError).not.toBe(true);
+    const parsed = JSON.parse(result.content?.[0]?.text as string);
+    expect(parsed.paths).toHaveLength(2);
+    expect(typeof parsed.clean).toBe("boolean");
+    for (const p of parsed.paths) {
+      expect(p).toHaveProperty("targetPath");
+      expect(p).toHaveProperty("gitHygiene");
+      expect(p).toHaveProperty("looseObjects");
+      expect(p).toHaveProperty("hasIssues");
+    }
   });
 });
