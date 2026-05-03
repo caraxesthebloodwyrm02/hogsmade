@@ -677,6 +677,151 @@ export function buildServer(): McpServer {
     },
   );
 
+  // Signal bridge: accept mangrove health data and produce a maintenance workflow
+  server.registerTool(
+    "suggest_maintenance_workflow",
+    {
+      description:
+        "Accept a janitor_scan health report and generate a maintenance workflow " +
+        "to fix the reported issues. Returns a workflow ID that can be executed " +
+        "via workflow_execute. Bridge between mangrove health signals and afloat workflows.",
+      inputSchema: z.object({
+        paths: z
+          .array(
+            z.object({
+              targetPath: z.string().describe("Repository path that was scanned"),
+              hasIssues: z.boolean().describe("Whether issues were found"),
+              gitHygiene: z
+                .object({
+                  clean: z.boolean().optional(),
+                  modified: z.number().optional(),
+                  untracked: z.number().optional(),
+                })
+                .passthrough()
+                .optional(),
+              looseObjects: z
+                .object({
+                  looseObjects: z.number().optional(),
+                  issue: z.boolean().optional(),
+                })
+                .passthrough()
+                .optional(),
+            }),
+          )
+          .min(1)
+          .describe("Array of scanned paths from janitor_scan output"),
+      }) as any,
+    },
+    async (args: {
+      paths: Array<{
+        targetPath: string;
+        hasIssues: boolean;
+        gitHygiene?: { clean?: boolean; modified?: number; untracked?: number };
+        looseObjects?: { looseObjects?: number; issue?: boolean };
+      }>;
+    }) => {
+      const rlMsg = readLimiter.check("suggest_maintenance_workflow");
+      if (rlMsg)
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({ error: rlMsg }) }],
+          isError: true,
+        };
+      await ensureDataDir();
+
+      const issuesPaths = args.paths.filter((p) => p.hasIssues);
+      if (issuesPaths.length === 0) {
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: JSON.stringify({
+                suggested: false,
+                reason: "No issues found in health report",
+              }),
+            },
+          ],
+        };
+      }
+
+      const steps: WorkflowStep[] = [];
+
+      for (const p of issuesPaths) {
+        // Validate path is within allowed roots
+        const inAllowed = config.allowedRoots.some(
+          (root) => p.targetPath === root || p.targetPath.startsWith(root + path.sep),
+        );
+        if (!inAllowed) continue;
+
+        if (p.looseObjects?.issue) {
+          steps.push({
+            name: `gc-${path.basename(p.targetPath)}`,
+            description: `Git garbage collection for ${path.basename(p.targetPath)} (${
+              p.looseObjects.looseObjects ?? "unknown"
+            } loose objects)`,
+            command: `git -C ${p.targetPath} gc --auto`,
+            timeout: 120,
+          });
+        }
+
+        if (p.gitHygiene && !p.gitHygiene.clean && (p.gitHygiene.modified ?? 0) > 0) {
+          steps.push({
+            name: `status-${path.basename(p.targetPath)}`,
+            description: `Report modified files in ${path.basename(p.targetPath)} (${
+              p.gitHygiene.modified
+            } modified)`,
+            command: `git -C ${p.targetPath} status --short`,
+            timeout: 30,
+          });
+        }
+      }
+
+      if (steps.length === 0) {
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: JSON.stringify({
+                suggested: false,
+                reason: "Issues detected but all paths are outside allowed roots",
+              }),
+            },
+          ],
+        };
+      }
+
+      const workflowId = generateId("maint");
+      const workflow: WorkflowDefinition = {
+        id: workflowId,
+        name: `maintenance-${new Date().toISOString().slice(0, 10)}`,
+        description: `Auto-suggested maintenance for ${steps.length} issue(s) across ${issuesPaths.length} path(s)`,
+        steps,
+        createdAt: new Date().toISOString(),
+      };
+
+      await saveWorkflow(workflow);
+
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(
+              {
+                suggested: true,
+                workflowId,
+                name: workflow.name,
+                stepCount: steps.length,
+                steps: steps.map((s) => ({ name: s.name, description: s.description })),
+                nextAction: `Dry-run with workflow_execute(workflowId: "${workflowId}", dryRun: true)`,
+              },
+              null,
+              2,
+            ),
+          },
+        ],
+      };
+    },
+  );
+
   // ── Start ──
 
   return server;

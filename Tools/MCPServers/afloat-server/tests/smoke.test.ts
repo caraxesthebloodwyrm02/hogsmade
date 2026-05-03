@@ -349,4 +349,41 @@ describe("afloat-server smoke", () => {
     expect(error.policyResult.verdict).toBe("deny");
     expect(error.policyResult.reason).toContain("blocked shell operator");
   });
+
+  it("registers suggest_maintenance_workflow tool", () => {
+    expect(getToolNames(buildServer())).toContain("suggest_maintenance_workflow");
+  });
+
+  it("suggest_maintenance_workflow returns no suggestion when no issues", async () => {
+    const server = buildServer();
+    const result = (await invokeTool(server, "suggest_maintenance_workflow", {
+      paths: [{ targetPath: "/tmp/clean-repo", hasIssues: false }],
+    })) as { content: Array<{ text: string }> };
+
+    const payload = JSON.parse(result.content[0].text);
+    expect(payload.suggested).toBe(false);
+    expect(payload.reason).toMatch(/No issues/i);
+  });
+
+  it("suggest_maintenance_workflow generates workflow for loose objects", async () => {
+    const server = buildServer();
+    const fakePath = path.join(os.homedir(), "CascadeProjects", "test-repo");
+    const result = (await invokeTool(server, "suggest_maintenance_workflow", {
+      paths: [
+        {
+          targetPath: fakePath,
+          hasIssues: true,
+          looseObjects: { looseObjects: 2000, issue: true },
+          gitHygiene: { clean: true },
+        },
+      ],
+    })) as { content: Array<{ text: string }> };
+
+    const payload = JSON.parse(result.content[0].text);
+    expect(payload.suggested).toBe(true);
+    expect(payload.workflowId).toBeDefined();
+    expect(payload.stepCount).toBeGreaterThanOrEqual(1);
+    expect(payload.steps[0].name).toMatch(/^gc-/);
+    expect(payload.nextAction).toContain(payload.workflowId);
+  });
 });
