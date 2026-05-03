@@ -26,8 +26,11 @@ import {
 } from "@cascade/shared-types/trace-context";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { execFile } from "child_process";
 import path from "path";
 import { pathToFileURL } from "url";
+import { promisify } from "util";
+import * as z from "zod";
 import { getConfig } from "./config.js";
 
 // ── Constants ──
@@ -38,6 +41,121 @@ const logger = new McpLogger(SERVER_NAME);
 const config = getConfig();
 const MANGROVE_WORKSPACE_ROOT = config.mangroveWorkspaceRoot;
 const GRUFF_WORKSPACE_PATH = config.gruffWorkspacePath;
+const execFileAsync = promisify(execFile);
+const targetSchema = z.object({
+  targetPath: z.string().optional(),
+});
+
+interface GitStatusSummary {
+  targetPath: string;
+  isGitRepo: boolean;
+  branch?: string;
+  ahead?: number;
+  behind?: number;
+  staged: number;
+  modified: number;
+  untracked: number;
+  clean: boolean;
+  issues: string[];
+}
+
+function isInside(parent: string, child: string): boolean {
+  const relative = path.relative(parent, child);
+  return relative === "" || (!relative.startsWith("..") && !path.isAbsolute(relative));
+}
+
+function resolveTargetPath(targetPath?: string): string {
+  const resolved = path.resolve(targetPath || MANGROVE_WORKSPACE_ROOT);
+  const allowedRoots = [MANGROVE_WORKSPACE_ROOT, GRUFF_WORKSPACE_PATH];
+  if (!allowedRoots.some((root) => isInside(root, resolved))) {
+    throw new Error(`targetPath must be inside an allowed Mangrove root`);
+  }
+  return resolved;
+}
+
+async function runGit(args: string[], cwd: string): Promise<string> {
+  const { stdout } = await execFileAsync("git", args, {
+    cwd,
+    timeout: 10_000,
+    maxBuffer: 1024 * 1024,
+  });
+  return stdout.trim();
+}
+
+function parseBranchLine(line: string): Pick<GitStatusSummary, "branch" | "ahead" | "behind"> {
+  const branch = line
+    .replace(/^##\s+/, "")
+    .split("...")[0]
+    ?.trim();
+  const ahead = Number(line.match(/ahead (\d+)/)?.[1] ?? 0);
+  const behind = Number(line.match(/behind (\d+)/)?.[1] ?? 0);
+  return { branch, ahead, behind };
+}
+
+async function inspectGitHygiene(targetPath?: string): Promise<GitStatusSummary> {
+  const resolved = resolveTargetPath(targetPath);
+  try {
+    await runGit(["rev-parse", "--is-inside-work-tree"], resolved);
+  } catch {
+    return {
+      targetPath: resolved,
+      isGitRepo: false,
+      staged: 0,
+      modified: 0,
+      untracked: 0,
+      clean: false,
+      issues: ["not_git_repository"],
+    };
+  }
+
+  const status = await runGit(["status", "--porcelain=v1", "-b"], resolved);
+  const lines = status.split("\n").filter(Boolean);
+  const branchInfo = lines[0]?.startsWith("## ") ? parseBranchLine(lines[0]) : {};
+  const entries = lines.filter((line) => !line.startsWith("## "));
+  const staged = entries.filter((line) => line[0] !== " " && line[0] !== "?").length;
+  const modified = entries.filter((line) => line[1] !== " " && line[0] !== "?").length;
+  const untracked = entries.filter((line) => line.startsWith("??")).length;
+  const issues = [
+    ...(staged > 0 ? ["staged_changes"] : []),
+    ...(modified > 0 ? ["modified_files"] : []),
+    ...(untracked > 0 ? ["untracked_files"] : []),
+    ...((branchInfo.behind ?? 0) > 0 ? ["behind_remote"] : []),
+  ];
+
+  return {
+    targetPath: resolved,
+    isGitRepo: true,
+    ...branchInfo,
+    staged,
+    modified,
+    untracked,
+    clean: issues.length === 0,
+    issues,
+  };
+}
+
+async function inspectLooseObjects(targetPath?: string) {
+  const resolved = resolveTargetPath(targetPath);
+  await runGit(["rev-parse", "--is-inside-work-tree"], resolved);
+  const output = await runGit(["count-objects", "-v"], resolved);
+  const counts = Object.fromEntries(
+    output.split("\n").map((line) => {
+      const [key, value] = line.split(": ");
+      return [key, Number(value)];
+    }),
+  ) as Record<string, number>;
+
+  return {
+    targetPath: resolved,
+    looseObjects: counts.count ?? 0,
+    looseSizeKiB: counts.size ?? 0,
+    inPack: counts["in-pack"] ?? 0,
+    packs: counts.packs ?? 0,
+    prunePackable: counts["prune-packable"] ?? 0,
+    garbage: counts.garbage ?? 0,
+    issue: (counts.count ?? 0) > 1000 || (counts.garbage ?? 0) > 0,
+  };
+}
 
 // ── Server Builder ──
 
@@ -53,26 +171,20 @@ export function buildServer(): McpServer {
   registerTool(
     "health_check",
     { description: "Check mangrove-server health and operational readiness" },
-    async (_params: unknown, extra?: { traceContext?: TraceContext }) => {
-      const rootSpan = createRootSpan("mangrove:health_check", {
-        server: SERVER_NAME,
-        version: VERSION,
-        workspace: MANGROVE_WORKSPACE_ROOT,
-      });
-      const ctx = extractTrace(extra?.traceContext ?? {}, rootSpan.span);
+    async (_params: unknown) => {
+      const span = createRootSpan();
 
-      const id = generateId();
+      const id = generateId("mangrove");
       const timestamp = new Date().toISOString();
 
       await emitAudit({
-        timestamp,
+        traceId: span.traceId,
+        spanId: span.spanId,
         source: SERVER_NAME,
         tool: "health_check",
         status: "success",
         metadata: {
           correlationId: id,
-          traceId: ctx?.traceId ?? rootSpan.traceId,
-          spanId: ctx?.spanId ?? rootSpan.spanId,
         },
       });
 
@@ -87,6 +199,72 @@ export function buildServer(): McpServer {
 
       return {
         content: [{ type: "text" as const, text: JSON.stringify(payload, null, 2) }],
+      };
+    },
+  );
+
+  registerTool(
+    "check_git_hygiene",
+    {
+      description: "Read-only Git hygiene inspection for an allowed Mangrove ecosystem path",
+      inputSchema: targetSchema.shape,
+    },
+    async (params: z.infer<typeof targetSchema>) => {
+      const incomingTrace: TraceContext | null = extractTrace(params as Record<string, unknown>);
+      const span = incomingTrace ?? createRootSpan();
+      const timestamp = new Date().toISOString();
+      const payload = await inspectGitHygiene(params.targetPath);
+
+      await emitAudit({
+        traceId: span.traceId,
+        spanId: span.spanId,
+        source: SERVER_NAME,
+        tool: "check_git_hygiene",
+        status: "success",
+        metadata: {
+          correlationId: generateId("mangrove"),
+          targetPath: payload.targetPath,
+          clean: payload.clean,
+        },
+      });
+
+      return {
+        content: [
+          { type: "text" as const, text: JSON.stringify({ ...payload, timestamp }, null, 2) },
+        ],
+      };
+    },
+  );
+
+  registerTool(
+    "find_loose_objects",
+    {
+      description: "Read-only Git loose-object inspection for an allowed Mangrove ecosystem path",
+      inputSchema: targetSchema.shape,
+    },
+    async (params: z.infer<typeof targetSchema>) => {
+      const incomingTrace: TraceContext | null = extractTrace(params as Record<string, unknown>);
+      const span = incomingTrace ?? createRootSpan();
+      const timestamp = new Date().toISOString();
+      const payload = await inspectLooseObjects(params.targetPath);
+
+      await emitAudit({
+        traceId: span.traceId,
+        spanId: span.spanId,
+        source: SERVER_NAME,
+        tool: "find_loose_objects",
+        status: "success",
+        metadata: {
+          correlationId: generateId("mangrove"),
+          targetPath: payload.targetPath,
+          looseObjects: payload.looseObjects,
+        },
+      });
+
+      return {
+        content: [
+          { type: "text" as const, text: JSON.stringify({ ...payload, timestamp }, null, 2) },
+        ],
       };
     },
   );
