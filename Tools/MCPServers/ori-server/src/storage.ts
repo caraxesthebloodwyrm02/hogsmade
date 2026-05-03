@@ -2,12 +2,21 @@
  * Data layer — NDJSON log persistence and directory management.
  */
 
+import { RetryPolicy } from "@cascade/shared-resilience";
 import { promises as fs } from "fs";
 import path from "path";
 import { getConfig } from "./config.js";
 import type { LogEntry } from "./types.js";
 
 const config = getConfig();
+
+const logWriteRetry = new RetryPolicy("ori-log-write", {
+  maxAttempts: 3,
+  initialDelayMs: 100,
+  maxDelayMs: 1000,
+  backoffMultiplier: 2,
+  retryableErrors: ["EBUSY", "EAGAIN", "EMFILE", "EIO"],
+});
 
 export async function ensureDataDirs(): Promise<void> {
   await fs.mkdir(config.logDir, { recursive: true });
@@ -31,7 +40,12 @@ export function todayLogFile(): string {
 export async function appendLogEntries(entries: LogEntry[]): Promise<void> {
   const filepath = todayLogFile();
   const lines = entries.map((e) => JSON.stringify(e)).join("\n") + "\n";
-  await fs.appendFile(filepath, lines, "utf-8");
+  await logWriteRetry.execute(() => fs.appendFile(filepath, lines, "utf-8"), {
+    serviceName: "ori-log-write",
+    operationName: "appendFile",
+    startTime: Date.now(),
+    attempt: 1,
+  });
 }
 
 export async function readTodayLogs(): Promise<LogEntry[]> {
