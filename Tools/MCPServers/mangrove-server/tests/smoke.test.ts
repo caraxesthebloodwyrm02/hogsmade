@@ -141,4 +141,26 @@ describe("mangrove-server smoke", () => {
       expect(p).toHaveProperty("hasIssues");
     }
   });
+
+  it("janitor_scan output shape is compatible with afloat suggest_maintenance_workflow input", async () => {
+    const server = buildServer();
+    const result = (await invokeTool(server, "janitor_scan", { targetPath: repoPath })) as {
+      content?: Array<{ type: string; text?: string }>;
+    };
+    const parsed = JSON.parse(result.content?.[0]?.text as string);
+
+    // Verify each path entry has the exact fields afloat expects
+    for (const p of parsed.paths) {
+      expect(typeof p.targetPath).toBe("string");
+      expect(typeof p.hasIssues).toBe("boolean");
+      // gitHygiene must have clean (boolean) and modified (number) for afloat step generation
+      expect(typeof p.gitHygiene.clean).toBe("boolean");
+      expect(typeof p.gitHygiene.modified).toBe("number");
+      // looseObjects must have issue (boolean) and looseObjects (number)
+      if (p.looseObjects !== null) {
+        expect(typeof p.looseObjects.issue).toBe("boolean");
+        expect(typeof p.looseObjects.looseObjects).toBe("number");
+      }
+    }
+  });
 });
