@@ -22,9 +22,11 @@ import {
 } from "@cascade/shared-types/trace-context";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { execFile } from "child_process";
 import { promises as fs } from "fs";
 import path from "path";
 import { pathToFileURL } from "url";
+import { promisify } from "util";
 import * as z from "zod";
 import { getConfig } from "./config.js";
 
@@ -44,7 +46,8 @@ const executionPolicy = new ExecutionPolicyEngine(config.allowedRoots);
 
 // Preview token for multi-step safety: execute requires a token from a prior dry-run (TTL 5 min)
 const PREVIEW_TOKEN_TTL_MS = 5 * 60 * 1000;
-let lastPreview: { token: string; expiresAt: number; workflowId: string } | null = null;
+const PREVIEW_TOKENS_DIR = path.join(DATA_DIR, "preview-tokens");
+const execFileAsync = promisify(execFile);
 
 // ── Types ──
 
@@ -81,11 +84,18 @@ interface WorkflowExecution {
   dryRun: boolean;
 }
 
+interface PreviewToken {
+  token: string;
+  expiresAt: number;
+  workflowId: string;
+}
+
 // ── Data Layer ──
 
 async function ensureDataDir(): Promise<void> {
   await fs.mkdir(WORKFLOWS_DIR, { recursive: true });
   await fs.mkdir(HISTORY_DIR, { recursive: true });
+  await fs.mkdir(PREVIEW_TOKENS_DIR, { recursive: true });
 }
 
 /** Atomic write: write to .tmp then rename to prevent corruption. */
@@ -156,6 +166,62 @@ async function listExecutions(limit: number, workflowId?: string): Promise<Workf
   } catch {
     return [];
   }
+}
+
+async function savePreviewToken(pt: PreviewToken): Promise<void> {
+  const filepath = path.join(PREVIEW_TOKENS_DIR, `${pt.workflowId}.json`);
+  await atomicWriteJson(filepath, pt);
+}
+
+async function loadPreviewToken(workflowId: string): Promise<PreviewToken | null> {
+  const filepath = path.join(PREVIEW_TOKENS_DIR, `${workflowId}.json`);
+  try {
+    const content = await fs.readFile(filepath, "utf-8");
+    const pt = JSON.parse(content) as PreviewToken;
+    if (pt.expiresAt < Date.now()) {
+      await fs.unlink(filepath).catch(() => {});
+      return null;
+    }
+    return pt;
+  } catch {
+    return null;
+  }
+}
+
+async function consumePreviewToken(workflowId: string): Promise<void> {
+  const filepath = path.join(PREVIEW_TOKENS_DIR, `${workflowId}.json`);
+  await fs.unlink(filepath).catch(() => {});
+}
+
+async function cleanExpiredTokens(): Promise<void> {
+  try {
+    const files = await fs.readdir(PREVIEW_TOKENS_DIR);
+    const now = Date.now();
+    for (const file of files.filter((f: string) => f.endsWith(".json"))) {
+      try {
+        const content = await fs.readFile(path.join(PREVIEW_TOKENS_DIR, file), "utf-8");
+        const pt = JSON.parse(content) as PreviewToken;
+        if (pt.expiresAt < now) {
+          await fs.unlink(path.join(PREVIEW_TOKENS_DIR, file)).catch(() => {});
+        }
+      } catch {
+        await fs.unlink(path.join(PREVIEW_TOKENS_DIR, file)).catch(() => {});
+      }
+    }
+  } catch {
+    /* dir may not exist yet */
+  }
+}
+
+async function executeShellCommand(
+  command: string,
+  timeoutMs: number = 30_000,
+): Promise<{ stdout: string; stderr: string }> {
+  const { stdout, stderr } = await execFileAsync("sh", ["-c", command], {
+    timeout: timeoutMs,
+    maxBuffer: 1024 * 1024,
+  });
+  return { stdout: stdout.trim(), stderr: stderr.trim() };
 }
 
 // generateId imported from @cascade/shared-types/id (CSPRNG-based)
@@ -366,10 +432,10 @@ export function buildServer(): McpServer {
 
       const dryRun = args.dryRun !== false;
 
-      // P-MCP-002: Require preview token for non-dry-run execution
+      // P-MCP-002: Require preview token for non-dry-run execution (disk-persisted)
       if (!dryRun) {
-        const now = Date.now();
-        if (!lastPreview || lastPreview.expiresAt < now) {
+        const storedToken = await loadPreviewToken(args.workflowId);
+        if (!storedToken) {
           return {
             content: [
               {
@@ -383,27 +449,13 @@ export function buildServer(): McpServer {
             isError: true,
           };
         }
-        if (args.previewToken !== lastPreview.token) {
+        if (args.previewToken !== storedToken.token) {
           return {
             content: [
               {
                 type: "text" as const,
                 text: JSON.stringify({
                   error: "Invalid preview token",
-                  policyId: "P-MCP-002",
-                }),
-              },
-            ],
-            isError: true,
-          };
-        }
-        if (lastPreview.workflowId !== wf.id) {
-          return {
-            content: [
-              {
-                type: "text" as const,
-                text: JSON.stringify({
-                  error: "Preview token does not match workflow ID",
                   policyId: "P-MCP-002",
                 }),
               },
@@ -455,21 +507,93 @@ export function buildServer(): McpServer {
           }
         }
 
+        if (step.rollbackCommand) {
+          const rbValidation = executionPolicy.validateCommand(step.rollbackCommand);
+          if (rbValidation.verdict === "deny") {
+            exec.status = "failed";
+            exec.completedAt = new Date().toISOString();
+            exec.stepResults.push({
+              step: step.name,
+              status: "blocked",
+              error: `Rollback command blocked: ${rbValidation.reason}`,
+            });
+            await saveExecution(exec);
+            return {
+              content: [
+                {
+                  type: "text" as const,
+                  text: JSON.stringify({
+                    error: `Rollback command validation failed for step "${step.name}"`,
+                    policyResult: rbValidation,
+                    execution: exec,
+                  }),
+                },
+              ],
+              isError: true,
+            };
+          }
+        }
+
         if (dryRun) {
           exec.stepResults.push({
             step: step.name,
             status: "validated",
             output: `[DRY RUN] Would execute: ${step.command ?? "(no command)"}`,
           });
+        } else if (step.command) {
+          try {
+            const result = await executeShellCommand(step.command, (step.timeout ?? 30) * 1000);
+            exec.stepResults.push({
+              step: step.name,
+              status: "completed",
+              output: result.stdout || result.stderr || "(no output)",
+            });
+          } catch (err: unknown) {
+            const error = err instanceof Error ? err.message : String(err);
+            exec.stepResults.push({
+              step: step.name,
+              status: "failed",
+              error,
+            });
+
+            const completedSteps = wf.steps.slice(0, i).reverse();
+            for (const rbStep of completedSteps) {
+              if (rbStep.rollbackCommand) {
+                try {
+                  const rbResult = await executeShellCommand(rbStep.rollbackCommand);
+                  exec.stepResults.push({
+                    step: rbStep.name,
+                    status: "rolled_back",
+                    output: rbResult.stdout || "(rollback completed)",
+                  });
+                } catch (rbErr: unknown) {
+                  exec.stepResults.push({
+                    step: rbStep.name,
+                    status: "rollback_failed",
+                    error: rbErr instanceof Error ? rbErr.message : String(rbErr),
+                  });
+                }
+              }
+            }
+
+            exec.status = "rolled_back";
+            exec.completedAt = new Date().toISOString();
+            await consumePreviewToken(wf.id);
+            await saveExecution(exec);
+            return {
+              content: [
+                {
+                  type: "text" as const,
+                  text: JSON.stringify(exec, null, 2),
+                },
+              ],
+            };
+          }
         } else {
-          // In real execution, we'd spawn the command here
-          // For safety, we only simulate — actual execution requires explicit approval
           exec.stepResults.push({
             step: step.name,
-            status: "simulated",
-            output: `Step "${step.name}" ready for execution. Command: ${
-              step.command ?? "(manual)"
-            }`,
+            status: "completed",
+            output: "(no command — manual step)",
           });
         }
       }
@@ -478,14 +602,17 @@ export function buildServer(): McpServer {
       exec.completedAt = new Date().toISOString();
       await saveExecution(exec);
 
-      // Generate preview token on successful dry-run
+      let previewTokenValue: string | undefined;
       if (dryRun) {
-        const token = generateId("preview");
-        lastPreview = {
-          token,
+        previewTokenValue = generateId("preview");
+        await savePreviewToken({
+          token: previewTokenValue,
           expiresAt: Date.now() + PREVIEW_TOKEN_TTL_MS,
           workflowId: wf.id,
-        };
+        });
+        await cleanExpiredTokens();
+      } else {
+        await consumePreviewToken(wf.id);
       }
 
       return {
@@ -494,7 +621,7 @@ export function buildServer(): McpServer {
             type: "text" as const,
             text: JSON.stringify({
               ...exec,
-              previewToken: dryRun ? lastPreview?.token : undefined,
+              previewToken: previewTokenValue,
             }),
           },
         ],

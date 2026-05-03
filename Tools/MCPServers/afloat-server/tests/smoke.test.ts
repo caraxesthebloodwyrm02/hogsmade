@@ -133,16 +133,16 @@ describe("afloat-server smoke", () => {
     );
   });
 
-  it("executes non-dry-run in simulated mode with preview token", async () => {
+  it("executes non-dry-run with preview token", async () => {
     const server = buildServer();
     const create = (await invokeTool(server, "workflow_create", {
-      name: "simulated-flow",
-      description: "simulated execution test",
+      name: "real-exec-flow",
+      description: "real execution test",
       steps: [
         {
           name: "release",
           description: "ship release",
-          command: "npm run release",
+          command: "echo release-done",
         },
       ],
     })) as { content: Array<{ text: string }> };
@@ -170,8 +170,8 @@ describe("afloat-server smoke", () => {
     const execution = JSON.parse(execute.content[0].text);
     expect(execution.dryRun).toBe(false);
     expect(execution.status).toBe("completed");
-    expect(execution.stepResults[0].status).toBe("simulated");
-    expect(execution.stepResults[0].output).toContain("npm run release");
+    expect(execution.stepResults[0].status).toBe("completed");
+    expect(execution.stepResults[0].output).toContain("release-done");
   });
 
   it("blocks non-dry-run execution without a preview token (P-MCP-002)", async () => {
@@ -194,6 +194,132 @@ describe("afloat-server smoke", () => {
     // P-MCP-002 fires regardless of whether no token, wrong token, or wrong workflow
     expect(body.policyId).toBe("P-MCP-002");
     expect(body.error).toBeDefined();
+  });
+
+  it("preview token persists across server instances", async () => {
+    const server1 = buildServer();
+    const create = (await invokeTool(server1, "workflow_create", {
+      name: "persist-test",
+      description: "token persistence test",
+      steps: [{ name: "step", description: "a step", command: "echo ok" }],
+    })) as { content: Array<{ text: string }> };
+    const workflowId = JSON.parse(create.content[0].text).workflow.id as string;
+
+    const dryRun = (await invokeTool(server1, "workflow_execute", {
+      workflowId,
+      dryRun: true,
+    })) as { content: Array<{ text: string }> };
+    const previewToken = JSON.parse(dryRun.content[0].text).previewToken as string;
+    expect(previewToken).toBeDefined();
+
+    // New server instance can use the persisted token
+    const server2 = buildServer();
+    const execute = (await invokeTool(server2, "workflow_execute", {
+      workflowId,
+      dryRun: false,
+      previewToken,
+    })) as { content: Array<{ text: string }>; isError?: boolean };
+
+    expect(execute.isError).not.toBe(true);
+    const result = JSON.parse(execute.content[0].text);
+    expect(result.dryRun).toBe(false);
+    expect(result.status).toBe("completed");
+    expect(result.stepResults[0].status).toBe("completed");
+  });
+
+  it("executes rollback in reverse order when a step fails", async () => {
+    const server = buildServer();
+    const create = (await invokeTool(server, "workflow_create", {
+      name: "rollback-test",
+      description: "rollback on failure",
+      steps: [
+        {
+          name: "step-1",
+          description: "succeeds",
+          command: "echo step-1-ok",
+          rollbackCommand: "echo rollback-1",
+        },
+        { name: "step-2", description: "fails", command: "false" },
+      ],
+    })) as { content: Array<{ text: string }> };
+    const workflowId = JSON.parse(create.content[0].text).workflow.id as string;
+
+    const dryRun = (await invokeTool(server, "workflow_execute", {
+      workflowId,
+      dryRun: true,
+    })) as { content: Array<{ text: string }> };
+    const token = JSON.parse(dryRun.content[0].text).previewToken as string;
+
+    const execute = (await invokeTool(server, "workflow_execute", {
+      workflowId,
+      dryRun: false,
+      previewToken: token,
+    })) as { content: Array<{ text: string }>; isError?: boolean };
+
+    expect(execute.isError).not.toBe(true);
+    const result = JSON.parse(execute.content[0].text);
+    expect(result.status).toBe("rolled_back");
+
+    const stepStatuses = result.stepResults.map((r: { step: string; status: string }) => ({
+      step: r.step,
+      status: r.status,
+    }));
+    expect(stepStatuses).toEqual([
+      { step: "step-1", status: "completed" },
+      { step: "step-2", status: "failed" },
+      { step: "step-1", status: "rolled_back" },
+    ]);
+  });
+
+  it("records rollback_failed when a rollback command itself fails", async () => {
+    const server = buildServer();
+    const create = (await invokeTool(server, "workflow_create", {
+      name: "partial-rollback",
+      description: "partial rollback test",
+      steps: [
+        {
+          name: "step-a",
+          description: "ok",
+          command: "echo a-ok",
+          rollbackCommand: "false",
+        },
+        {
+          name: "step-b",
+          description: "ok",
+          command: "echo b-ok",
+          rollbackCommand: "echo b-rollback",
+        },
+        { name: "step-c", description: "fails", command: "false" },
+      ],
+    })) as { content: Array<{ text: string }> };
+    const workflowId = JSON.parse(create.content[0].text).workflow.id as string;
+
+    const dryRun = (await invokeTool(server, "workflow_execute", {
+      workflowId,
+      dryRun: true,
+    })) as { content: Array<{ text: string }> };
+    const token = JSON.parse(dryRun.content[0].text).previewToken as string;
+
+    const execute = (await invokeTool(server, "workflow_execute", {
+      workflowId,
+      dryRun: false,
+      previewToken: token,
+    })) as { content: Array<{ text: string }>; isError?: boolean };
+
+    const result = JSON.parse(execute.content[0].text);
+    expect(result.status).toBe("rolled_back");
+
+    const stepStatuses = result.stepResults.map((r: { step: string; status: string }) => ({
+      step: r.step,
+      status: r.status,
+    }));
+    expect(stepStatuses).toEqual([
+      { step: "step-a", status: "completed" },
+      { step: "step-b", status: "completed" },
+      { step: "step-c", status: "failed" },
+      { step: "step-b", status: "rolled_back" },
+      { step: "step-a", status: "rollback_failed" },
+    ]);
   });
 
   it("blocks commands with dangerous shell operators (P-MCP-003)", async () => {
