@@ -14,12 +14,6 @@
 import { generateId } from "@cascade/shared-types/id";
 import { ExecutionPolicyEngine } from "@cascade/shared-types/security-policy";
 import { SessionRateLimiter } from "@cascade/shared-types/session-rate-limit";
-import {
-  type TraceContext,
-  createChildSpan,
-  createRootSpan,
-  extractTrace,
-} from "@cascade/shared-types/trace-context";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { execFile } from "child_process";
@@ -110,8 +104,15 @@ async function saveWorkflow(wf: WorkflowDefinition): Promise<void> {
   await atomicWriteJson(filepath, wf);
 }
 
+function isContainedIn(filepath: string, baseDir: string): boolean {
+  const resolved = path.resolve(filepath);
+  const base = path.resolve(baseDir) + path.sep;
+  return resolved.startsWith(base) || resolved === path.resolve(baseDir);
+}
+
 async function loadWorkflow(id: string): Promise<WorkflowDefinition | null> {
   const filepath = path.join(WORKFLOWS_DIR, `${id}.json`);
+  if (!isContainedIn(filepath, WORKFLOWS_DIR)) return null;
   try {
     const content = await fs.readFile(filepath, "utf-8");
     return JSON.parse(content) as WorkflowDefinition;
@@ -175,6 +176,7 @@ async function savePreviewToken(pt: PreviewToken): Promise<void> {
 
 async function loadPreviewToken(workflowId: string): Promise<PreviewToken | null> {
   const filepath = path.join(PREVIEW_TOKENS_DIR, `${workflowId}.json`);
+  if (!isContainedIn(filepath, PREVIEW_TOKENS_DIR)) return null;
   try {
     const content = await fs.readFile(filepath, "utf-8");
     const pt = JSON.parse(content) as PreviewToken;
@@ -190,6 +192,7 @@ async function loadPreviewToken(workflowId: string): Promise<PreviewToken | null
 
 async function consumePreviewToken(workflowId: string): Promise<void> {
   const filepath = path.join(PREVIEW_TOKENS_DIR, `${workflowId}.json`);
+  if (!isContainedIn(filepath, PREVIEW_TOKENS_DIR)) return;
   await fs.unlink(filepath).catch(() => {});
 }
 

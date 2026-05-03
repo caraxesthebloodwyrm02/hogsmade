@@ -128,7 +128,7 @@ export class MCPPolicyEngine {
 
 export class ExecutionPolicyEngine {
   private allowedRoots: string[];
-  private blockedShellOperators = ["|", "&&", "||", ";", "`", "$(", ">", "<", ">>"];
+  private blockedShellOperators = ["|", "&&", "||", ";", "`", "$(", ">", "<", ">>", "&"];
   private allowedInterpreters = ["node", "python", "powershell", "bash"];
 
   constructor(allowedRoots: string[]) {
