@@ -174,6 +174,28 @@ describe("afloat-server smoke", () => {
     expect(execution.stepResults[0].output).toContain("npm run release");
   });
 
+  it("blocks non-dry-run execution without a preview token (P-MCP-002)", async () => {
+    const server = buildServer();
+    const create = (await invokeTool(server, "workflow_create", {
+      name: "no-token-flow",
+      description: "p-mcp-002 rejection test",
+      steps: [{ name: "step-a", description: "a step", command: "echo hello" }],
+    })) as { content: Array<{ text: string }> };
+    const workflowId = JSON.parse(create.content[0].text).workflow.id as string;
+
+    // Attempt non-dry-run with no token at all — must be rejected
+    const execute = (await invokeTool(server, "workflow_execute", {
+      workflowId,
+      dryRun: false,
+    })) as { content: Array<{ text: string }>; isError?: boolean };
+
+    expect(execute.isError).toBe(true);
+    const body = JSON.parse(execute.content[0].text);
+    // P-MCP-002 fires regardless of whether no token, wrong token, or wrong workflow
+    expect(body.policyId).toBe("P-MCP-002");
+    expect(body.error).toBeDefined();
+  });
+
   it("blocks commands with dangerous shell operators (P-MCP-003)", async () => {
     const server = buildServer();
     const create = (await invokeTool(server, "workflow_create", {
