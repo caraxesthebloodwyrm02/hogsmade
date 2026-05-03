@@ -519,4 +519,31 @@ describe("pulse-server smoke", () => {
     const aPayload = parseToolJson(alerts);
     expect(aPayload.noiseFiltered).toBe(9);
   });
+
+  it("what_should_i_work_on: trustContext is null when GRUFF_TRUST_SCORES_ENABLED is unset", async () => {
+    delete process.env.GRUFF_TRUST_SCORES_ENABLED;
+    delete process.env.GRUFF_TRUST_DB_PATH;
+    const server = buildServer() as TestServer;
+    const result = (await invokeTool(server, "what_should_i_work_on", {})) as {
+      content: Array<{ text: string }>;
+    };
+    const payload = parseToolJson(result);
+    expect(payload.trustContext).toBeNull();
+  });
+
+  it("what_should_i_work_on: trustContext is null when DB path does not exist", async () => {
+    process.env.GRUFF_TRUST_SCORES_ENABLED = "true";
+    process.env.GRUFF_TRUST_DB_PATH = path.join(tempRoot, "nonexistent-trust.sqlite");
+    try {
+      const server = buildServer() as TestServer;
+      const result = (await invokeTool(server, "what_should_i_work_on", {})) as {
+        content: Array<{ text: string }>;
+      };
+      const payload = parseToolJson(result);
+      expect(payload.trustContext).toBeNull();
+    } finally {
+      delete process.env.GRUFF_TRUST_SCORES_ENABLED;
+      delete process.env.GRUFF_TRUST_DB_PATH;
+    }
+  });
 });

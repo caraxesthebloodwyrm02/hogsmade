@@ -39,7 +39,10 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { promises as fs } from "fs";
 import path from "path";
+import { execFile } from "child_process";
+import { homedir } from "os";
 import { pathToFileURL } from "url";
+import { promisify } from "util";
 import * as z from "zod";
 import { getConfig } from "./config.js";
 
@@ -630,6 +633,53 @@ async function getLatestSeedsSnapshot(): Promise<SeedsSnapshotResult> {
 async function getLatestEcosystemScore(): Promise<number | null> {
   const latest = await getLatestSeedsSnapshot();
   return latest.snapshot?.overallScore ?? null;
+}
+
+// ── Trust Scores (read-only, optional) ──
+
+interface TrustScoreEntry {
+  actor: string;
+  score: number;
+  tier: string;
+  lastUpdated: string;
+  eventCount: number;
+}
+
+// Reads low-trust actors from gruff's sqlite DB. Returns null when the feature
+// is disabled (GRUFF_TRUST_SCORES_ENABLED unset) or the DB doesn't exist yet.
+// Path override GRUFF_TRUST_DB_PATH is used in tests to avoid touching real data.
+async function readTrustScores(): Promise<TrustScoreEntry[] | null> {
+  if (!process.env.GRUFF_TRUST_SCORES_ENABLED) return null;
+  const dbPath = process.env.GRUFF_TRUST_DB_PATH ?? path.join(homedir(), ".gruff", "trust.sqlite");
+  try {
+    await fs.access(dbPath);
+  } catch {
+    return null;
+  }
+  const query =
+    "SELECT actor, ROUND(score,1), tier, last_seen, event_count " +
+    "FROM actor_profile WHERE score < 80 AND actor NOT LIKE 'mcp:%' AND event_count >= 3 " +
+    "ORDER BY score ASC;";
+  try {
+    const execFileAsync = promisify(execFile);
+    const { stdout } = await execFileAsync("sqlite3", ["-readonly", dbPath, query]);
+    return stdout
+      .trim()
+      .split("\n")
+      .filter(Boolean)
+      .map((line) => {
+        const parts = line.split("|");
+        return {
+          actor: parts[0],
+          score: parseFloat(parts[1]),
+          tier: parts[2],
+          lastUpdated: parts[3],
+          eventCount: parseInt(parts[4], 10),
+        };
+      });
+  } catch {
+    return null;
+  }
 }
 
 async function listRecentWorkflowExecutions(limit: number): Promise<Record<string, any>[]> {
@@ -1440,6 +1490,8 @@ export function buildServer(): McpServer {
               occurrenceCount: item.occurrenceCount,
             }));
 
+      const trustContext = await readTrustScores();
+
       return {
         content: [
           {
@@ -1464,6 +1516,7 @@ export function buildServer(): McpServer {
                   healthThreshold: rules.healthThreshold,
                   correlationBoost: rules.correlationBoost,
                 },
+                trustContext,
               },
               null,
               2,
