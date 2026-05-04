@@ -15,14 +15,14 @@ describe("triadic-guard", () => {
     expect(result.warnings).toHaveLength(0);
   });
 
-  it("blocks jump from ground to elevated (safety)", () => {
+  it("blocks jump from ground to elevated (safety DAG)", () => {
     const result = applyTriadicGuard(
       { threshold_state: "elevated", progress: 1.0 },
       GROUND_STATE,
       DEFAULT_WEIGHTS,
     );
     expect(result.allowed).toBe(false);
-    expect(result.warnings[0]).toContain("cannot jump from ground to elevated");
+    expect(result.warnings[0]).toContain("transition ground → elevated is not permitted");
   });
 
   it("blocks invalid threshold_state (safety)", () => {
@@ -35,14 +35,14 @@ describe("triadic-guard", () => {
     expect(result.warnings[0]).toContain("invalid threshold_state");
   });
 
-  it("blocks jump from ground to denied (safety)", () => {
+  it("blocks jump from ground to denied (safety DAG)", () => {
     const result = applyTriadicGuard(
       { threshold_state: "denied", progress: 1.0 },
       GROUND_STATE,
       DEFAULT_WEIGHTS,
     );
     expect(result.allowed).toBe(false);
-    expect(result.warnings[0]).toContain("cannot jump from ground to denied");
+    expect(result.warnings[0]).toContain("transition ground → denied is not permitted");
   });
 
   it("blocks invalid agent_state (safety)", () => {
@@ -68,8 +68,8 @@ describe("triadic-guard", () => {
   });
 
   it("blocks elevated with low progress when autonomy < 0.8", () => {
-    const evaluating = { ...GROUND_STATE, threshold_state: "evaluating" };
-    const result = applyTriadicGuard({ threshold_state: "elevated", progress: 0.5 }, evaluating, {
+    const voice3 = { ...GROUND_STATE, threshold_state: "voice_3_active" };
+    const result = applyTriadicGuard({ threshold_state: "elevated", progress: 0.5 }, voice3, {
       ...DEFAULT_WEIGHTS,
       autonomy: 0.7,
     });
@@ -78,8 +78,8 @@ describe("triadic-guard", () => {
   });
 
   it("allows elevated with high progress when autonomy < 0.8", () => {
-    const evaluating = { ...GROUND_STATE, threshold_state: "evaluating" };
-    const result = applyTriadicGuard({ threshold_state: "elevated", progress: 0.95 }, evaluating, {
+    const voice3 = { ...GROUND_STATE, threshold_state: "voice_3_active" };
+    const result = applyTriadicGuard({ threshold_state: "elevated", progress: 0.95 }, voice3, {
       ...DEFAULT_WEIGHTS,
       autonomy: 0.7,
     });
@@ -87,12 +87,29 @@ describe("triadic-guard", () => {
   });
 
   it("allows elevated with low progress when autonomy >= 0.8", () => {
-    const evaluating = { ...GROUND_STATE, threshold_state: "evaluating" };
-    const result = applyTriadicGuard({ threshold_state: "elevated", progress: 0.2 }, evaluating, {
+    const voice3 = { ...GROUND_STATE, threshold_state: "voice_3_active" };
+    const result = applyTriadicGuard({ threshold_state: "elevated", progress: 0.2 }, voice3, {
       ...DEFAULT_WEIGHTS,
       autonomy: 0.85,
     });
     expect(result.allowed).toBe(true);
+  });
+
+  it("allows valid DAG transitions", () => {
+    const evaluating = { ...GROUND_STATE, threshold_state: "evaluating" };
+    const result = applyTriadicGuard(
+      { threshold_state: "floor_rising" },
+      evaluating,
+      DEFAULT_WEIGHTS,
+    );
+    expect(result.allowed).toBe(true);
+  });
+
+  it("blocks evaluating to elevated (must go through full ceremony)", () => {
+    const evaluating = { ...GROUND_STATE, threshold_state: "evaluating" };
+    const result = applyTriadicGuard({ threshold_state: "elevated" }, evaluating, DEFAULT_WEIGHTS);
+    expect(result.allowed).toBe(false);
+    expect(result.warnings[0]).toContain("transition evaluating → elevated is not permitted");
   });
 
   it("skips correctness checks when correctness weight is low", () => {

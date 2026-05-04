@@ -1,19 +1,19 @@
 import type { TriadicWeights } from "./profile-reader.js";
 
-const DANGEROUS_TRANSITIONS = new Set(["elevated", "denied"]);
+const VALID_TRANSITIONS: Record<string, string[]> = {
+  ground: ["evaluating"],
+  evaluating: ["floor_rising", "denied"],
+  floor_rising: ["voices_appearing", "denied"],
+  voices_appearing: ["voice_1_active", "denied"],
+  voice_1_active: ["voice_2_active", "denied"],
+  voice_2_active: ["voice_3_active", "denied"],
+  voice_3_active: ["elevated", "denied"],
+  elevated: ["returning"],
+  returning: ["ground"],
+  denied: ["ground"],
+};
 
-const VALID_STATES = new Set([
-  "ground",
-  "evaluating",
-  "floor_rising",
-  "voices_appearing",
-  "voice_1_active",
-  "voice_2_active",
-  "voice_3_active",
-  "elevated",
-  "returning",
-  "denied",
-]);
+const VALID_STATES = new Set(Object.keys(VALID_TRANSITIONS));
 
 const VALID_AGENT_STATES = new Set(["idle", "thinking", "writing", "reviewing", "elevated"]);
 
@@ -30,17 +30,23 @@ export function applyTriadicGuard(
   const warnings: string[] = [];
   let allowed = true;
 
-  // Safety: validate state transitions — block invalid or dangerous jumps
+  // Safety: validate state transitions via full DAG
   if (weights.safety >= 0.8) {
     const ts = patch.threshold_state;
     if (typeof ts === "string") {
       if (!VALID_STATES.has(ts)) {
         warnings.push(`safety: invalid threshold_state "${ts}"`);
         allowed = false;
-      }
-      if (DANGEROUS_TRANSITIONS.has(ts) && current.threshold_state === "ground") {
-        warnings.push(`safety: cannot jump from ground to ${ts} — must pass through evaluating`);
-        allowed = false;
+      } else {
+        const currentState =
+          typeof current.threshold_state === "string" ? current.threshold_state : "ground";
+        if (ts !== currentState) {
+          const permitted = VALID_TRANSITIONS[currentState];
+          if (!permitted || !permitted.includes(ts)) {
+            warnings.push(`safety: transition ${currentState} → ${ts} is not permitted`);
+            allowed = false;
+          }
+        }
       }
     }
 
@@ -80,14 +86,14 @@ export function applyTriadicGuard(
     }
   }
 
-  // Autonomy: when weight is low, block auto-transitions that skip human checkpoints
+  // Autonomy: when weight is low, elevated requires high progress
   if (weights.autonomy < 0.8) {
     const ts = patch.threshold_state;
-    if (typeof ts === "string" && DANGEROUS_TRANSITIONS.has(ts)) {
+    if (ts === "elevated") {
       const progress = (patch.progress ?? current.progress) as number | undefined;
       if (typeof progress !== "number" || progress < 0.9) {
         warnings.push(
-          `autonomy: ${ts} requires progress >= 0.9 when autonomy weight is < 0.8 (got ${
+          `autonomy: elevated requires progress >= 0.9 when autonomy weight is < 0.8 (got ${
             progress ?? "unset"
           })`,
         );

@@ -687,18 +687,18 @@ describe("glass-server tools", () => {
     it("prunes oldest agent blocks when max_blocks exceeded", async () => {
       const { client } = await makeClient();
       await client.callTool({ name: "glass_session_start", arguments: {} });
-      // Add 3 agent blocks; max_blocks=2 on the 3rd → should prune the first
+      // Add 3 agent output blocks; max_blocks=2 on the 3rd → should prune the first
       await client.callTool({
         name: "glass_emit_block",
-        arguments: { type: "note", content: "old1" },
+        arguments: { type: "output", content: "old1" },
       });
       await client.callTool({
         name: "glass_emit_block",
-        arguments: { type: "note", content: "old2" },
+        arguments: { type: "output", content: "old2" },
       });
       const result = await client.callTool({
         name: "glass_emit_block",
-        arguments: { type: "note", content: "new", max_blocks: 2 },
+        arguments: { type: "output", content: "new", max_blocks: 2 },
       });
       const parsed = JSON.parse(toolText(result));
       expect(parsed.block_count).toBe(2);
@@ -719,7 +719,7 @@ describe("glass-server tools", () => {
           blocks: [
             {
               id: "user-block-1",
-              type: "note",
+              type: "output",
               language: "text",
               content: "user note",
               position: { x: 0, y: 0 },
@@ -728,14 +728,14 @@ describe("glass-server tools", () => {
           ],
         },
       });
-      // Emit 2 agent blocks with max_blocks=1 — should prune oldest agent but keep user block
+      // Emit 2 agent output blocks with max_blocks=1 — should prune oldest agent but keep user block
       await client.callTool({
         name: "glass_emit_block",
-        arguments: { type: "note", content: "agent1", max_blocks: 1 },
+        arguments: { type: "output", content: "agent1", max_blocks: 1 },
       });
       const result = await client.callTool({
         name: "glass_emit_block",
-        arguments: { type: "note", content: "agent2", max_blocks: 1 },
+        arguments: { type: "output", content: "agent2", max_blocks: 1 },
       });
       const parsed = JSON.parse(toolText(result));
       // 1 user + 1 agent = 2 total
@@ -858,11 +858,11 @@ describe("glass-server tools", () => {
       });
       await client.callTool({
         name: "glass_emit_block",
-        arguments: { type: "note", content: "agent1", max_blocks: 1 },
+        arguments: { type: "output", content: "agent1", max_blocks: 1 },
       });
       await client.callTool({
         name: "glass_emit_block",
-        arguments: { type: "note", content: "agent2", max_blocks: 1 },
+        arguments: { type: "output", content: "agent2", max_blocks: 1 },
       });
 
       const { readFile } = await import("fs/promises");
