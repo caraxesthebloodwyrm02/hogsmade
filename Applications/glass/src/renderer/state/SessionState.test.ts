@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { SessionState, type SessionData } from "./SessionState";
+import { SessionState } from "./SessionState";
 
 const mockStorage = (): Storage => {
   const store: Record<string, string> = {};
@@ -33,7 +33,6 @@ describe("SessionState", () => {
   it("starts with default values when storage is empty", () => {
     const data = session.get();
     expect(data.sessionId).toBe("");
-    expect(data.blockPositions).toEqual({});
     expect(data.cameraOffset).toEqual({ x: 0, y: 0 });
   });
 
@@ -51,15 +50,10 @@ describe("SessionState", () => {
     expect(data.cameraOffset).toEqual({ x: 100, y: 50 });
   });
 
-  it("persists block positions", () => {
-    session.update({
-      blockPositions: { b1: { x: 10, y: 20 }, b2: { x: 30, y: 40 } },
-    });
+  it("persists camera offset", () => {
+    session.update({ cameraOffset: { x: 200, y: 150 } });
     const fresh = new SessionState(storage);
-    expect(fresh.get().blockPositions).toEqual({
-      b1: { x: 10, y: 20 },
-      b2: { x: 30, y: 40 },
-    });
+    expect(fresh.get().cameraOffset).toEqual({ x: 200, y: 150 });
   });
 
   it("handles corrupted storage gracefully", () => {

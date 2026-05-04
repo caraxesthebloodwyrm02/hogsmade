@@ -8,6 +8,8 @@ import { ConversationLayer, type ConversationMessage } from "../conversation/Con
 import { AudioEngine } from "../audio/AudioEngine";
 import { BlockManager } from "../blocks/BlockManager";
 import { CodeBlock, type CodeBlockOptions } from "../blocks/CodeBlock";
+import { BlockDragController } from "../blocks/BlockDragController";
+import { BlockSpawnMenu } from "../blocks/BlockSpawnMenu";
 import type { FieldState } from "../state/FieldState";
 import type { ThresholdState } from "../../../bridge/schema";
 
@@ -27,6 +29,8 @@ export class Field {
   private conversationLayer: ConversationLayer;
   private audioEngine: AudioEngine;
   private blockManager: BlockManager;
+  private dragController: BlockDragController;
+  private spawnMenu: BlockSpawnMenu;
   private codeBlocks: Map<string, CodeBlock> = new Map();
   private blockHost: HTMLDivElement;
 
@@ -38,6 +42,8 @@ export class Field {
 
   private panning = false;
   private spaceHeld = false;
+
+  private cameraPanCallbacks: Array<(x: number, y: number) => void> = [];
 
   constructor(canvas: HTMLCanvasElement, state: FieldState, blockHost: HTMLDivElement) {
     this.canvas = canvas;
@@ -59,6 +65,18 @@ export class Field {
     this.conversationLayer = new ConversationLayer(canvas.width, canvas.height);
     this.audioEngine = new AudioEngine();
     this.blockManager = new BlockManager();
+
+    this.dragController = new BlockDragController({
+      onDragEnd: (id, x, y) => {
+        (window as any).glass?.patchBlockPosition?.(id, x, y);
+      },
+    });
+
+    this.spawnMenu = new BlockSpawnMenu(blockHost, {
+      onSpawn: (type, language, content, position) => {
+        (window as any).glass?.addBlock?.(type, language, content, position);
+      },
+    });
 
     window.addEventListener("resize", () => this.resize());
     this.bindInputs();
@@ -86,6 +104,20 @@ export class Field {
     });
   }
 
+  restoreCameraOffset(x: number, y: number): void {
+    this.camera.setPosition(x, y);
+  }
+
+  onCameraPan(cb: (x: number, y: number) => void): void {
+    this.cameraPanCallbacks.push(cb);
+  }
+
+  private notifyCameraPan(): void {
+    for (const cb of this.cameraPanCallbacks) {
+      cb(this.camera.x, this.camera.y);
+    }
+  }
+
   private bindInputs(): void {
     const { canvas } = this;
 
@@ -97,6 +129,29 @@ export class Field {
       }
     });
 
+    window.addEventListener("mousemove", (e) => {
+      if (this.dragController.isDragging()) {
+        const pos = this.dragController.moveDrag(e.clientX, e.clientY);
+        if (pos) {
+          this.blockManager.move(pos.id, pos.x, pos.y);
+          const cb = this.codeBlocks.get(pos.id);
+          cb?.setPosition(pos.x, pos.y);
+        }
+      }
+    });
+
+    window.addEventListener("mouseup", (e) => {
+      if (this.dragController.isDragging()) {
+        const result = this.dragController.endDragAt(e.clientX, e.clientY);
+        if (result) {
+          this.blockManager.move(result.id, result.x, result.y);
+          const cb = this.codeBlocks.get(result.id);
+          cb?.setPosition(result.x, result.y);
+          (window as any).glass?.patchBlockPosition?.(result.id, result.x, result.y);
+        }
+      }
+    });
+
     canvas.addEventListener("mousedown", (e) => {
       if (e.button === 1 || (e.button === 0 && this.spaceHeld)) {
         this.panning = true;
@@ -105,11 +160,20 @@ export class Field {
     });
 
     canvas.addEventListener("mouseup", (e) => {
-      if (e.button === 1 || e.button === 0) this.panning = false;
+      if (e.button === 1 || e.button === 0) {
+        if (this.panning) {
+          this.panning = false;
+          this.notifyCameraPan();
+        }
+      }
     });
 
     canvas.addEventListener("click", (e) => {
       if (this.panning) return;
+      if (this.spawnMenu.isVisible()) {
+        this.spawnMenu.hide();
+        return;
+      }
       const ax = this.agentPresence.x;
       const ay = this.agentPresence.y;
       const dx = e.clientX + this.camera.x - ax;
@@ -120,20 +184,31 @@ export class Field {
     });
 
     window.addEventListener("keydown", (e) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
       if (e.code === "Space" && !e.repeat) {
         this.spaceHeld = true;
         e.preventDefault();
       }
+      if ((e.ctrlKey || e.metaKey) && e.code === "KeyN") {
+        e.preventDefault();
+        const cx = this.camera.x + this.canvas.width / 2;
+        const cy = this.camera.y + this.canvas.height / 2;
+        (window as any).glass?.addBlock?.("code", "typescript", "", { x: cx, y: cy });
+      }
     });
 
     window.addEventListener("keyup", (e) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
       if (e.code === "Space") {
         this.spaceHeld = false;
         this.panning = false;
       }
     });
 
-    canvas.addEventListener("contextmenu", (e) => e.preventDefault());
+    canvas.addEventListener("contextmenu", (e) => {
+      e.preventDefault();
+      this.spawnMenu.show(e.clientX, e.clientY, this.camera.x, this.camera.y);
+    });
   }
 
   private resize(): void {
@@ -235,10 +310,26 @@ export class Field {
           height: 180,
           origin: block.origin,
         };
-        this.codeBlocks.set(block.id, new CodeBlock(opts, container));
+        const codeBlock = new CodeBlock(opts, container);
+        this.codeBlocks.set(block.id, codeBlock);
+
+        const grip = codeBlock.getGripElement();
+        grip.addEventListener("mousedown", (e) => {
+          if (e.button !== 0) return;
+          e.stopPropagation();
+          this.dragController.startDrag(
+            block.id,
+            e.clientX,
+            e.clientY,
+            block.position.x,
+            block.position.y,
+          );
+        });
       } else {
         const cb = this.codeBlocks.get(block.id)!;
-        cb.setPosition(block.position.x, block.position.y);
+        if (!this.dragController.isDragging() || this.dragController.activeBlockId() !== block.id) {
+          cb.setPosition(block.position.x, block.position.y);
+        }
         cb.setContent(block.content);
       }
     }

@@ -100,6 +100,114 @@ function readBridgeFile(): BridgeState {
   }
 }
 
+export function appendConversationTurn(text: string): void {
+  if (typeof text !== "string" || text.length === 0 || text.length > MAX_TEXT) {
+    console.warn(
+      `[glass] appendConversationTurn rejected — text length ${text?.length ?? 0} outside 1..${MAX_TEXT}`,
+    );
+    return;
+  }
+  try {
+    const state = readBridgeFile();
+    const conversation = Array.isArray(state.conversation) ? [...state.conversation] : [];
+    conversation.push({ role: "user", text, timestamp: new Date().toISOString() });
+    if (conversation.length > MAX_ARRAY) conversation.splice(0, conversation.length - MAX_ARRAY);
+    state.conversation = conversation;
+    const tmp = `${BRIDGE_PATH}.tmp.${process.pid}.msg`;
+    fs.writeFileSync(tmp, JSON.stringify(state, null, 2), { encoding: "utf-8", mode: 0o600 });
+    fs.renameSync(tmp, BRIDGE_PATH);
+  } catch (err) {
+    console.error(
+      `[glass] appendConversationTurn failed: ${err instanceof Error ? err.message : String(err)}`,
+    );
+  }
+}
+
+let blockSeq = 0;
+
+export function addBridgeBlock(block: {
+  type: string;
+  language: string;
+  content: string;
+  position: { x: number; y: number };
+  origin: string;
+}): void {
+  if (!block || typeof block !== "object") {
+    console.warn(`[glass] addBridgeBlock rejected — invalid payload`);
+    return;
+  }
+  const validTypes = new Set(["code", "note", "output"]);
+  if (!validTypes.has(block.type)) {
+    console.warn(`[glass] addBridgeBlock rejected — invalid type: ${block.type}`);
+    return;
+  }
+  if (typeof block.content !== "string" || block.content.length > 1_000_000) {
+    console.warn(`[glass] addBridgeBlock rejected — content exceeds 1MB or not a string`);
+    return;
+  }
+  try {
+    const state = readBridgeFile();
+    const blocks = Array.isArray(state.blocks) ? [...state.blocks] : [];
+    if (blocks.length >= MAX_ARRAY) {
+      console.warn(`[glass] addBridgeBlock rejected — blocks array at capacity (${MAX_ARRAY})`);
+      return;
+    }
+    const id = `user-${Date.now()}-${++blockSeq}`;
+    blocks.push({
+      id,
+      type: block.type,
+      language: block.language || "text",
+      content: block.content,
+      position: { x: Number(block.position?.x) || 0, y: Number(block.position?.y) || 0 },
+      origin: block.origin === "agent" ? "agent" : "user",
+    });
+    state.blocks = blocks;
+    const tmp = `${BRIDGE_PATH}.tmp.${process.pid}.add`;
+    fs.writeFileSync(tmp, JSON.stringify(state, null, 2), { encoding: "utf-8", mode: 0o600 });
+    fs.renameSync(tmp, BRIDGE_PATH);
+  } catch (err) {
+    console.error(
+      `[glass] addBridgeBlock failed: ${err instanceof Error ? err.message : String(err)}`,
+    );
+  }
+}
+
+export function patchBridgeBlockPosition(blockId: string, x: number, y: number): void {
+  if (typeof blockId !== "string" || blockId.length === 0 || blockId.length > 128) {
+    console.warn(`[glass] patchBridgeBlockPosition rejected — invalid blockId`);
+    return;
+  }
+  if (typeof x !== "number" || typeof y !== "number" || !isFinite(x) || !isFinite(y)) {
+    console.warn(`[glass] patchBridgeBlockPosition rejected — invalid coordinates`);
+    return;
+  }
+  try {
+    const state = readBridgeFile();
+    if (!Array.isArray(state.blocks)) {
+      console.warn(`[glass] patchBridgeBlockPosition skipped — state.blocks is not an array`);
+      return;
+    }
+    const idx = (state.blocks as Array<Record<string, unknown>>).findIndex(
+      (b) => b?.id === blockId,
+    );
+    if (idx === -1) {
+      console.warn(`[glass] patchBridgeBlockPosition skipped — blockId "${blockId}" not found`);
+      return;
+    }
+    (state.blocks as Array<Record<string, unknown>>)[idx] = {
+      ...(state.blocks as Array<Record<string, unknown>>)[idx],
+      position: { x, y },
+    };
+    const tmp = `${BRIDGE_PATH}.tmp.${process.pid}.pos`;
+    fs.writeFileSync(tmp, JSON.stringify(state, null, 2), { encoding: "utf-8", mode: 0o600 });
+    fs.renameSync(tmp, BRIDGE_PATH);
+  } catch (err) {
+    console.error(
+      `[glass] patchBridgeBlockPosition failed: ${err instanceof Error ? err.message : String(err)}`,
+    );
+  }
+}
+
 export function patchBridgeBlock(blockId: string, content: string): void {
   if (typeof blockId !== "string" || blockId.length === 0 || blockId.length > 128) {
     console.warn(

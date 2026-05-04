@@ -9,4 +9,18 @@ contextBridge.exposeInMainWorld("glass", {
   patchBlock: (id: string, content: string) => {
     ipcRenderer.send("bridge:patch-block", { id, content });
   },
+  sendMessage: (text: string) => {
+    ipcRenderer.send("bridge:send-message", { text });
+  },
+  addBlock: (
+    type: string,
+    language: string,
+    content: string,
+    position: { x: number; y: number },
+  ) => {
+    ipcRenderer.send("bridge:add-block", { type, language, content, position, origin: "user" });
+  },
+  patchBlockPosition: (id: string, x: number, y: number) => {
+    ipcRenderer.send("bridge:patch-block-position", { id, x, y });
+  },
 });

@@ -1,6 +1,12 @@
 import { app, BrowserWindow, session, ipcMain } from "electron";
 import path from "path";
-import { startBridgeWatcher, patchBridgeBlock } from "./bridge-watcher";
+import {
+  startBridgeWatcher,
+  patchBridgeBlock,
+  appendConversationTurn,
+  addBridgeBlock,
+  patchBridgeBlockPosition,
+} from "./bridge-watcher";
 
 app.enableSandbox();
 
@@ -66,6 +72,57 @@ ipcMain.on("bridge:patch-block", (_event, payload: unknown) => {
     return;
   }
   patchBridgeBlock(id, content);
+});
+
+ipcMain.on("bridge:send-message", (_event, payload: unknown) => {
+  if (typeof payload !== "object" || payload === null) {
+    console.warn(`[glass] bridge:send-message rejected — payload is not an object`);
+    return;
+  }
+  const { text } = payload as Record<string, unknown>;
+  if (typeof text !== "string") {
+    console.warn(`[glass] bridge:send-message rejected — text is not a string`);
+    return;
+  }
+  appendConversationTurn(text);
+});
+
+ipcMain.on("bridge:add-block", (_event, payload: unknown) => {
+  if (typeof payload !== "object" || payload === null) {
+    console.warn(`[glass] bridge:add-block rejected — payload is not an object`);
+    return;
+  }
+  const p = payload as Record<string, unknown>;
+  if (typeof p.type !== "string" || typeof p.language !== "string") {
+    console.warn(`[glass] bridge:add-block rejected — missing type or language`);
+    return;
+  }
+  addBridgeBlock({
+    type: p.type,
+    language: p.language,
+    content: typeof p.content === "string" ? p.content : "",
+    position:
+      p.position && typeof p.position === "object"
+        ? {
+            x: Number((p.position as Record<string, unknown>).x) || 0,
+            y: Number((p.position as Record<string, unknown>).y) || 0,
+          }
+        : { x: 0, y: 0 },
+    origin: typeof p.origin === "string" ? p.origin : "user",
+  });
+});
+
+ipcMain.on("bridge:patch-block-position", (_event, payload: unknown) => {
+  if (typeof payload !== "object" || payload === null) {
+    console.warn(`[glass] bridge:patch-block-position rejected — payload is not an object`);
+    return;
+  }
+  const { id, x, y } = payload as Record<string, unknown>;
+  if (typeof id !== "string" || typeof x !== "number" || typeof y !== "number") {
+    console.warn(`[glass] bridge:patch-block-position rejected — invalid id, x, or y`);
+    return;
+  }
+  patchBridgeBlockPosition(id, x, y);
 });
 
 app.whenReady().then(() => {

@@ -55,6 +55,7 @@ export class CodeBlock {
   language: string;
 
   private container: HTMLDivElement;
+  private gripElement: HTMLDivElement;
   private width: number;
   private height: number;
   private editor: monaco.editor.IStandaloneCodeEditor | null = null;
@@ -69,9 +70,26 @@ export class CodeBlock {
     this.width = opts.width;
     this.height = opts.height;
     this.container = container;
+    this.gripElement = document.createElement("div");
 
     this.applyStyle();
+    this.mountGrip();
     this.mountEditor();
+  }
+
+  getGripElement(): HTMLDivElement {
+    return this.gripElement;
+  }
+
+  private mountGrip(): void {
+    const g = this.gripElement;
+    g.style.width = "100%";
+    g.style.height = "16px";
+    g.style.cursor = "grab";
+    g.style.borderBottom = "1px solid rgba(200,184,154,0.08)";
+    g.style.flexShrink = "0";
+    g.style.pointerEvents = "auto";
+    this.container.appendChild(g);
   }
 
   private mountEditor(): void {

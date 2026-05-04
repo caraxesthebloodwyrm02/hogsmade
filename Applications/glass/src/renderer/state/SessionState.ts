@@ -1,16 +1,12 @@
-import type { BlockPosition } from "../../../bridge/schema";
-
 const STORAGE_KEY = "glass:session";
 
 export interface SessionData {
   sessionId: string;
-  blockPositions: Record<string, BlockPosition>;
   cameraOffset: { x: number; y: number };
 }
 
 const DEFAULT_SESSION: SessionData = {
   sessionId: "",
-  blockPositions: {},
   cameraOffset: { x: 0, y: 0 },
 };
 
