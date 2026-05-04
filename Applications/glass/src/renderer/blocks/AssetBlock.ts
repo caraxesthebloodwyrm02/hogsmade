@@ -1,4 +1,4 @@
-import type { AssetMeta, BlockOrigin } from "../../../bridge/schema";
+import type { AssetMeta, BlockOrigin, ThresholdState } from "../../../bridge/schema";
 
 export interface AssetBlockOptions {
   id: string;
@@ -22,6 +22,28 @@ const RARITY_COLORS: Record<AssetMeta["rarity"], string> = {
   mythic: "#a0524a",
 };
 
+// Z-index by rarity — legendary and mythic surface above the default depth planes.
+// For common..epic, falls through to origin-based z (agent=1, user=2).
+const RARITY_Z: Partial<Record<AssetMeta["rarity"], number>> = {
+  legendary: 3,
+  mythic: 4,
+};
+
+// Ceremony shadow overlay stacked on top of the rarity glow.
+// Rarity border-color is owned by renderAsset() and not changed here.
+const CEREMONY_SHADOW: Record<ThresholdState, string | null> = {
+  ground: null,
+  evaluating: null,
+  floor_rising: "0 0 8px rgba(196,149,106,0.10)",
+  voices_appearing: "0 0 10px rgba(196,149,106,0.15)",
+  voice_1_active: "0 0 10px rgba(196,149,106,0.18)",
+  voice_2_active: "0 0 12px rgba(196,149,106,0.20)",
+  voice_3_active: "0 0 12px rgba(196,149,106,0.22)",
+  elevated: "0 0 16px rgba(196,149,106,0.28)",
+  returning: null,
+  denied: "0 0 12px rgba(160,82,74,0.24)",
+};
+
 export class AssetBlock {
   readonly id: string;
   readonly origin: BlockOrigin;
@@ -38,6 +60,7 @@ export class AssetBlock {
   private labelElement: HTMLDivElement;
   private metaElement: HTMLDivElement;
   private contentElement: HTMLDivElement;
+  private _cachedThresholdState: ThresholdState | null = null;
 
   constructor(opts: AssetBlockOptions, container: HTMLDivElement) {
     this.id = opts.id;
@@ -88,8 +111,19 @@ export class AssetBlock {
     return Math.min(1, age / SPAWN_DURATION);
   }
 
-  updateOpacity(age: number): void {
-    this.container.style.opacity = String(this.spawnOpacity(age));
+  updateOpacity(age: number, levitationMod = 1): void {
+    this.container.style.opacity = String(this.spawnOpacity(age) * levitationMod);
+  }
+
+  setThresholdState(state: ThresholdState): void {
+    if (state === this._cachedThresholdState) return;
+    this._cachedThresholdState = state;
+    // Stack ceremony glow on top of the rarity shadow — rarity border-color stays unchanged.
+    const rarityColor = RARITY_COLORS[this.asset.rarity];
+    const overlay = CEREMONY_SHADOW[state];
+    this.container.style.boxShadow = overlay
+      ? `0 0 18px ${rarityColor}40, ${overlay}`
+      : `0 0 18px ${rarityColor}40`;
   }
 
   dispose(): void {
@@ -108,10 +142,13 @@ export class AssetBlock {
     s.border = "1px solid rgba(200, 184, 154, 0.2)";
     s.borderRadius = "10px";
     s.overflow = "hidden";
-    s.transition = "opacity 0.1s ease, box-shadow 0.2s ease, border-color 0.2s ease";
+    s.transition = "opacity 0.1s ease, box-shadow 0.6s ease, border-color 0.6s ease";
     s.pointerEvents = "auto";
     s.display = "flex";
     s.flexDirection = "column";
+    // Z-index: legendary=3 (Gold), mythic=4 (Mythic) override depth planes;
+    // otherwise origin-driven: user=2 (Silver), agent=1 (Amber).
+    s.zIndex = String(RARITY_Z[this.asset.rarity] ?? (this.origin === "user" ? 2 : 1));
   }
 
   private mountGrip(): void {

@@ -12,6 +12,23 @@ export type ThresholdState =
   | "returning"
   | "denied";
 
+export const THRESHOLD_STATES: readonly ThresholdState[] = [
+  "ground",
+  "evaluating",
+  "floor_rising",
+  "voices_appearing",
+  "voice_1_active",
+  "voice_2_active",
+  "voice_3_active",
+  "elevated",
+  "returning",
+  "denied",
+];
+
+export function isThresholdState(value: unknown): value is ThresholdState {
+  return typeof value === "string" && THRESHOLD_STATES.includes(value as ThresholdState);
+}
+
 // ─── Asset / Collectible types ──────────────────────────────────────────────
 
 /**
@@ -48,10 +65,7 @@ export const ASSET_CATEGORIES: readonly AssetCategory[] = [
   "collectible",
 ];
 
-/**
- * Rarity tiers.
- * Ceiling at mint time is enforced by RARITY_GATE[threshold_state].
- */
+/** Rarity tiers. */
 export type AssetRarity = "common" | "uncommon" | "rare" | "epic" | "legendary" | "mythic";
 
 export const ASSET_RARITIES: readonly AssetRarity[] = [
@@ -81,35 +95,120 @@ export const RARITY_ORDER: Record<AssetRarity, number> = {
   mythic: 5,
 };
 
-/**
- * Maximum rarity an agent may mint at each ThresholdState.
- *
- *   ground / evaluating          → uncommon ceiling  (early work)
- *   floor_rising                 → rare ceiling       (build is real)
- *   voices_appearing / voice_*   → epic ceiling       (voices engaged)
- *   elevated                     → mythic ceiling     (Rift crossed)
- *   returning                    → rare ceiling       (descending)
- *   denied                       → common only        (punitive gate)
- */
-export const RARITY_GATE: Record<ThresholdState, AssetRarity> = {
-  ground: "uncommon",
-  evaluating: "uncommon",
-  floor_rising: "rare",
-  voices_appearing: "epic",
-  voice_1_active: "epic",
-  voice_2_active: "epic",
-  voice_3_active: "epic",
-  elevated: "mythic",
-  returning: "rare",
-  denied: "common",
-};
+export type RarityGateMap = Record<ThresholdState, AssetRarity>;
 
 /**
- * Returns true if the requested rarity is permitted at the given ceremony state.
- * Called in main's bridge:add-block handler before accepting an asset block.
+ * Returns true if the requested rarity is permitted at the given ceremony state
+ * using a caller-provided gate map.
  */
-export function isRarityPermitted(rarity: AssetRarity, state: ThresholdState): boolean {
-  return RARITY_ORDER[rarity] <= RARITY_ORDER[RARITY_GATE[state]];
+export function isRarityPermitted(
+  rarity: AssetRarity,
+  state: ThresholdState,
+  gate: RarityGateMap,
+): boolean {
+  return RARITY_ORDER[rarity] <= RARITY_ORDER[gate[state]];
+}
+
+export interface FieldEnvelope {
+  sustain: number;
+  lfoRate: number;
+  lfoDepth: number;
+}
+
+export interface FieldDiskBusSpec {
+  scale: number;
+  brightness: number;
+  rimAlpha: number;
+}
+
+export interface FieldOvalBusSpec {
+  opacity: number;
+  lineWidth: number;
+  markerAlpha: number;
+  fieldAlpha: number;
+}
+
+export interface FieldVoiceBusSpec {
+  alpha: number;
+  scanSpeed: number;
+  glowRadius: number;
+}
+
+export interface FieldAmbientBusSpec {
+  ambientIntensity: number;
+}
+
+export interface FieldBlockBusSpec {
+  levitationMod: number;
+}
+
+export interface FieldModulationSpec {
+  envelopes: Record<ThresholdState, FieldEnvelope>;
+  base: {
+    disk: FieldDiskBusSpec;
+    oval: FieldOvalBusSpec;
+    voice: FieldVoiceBusSpec;
+    field: FieldAmbientBusSpec;
+    block: FieldBlockBusSpec;
+  };
+  recipe: {
+    disk: FieldDiskBusSpec;
+    oval: FieldOvalBusSpec;
+    voice: FieldVoiceBusSpec;
+    field: FieldAmbientBusSpec;
+    block: FieldBlockBusSpec;
+  };
+}
+
+export interface CeremonyProfile {
+  rarityGate: RarityGateMap;
+}
+
+export interface WorkflowFunctionProfile {
+  id: string;
+  label: string;
+  intent: string;
+  inputs: string[];
+  outputs: string[];
+}
+
+export interface WorkflowLaneProfile {
+  id: string;
+  label: string;
+  intent: string;
+  inputs: string[];
+  outputs: string[];
+  discoveryRoom: string[];
+}
+
+export interface WorkflowProfile {
+  goalStatement: string;
+  hardConstraints: string[];
+  functions: WorkflowFunctionProfile[];
+  lanes: WorkflowLaneProfile[];
+}
+
+export interface FieldEngineSpec {
+  physics: {
+    pulseRadiusBase: number;
+    pulseIntensityMod: number;
+    transitionSpeedUp: number;
+    transitionSpeedDown: number;
+  };
+  visuals: {
+    ovalAlphaMod: number;
+    slotIntensityMod: number;
+    presenceAlphaBase: number;
+  };
+}
+
+export interface FieldProfile {
+  profileName: string;
+  version: string;
+  modulation: FieldModulationSpec;
+  ceremony: CeremonyProfile;
+  workflow: WorkflowProfile;
+  engine: FieldEngineSpec;
 }
 
 export interface AssetMeta {
@@ -122,6 +221,21 @@ export interface AssetMeta {
   source_session: string; // session_id that minted this asset
   consumed?: boolean; // catalyst only: true once spent
   ledger_id?: string; // future: cross-ref to ~/.caraxes/glass-inventory.json
+}
+
+export type SemanticSearchSource = "block" | "asset";
+
+export interface SemanticSearchResult {
+  id: string;
+  source: SemanticSearchSource;
+  title: string;
+  snippet: string;
+  score: number;
+  matchedTerms: string[];
+  blockType?: BlockType;
+  language?: string;
+  position?: BlockPosition;
+  asset?: AssetMeta;
 }
 
 // ────────────────────────────────────────────────────────────────────────────

@@ -9,13 +9,49 @@ import { AudioEngine } from "../audio/AudioEngine";
 import { BlockManager } from "../blocks/BlockManager";
 import { CodeBlock, type CodeBlockOptions } from "../blocks/CodeBlock";
 import { AssetBlock, type AssetBlockOptions } from "../blocks/AssetBlock";
+import { NoteBlock, type NoteBlockOptions } from "../blocks/NoteBlock";
 import { BlockDragController } from "../blocks/BlockDragController";
 import { BlockSpawnMenu } from "../blocks/BlockSpawnMenu";
+import { InventoryMenu } from "../blocks/InventoryMenu";
 import { computeSignalHeat } from "./signal-heat";
 import type { FieldState } from "../state/FieldState";
-import type { BlockType, ThresholdState } from "../../../bridge/schema";
+import type {
+  BlockType,
+  FieldModulationSpec,
+  FieldProfile,
+  ThresholdState,
+} from "../../../bridge/schema";
 
-type BlockView = CodeBlock | AssetBlock;
+type BlockView = CodeBlock | AssetBlock | NoteBlock;
+
+const FALLBACK_MODULATION: FieldModulationSpec = {
+  envelopes: {
+    ground: { sustain: 0.12, lfoRate: 0.04, lfoDepth: 0.025 },
+    evaluating: { sustain: 0.5, lfoRate: 0.18, lfoDepth: 0.07 },
+    floor_rising: { sustain: 1.0, lfoRate: 0.22, lfoDepth: 0.04 },
+    voices_appearing: { sustain: 0.85, lfoRate: 0.12, lfoDepth: 0.05 },
+    voice_1_active: { sustain: 0.88, lfoRate: 0.1, lfoDepth: 0.06 },
+    voice_2_active: { sustain: 0.88, lfoRate: 0.13, lfoDepth: 0.06 },
+    voice_3_active: { sustain: 0.88, lfoRate: 0.09, lfoDepth: 0.06 },
+    elevated: { sustain: 1.0, lfoRate: 0.07, lfoDepth: 0.03 },
+    returning: { sustain: 0.25, lfoRate: 0.06, lfoDepth: 0.03 },
+    denied: { sustain: 0.08, lfoRate: 0.35, lfoDepth: 0.1 },
+  },
+  base: {
+    disk: { scale: 0.06, brightness: 0.04, rimAlpha: 0.05 },
+    oval: { opacity: 0.03, lineWidth: 0.3, markerAlpha: 0.04, fieldAlpha: 0.02 },
+    voice: { alpha: 0.0, scanSpeed: 0.4, glowRadius: 8 },
+    field: { ambientIntensity: 0.28 },
+    block: { levitationMod: 0.88 },
+  },
+  recipe: {
+    disk: { scale: 0.94, brightness: 0.96, rimAlpha: 0.95 },
+    oval: { opacity: 0.72, lineWidth: 2.1, markerAlpha: 0.82, fieldAlpha: 0.55 },
+    voice: { alpha: 0.9, scanSpeed: 1.8, glowRadius: 18 },
+    field: { ambientIntensity: 0.44 },
+    block: { levitationMod: 0.12 },
+  },
+};
 
 export class Field {
   private canvas: HTMLCanvasElement;
@@ -35,6 +71,7 @@ export class Field {
   private blockManager: BlockManager;
   private dragController: BlockDragController;
   private spawnMenu: BlockSpawnMenu;
+  private inventoryMenu: InventoryMenu;
   private blockViews: Map<string, BlockView> = new Map();
   private blockViewTypes: Map<string, BlockType> = new Map();
   private blockHost: HTMLDivElement;
@@ -68,7 +105,7 @@ export class Field {
     this.diskEngine = new DiskEngine(cx, cy);
     this.ovalStadium = new OvalStadium(cx, cy, canvas.width, canvas.height);
     this.voiceLayer = new VoiceLayer(canvas.width, canvas.height);
-    this.modEngine = new ModulationEngine();
+    this.modEngine = new ModulationEngine(FALLBACK_MODULATION);
     this.thresholdLine = new ThresholdLine(canvas.width, canvas.height);
     this.camera = new Camera();
     this.conversationLayer = new ConversationLayer(canvas.width, canvas.height);
@@ -84,6 +121,12 @@ export class Field {
     this.spawnMenu = new BlockSpawnMenu(blockHost, {
       onSpawn: (type, language, content, position) => {
         (window as any).glass?.addBlock?.(type, language, content, position);
+      },
+    });
+
+    this.inventoryMenu = new InventoryMenu(blockHost, {
+      onSpawn: (type, language, content, position, asset) => {
+        (window as any).glass?.addBlock?.(type, language, content, position, asset);
       },
     });
 
@@ -114,8 +157,21 @@ export class Field {
     });
   }
 
+  applyFieldProfile(profile: FieldProfile): void {
+    this.modEngine = new ModulationEngine(profile.modulation);
+  }
+
   restoreCameraOffset(x: number, y: number): void {
     this.camera.setPosition(x, y);
+  }
+
+  panToBlock(blockId: string): void {
+    const block = this.blockManager.blocks.find((b) => b.id === blockId);
+    if (block && block.position) {
+      const targetX = block.position.x - this.canvas.width / 2;
+      const targetY = block.position.y - this.canvas.height / 2;
+      this.camera.setTarget(targetX, targetY);
+    }
   }
 
   onCameraPan(cb: (x: number, y: number) => void): void {
@@ -160,6 +216,10 @@ export class Field {
           (window as any).glass?.patchBlockPosition?.(result.id, result.x, result.y);
         }
       }
+      if (this.panning && (e.button === 0 || e.button === 1)) {
+        this.panning = false;
+        this.notifyCameraPan();
+      }
     });
 
     canvas.addEventListener("mousedown", (e) => {
@@ -180,10 +240,16 @@ export class Field {
 
     canvas.addEventListener("click", (e) => {
       if (this.panning) return;
+      let handled = false;
       if (this.spawnMenu.isVisible()) {
         this.spawnMenu.hide();
-        return;
+        handled = true;
       }
+      if (this.inventoryMenu.isVisible()) {
+        this.inventoryMenu.hide();
+        handled = true;
+      }
+      if (handled) return;
       const ax = this.agentPresence.x;
       const ay = this.agentPresence.y;
       const dx = e.clientX + this.camera.x - ax;
@@ -205,6 +271,17 @@ export class Field {
         const cy = this.camera.y + this.canvas.height / 2;
         (window as any).glass?.addBlock?.("code", "typescript", "", { x: cx, y: cy });
       }
+      if ((e.ctrlKey || e.metaKey) && e.code === "KeyI") {
+        e.preventDefault();
+        if (this.inventoryMenu.isVisible()) {
+          this.inventoryMenu.hide();
+        } else {
+          this.spawnMenu.hide();
+          const screenX = this.canvas.width / 2 - 140;
+          const screenY = this.canvas.height / 2 - 150;
+          this.inventoryMenu.show(screenX, screenY, this.camera.x, this.camera.y);
+        }
+      }
     });
 
     window.addEventListener("keyup", (e) => {
@@ -217,6 +294,7 @@ export class Field {
 
     canvas.addEventListener("contextmenu", (e) => {
       e.preventDefault();
+      if (this.inventoryMenu.isVisible()) this.inventoryMenu.hide();
       this.spawnMenu.show(e.clientX, e.clientY, this.camera.x, this.camera.y);
     });
   }
@@ -229,6 +307,12 @@ export class Field {
   private resize(): void {
     this.canvas.width = this.paneOpen ? window.innerWidth - this.paneWidth : window.innerWidth;
     this.canvas.height = window.innerHeight;
+    const cx = this.canvas.width * 0.5;
+    const cy = this.canvas.height * 0.48;
+    this.agentPresence?.reposition(cx, cy);
+    this.diskEngine?.reposition(cx, cy);
+    this.ovalStadium?.resize(cx, cy, this.canvas.width, this.canvas.height);
+    this.voiceLayer?.resize(this.canvas.width, this.canvas.height);
     this.thresholdLine?.resize(this.canvas.width, this.canvas.height);
     this.conversationLayer?.resize(this.canvas.width, this.canvas.height);
   }
@@ -265,7 +349,8 @@ export class Field {
     this.thresholdLine.tick(dt, this.thresholdState);
     this.conversationLayer.tick(dt);
     this.blockManager.tick(dt);
-    this.updateBlockOpacities();
+    this.updateBlockOpacities(bus.block.levitationMod);
+    this.updateBlockColorTemp(this.thresholdState);
 
     const audioParams = AudioEngine.deriveParams(bus.field.ambientIntensity, this.thresholdState);
     this.audioEngine.update(audioParams);
@@ -340,6 +425,17 @@ export class Field {
             asset: block.asset,
           };
           blockView = new AssetBlock(opts, container);
+        } else if (block.type === "note") {
+          const opts: NoteBlockOptions = {
+            id: block.id,
+            content: block.content,
+            x: block.position.x,
+            y: block.position.y,
+            width: 320,
+            height: 240,
+            origin: block.origin,
+          };
+          blockView = new NoteBlock(opts, container);
         } else {
           const opts: CodeBlockOptions = {
             id: block.id,
@@ -381,10 +477,16 @@ export class Field {
     }
   }
 
-  private updateBlockOpacities(): void {
+  private updateBlockOpacities(levitationMod: number): void {
     for (const block of this.blockManager.getAll()) {
       const cb = this.blockViews.get(block.id);
-      cb?.updateOpacity(block.spawnAge);
+      cb?.updateOpacity(block.spawnAge, levitationMod);
+    }
+  }
+
+  private updateBlockColorTemp(state: ThresholdState): void {
+    for (const cb of this.blockViews.values()) {
+      cb.setThresholdState(state);
     }
   }
 

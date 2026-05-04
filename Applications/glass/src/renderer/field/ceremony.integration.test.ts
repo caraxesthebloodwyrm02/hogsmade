@@ -5,6 +5,7 @@ import { ThresholdLine } from "./ThresholdLine";
 import { VoiceSequencer } from "./VoiceSequencer";
 import {
   DEFAULT_BRIDGE_STATE,
+  type FieldProfile,
   type ThresholdState,
   type BridgeVoice,
 } from "../../../bridge/schema";
@@ -24,9 +25,62 @@ function simulate(
   return bus!;
 }
 
+const TEST_PROFILE: FieldProfile = {
+  profileName: "Test Profile",
+  version: "1.0.0",
+  modulation: {
+    envelopes: {
+      ground: { sustain: 0.12, lfoRate: 0.04, lfoDepth: 0.025 },
+      evaluating: { sustain: 0.5, lfoRate: 0.18, lfoDepth: 0.07 },
+      floor_rising: { sustain: 1, lfoRate: 0.22, lfoDepth: 0.04 },
+      voices_appearing: { sustain: 0.85, lfoRate: 0.12, lfoDepth: 0.05 },
+      voice_1_active: { sustain: 0.88, lfoRate: 0.1, lfoDepth: 0.06 },
+      voice_2_active: { sustain: 0.88, lfoRate: 0.13, lfoDepth: 0.06 },
+      voice_3_active: { sustain: 0.88, lfoRate: 0.09, lfoDepth: 0.06 },
+      elevated: { sustain: 1, lfoRate: 0.07, lfoDepth: 0.03 },
+      returning: { sustain: 0.25, lfoRate: 0.06, lfoDepth: 0.03 },
+      denied: { sustain: 0.08, lfoRate: 0.35, lfoDepth: 0.1 },
+    },
+    base: {
+      disk: { scale: 0.06, brightness: 0.04, rimAlpha: 0.05 },
+      oval: { opacity: 0.03, lineWidth: 0.3, markerAlpha: 0.04, fieldAlpha: 0.02 },
+      voice: { alpha: 0, scanSpeed: 0.4, glowRadius: 8 },
+      field: { ambientIntensity: 0.28 },
+      block: { levitationMod: 0.88 },
+    },
+    recipe: {
+      disk: { scale: 0.94, brightness: 0.96, rimAlpha: 0.95 },
+      oval: { opacity: 0.72, lineWidth: 2.1, markerAlpha: 0.82, fieldAlpha: 0.55 },
+      voice: { alpha: 0.9, scanSpeed: 1.8, glowRadius: 18 },
+      field: { ambientIntensity: 0.44 },
+      block: { levitationMod: 0.12 },
+    },
+  },
+  ceremony: {
+    rarityGate: {
+      ground: "uncommon",
+      evaluating: "uncommon",
+      floor_rising: "rare",
+      voices_appearing: "epic",
+      voice_1_active: "epic",
+      voice_2_active: "epic",
+      voice_3_active: "epic",
+      elevated: "mythic",
+      returning: "rare",
+      denied: "common",
+    },
+  },
+  workflow: {
+    goalStatement: "test",
+    hardConstraints: ["test"],
+    functions: [],
+    lanes: [],
+  },
+};
+
 describe("ceremony integration", () => {
   it("full cycle: ground → evaluating → floor_rising → voices_appearing → elevated → returning → ground", () => {
-    const engine = new ModulationEngine();
+    const engine = new ModulationEngine(TEST_PROFILE.modulation);
     const line = new ThresholdLine(1400, 900);
 
     // ground — quiet
@@ -66,7 +120,7 @@ describe("ceremony integration", () => {
 
   it("voice sequencer maps to correct threshold states", () => {
     const seq = new VoiceSequencer();
-    const engine = new ModulationEngine();
+    const engine = new ModulationEngine(TEST_PROFILE.modulation);
 
     seq.begin();
     expect(VoiceSequencer.thresholdStateForVoice(seq.state)).toBe("voice_1_active");
@@ -121,7 +175,7 @@ describe("ceremony integration", () => {
   });
 
   it("denied state produces distinct visual signature", () => {
-    const engine = new ModulationEngine();
+    const engine = new ModulationEngine(TEST_PROFILE.modulation);
     const line = new ThresholdLine(1400, 900);
 
     simulate(engine, line, "evaluating", 0.5, 100);

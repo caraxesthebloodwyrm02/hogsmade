@@ -66,6 +66,11 @@ export class AgentPresence {
     this.y = cy;
   }
 
+  reposition(cx: number, cy: number): void {
+    this.x = cx;
+    this.y = cy;
+  }
+
   setAgentState(state: AgentState): void {
     this.active = state === "writing" || state === "thinking";
   }
@@ -294,6 +299,12 @@ export class VoicePresence {
     this.voice = voice;
   }
 
+  resize(canvasWidth: number, canvasHeight: number): void {
+    const pos = this.anchorPosition(this.voice.position, canvasWidth, canvasHeight);
+    this.x = pos.x;
+    this.y = pos.y;
+  }
+
   draw(ctx: CanvasRenderingContext2D, dt: number): void {
     // fade in when active
     const targetAppear = this.voice.active ? 1 : 0;
@@ -496,6 +507,14 @@ export class VoiceLayer {
   constructor(canvasWidth: number, canvasHeight: number) {
     this.canvasWidth = canvasWidth;
     this.canvasHeight = canvasHeight;
+  }
+
+  resize(canvasWidth: number, canvasHeight: number): void {
+    this.canvasWidth = canvasWidth;
+    this.canvasHeight = canvasHeight;
+    for (const presence of this.presences.values()) {
+      presence.resize(canvasWidth, canvasHeight);
+    }
   }
 
   update(voices: BridgeVoice[], thresholdState: ThresholdState): void {

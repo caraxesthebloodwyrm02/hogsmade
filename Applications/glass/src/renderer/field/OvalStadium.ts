@@ -56,6 +56,13 @@ export class OvalStadium {
     if (slot) slot.active = active;
   }
 
+  resize(cx: number, cy: number, canvasWidth: number, canvasHeight: number): void {
+    this.cx = cx;
+    this.cy = cy;
+    this.rx = canvasWidth * 0.38;
+    this.ry = canvasHeight * 0.28;
+  }
+
   draw(ctx: CanvasRenderingContext2D, bus: OvalBus): void {
     if (bus.opacity < 0.005) return;
 

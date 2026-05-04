@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from "electron";
-import type { BridgeState } from "../../bridge/schema";
+import type { BridgeState, FieldProfile, SemanticSearchResult } from "../../bridge/schema";
 
 contextBridge.exposeInMainWorld("glass", {
   onBridgeUpdate: (cb: (state: BridgeState) => void) => {
@@ -17,17 +17,35 @@ contextBridge.exposeInMainWorld("glass", {
     language: string,
     content: string,
     position: { x: number; y: number },
+    asset?: any,
   ) => {
-    ipcRenderer.send("bridge:add-block", { type, language, content, position, origin: "user" });
+    ipcRenderer.send("bridge:add-block", {
+      type,
+      language,
+      content,
+      position,
+      origin: "user",
+      asset,
+    });
   },
   patchBlockPosition: (id: string, x: number, y: number) => {
     ipcRenderer.send("bridge:patch-block-position", { id, x, y });
   },
-  onSimilarityResults: (cb: (results: unknown[]) => void) => {
-    ipcRenderer.removeAllListeners("pane:similarity-results");
-    ipcRenderer.on("pane:similarity-results", (_event, results: unknown[]) => cb(results));
+  deleteBlock: (id: string) => {
+    ipcRenderer.send("bridge:delete-block", { id });
   },
-  togglePane: (open: boolean) => {
-    ipcRenderer.send("pane:toggle", { open });
+  listAssets: () => {
+    return ipcRenderer.invoke("bridge:list-assets");
+  },
+  searchSemantic: (query: string, limit = 8) => {
+    return ipcRenderer.invoke("search:semantic", { query, limit }) as Promise<
+      SemanticSearchResult[]
+    >;
+  },
+  getFieldProfile: () => {
+    return ipcRenderer.invoke("config:get-field-profile") as Promise<FieldProfile | null>;
+  },
+  triggerCeremony: (state: string) => {
+    ipcRenderer.send("bridge:trigger-ceremony", { state });
   },
 });

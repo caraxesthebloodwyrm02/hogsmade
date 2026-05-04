@@ -1,4 +1,6 @@
 import { app, BrowserWindow, session, ipcMain } from "electron";
+import { readFile } from "fs/promises";
+import os from "os";
 import path from "path";
 import {
   startBridgeWatcher,
@@ -6,9 +8,51 @@ import {
   appendConversationTurn,
   addBridgeBlock,
   patchBridgeBlockPosition,
+  deleteBridgeBlock,
+  setBridgeFieldProfile,
+  setBridgeThresholdState,
 } from "./bridge-watcher";
+import { loadFieldProfile } from "./field-profile";
+import { searchLocalSemantic } from "./local-search";
+import type { BridgeState, FieldProfile } from "../../bridge/schema";
+
+if (process.platform === "linux" && process.env.NODE_ENV === "development") {
+  app.commandLine.appendSwitch("disable-gpu");
+  app.commandLine.appendSwitch("disable-software-rasterizer");
+  app.disableHardwareAcceleration();
+}
 
 app.enableSandbox();
+
+let latestBridgeState: BridgeState | null = null;
+let activeFieldProfile: FieldProfile | null = null;
+
+async function readInventoryAssets(): Promise<Record<string, unknown>[]> {
+  const inventoryPath =
+    process.env.GLASS_INVENTORY_PATH ?? path.join(os.homedir(), ".caraxes", "glass-inventory.json");
+  try {
+    const raw = await readFile(inventoryPath, "utf-8");
+    return JSON.parse(raw).assets || [];
+  } catch (err: unknown) {
+    if ((err as NodeJS.ErrnoException).code !== "ENOENT") {
+      console.warn(
+        `[glass] bridge:list-assets failed: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
+    return [];
+  }
+}
+
+function sendBridgeUpdate(win: BrowserWindow, state: BridgeState): void {
+  if (win.isDestroyed()) return;
+  win.webContents.send("bridge:update", state);
+}
+
+function broadcastBridgeUpdate(state: BridgeState): void {
+  for (const win of BrowserWindow.getAllWindows()) {
+    sendBridgeUpdate(win, state);
+  }
+}
 
 function createWindow(): BrowserWindow {
   const win = new BrowserWindow({
@@ -45,6 +89,10 @@ function createWindow(): BrowserWindow {
         ],
       },
     });
+  });
+
+  win.webContents.on("did-finish-load", () => {
+    if (latestBridgeState) sendBridgeUpdate(win, latestBridgeState);
   });
 
   if (process.env.NODE_ENV === "development") {
@@ -126,11 +174,73 @@ ipcMain.on("bridge:patch-block-position", (_event, payload: unknown) => {
   patchBridgeBlockPosition(id, x, y);
 });
 
+ipcMain.on("bridge:delete-block", (_event, payload: unknown) => {
+  if (typeof payload !== "object" || payload === null) {
+    console.warn(`[glass] bridge:delete-block rejected — payload is not an object`);
+    return;
+  }
+  const { id } = payload as Record<string, unknown>;
+  if (typeof id !== "string") {
+    console.warn(`[glass] bridge:delete-block rejected — id is not a string`);
+    return;
+  }
+  deleteBridgeBlock(id);
+});
+
+ipcMain.handle("bridge:list-assets", async () => {
+  return readInventoryAssets();
+});
+
+ipcMain.handle("search:semantic", async (_event, payload: unknown) => {
+  const query =
+    typeof payload === "object" &&
+    payload !== null &&
+    typeof (payload as { query?: unknown }).query === "string"
+      ? (payload as { query: string }).query
+      : "";
+  const limit =
+    typeof payload === "object" &&
+    payload !== null &&
+    typeof (payload as { limit?: unknown }).limit === "number"
+      ? Math.max(1, Math.min(20, (payload as { limit: number }).limit))
+      : 8;
+  if (!query.trim()) return [];
+  const assets = await readInventoryAssets();
+  return searchLocalSemantic(query, latestBridgeState, assets, limit);
+});
+
+ipcMain.handle("config:get-field-profile", async () => {
+  return activeFieldProfile;
+});
+
+ipcMain.on("bridge:trigger-ceremony", (_event, payload: unknown) => {
+  if (typeof payload !== "object" || payload === null) {
+    console.warn("[glass] bridge:trigger-ceremony rejected — payload is not an object");
+    return;
+  }
+  const { state } = payload as Record<string, unknown>;
+  if (typeof state !== "string") {
+    console.warn("[glass] bridge:trigger-ceremony rejected — state is not a string");
+    return;
+  }
+  setBridgeThresholdState(state);
+});
+
 app.whenReady().then(() => {
-  const win = createWindow();
+  const loadedProfile = loadFieldProfile(app.getAppPath());
+  activeFieldProfile = loadedProfile.profile;
+  setBridgeFieldProfile(loadedProfile.profile);
+  console.log(
+    `[glass] loaded field-profile from ${loadedProfile.resolvedPath}${
+      loadedProfile.usedOverride ? " (override)" : ""
+    }`,
+  );
+
+  createWindow();
 
   startBridgeWatcher((state) => {
-    win.webContents.send("bridge:update", state);
+    latestBridgeState = state;
+    broadcastBridgeUpdate(state);
   });
 
   app.on("activate", () => {

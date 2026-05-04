@@ -9,7 +9,7 @@ export interface VoiceProfile {
 }
 
 export interface CeremonyConfig {
-  auto_evaluate_after_commits?: number;
+  auto_evaluate_after_iterations?: number;
   auto_return_after_idle_minutes?: number;
 }
 
@@ -54,11 +54,74 @@ export interface GlassProfile {
 function parseYaml(raw: string): Record<string, unknown> {
   const result: Record<string, unknown> = {};
   const lines = raw.split("\n");
-  const stack: { indent: number; obj: Record<string, unknown> }[] = [{ indent: -1, obj: result }];
+  const stack: { indent: number; obj: any; parent?: any; key?: string | number }[] = [
+    { indent: -1, obj: result },
+  ];
 
   for (const line of lines) {
     const trimmed = line.trimStart();
     if (!trimmed || trimmed.startsWith("#")) continue;
+
+    if (trimmed.startsWith("- ")) {
+      const indent = line.length - trimmed.length;
+
+      while (stack.length > 1 && stack[stack.length - 1].indent >= indent) {
+        stack.pop();
+      }
+
+      const top = stack[stack.length - 1];
+
+      if (
+        top.obj &&
+        typeof top.obj === "object" &&
+        !Array.isArray(top.obj) &&
+        Object.keys(top.obj).length === 0
+      ) {
+        top.obj = [];
+        if (top.parent && top.key !== undefined) {
+          top.parent[top.key] = top.obj;
+        }
+      }
+
+      let value: any = trimmed.slice(2).trim();
+      let parsedValue: any = value;
+
+      if (value && value.length > 0) {
+        if (value.startsWith('"') && value.endsWith('"')) {
+          value = value.slice(1, -1);
+        } else if (value.startsWith("'") && value.endsWith("'")) {
+          value = value.slice(1, -1);
+        }
+        const num = Number(value);
+        parsedValue = !isNaN(num) && value.length > 0 ? num : value;
+      }
+
+      if (Array.isArray(top.obj)) {
+        if (value === "") {
+          const child = {};
+          top.obj.push(child);
+          stack.push({ indent: indent, obj: child, parent: top.obj, key: top.obj.length - 1 });
+        } else {
+          const inlineMatch = value.match(/^([^:]+):\s*(.*)/);
+          if (inlineMatch) {
+            const k = inlineMatch[1].trim();
+            let v = inlineMatch[2].trim();
+            const child: any = {};
+            if (v) {
+              if (v.startsWith('"') && v.endsWith('"')) v = v.slice(1, -1);
+              else if (v.startsWith("'") && v.endsWith("'")) v = v.slice(1, -1);
+              const n = Number(v);
+              child[k] = !isNaN(n) && v.length > 0 ? n : v;
+            }
+            top.obj.push(child);
+            stack.push({ indent: indent, obj: child, parent: top.obj, key: top.obj.length - 1 });
+          } else {
+            top.obj.push(parsedValue);
+          }
+        }
+      }
+      continue;
+    }
 
     const indent = line.length - trimmed.length;
     const match = trimmed.match(/^([^:]+):\s*(.*)/);
@@ -70,10 +133,13 @@ function parseYaml(raw: string): Record<string, unknown> {
     while (stack.length > 1 && stack[stack.length - 1].indent >= indent) {
       stack.pop();
     }
-    const parent = stack[stack.length - 1].obj;
+    const top = stack[stack.length - 1];
+    const parent = top.obj;
 
     if (value && value.length > 0) {
       if (value.startsWith('"') && value.endsWith('"')) {
+        value = value.slice(1, -1);
+      } else if (value.startsWith("'") && value.endsWith("'")) {
         value = value.slice(1, -1);
       }
       const num = Number(value);
@@ -81,7 +147,7 @@ function parseYaml(raw: string): Record<string, unknown> {
     } else {
       const child: Record<string, unknown> = {};
       parent[key] = child;
-      stack.push({ indent, obj: child });
+      stack.push({ indent, obj: child, parent, key });
     }
   }
 
@@ -111,8 +177,8 @@ function validateProfile(raw: Record<string, unknown>): GlassProfile {
   if (raw.ceremony && typeof raw.ceremony === "object") {
     const c = raw.ceremony as Record<string, unknown>;
     profile.ceremony = {};
-    if (typeof c.auto_evaluate_after_commits === "number") {
-      profile.ceremony.auto_evaluate_after_commits = c.auto_evaluate_after_commits;
+    if (typeof c.auto_evaluate_after_iterations === "number") {
+      profile.ceremony.auto_evaluate_after_iterations = c.auto_evaluate_after_iterations;
     }
     if (typeof c.auto_return_after_idle_minutes === "number") {
       profile.ceremony.auto_return_after_idle_minutes = c.auto_return_after_idle_minutes;

@@ -18,7 +18,7 @@ voices:
 
 # --- Ceremony triggers ---
 ceremony:
-  auto_evaluate_after_commits: 5
+  auto_evaluate_after_iterations: 15
   auto_return_after_idle_minutes: 10
 
 # --- Signal thresholds ---
@@ -26,6 +26,7 @@ signals:
   hot_threshold:
     git_diff_lines: 200
     iteration_count: 15
+    session_age_minutes: 60
 
 # --- Earth palette (from session-env.jsx) ---
 # Used by bridge consumers to derive field tuning.
@@ -87,3 +88,21 @@ presets:
     modulation_notes:
       envelope: "evaluating — sustain: 0.15, lfoRate: 0.06, lfoDepth: 0.04"
       character: "field darkens, threshold line appears, spaceman pulses"
+  autonomy-card-demo:
+    description: "Session initialized with an autonomy card note."
+    captured: "2026-05-04"
+    bridge:
+      threshold_state: ground
+      progress: 0
+      agent_state: idle
+      voices: []
+      blocks:
+        - id: "block_autonomy_card"
+          type: "note"
+          language: "markdown"
+          content: "Autonomy Card\n\n- Safety: 1.0\n- Correctness: 0.85\n- Autonomy: 0.7\n\nProceed with caution but resolve issues autonomously."
+          position:
+            x: 50
+            y: 50
+          origin: "preset"
+      conversation: []

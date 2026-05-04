@@ -5,13 +5,14 @@
  * Electron renderer can visualize live agent sessions.
  *
  * Tools:
- *   glass_bridge_write      — partial-patch merge into the bridge file
- *   glass_session_start     — initialize a fresh session (zeroes signals, ground state)
- *   glass_emit_turn         — append a conversation turn + update agent_state
- *   glass_session_resume    — read bridge state summary
- *   glass_update_signals    — lightweight signal-only update (drives field modulation)
- *   glass_pending_messages  — return unread user messages since last consumption (HWM)
- *   glass_assets_list       — list durable semantic assets from the inventory ledger
+ *   glass_bridge_write         — partial-patch merge into the bridge file
+ *   glass_session_start        — initialize a fresh session (zeroes signals, ground state)
+ *   glass_emit_turn            — append a conversation turn + update agent_state
+ *   glass_session_resume       — read bridge state summary
+ *   glass_update_signals       — lightweight signal-only update (drives field modulation)
+ *   glass_pending_messages     — return unread user messages since last consumption (HWM)
+ *   glass_assets_list          — list durable semantic assets from the inventory ledger
+ *   glass_query_spatial_state  — read block positions, distance from Spaceman, staleness scores
  */
 
 import { emitAudit } from "@cascade/shared-types/audit-client";
@@ -255,7 +256,10 @@ export function buildServer(): McpServer {
 
         // Store ceremony thresholds in-memory so they survive Electron bridge round-trips
         // that strip unknown keys via validateBridgeState().
-        ceremonyEvalThreshold = profile?.signals?.hot_threshold?.iteration_count ?? 15;
+        ceremonyEvalThreshold =
+          profile?.ceremony?.auto_evaluate_after_iterations ??
+          profile?.signals?.hot_threshold?.iteration_count ??
+          15;
         if (profile?.ceremony?.auto_return_after_idle_minutes !== undefined) {
           ceremonyIdleMinutes = profile.ceremony.auto_return_after_idle_minutes;
         } else {
@@ -264,7 +268,7 @@ export function buildServer(): McpServer {
 
         // Write ceremony thresholds from profile (or defaults) so glass_evaluate_ceremony
         // can read them directly without re-parsing YAML.
-        state._ceremony_eval_threshold = profile?.signals?.hot_threshold?.iteration_count ?? 15;
+        state._ceremony_eval_threshold = ceremonyEvalThreshold;
         if (profile?.ceremony?.auto_return_after_idle_minutes !== undefined) {
           state._ceremony_idle_minutes = profile.ceremony.auto_return_after_idle_minutes;
         }
@@ -515,12 +519,31 @@ export function buildServer(): McpServer {
             : {};
 
         const updatedSignals: Record<string, unknown> = { ...currentSignals };
-        if (params.git_diff_lines !== undefined)
+        const workspace =
+          typeof current._profile_workspace === "string" ? current._profile_workspace : null;
+
+        const isAutoUpdate = Object.keys(params).length === 0;
+
+        if (params.git_diff_lines !== undefined) {
           updatedSignals.git_diff_lines = params.git_diff_lines;
-        if (params.iteration_count !== undefined)
+        } else if (isAutoUpdate || typeof currentSignals.git_diff_lines !== "number") {
+          updatedSignals.git_diff_lines = computeGitDiffLines(workspace);
+        }
+
+        if (params.iteration_count !== undefined) {
           updatedSignals.iteration_count = params.iteration_count;
-        if (params.session_age_minutes !== undefined)
+        } else if (isAutoUpdate) {
+          updatedSignals.iteration_count =
+            (typeof currentSignals.iteration_count === "number"
+              ? currentSignals.iteration_count
+              : 0) + 1;
+        }
+
+        if (params.session_age_minutes !== undefined) {
           updatedSignals.session_age_minutes = params.session_age_minutes;
+        } else if (isAutoUpdate || typeof currentSignals.session_age_minutes !== "number") {
+          updatedSignals.session_age_minutes = Math.round((Date.now() - sessionStartedAt) / 60000);
+        }
 
         const patch = { signals: updatedSignals };
         const merged = await writeBridge(patch);
@@ -927,6 +950,130 @@ export function buildServer(): McpServer {
         emitAudit({
           source: SERVER_NAME,
           tool: "glass_assets_list",
+          status: "error",
+          durationMs: Date.now() - startMs,
+          metadata: { error: String(error) },
+        });
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({ error: String(error) }) }],
+          isError: true,
+        };
+      }
+    },
+  );
+
+  // ── glass_query_spatial_state ──
+
+  tool(
+    "glass_query_spatial_state",
+    "Read the current spatial layout of all blocks in the field. Returns each block's position, distance from the Spaceman anchor (canvas center 700,450), and a normalized staleness score (0.0=fresh/close, 1.0=stale/far). Stale candidates are the farthest blocks from the anchor — prime targets for eviction or repositioning proposals.",
+    {
+      stale_limit: z
+        .number()
+        .int()
+        .min(1)
+        .max(20)
+        .optional()
+        .describe("Max stale candidates to surface (default: 3)"),
+    },
+    async ({ stale_limit }: { stale_limit?: number }) => {
+      const startMs = Date.now();
+      try {
+        const state = await readBridge();
+        const blocks = Array.isArray(state.blocks)
+          ? (state.blocks as Array<Record<string, unknown>>)
+          : [];
+
+        // Spaceman anchor: canvas center of the default 1400×900 window.
+        // This is the visual gravity well — blocks closer to (700,450) are fresher.
+        const SPACEMAN_X = 700;
+        const SPACEMAN_Y = 450;
+        // Normalisation ceiling: half-diagonal of canvas ≈ 830px
+        const MAX_DIST = Math.sqrt(SPACEMAN_X ** 2 + SPACEMAN_Y ** 2);
+
+        const spatialBlocks = blocks.map((b) => {
+          const pos =
+            b.position && typeof b.position === "object"
+              ? (b.position as Record<string, unknown>)
+              : {};
+          const bx = typeof pos.x === "number" ? pos.x : 0;
+          const by = typeof pos.y === "number" ? pos.y : 0;
+          const dist = Math.sqrt((bx - SPACEMAN_X) ** 2 + (by - SPACEMAN_Y) ** 2);
+          const stalenessScore = Math.min(1, dist / MAX_DIST);
+          return {
+            id: String(b.id ?? ""),
+            type: String(b.type ?? ""),
+            origin: String(b.origin ?? ""),
+            position: { x: bx, y: by },
+            distance_from_spaceman: Math.round(dist * 10) / 10,
+            staleness_score: Math.round(stalenessScore * 1000) / 1000,
+          };
+        });
+
+        // Stale candidates: top N farthest blocks from anchor
+        const limit = stale_limit ?? 3;
+        const stale_candidates = [...spatialBlocks]
+          .sort((a, b) => b.distance_from_spaceman - a.distance_from_spaceman)
+          .slice(0, limit)
+          .map((b) => b.id);
+
+        // Field heat: max normalised signal vs hot_threshold, clamped 0–1
+        const signals =
+          state.signals && typeof state.signals === "object"
+            ? (state.signals as Record<string, unknown>)
+            : {};
+        const hotThreshold =
+          state._hot_threshold && typeof state._hot_threshold === "object"
+            ? (state._hot_threshold as Record<string, unknown>)
+            : {};
+        const iterHeat =
+          typeof signals.iteration_count === "number" &&
+          typeof hotThreshold.iteration_count === "number" &&
+          hotThreshold.iteration_count > 0
+            ? signals.iteration_count / hotThreshold.iteration_count
+            : 0;
+        const diffHeat =
+          typeof signals.git_diff_lines === "number" &&
+          typeof hotThreshold.git_diff_lines === "number" &&
+          hotThreshold.git_diff_lines > 0
+            ? signals.git_diff_lines / hotThreshold.git_diff_lines
+            : 0;
+        const fieldHeat = Math.min(1, Math.max(iterHeat, diffHeat));
+        const isHot = fieldHeat >= 1.0;
+
+        emitAudit({
+          source: SERVER_NAME,
+          tool: "glass_query_spatial_state",
+          status: "success",
+          durationMs: Date.now() - startMs,
+          metadata: { block_count: blocks.length, field_heat: fieldHeat, is_hot: isHot },
+        });
+
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: JSON.stringify(
+                {
+                  ok: true,
+                  spaceman_position: { x: SPACEMAN_X, y: SPACEMAN_Y },
+                  threshold_state: state.threshold_state ?? "ground",
+                  field_heat: Math.round(fieldHeat * 1000) / 1000,
+                  is_hot: isHot,
+                  block_count: blocks.length,
+                  stale_candidates,
+                  blocks: spatialBlocks,
+                },
+                null,
+                2,
+              ),
+            },
+          ],
+        };
+      } catch (error) {
+        emitAudit({
+          source: SERVER_NAME,
+          tool: "glass_query_spatial_state",
           status: "error",
           durationMs: Date.now() - startMs,
           metadata: { error: String(error) },

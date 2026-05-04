@@ -6,6 +6,8 @@ import {
   isAssetCategory,
   isAssetRarity,
   isRarityPermitted,
+  isThresholdState,
+  THRESHOLD_STATES,
   type BridgeState,
 } from "../../bridge/schema";
 import type {
@@ -14,6 +16,8 @@ import type {
   BlockOrigin,
   BlockType,
   BridgeBlock,
+  FieldProfile,
+  BridgeVoice,
   ThresholdState,
 } from "../../bridge/schema";
 
@@ -31,19 +35,11 @@ const VALID_AGENT_STATES = new Set<string>([
   "reviewing",
   "elevated",
 ]);
-const VALID_THRESHOLD_STATES = new Set<string>([
-  "ground",
-  "evaluating",
-  "floor_rising",
-  "voices_appearing",
-  "voice_1_active",
-  "voice_2_active",
-  "voice_3_active",
-  "elevated",
-  "returning",
-  "denied",
-]);
+const VALID_THRESHOLD_STATES = new Set<string>(THRESHOLD_STATES);
 const VALID_BLOCK_TYPES = new Set<string>(["code", "note", "output", "asset"]);
+const VALID_VOICE_IDS = new Set<string>(["I", "II", "III"]);
+const VALID_VOICE_COLORS = new Set<string>(["amber", "silver", "gold"]);
+const VALID_VOICE_POSITIONS = new Set<string>(["left", "center", "right"]);
 
 function clampNumber(v: unknown, min: number, max: number, fallback: number): number {
   if (typeof v !== "number" || !isFinite(v)) return fallback;
@@ -55,8 +51,14 @@ function clampString(v: unknown, max: number, fallback: string): string {
   return v.length > max ? v.slice(0, max) : v;
 }
 
-function isThresholdState(value: unknown): value is ThresholdState {
-  return typeof value === "string" && VALID_THRESHOLD_STATES.has(value);
+let activeFieldProfile: FieldProfile | null = null;
+
+export function setBridgeFieldProfile(profile: FieldProfile): void {
+  activeFieldProfile = profile;
+}
+
+function currentRarityGate(profile: FieldProfile | null) {
+  return profile?.ceremony.rarityGate ?? null;
 }
 
 function validateAssetMeta(
@@ -68,9 +70,11 @@ function validateAssetMeta(
 
   const a = raw as Record<string, unknown>;
   if (!isAssetCategory(a.category) || !isAssetRarity(a.rarity)) return null;
+  const rarityGate = currentRarityGate(activeFieldProfile);
+  if (!rarityGate) return null;
 
   const sourceCeremony = isThresholdState(a.source_ceremony) ? a.source_ceremony : thresholdState;
-  if (!isRarityPermitted(a.rarity, sourceCeremony)) return null;
+  if (!isRarityPermitted(a.rarity, sourceCeremony, rarityGate)) return null;
 
   const label = clampString(a.label, 64, "");
   if (label.length === 0) return null;
@@ -132,6 +136,23 @@ function validateBridgeBlock(
   return block;
 }
 
+function validateBridgeVoice(raw: unknown): BridgeVoice | null {
+  if (raw == null || typeof raw !== "object") return null;
+
+  const v = raw as Record<string, unknown>;
+  if (!VALID_VOICE_IDS.has(v.id as string)) return null;
+  if (!VALID_VOICE_COLORS.has(v.color as string)) return null;
+  if (!VALID_VOICE_POSITIONS.has(v.position as string)) return null;
+
+  return {
+    id: v.id as BridgeVoice["id"],
+    color: v.color as BridgeVoice["color"],
+    position: v.position as BridgeVoice["position"],
+    text: clampString(v.text, MAX_TEXT, ""),
+    active: typeof v.active === "boolean" ? v.active : false,
+  };
+}
+
 function validateBridgeState(raw: unknown): BridgeState {
   if (raw == null || typeof raw !== "object") return { ...DEFAULT_BRIDGE_STATE };
 
@@ -161,7 +182,12 @@ function validateBridgeState(raw: unknown): BridgeState {
         timestamp: clampString(m?.timestamp, 64, ""),
       }))
     : [];
-  const voices = Array.isArray(r.voices) ? r.voices.slice(0, 3) : [];
+  const voices = Array.isArray(r.voices)
+    ? r.voices
+        .slice(0, 3)
+        .map(validateBridgeVoice)
+        .filter((v): v is BridgeVoice => v !== null)
+    : [];
 
   const rawSignals =
     r.signals && typeof r.signals === "object" ? (r.signals as Record<string, unknown>) : {};
@@ -307,15 +333,19 @@ export function patchBridgeBlockPosition(blockId: string, x: number, y: number):
       console.warn(`[glass] patchBridgeBlockPosition skipped — state.blocks is not an array`);
       return;
     }
-    const idx = (state.blocks as Array<Record<string, unknown>>).findIndex(
-      (b) => b?.id === blockId,
-    );
+    const idx = state.blocks.findIndex((b) => b.id === blockId);
     if (idx === -1) {
       console.warn(`[glass] patchBridgeBlockPosition skipped — blockId "${blockId}" not found`);
       return;
     }
-    (state.blocks as Array<Record<string, unknown>>)[idx] = {
-      ...(state.blocks as Array<Record<string, unknown>>)[idx],
+    if (state.blocks[idx].origin !== "user") {
+      console.warn(
+        `[glass] patchBridgeBlockPosition rejected — block "${blockId}" is not user-owned`,
+      );
+      return;
+    }
+    state.blocks[idx] = {
+      ...state.blocks[idx],
       position: { x, y },
     };
     const tmp = `${BRIDGE_PATH}.tmp.${process.pid}.pos`;
@@ -347,15 +377,17 @@ export function patchBridgeBlock(blockId: string, content: string): void {
       console.warn(`[glass] patchBridgeBlock skipped — state.blocks is not an array`);
       return;
     }
-    const idx = (state.blocks as Array<Record<string, unknown>>).findIndex(
-      (b) => b?.id === blockId,
-    );
+    const idx = state.blocks.findIndex((b) => b.id === blockId);
     if (idx === -1) {
       console.warn(`[glass] patchBridgeBlock skipped — blockId "${blockId}" not found`);
       return;
     }
-    (state.blocks as Array<Record<string, unknown>>)[idx] = {
-      ...(state.blocks as Array<Record<string, unknown>>)[idx],
+    if (state.blocks[idx].origin !== "user") {
+      console.warn(`[glass] patchBridgeBlock rejected — block "${blockId}" is not user-owned`);
+      return;
+    }
+    state.blocks[idx] = {
+      ...state.blocks[idx],
       content,
     };
     const tmp = `${BRIDGE_PATH}.tmp.${process.pid}.edit`;
@@ -370,6 +402,60 @@ export function patchBridgeBlock(blockId: string, content: string): void {
   }
 }
 
+export function deleteBridgeBlock(blockId: string): void {
+  if (typeof blockId !== "string" || blockId.length === 0 || blockId.length > 128) {
+    console.warn(
+      `[glass] deleteBridgeBlock rejected — invalid blockId: ${typeof blockId}, len=${
+        String(blockId)?.length
+      }`,
+    );
+    return;
+  }
+  try {
+    const state = readBridgeFile();
+    if (!Array.isArray(state.blocks)) {
+      console.warn(`[glass] deleteBridgeBlock skipped — state.blocks is not an array`);
+      return;
+    }
+    const idx = state.blocks.findIndex((b) => b.id === blockId);
+    if (idx === -1) {
+      console.warn(`[glass] deleteBridgeBlock skipped — blockId "${blockId}" not found`);
+      return;
+    }
+    if (state.blocks[idx].origin !== "user") {
+      console.warn(`[glass] deleteBridgeBlock rejected — block "${blockId}" is not user-owned`);
+      return;
+    }
+    state.blocks.splice(idx, 1);
+    const tmp = `${BRIDGE_PATH}.tmp.${process.pid}.del`;
+    fs.writeFileSync(tmp, JSON.stringify(state, null, 2), { encoding: "utf-8", mode: 0o600 });
+    fs.renameSync(tmp, BRIDGE_PATH);
+  } catch (err) {
+    console.error(
+      `[glass] deleteBridgeBlock failed — renderer delete not persisted: ${
+        err instanceof Error ? err.message : String(err)
+      }`,
+    );
+  }
+}
+
+export function setBridgeThresholdState(state: ThresholdState): void {
+  if (!isThresholdState(state)) {
+    console.warn(`[glass] setBridgeThresholdState rejected — invalid state: ${String(state)}`);
+    return;
+  }
+  try {
+    const current = readBridgeFile();
+    current.threshold_state = state;
+    const tmp = `${BRIDGE_PATH}.tmp.${process.pid}.ceremony`;
+    fs.writeFileSync(tmp, JSON.stringify(current, null, 2), { encoding: "utf-8", mode: 0o600 });
+    fs.renameSync(tmp, BRIDGE_PATH);
+  } catch (err) {
+    console.error(
+      `[glass] setBridgeThresholdState failed: ${err instanceof Error ? err.message : String(err)}`,
+    );
+  }
+}
 export function startBridgeWatcher(onUpdate: (state: BridgeState) => void): void {
   onUpdate(readBridgeFile());
 
@@ -395,7 +481,9 @@ export function startBridgeWatcher(onUpdate: (state: BridgeState) => void): void
   } catch (watchErr) {
     console.warn(
       `[glass] native fs.watch unavailable (${
-        watchErr instanceof Error ? (watchErr.code ?? watchErr.message) : String(watchErr)
+        watchErr instanceof Error
+          ? ((watchErr as NodeJS.ErrnoException).code ?? watchErr.message)
+          : String(watchErr)
       }) — falling back to polling`,
     );
     setInterval(() => {

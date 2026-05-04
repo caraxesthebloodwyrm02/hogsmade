@@ -122,6 +122,15 @@ describe("OvalStadium", () => {
       expect(isFinite(pos!.x)).toBe(true);
       expect(isFinite(pos!.y)).toBe(true);
     });
+
+    it("recomputes slot positions after resize", () => {
+      const before = stadium.slotPosition("voice_I");
+      stadium.resize(500, 240, 1000, 500);
+      const after = stadium.slotPosition("voice_I");
+
+      expect(after).not.toBeNull();
+      expect(after).not.toEqual(before);
+    });
   });
 
   describe("draw", () => {

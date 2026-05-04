@@ -8,10 +8,9 @@ Out:  snapshots/glass-state-YYYY-MM-DD.json
 from __future__ import annotations
 
 import json
-import os
 import re
 import sys
-from datetime import date, timezone, datetime
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -27,6 +26,7 @@ MANIFEST: list[dict] = [
     # main
     {"path": "src/main/index.ts", "category": "main", "designed": True},
     {"path": "src/main/bridge-watcher.ts", "category": "main", "designed": True},
+    {"path": "src/main/field-profile.ts", "category": "main", "designed": True},
     # preload
     {"path": "src/preload/index.ts", "category": "preload", "designed": True},
     # renderer entry
@@ -35,24 +35,61 @@ MANIFEST: list[dict] = [
     # field
     {"path": "src/renderer/field/Field.ts", "category": "field", "designed": True},
     {"path": "src/renderer/field/Presence.ts", "category": "field", "designed": True},
-    {"path": "src/renderer/field/ThresholdLine.ts", "category": "field", "designed": True},
-    {"path": "src/renderer/field/DiskEngine.ts", "category": "field", "designed": False},
-    {"path": "src/renderer/field/OvalStadium.ts", "category": "field", "designed": False},
-    {"path": "src/renderer/field/ModulationEngine.ts", "category": "field", "designed": False},
+    {
+        "path": "src/renderer/field/ThresholdLine.ts",
+        "category": "field",
+        "designed": True,
+    },
+    {
+        "path": "src/renderer/field/DiskEngine.ts",
+        "category": "field",
+        "designed": False,
+    },
+    {
+        "path": "src/renderer/field/OvalStadium.ts",
+        "category": "field",
+        "designed": False,
+    },
+    {
+        "path": "src/renderer/field/ModulationEngine.ts",
+        "category": "field",
+        "designed": False,
+    },
     # blocks
-    {"path": "src/renderer/blocks/BlockManager.ts", "category": "blocks", "designed": True},
-    {"path": "src/renderer/blocks/CodeBlock.ts", "category": "blocks", "designed": True},
+    {
+        "path": "src/renderer/blocks/BlockManager.ts",
+        "category": "blocks",
+        "designed": True,
+    },
+    {
+        "path": "src/renderer/blocks/CodeBlock.ts",
+        "category": "blocks",
+        "designed": True,
+    },
     # conversation
-    {"path": "src/renderer/conversation/ConversationLayer.ts", "category": "conversation", "designed": True},
+    {
+        "path": "src/renderer/conversation/ConversationLayer.ts",
+        "category": "conversation",
+        "designed": True,
+    },
     # state
     {"path": "src/renderer/state/FieldState.ts", "category": "state", "designed": True},
-    {"path": "src/renderer/state/SessionState.ts", "category": "state", "designed": True},
+    {
+        "path": "src/renderer/state/SessionState.ts",
+        "category": "state",
+        "designed": True,
+    },
     # assets
     {"path": "assets/spaceman.svg", "category": "assets", "designed": True},
     # config
     {"path": "electron.vite.config.ts", "category": "config", "designed": True},
+    {"path": "config/field-profile.json", "category": "config", "designed": True},
     # emergent / unplanned
-    {"path": "src/renderer/audio/AudioEngine.ts", "category": "audio", "designed": False},
+    {
+        "path": "src/renderer/audio/AudioEngine.ts",
+        "category": "audio",
+        "designed": False,
+    },
 ]
 
 EXPORT_RE = re.compile(
@@ -67,7 +104,9 @@ def scan_file(abs_path: Path) -> dict:
         return {"lines": 0, "exports": [], "mtime": None}
     lines = text.count("\n") + (1 if text and not text.endswith("\n") else 0)
     exports = EXPORT_RE.findall(text)
-    mtime = datetime.fromtimestamp(abs_path.stat().st_mtime, tz=timezone.utc).isoformat()
+    mtime = datetime.fromtimestamp(
+        abs_path.stat().st_mtime, tz=timezone.utc
+    ).isoformat()
     return {"lines": lines, "exports": exports, "mtime": mtime}
 
 
@@ -77,50 +116,47 @@ def build_inventory() -> list[dict]:
         rel = entry["path"]
         abs_path = ROOT / rel
         exists = abs_path.exists()
-        info = scan_file(abs_path) if exists else {"lines": 0, "exports": [], "mtime": None}
+        info = (
+            scan_file(abs_path)
+            if exists
+            else {"lines": 0, "exports": [], "mtime": None}
+        )
 
         status = "done" if exists and info["lines"] > 0 else "not_started"
 
-        rows.append({
-            "component": Path(rel).stem,
-            "category": entry["category"],
-            "path": rel,
-            "lines": info["lines"],
-            "status": status,
-            "designed": entry["designed"],
-            "exports": info["exports"],
-            "mtime": info["mtime"],
-        })
+        rows.append(
+            {
+                "component": Path(rel).stem,
+                "category": entry["category"],
+                "path": rel,
+                "lines": info["lines"],
+                "status": status,
+                "designed": entry["designed"],
+                "exports": info["exports"],
+                "mtime": info["mtime"],
+            }
+        )
     return rows
 
 
 def read_modulation_data() -> list[dict]:
-    """Parse ENVELOPES and RECIPE from ModulationEngine.ts for the ceremony sheet."""
-    mod_path = ROOT / "src/renderer/field/ModulationEngine.ts"
-    if not mod_path.exists():
+    """Read modulation defaults from config/field-profile.json for the ceremony sheet."""
+    profile_path = ROOT / "config/field-profile.json"
+    if not profile_path.exists():
         return []
 
-    text = mod_path.read_text(encoding="utf-8")
+    profile = json.loads(profile_path.read_text(encoding="utf-8"))
+    modulation = profile.get("modulation", {})
+    envs = modulation.get("envelopes", {})
+    base = modulation.get("base", {})
+    recipe = modulation.get("recipe", {})
 
-    env_re = re.compile(
-        r'(\w+):\s*\{\s*sustain:\s*([\d.]+),\s*lfoRate:\s*([\d.]+),\s*lfoDepth:\s*([\d.]+)\s*\}'
-    )
-    envs = {m.group(1): {"sustain": float(m.group(2)), "lfoRate": float(m.group(3)), "lfoDepth": float(m.group(4))}
-            for m in env_re.finditer(text)}
-
-    base_disk_re = re.compile(r'disk:\s*\{\s*scale:\s*([\d.]+)')
-    recipe_disk_re = re.compile(r'RECIPE[\s\S]*?disk:\s*\{\s*scale:\s*([\d.]+)')
-    base_oval_re = re.compile(r'BASE[\s\S]*?oval:\s*\{[^}]*opacity:\s*([\d.]+)')
-    recipe_oval_re = re.compile(r'RECIPE[\s\S]*?oval:\s*\{[^}]*opacity:\s*([\d.]+)')
-    base_voice_re = re.compile(r'BASE[\s\S]*?voice:\s*\{[^}]*alpha:\s*([\d.]+)')
-    recipe_voice_re = re.compile(r'RECIPE[\s\S]*?voice:\s*\{[^}]*alpha:\s*([\d.]+)')
-
-    base_disk = float(m.group(1)) if (m := base_disk_re.search(text)) else 0
-    max_disk = float(m.group(1)) if (m := recipe_disk_re.search(text)) else 0
-    base_oval = float(m.group(1)) if (m := base_oval_re.search(text)) else 0
-    max_oval = float(m.group(1)) if (m := recipe_oval_re.search(text)) else 0
-    base_voice = float(m.group(1)) if (m := base_voice_re.search(text)) else 0
-    max_voice = float(m.group(1)) if (m := recipe_voice_re.search(text)) else 0
+    base_disk = float(base.get("disk", {}).get("scale", 0))
+    max_disk = float(recipe.get("disk", {}).get("scale", 0))
+    base_oval = float(base.get("oval", {}).get("opacity", 0))
+    max_oval = float(recipe.get("oval", {}).get("opacity", 0))
+    base_voice = float(base.get("voice", {}).get("alpha", 0))
+    max_voice = float(recipe.get("voice", {}).get("alpha", 0))
 
     descriptions = {
         "ground": "Dim field, small disk, quiet ambient motion",
@@ -137,43 +173,164 @@ def read_modulation_data() -> list[dict]:
 
     rows = []
     for state_name in [
-        "ground", "evaluating", "floor_rising", "voices_appearing",
-        "voice_1_active", "voice_2_active", "voice_3_active",
-        "elevated", "returning", "denied",
+        "ground",
+        "evaluating",
+        "floor_rising",
+        "voices_appearing",
+        "voice_1_active",
+        "voice_2_active",
+        "voice_3_active",
+        "elevated",
+        "returning",
+        "denied",
     ]:
         env = envs.get(state_name, {"sustain": 0, "lfoRate": 0, "lfoDepth": 0})
-        s = env["sustain"]
-        rows.append({
-            "state": state_name,
-            "sustain": s,
-            "lfo_rate": env["lfoRate"],
-            "lfo_depth": env["lfoDepth"],
-            "disk_scale": f"{base_disk + s * max_disk:.2f}",
-            "oval_opacity": f"{base_oval + s * max_oval:.2f}",
-            "voice_alpha": f"{base_voice + s * max_voice:.2f}",
-            "description": descriptions.get(state_name, ""),
-        })
+        sustain = float(env.get("sustain", 0))
+        rows.append(
+            {
+                "state": state_name,
+                "sustain": sustain,
+                "lfo_rate": float(env.get("lfoRate", 0)),
+                "lfo_depth": float(env.get("lfoDepth", 0)),
+                "disk_scale": f"{base_disk + sustain * max_disk:.2f}",
+                "oval_opacity": f"{base_oval + sustain * max_oval:.2f}",
+                "voice_alpha": f"{base_voice + sustain * max_voice:.2f}",
+                "description": descriptions.get(state_name, ""),
+            }
+        )
     return rows
 
 
 DEV_PHASES = [
     ("0", "Cleanup", "snapshot.py + xlsx", "-", "1h", "manual run", "pending"),
     ("0", "Cleanup", "npm run typecheck", "-", "15m", "CI gate", "pending"),
-    ("1", "Morning", "Vitest setup", "-", "1h", "vitest.config.ts + first test", "not_started"),
-    ("1", "Morning", "SessionState.ts", "FieldState.ts", "2h", "test: persist/restore round-trip", "not_started"),
-    ("1", "Morning", "ThresholdLine.ts", "ModulationEngine.ts", "2h", "test: line draw/dissolve lifecycle", "not_started"),
-    ("1", "Morning", "FieldState smoke tests", "Vitest setup", "1h", "test: update + subscribe", "not_started"),
-    ("1", "Morning", "ModulationEngine tests", "Vitest setup", "1h", "test: envelope curve, bus output", "not_started"),
-    ("2", "Afternoon", "CodeBlock.ts", "monaco-editor", "3h", "test: create/focus/blur/theme", "not_started"),
-    ("2", "Afternoon", "BlockManager.ts", "CodeBlock.ts", "3h", "test: CRUD, position, bridge sync", "not_started"),
-    ("2", "Afternoon", "Block spawn animation", "BlockManager.ts", "2h", "visual: bridge write trigger", "not_started"),
-    ("3", "Evening", "ConversationLayer.ts", "Field.ts", "3h", "test: render + history pruning", "not_started"),
-    ("3", "Evening", "Audio layer", "ModulationEngine.ts", "3h", "test: context lifecycle", "not_started"),
-    ("3", "Evening", "Camera panning", "Field.ts", "2h", "test: offset tracking", "not_started"),
+    (
+        "1",
+        "Morning",
+        "Vitest setup",
+        "-",
+        "1h",
+        "vitest.config.ts + first test",
+        "not_started",
+    ),
+    (
+        "1",
+        "Morning",
+        "SessionState.ts",
+        "FieldState.ts",
+        "2h",
+        "test: persist/restore round-trip",
+        "not_started",
+    ),
+    (
+        "1",
+        "Morning",
+        "ThresholdLine.ts",
+        "ModulationEngine.ts",
+        "2h",
+        "test: line draw/dissolve lifecycle",
+        "not_started",
+    ),
+    (
+        "1",
+        "Morning",
+        "FieldState smoke tests",
+        "Vitest setup",
+        "1h",
+        "test: update + subscribe",
+        "not_started",
+    ),
+    (
+        "1",
+        "Morning",
+        "ModulationEngine tests",
+        "Vitest setup",
+        "1h",
+        "test: envelope curve, bus output",
+        "not_started",
+    ),
+    (
+        "2",
+        "Afternoon",
+        "CodeBlock.ts",
+        "monaco-editor",
+        "3h",
+        "test: create/focus/blur/theme",
+        "not_started",
+    ),
+    (
+        "2",
+        "Afternoon",
+        "BlockManager.ts",
+        "CodeBlock.ts",
+        "3h",
+        "test: CRUD, position, bridge sync",
+        "not_started",
+    ),
+    (
+        "2",
+        "Afternoon",
+        "Block spawn animation",
+        "BlockManager.ts",
+        "2h",
+        "visual: bridge write trigger",
+        "not_started",
+    ),
+    (
+        "3",
+        "Evening",
+        "ConversationLayer.ts",
+        "Field.ts",
+        "3h",
+        "test: render + history pruning",
+        "not_started",
+    ),
+    (
+        "3",
+        "Evening",
+        "Audio layer",
+        "ModulationEngine.ts",
+        "3h",
+        "test: context lifecycle",
+        "not_started",
+    ),
+    (
+        "3",
+        "Evening",
+        "Camera panning",
+        "Field.ts",
+        "2h",
+        "test: offset tracking",
+        "not_started",
+    ),
     ("4", "Rest", "spaceman.svg", "-", "2h", "visual: load as Image", "not_started"),
-    ("4", "Rest", "Voice sequencing", "VoiceLayer", "2h", "test: state machine progression", "not_started"),
-    ("4", "Rest", "Oval slot wiring", "OvalStadium.ts", "1h", "test: bridge → slot activation", "not_started"),
-    ("4", "Rest", "Full ceremony test", "all", "2h", "integration: ground → elevated → return", "not_started"),
+    (
+        "4",
+        "Rest",
+        "Voice sequencing",
+        "VoiceLayer",
+        "2h",
+        "test: state machine progression",
+        "not_started",
+    ),
+    (
+        "4",
+        "Rest",
+        "Oval slot wiring",
+        "OvalStadium.ts",
+        "1h",
+        "test: bridge → slot activation",
+        "not_started",
+    ),
+    (
+        "4",
+        "Rest",
+        "Full ceremony test",
+        "all",
+        "2h",
+        "integration: ground → elevated → return",
+        "not_started",
+    ),
 ]
 
 
@@ -191,8 +348,15 @@ def write_json(inventory: list[dict], ceremony: list[dict]) -> Path:
         "inventory": inventory,
         "ceremony_states": ceremony,
         "dev_phases": [
-            {"phase": p[0], "cycle": p[1], "component": p[2], "depends_on": p[3],
-             "effort": p[4], "test_strategy": p[5], "status": p[6]}
+            {
+                "phase": p[0],
+                "cycle": p[1],
+                "component": p[2],
+                "depends_on": p[3],
+                "effort": p[4],
+                "test_strategy": p[5],
+                "status": p[6],
+            }
             for p in DEV_PHASES
         ],
     }
@@ -204,7 +368,7 @@ def write_json(inventory: list[dict], ceremony: list[dict]) -> Path:
 def write_xlsx(inventory: list[dict], ceremony: list[dict]) -> Path:
     try:
         from openpyxl import Workbook
-        from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+        from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
     except ImportError:
         print("  openpyxl not available — skipping xlsx", file=sys.stderr)
         return Path()
@@ -234,9 +398,19 @@ def write_xlsx(inventory: list[dict], ceremony: list[dict]) -> Path:
 
     # ── Sheet 1: Component Inventory ──────────────────────────────────────────
     ws1 = wb.active
+    if ws1 is None:
+        raise RuntimeError("Workbook did not expose an active worksheet")
     ws1.title = "Component Inventory"
-    cols1 = ["Component", "Category", "File Path", "Lines", "Status",
-             "Planned in DESIGN.md", "Exports", "Notes"]
+    cols1 = [
+        "Component",
+        "Category",
+        "File Path",
+        "Lines",
+        "Status",
+        "Planned in DESIGN.md",
+        "Exports",
+        "Notes",
+    ]
     style_header(ws1, cols1)
 
     for i, row in enumerate(inventory, 2):
@@ -254,7 +428,9 @@ def write_xlsx(inventory: list[dict], ceremony: list[dict]) -> Path:
         else:
             status_cell.fill = missing_fill
             status_cell.font = Font(name="Arial", size=10, color="000000")
-        ws1.cell(row=i, column=6, value="Yes" if row["designed"] else "Emergent").font = body_font
+        ws1.cell(
+            row=i, column=6, value="Yes" if row["designed"] else "Emergent"
+        ).font = body_font
         ws1.cell(row=i, column=7, value=", ".join(row["exports"])).font = body_font
         ws1.cell(row=i, column=8, value="").font = body_font
         for c in range(1, 9):
@@ -272,14 +448,26 @@ def write_xlsx(inventory: list[dict], ceremony: list[dict]) -> Path:
     # summary row
     summary_row = len(inventory) + 2
     ws1.cell(row=summary_row, column=1, value="TOTAL").font = header_font
-    ws1.cell(row=summary_row, column=4, value=f"=SUM(D2:D{len(inventory)+1})")
+    ws1.cell(row=summary_row, column=4, value=f"=SUM(D2:D{len(inventory) + 1})")
     done_count = len([r for r in inventory if r["status"] == "done"])
-    ws1.cell(row=summary_row, column=5, value=f"{done_count}/{len(inventory)} done").font = header_font
+    ws1.cell(
+        row=summary_row, column=5, value=f"{done_count}/{len(inventory)} done"
+    ).font = header_font
 
     # ── Sheet 2: Ceremony States ──────────────────────────────────────────────
     ws2 = wb.create_sheet("Ceremony States")
-    cols2 = ["ThresholdState", "Sustain", "LFO Rate (Hz)", "LFO Depth",
-             "Disk Scale", "Oval Opacity", "Voice Alpha", "Visual Description"]
+    if ws2 is None:
+        raise RuntimeError("Workbook failed to create ceremony worksheet")
+    cols2 = [
+        "ThresholdState",
+        "Sustain",
+        "LFO Rate (Hz)",
+        "LFO Depth",
+        "Disk Scale",
+        "Oval Opacity",
+        "Voice Alpha",
+        "Visual Description",
+    ]
     style_header(ws2, cols2)
 
     for i, row in enumerate(ceremony, 2):
@@ -311,8 +499,17 @@ def write_xlsx(inventory: list[dict], ceremony: list[dict]) -> Path:
 
     # ── Sheet 3: Development Phases ───────────────────────────────────────────
     ws3 = wb.create_sheet("Development Phases")
-    cols3 = ["Phase", "Cycle", "Component", "Depends On", "Est. Effort",
-             "Test Strategy", "Status"]
+    if ws3 is None:
+        raise RuntimeError("Workbook failed to create development worksheet")
+    cols3 = [
+        "Phase",
+        "Cycle",
+        "Component",
+        "Depends On",
+        "Est. Effort",
+        "Test Strategy",
+        "Status",
+    ]
     style_header(ws3, cols3)
 
     for i, p in enumerate(DEV_PHASES, 2):

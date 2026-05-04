@@ -62,6 +62,15 @@ describe("ConversationLayer", () => {
     expect(layer.messages[0].age).toBe(1000);
   });
 
+  it("preserves message age when bridge sync repeats the same message", () => {
+    layer.sync([msg("agent", "hello", 0, "2026-01-01T00:00:00Z")]);
+    layer.tick(9000);
+
+    layer.sync([msg("agent", "hello", 0, "2026-01-01T00:00:00Z")]);
+
+    expect(layer.messages[0].age).toBe(9000);
+  });
+
   it("computes opacity decay for older messages", () => {
     const recent = layer.opacityForAge(0);
     const old = layer.opacityForAge(30000);

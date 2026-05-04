@@ -29,7 +29,16 @@ export class ConversationLayer {
   }
 
   sync(msgs: ConversationMessage[]): void {
-    this._messages = msgs.slice(-MAX_HISTORY).map((m) => ({ ...m }));
+    const existingAges = new Map(this._messages.map((m) => [this.messageKey(m), m.age]));
+
+    this._messages = msgs.slice(-MAX_HISTORY).map((m) => ({
+      ...m,
+      age: existingAges.get(this.messageKey(m)) ?? m.age,
+    }));
+  }
+
+  private messageKey(m: ConversationMessage): string {
+    return `${m.role}\0${m.timestamp}\0${m.text}`;
   }
 
   tick(dt: number): void {

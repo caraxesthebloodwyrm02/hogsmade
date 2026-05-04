@@ -3,9 +3,11 @@ import {
   ASSET_CATEGORIES,
   ASSET_RARITIES,
   DEFAULT_BRIDGE_STATE,
+  THRESHOLD_STATES,
   isAssetCategory,
   isAssetRarity,
   isRarityPermitted,
+  type RarityGateMap,
   type BridgeState,
   type ThresholdState,
   type BridgeVoice,
@@ -28,18 +30,7 @@ describe("bridge schema", () => {
   });
 
   it("ThresholdState covers all ceremony stages", () => {
-    const states: ThresholdState[] = [
-      "ground",
-      "evaluating",
-      "floor_rising",
-      "voices_appearing",
-      "voice_1_active",
-      "voice_2_active",
-      "voice_3_active",
-      "elevated",
-      "returning",
-      "denied",
-    ];
+    const states: ThresholdState[] = [...THRESHOLD_STATES];
     expect(states).toHaveLength(10);
   });
 
@@ -78,12 +69,24 @@ describe("bridge schema", () => {
   });
 
   it("gates rarity by ceremony threshold state", () => {
-    expect(isRarityPermitted("uncommon", "ground")).toBe(true);
-    expect(isRarityPermitted("rare", "ground")).toBe(false);
-    expect(isRarityPermitted("rare", "floor_rising")).toBe(true);
-    expect(isRarityPermitted("epic", "voice_2_active")).toBe(true);
-    expect(isRarityPermitted("mythic", "voice_2_active")).toBe(false);
-    expect(isRarityPermitted("mythic", "elevated")).toBe(true);
-    expect(isRarityPermitted("uncommon", "denied")).toBe(false);
+    const gate: RarityGateMap = {
+      ground: "uncommon",
+      evaluating: "uncommon",
+      floor_rising: "rare",
+      voices_appearing: "epic",
+      voice_1_active: "epic",
+      voice_2_active: "epic",
+      voice_3_active: "epic",
+      elevated: "mythic",
+      returning: "rare",
+      denied: "common",
+    };
+    expect(isRarityPermitted("uncommon", "ground", gate)).toBe(true);
+    expect(isRarityPermitted("rare", "ground", gate)).toBe(false);
+    expect(isRarityPermitted("rare", "floor_rising", gate)).toBe(true);
+    expect(isRarityPermitted("epic", "voice_2_active", gate)).toBe(true);
+    expect(isRarityPermitted("mythic", "voice_2_active", gate)).toBe(false);
+    expect(isRarityPermitted("mythic", "elevated", gate)).toBe(true);
+    expect(isRarityPermitted("uncommon", "denied", gate)).toBe(false);
   });
 });

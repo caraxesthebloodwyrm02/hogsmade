@@ -1,4 +1,4 @@
-import type { BlockOrigin } from "../../../bridge/schema";
+import type { BlockOrigin, ThresholdState } from "../../../bridge/schema";
 import * as monaco from "monaco-editor";
 
 export interface CodeBlockOptions {
@@ -13,6 +13,22 @@ export interface CodeBlockOptions {
 }
 
 const SPAWN_DURATION = 600;
+
+// Color temperature shifts per ceremony state.
+// border + shadow nudge blocks from cool amber (ground) → warm gold (elevated) → red (denied).
+type ColorTemp = { border: string; shadow: string };
+const CODE_COLOR_TEMP: Record<ThresholdState, ColorTemp> = {
+  ground: { border: "rgba(200,184,154,0.12)", shadow: "none" },
+  evaluating: { border: "rgba(200,184,154,0.18)", shadow: "none" },
+  floor_rising: { border: "rgba(196,149,106,0.28)", shadow: "0 0 6px rgba(196,149,106,0.08)" },
+  voices_appearing: { border: "rgba(196,149,106,0.35)", shadow: "0 0 8px rgba(196,149,106,0.12)" },
+  voice_1_active: { border: "rgba(196,149,106,0.40)", shadow: "0 0 10px rgba(196,149,106,0.15)" },
+  voice_2_active: { border: "rgba(196,149,106,0.44)", shadow: "0 0 10px rgba(196,149,106,0.17)" },
+  voice_3_active: { border: "rgba(196,149,106,0.48)", shadow: "0 0 12px rgba(196,149,106,0.18)" },
+  elevated: { border: "rgba(196,149,106,0.62)", shadow: "0 0 14px rgba(196,149,106,0.25)" },
+  returning: { border: "rgba(200,184,154,0.18)", shadow: "none" },
+  denied: { border: "rgba(160,82,74,0.42)", shadow: "0 0 10px rgba(160,82,74,0.22)" },
+};
 
 const GLASS_THEME = "glass-dark";
 let themeRegistered = false;
@@ -59,6 +75,7 @@ export class CodeBlock {
   private width: number;
   private height: number;
   private editor: monaco.editor.IStandaloneCodeEditor | null = null;
+  private _cachedThresholdState: ThresholdState | null = null;
 
   constructor(opts: CodeBlockOptions, container: HTMLDivElement) {
     this.id = opts.id;
@@ -74,6 +91,7 @@ export class CodeBlock {
 
     this.applyStyle();
     this.mountGrip();
+    this.mountDeleteButton();
     this.mountEditor();
   }
 
@@ -90,6 +108,40 @@ export class CodeBlock {
     g.style.flexShrink = "0";
     g.style.pointerEvents = "auto";
     this.container.appendChild(g);
+  }
+
+  private mountDeleteButton(): void {
+    if (this.origin !== "user") return;
+
+    const btn = document.createElement("button");
+    btn.textContent = "×";
+    btn.style.position = "absolute";
+    btn.style.top = "2px";
+    btn.style.right = "4px";
+    btn.style.width = "20px";
+    btn.style.height = "20px";
+    btn.style.padding = "0";
+    btn.style.border = "none";
+    btn.style.background = "transparent";
+    btn.style.color = "rgba(200, 184, 154, 0.5)";
+    btn.style.fontSize = "18px";
+    btn.style.lineHeight = "1";
+    btn.style.cursor = "pointer";
+    btn.style.zIndex = "10";
+    btn.style.transition = "color 0.15s";
+
+    btn.addEventListener?.("mouseenter", () => {
+      btn.style.color = "rgba(200, 184, 154, 1)";
+    });
+    btn.addEventListener?.("mouseleave", () => {
+      btn.style.color = "rgba(200, 184, 154, 0.5)";
+    });
+    btn.addEventListener?.("click", (e) => {
+      e.stopPropagation();
+      (window as any).glass?.deleteBlock?.(this.id);
+    });
+
+    this.container.appendChild(btn);
   }
 
   private mountEditor(): void {
@@ -175,8 +227,16 @@ export class CodeBlock {
     return Math.min(1, age / SPAWN_DURATION);
   }
 
-  updateOpacity(age: number): void {
-    this.container.style.opacity = String(this.spawnOpacity(age));
+  updateOpacity(age: number, levitationMod = 1): void {
+    this.container.style.opacity = String(this.spawnOpacity(age) * levitationMod);
+  }
+
+  setThresholdState(state: ThresholdState): void {
+    if (state === this._cachedThresholdState) return;
+    this._cachedThresholdState = state;
+    const ct = CODE_COLOR_TEMP[state];
+    this.container.style.borderColor = ct.border;
+    this.container.style.boxShadow = ct.shadow;
   }
 
   dispose(): void {
@@ -197,6 +257,7 @@ export class CodeBlock {
     s.border = "1px solid rgba(200, 184, 154, 0.12)";
     s.borderRadius = "4px";
     s.overflow = "hidden";
-    s.transition = "opacity 0.1s ease";
+    s.transition = "opacity 0.1s ease, border-color 0.6s ease, box-shadow 0.6s ease";
+    s.zIndex = String(this.origin === "user" ? 2 : 1);
   }
 }

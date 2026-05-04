@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import fs from "fs";
+import type { FieldProfile } from "../../bridge/schema";
 
 vi.mock("fs");
 vi.mock("os", () => ({ default: { homedir: () => "/mock-home" }, homedir: () => "/mock-home" }));
@@ -23,6 +24,64 @@ function makeBridgeState(overrides: Record<string, unknown> = {}): Record<string
 
 function mockReadSync(state: Record<string, unknown>): void {
   vi.mocked(fs.readFileSync).mockReturnValue(JSON.stringify(state));
+}
+
+const TEST_PROFILE: FieldProfile = {
+  profileName: "Test Profile",
+  version: "1.0.0",
+  modulation: {
+    envelopes: {
+      ground: { sustain: 0.12, lfoRate: 0.04, lfoDepth: 0.025 },
+      evaluating: { sustain: 0.5, lfoRate: 0.18, lfoDepth: 0.07 },
+      floor_rising: { sustain: 1, lfoRate: 0.22, lfoDepth: 0.04 },
+      voices_appearing: { sustain: 0.85, lfoRate: 0.12, lfoDepth: 0.05 },
+      voice_1_active: { sustain: 0.88, lfoRate: 0.1, lfoDepth: 0.06 },
+      voice_2_active: { sustain: 0.88, lfoRate: 0.13, lfoDepth: 0.06 },
+      voice_3_active: { sustain: 0.88, lfoRate: 0.09, lfoDepth: 0.06 },
+      elevated: { sustain: 1, lfoRate: 0.07, lfoDepth: 0.03 },
+      returning: { sustain: 0.25, lfoRate: 0.06, lfoDepth: 0.03 },
+      denied: { sustain: 0.08, lfoRate: 0.35, lfoDepth: 0.1 },
+    },
+    base: {
+      disk: { scale: 0.06, brightness: 0.04, rimAlpha: 0.05 },
+      oval: { opacity: 0.03, lineWidth: 0.3, markerAlpha: 0.04, fieldAlpha: 0.02 },
+      voice: { alpha: 0, scanSpeed: 0.4, glowRadius: 8 },
+      field: { ambientIntensity: 0.28 },
+      block: { levitationMod: 0.88 },
+    },
+    recipe: {
+      disk: { scale: 0.94, brightness: 0.96, rimAlpha: 0.95 },
+      oval: { opacity: 0.72, lineWidth: 2.1, markerAlpha: 0.82, fieldAlpha: 0.55 },
+      voice: { alpha: 0.9, scanSpeed: 1.8, glowRadius: 18 },
+      field: { ambientIntensity: 0.44 },
+      block: { levitationMod: 0.12 },
+    },
+  },
+  ceremony: {
+    rarityGate: {
+      ground: "uncommon",
+      evaluating: "uncommon",
+      floor_rising: "rare",
+      voices_appearing: "epic",
+      voice_1_active: "epic",
+      voice_2_active: "epic",
+      voice_3_active: "epic",
+      elevated: "mythic",
+      returning: "rare",
+      denied: "common",
+    },
+  },
+  workflow: {
+    goalStatement: "Test goal",
+    hardConstraints: ["Constraint 1"],
+    functions: [],
+    lanes: [],
+  },
+};
+
+async function configureWatcherProfile(): Promise<void> {
+  const { setBridgeFieldProfile } = await import("./bridge-watcher");
+  setBridgeFieldProfile(TEST_PROFILE);
 }
 
 let writtenData: string | null = null;
@@ -109,6 +168,7 @@ describe("appendConversationTurn", () => {
 
 describe("addBridgeBlock", () => {
   it("adds a code block with generated ID", async () => {
+    await configureWatcherProfile();
     const { addBridgeBlock } = await import("./bridge-watcher");
     mockReadSync(makeBridgeState());
     addBridgeBlock({
@@ -130,6 +190,7 @@ describe("addBridgeBlock", () => {
   });
 
   it("rejects invalid type", async () => {
+    await configureWatcherProfile();
     const { addBridgeBlock } = await import("./bridge-watcher");
     mockReadSync(makeBridgeState());
     addBridgeBlock({
@@ -143,6 +204,7 @@ describe("addBridgeBlock", () => {
   });
 
   it("adds asset blocks when rarity is permitted by current ceremony state", async () => {
+    await configureWatcherProfile();
     const { addBridgeBlock } = await import("./bridge-watcher");
     mockReadSync(makeBridgeState({ threshold_state: "elevated" }));
     addBridgeBlock({
@@ -168,6 +230,7 @@ describe("addBridgeBlock", () => {
   });
 
   it("rejects asset blocks when rarity exceeds ceremony ceiling", async () => {
+    await configureWatcherProfile();
     const { addBridgeBlock } = await import("./bridge-watcher");
     mockReadSync(makeBridgeState({ threshold_state: "ground" }));
     addBridgeBlock({
@@ -189,6 +252,7 @@ describe("addBridgeBlock", () => {
   });
 
   it("rejects when blocks at capacity", async () => {
+    await configureWatcherProfile();
     const { addBridgeBlock } = await import("./bridge-watcher");
     const blocks = Array.from({ length: 200 }, (_, i) => ({
       id: `b-${i}`,
@@ -232,6 +296,28 @@ describe("patchBridgeBlockPosition", () => {
     expect(state.blocks[0].position).toEqual({ x: 50, y: 75 });
   });
 
+  it("rejects position changes for agent-owned blocks", async () => {
+    const { patchBridgeBlockPosition } = await import("./bridge-watcher");
+    mockReadSync(
+      makeBridgeState({
+        blocks: [
+          {
+            id: "agent-1",
+            type: "code",
+            language: "ts",
+            content: "x",
+            position: { x: 0, y: 0 },
+            origin: "agent",
+          },
+        ],
+      }),
+    );
+
+    patchBridgeBlockPosition("agent-1", 50, 75);
+
+    expect(writtenData).toBeNull();
+  });
+
   it("skips unknown block ID silently", async () => {
     const { patchBridgeBlockPosition } = await import("./bridge-watcher");
     mockReadSync(makeBridgeState({ blocks: [] }));
@@ -269,10 +355,61 @@ describe("patchBridgeBlock", () => {
     expect(state.blocks[0].content).toBe("new content");
   });
 
+  it("rejects content changes for agent-owned blocks", async () => {
+    const { patchBridgeBlock } = await import("./bridge-watcher");
+    mockReadSync(
+      makeBridgeState({
+        blocks: [
+          {
+            id: "agent-1",
+            type: "code",
+            language: "ts",
+            content: "old",
+            position: { x: 0, y: 0 },
+            origin: "agent",
+          },
+        ],
+      }),
+    );
+
+    patchBridgeBlock("agent-1", "new content");
+
+    expect(writtenData).toBeNull();
+  });
+
   it("skips unknown block ID", async () => {
     const { patchBridgeBlock } = await import("./bridge-watcher");
     mockReadSync(makeBridgeState({ blocks: [] }));
     patchBridgeBlock("unknown", "data");
     expect(writtenData).toBeNull();
+  });
+});
+
+describe("validateBridgeState voices", () => {
+  it("drops malformed voices while preserving valid voice entries", async () => {
+    await configureWatcherProfile();
+    const { addBridgeBlock } = await import("./bridge-watcher");
+    mockReadSync(
+      makeBridgeState({
+        voices: [
+          { id: "I", color: "amber", position: "left", text: "ready", active: true },
+          { id: "IV", color: "gold", position: "right", text: "invalid id", active: true },
+          { id: "II", color: "blue", position: "center", text: "invalid color", active: true },
+        ],
+      }),
+    );
+
+    addBridgeBlock({
+      type: "code",
+      language: "typescript",
+      content: "",
+      position: { x: 0, y: 0 },
+      origin: "user",
+    });
+
+    const state = JSON.parse(writtenData!);
+    expect(state.voices).toEqual([
+      { id: "I", color: "amber", position: "left", text: "ready", active: true },
+    ]);
   });
 });

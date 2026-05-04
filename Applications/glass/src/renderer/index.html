@@ -25,9 +25,21 @@
         position: fixed;
         inset: 0;
       }
+      #global-header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 32px;
+        z-index: 200;
+        background: rgba(10, 10, 12, 0.88);
+        border-bottom: 1px solid rgba(200, 184, 154, 0.08);
+        -webkit-app-region: drag;
+      }
     </style>
   </head>
   <body>
+    <div id="global-header"></div>
     <canvas id="field"></canvas>
     <div
       id="block-host"

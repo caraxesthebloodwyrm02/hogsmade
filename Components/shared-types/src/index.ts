@@ -200,3 +200,25 @@ export type {
 // Behavioral Schema (Probing, Evaluate & Triage Logic)
 export { ROUTINE_TEMPLATES } from "./behavioral-schema.js";
 export type { AgentRoutine, BehavioralTrigger, RoutineType } from "./behavioral-schema.js";
+
+// DSAA Heartbeat — rhythmic core of Design System Architecture Automation
+export {
+  DEFAULT_HEARTBEAT_CONFIG,
+  DEFAULT_SWING,
+  effectiveTempo,
+  nextPhase,
+  PHASE_BASE_WEIGHTS,
+  PHASE_SEQUENCE,
+  phaseDurations,
+  phaseWeight,
+  progression,
+  swingDisplacement,
+} from "./dsaa-heartbeat.js";
+export type {
+  BeatIndex,
+  HeartbeatConfig,
+  Phase,
+  Progression,
+  Pulse,
+  SwingProfile,
+} from "./dsaa-heartbeat.js";

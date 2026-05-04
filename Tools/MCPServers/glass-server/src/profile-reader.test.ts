@@ -46,7 +46,7 @@ voices:
     role: safety
 
 ceremony:
-  auto_evaluate_after_commits: 5
+  auto_evaluate_after_iterations: 5
   auto_return_after_idle_minutes: 10
 
 signals:
@@ -59,7 +59,7 @@ signals:
     expect(profile).not.toBeNull();
     expect(profile!.voices!["I"]).toEqual({ color: "amber", role: "speed", label: "Velocity" });
     expect(profile!.voices!["II"]).toEqual({ color: "silver", role: "safety", label: undefined });
-    expect(profile!.ceremony!.auto_evaluate_after_commits).toBe(5);
+    expect(profile!.ceremony!.auto_evaluate_after_iterations).toBe(5);
     expect(profile!.ceremony!.auto_return_after_idle_minutes).toBe(10);
     expect(profile!.signals!.hot_threshold!.git_diff_lines).toBe(200);
     expect(profile!.signals!.hot_threshold!.iteration_count).toBe(15);
@@ -85,6 +85,35 @@ presets:
     expect(preset.bridge?.threshold_state).toBe("ground");
     expect(preset.bridge?.progress).toBe(0);
     expect(preset.bridge?.agent_state).toBe("idle");
+  });
+
+  it("parses presets block with arrays", async () => {
+    const ws = await writeProfile(`
+presets:
+  array-preset:
+    bridge:
+      voices:
+        - I
+        - II
+      blocks:
+        - id: 1
+          content: "hello"
+        - id: 2
+          content: "world"
+      conversation:
+        - "message 1"
+        - "message 2"
+`);
+    const profile = await loadProfile(ws);
+    expect(profile).not.toBeNull();
+    expect(profile!.presets).toBeDefined();
+    const preset = profile!.presets!["array-preset"];
+    expect(preset.bridge?.voices).toEqual(["I", "II"]);
+    expect(preset.bridge?.blocks).toEqual([
+      { id: 1, content: "hello" },
+      { id: 2, content: "world" },
+    ]);
+    expect(preset.bridge?.conversation).toEqual(["message 1", "message 2"]);
   });
 
   it("ignores invalid voice colors", async () => {

@@ -935,4 +935,214 @@ describe("glass-server tools", () => {
       ]);
     });
   });
+
+  describe("glass_query_spatial_state", () => {
+    it("returns empty blocks and zero heat when bridge is empty", async () => {
+      const { client } = await makeClient();
+      const result = await client.callTool({
+        name: "glass_query_spatial_state",
+        arguments: {},
+      });
+      const parsed = JSON.parse(toolText(result));
+      expect(parsed.ok).toBe(true);
+      expect(parsed.block_count).toBe(0);
+      expect(parsed.blocks).toEqual([]);
+      expect(parsed.stale_candidates).toEqual([]);
+      expect(parsed.field_heat).toBe(0);
+      expect(parsed.is_hot).toBe(false);
+    });
+
+    it("returns spaceman_position at canvas center", async () => {
+      const { client } = await makeClient();
+      const result = await client.callTool({
+        name: "glass_query_spatial_state",
+        arguments: {},
+      });
+      const parsed = JSON.parse(toolText(result));
+      expect(parsed.spaceman_position).toEqual({ x: 700, y: 450 });
+    });
+
+    it("computes distance_from_spaceman correctly", async () => {
+      // Write a bridge with one block at a known position
+      const { writeFile } = await import("fs/promises");
+      await writeFile(
+        BRIDGE,
+        JSON.stringify({
+          session_id: "test",
+          threshold_state: "ground",
+          blocks: [
+            {
+              id: "b1",
+              type: "note",
+              origin: "agent",
+              language: "text",
+              content: "hello",
+              position: { x: 700, y: 450 }, // exactly at spaceman → distance 0
+            },
+            {
+              id: "b2",
+              type: "code",
+              origin: "user",
+              language: "typescript",
+              content: "x",
+              position: { x: 700, y: 450 + 100 }, // 100px below → distance 100
+            },
+          ],
+          conversation: [],
+          signals: { git_diff_lines: 0, iteration_count: 0, session_age_minutes: 0 },
+        }),
+        "utf-8",
+      );
+
+      const { client } = await makeClient();
+      const result = await client.callTool({
+        name: "glass_query_spatial_state",
+        arguments: {},
+      });
+      const parsed = JSON.parse(toolText(result));
+
+      const b1 = parsed.blocks.find((b: { id: string }) => b.id === "b1");
+      const b2 = parsed.blocks.find((b: { id: string }) => b.id === "b2");
+
+      expect(b1.distance_from_spaceman).toBe(0);
+      expect(b1.staleness_score).toBe(0);
+      expect(b2.distance_from_spaceman).toBe(100);
+      expect(b2.staleness_score).toBeGreaterThan(0);
+    });
+
+    it("stale_candidates are sorted farthest first", async () => {
+      const { writeFile } = await import("fs/promises");
+      await writeFile(
+        BRIDGE,
+        JSON.stringify({
+          session_id: "test",
+          threshold_state: "ground",
+          blocks: [
+            {
+              id: "near",
+              type: "note",
+              origin: "agent",
+              language: "text",
+              content: "",
+              position: { x: 700, y: 450 },
+            },
+            {
+              id: "mid",
+              type: "note",
+              origin: "agent",
+              language: "text",
+              content: "",
+              position: { x: 700, y: 550 },
+            },
+            {
+              id: "far",
+              type: "note",
+              origin: "agent",
+              language: "text",
+              content: "",
+              position: { x: 0, y: 0 },
+            },
+          ],
+          conversation: [],
+          signals: { git_diff_lines: 0, iteration_count: 0, session_age_minutes: 0 },
+        }),
+        "utf-8",
+      );
+
+      const { client } = await makeClient();
+      const result = await client.callTool({
+        name: "glass_query_spatial_state",
+        arguments: { stale_limit: 2 },
+      });
+      const parsed = JSON.parse(toolText(result));
+
+      expect(parsed.stale_candidates).toHaveLength(2);
+      expect(parsed.stale_candidates[0]).toBe("far"); // farthest first
+    });
+
+    it("computes field_heat from iteration_count vs hot_threshold", async () => {
+      const { writeFile } = await import("fs/promises");
+      await writeFile(
+        BRIDGE,
+        JSON.stringify({
+          session_id: "test",
+          threshold_state: "ground",
+          blocks: [],
+          conversation: [],
+          signals: { git_diff_lines: 0, iteration_count: 10, session_age_minutes: 0 },
+          _hot_threshold: { git_diff_lines: 200, iteration_count: 20, session_age_minutes: 60 },
+        }),
+        "utf-8",
+      );
+
+      const { client } = await makeClient();
+      const result = await client.callTool({
+        name: "glass_query_spatial_state",
+        arguments: {},
+      });
+      const parsed = JSON.parse(toolText(result));
+
+      // 10 / 20 = 0.5
+      expect(parsed.field_heat).toBe(0.5);
+      expect(parsed.is_hot).toBe(false);
+    });
+
+    it("is_hot true when signals meet or exceed threshold", async () => {
+      const { writeFile } = await import("fs/promises");
+      await writeFile(
+        BRIDGE,
+        JSON.stringify({
+          session_id: "test",
+          threshold_state: "ground",
+          blocks: [],
+          conversation: [],
+          signals: { git_diff_lines: 0, iteration_count: 20, session_age_minutes: 0 },
+          _hot_threshold: { git_diff_lines: 200, iteration_count: 20, session_age_minutes: 60 },
+        }),
+        "utf-8",
+      );
+
+      const { client } = await makeClient();
+      const result = await client.callTool({
+        name: "glass_query_spatial_state",
+        arguments: {},
+      });
+      const parsed = JSON.parse(toolText(result));
+
+      expect(parsed.field_heat).toBe(1);
+      expect(parsed.is_hot).toBe(true);
+    });
+
+    it("staleness_score is clamped to 1 for blocks far outside canvas bounds", async () => {
+      const { writeFile } = await import("fs/promises");
+      await writeFile(
+        BRIDGE,
+        JSON.stringify({
+          session_id: "test",
+          threshold_state: "ground",
+          blocks: [
+            {
+              id: "wayout",
+              type: "note",
+              origin: "agent",
+              language: "text",
+              content: "",
+              position: { x: 9999, y: 9999 },
+            },
+          ],
+          conversation: [],
+          signals: { git_diff_lines: 0, iteration_count: 0, session_age_minutes: 0 },
+        }),
+        "utf-8",
+      );
+
+      const { client } = await makeClient();
+      const result = await client.callTool({
+        name: "glass_query_spatial_state",
+        arguments: {},
+      });
+      const parsed = JSON.parse(toolText(result));
+      expect(parsed.blocks[0].staleness_score).toBe(1);
+    });
+  });
 });
