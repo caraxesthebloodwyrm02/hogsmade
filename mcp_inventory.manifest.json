@@ -209,6 +209,12 @@
       "auditEmit": "dual \u2014 sidecar (~/.echoes/mcp-logs/personal-rag.ndjson) + shared trail (~/.echoes/audit.ndjson). Shared trail uses @cascade/shared-types AuditEvent schema (terminal states only).",
       "smokeVerification": "Runtime only \u2014 call health_check. Not in CI (requires local Ollama + ChromaDB).",
       "notes": "Sovereign personal knowledge RAG (memory, rules, skills, sessions). Federation peer to grid-rag-enhanced via query_federated (JSON envelope with gravity_score for agent-level merge)."
+    },
+    {
+      "mcpServerKey": "glass-server",
+      "runtime": "typescript",
+      "bootstrapType": "mcp_sdk_stdio_ts",
+      "entryRelative": "glass-server/src/server.ts"
     }
   ]
 }

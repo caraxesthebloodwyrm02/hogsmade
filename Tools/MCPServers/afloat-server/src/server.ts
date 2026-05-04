@@ -745,17 +745,16 @@ export function buildServer(): McpServer {
 
       const steps: WorkflowStep[] = [];
 
+      let anyAllowed = false;
       for (const p of issuesPaths) {
-        // Validate path is within allowed roots
-        const inAllowed = config.allowedRoots.some(
-          (root) => p.targetPath === root || p.targetPath.startsWith(root + path.sep),
-        );
-        if (!inAllowed) continue;
+        if (executionPolicy.validateScriptPath(p.targetPath).verdict !== "allow") continue;
+        anyAllowed = true;
 
+        const repoName = path.basename(p.targetPath);
         if (p.looseObjects?.issue) {
           steps.push({
-            name: `gc-${path.basename(p.targetPath)}`,
-            description: `Git garbage collection for ${path.basename(p.targetPath)} (${
+            name: `gc-${repoName}`,
+            description: `Git garbage collection for ${repoName} (${
               p.looseObjects.looseObjects ?? "unknown"
             } loose objects)`,
             command: `git -C ${p.targetPath} gc --auto`,
@@ -765,10 +764,8 @@ export function buildServer(): McpServer {
 
         if (p.gitHygiene && !p.gitHygiene.clean && (p.gitHygiene.modified ?? 0) > 0) {
           steps.push({
-            name: `status-${path.basename(p.targetPath)}`,
-            description: `Report modified files in ${path.basename(p.targetPath)} (${
-              p.gitHygiene.modified
-            } modified)`,
+            name: `status-${repoName}`,
+            description: `Report modified files in ${repoName} (${p.gitHygiene.modified} modified)`,
             command: `git -C ${p.targetPath} status --short`,
             timeout: 30,
           });
@@ -782,7 +779,9 @@ export function buildServer(): McpServer {
               type: "text" as const,
               text: JSON.stringify({
                 suggested: false,
-                reason: "Issues detected but all paths are outside allowed roots",
+                reason: anyAllowed
+                  ? "Issues detected but no actionable steps (untracked-only or unsupported issue type)"
+                  : "All issue paths are outside allowed roots",
               }),
             },
           ],
@@ -796,6 +795,7 @@ export function buildServer(): McpServer {
         description: `Auto-suggested maintenance for ${steps.length} issue(s) across ${issuesPaths.length} path(s)`,
         steps,
         createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       };
 
       await saveWorkflow(workflow);

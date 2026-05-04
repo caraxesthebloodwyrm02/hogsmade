@@ -82,7 +82,7 @@ export interface ResilienceContext {
   serviceName: string;
   operationName: string;
   startTime: number;
-  attempt: number;
+  attempt?: number;
   /** W3C trace-id for cross-service correlation (optional). */
   traceId?: string;
   /** W3C span-id for cross-service correlation (optional). */

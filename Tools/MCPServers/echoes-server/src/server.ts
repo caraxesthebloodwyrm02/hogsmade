@@ -171,7 +171,6 @@ async function appendAuditEntry(entry: AuditEntry): Promise<void> {
       serviceName: "echoes-audit-write",
       operationName: "appendFile",
       startTime: Date.now(),
-      attempt: 1,
     });
   } catch (err) {
     process.stderr.write(

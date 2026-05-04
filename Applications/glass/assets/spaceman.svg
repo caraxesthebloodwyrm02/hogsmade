@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-16 -24 32 48" width="32" height="48">
+  <!-- Spaceman  soft geometric silhouette, warm fill, no hard outlines -->
+  <defs>
+    <radialGradient id="glow" cx="50%" cy="50%" r="60%">
+      <stop offset="0%" stop-color="#c8b89a" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#c8b89a" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- ambient glow -->
+  <circle cx="0" cy="0" r="22" fill="url(#glow)"/>
+
+  <!-- helmet -->
+  <circle cx="0" cy="-14" r="7" fill="#c8b89a" fill-opacity="0.12" stroke="#c8b89a" stroke-opacity="0.55" stroke-width="0.8"/>
+
+  <!-- visor -->
+  <ellipse cx="0" cy="-14" rx="4" ry="3" fill="#0a0a0c" fill-opacity="0.75" stroke="#a0d2dc" stroke-opacity="0.5" stroke-width="0.6"/>
+  <ellipse cx="-1" cy="-15.5" rx="2" ry="1" fill="#a0d2dc" fill-opacity="0.3" transform="rotate(-22 -1 -15.5)"/>
+
+  <!-- torso -->
+  <rect x="-6" y="-7" width="12" height="14" rx="3" fill="#c8b89a" fill-opacity="0.08" stroke="#c8b89a" stroke-opacity="0.45" stroke-width="0.8"/>
+
+  <!-- left arm -->
+  <rect x="-11" y="-6" width="5" height="9" rx="2" fill="#c8b89a" fill-opacity="0.06" stroke="#c8b89a" stroke-opacity="0.35" stroke-width="0.7"/>
+
+  <!-- right arm -->
+  <rect x="6" y="-6" width="5" height="9" rx="2" fill="#c8b89a" fill-opacity="0.06" stroke="#c8b89a" stroke-opacity="0.35" stroke-width="0.7"/>
+
+  <!-- left leg -->
+  <rect x="-5" y="7" width="4" height="8" rx="2" fill="#c8b89a" fill-opacity="0.06" stroke="#c8b89a" stroke-opacity="0.35" stroke-width="0.7"/>
+
+  <!-- right leg -->
+  <rect x="1" y="7" width="4" height="8" rx="2" fill="#c8b89a" fill-opacity="0.06" stroke="#c8b89a" stroke-opacity="0.35" stroke-width="0.7"/>
+</svg>

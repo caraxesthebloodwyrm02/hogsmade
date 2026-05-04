@@ -1,0 +1,482 @@
+{
+  "snapshot_date": "2026-05-04",
+  "root": "/mnt/arch_data/home/caraxes/CascadeProjects/Applications/glass",
+  "total_files": 20,
+  "total_lines": 1884,
+  "missing_count": 0,
+  "inventory": [
+    {
+      "component": "schema",
+      "category": "bridge",
+      "path": "bridge/schema.ts",
+      "lines": 83,
+      "status": "done",
+      "designed": true,
+      "exports": [
+        "AgentState",
+        "ThresholdState",
+        "BlockType",
+        "BlockOrigin",
+        "MessageRole",
+        "VoiceId",
+        "VoiceColor",
+        "VoicePosition",
+        "BlockPosition",
+        "BridgeBlock",
+        "BridgeMessage",
+        "BridgeSignals",
+        "BridgeVoice",
+        "BridgeState",
+        "DEFAULT_BRIDGE_STATE"
+      ],
+      "mtime": "2026-05-03T20:44:43.899271+00:00"
+    },
+    {
+      "component": "index",
+      "category": "main",
+      "path": "src/main/index.ts",
+      "lines": 43,
+      "status": "done",
+      "designed": true,
+      "exports": [],
+      "mtime": "2026-05-03T20:26:10.912532+00:00"
+    },
+    {
+      "component": "bridge-watcher",
+      "category": "main",
+      "path": "src/main/bridge-watcher.ts",
+      "lines": 39,
+      "status": "done",
+      "designed": true,
+      "exports": ["startBridgeWatcher"],
+      "mtime": "2026-05-03T20:26:17.733438+00:00"
+    },
+    {
+      "component": "index",
+      "category": "preload",
+      "path": "src/preload/index.ts",
+      "lines": 8,
+      "status": "done",
+      "designed": true,
+      "exports": [],
+      "mtime": "2026-05-03T20:26:22.768368+00:00"
+    },
+    {
+      "component": "index",
+      "category": "renderer",
+      "path": "src/renderer/index.html",
+      "lines": 18,
+      "status": "done",
+      "designed": true,
+      "exports": [],
+      "mtime": "2026-05-03T20:26:28.325292+00:00"
+    },
+    {
+      "component": "index",
+      "category": "renderer",
+      "path": "src/renderer/index.ts",
+      "lines": 21,
+      "status": "done",
+      "designed": true,
+      "exports": [],
+      "mtime": "2026-05-03T20:27:07.121759+00:00"
+    },
+    {
+      "component": "Field",
+      "category": "field",
+      "path": "src/renderer/field/Field.ts",
+      "lines": 119,
+      "status": "done",
+      "designed": true,
+      "exports": ["Field"],
+      "mtime": "2026-05-03T20:57:56.267197+00:00"
+    },
+    {
+      "component": "Presence",
+      "category": "field",
+      "path": "src/renderer/field/Presence.ts",
+      "lines": 514,
+      "status": "done",
+      "designed": true,
+      "exports": ["UserPresence", "AgentPresence", "VoicePresence", "VoiceLayer"],
+      "mtime": "2026-05-03T20:58:16.217917+00:00"
+    },
+    {
+      "component": "ThresholdLine",
+      "category": "field",
+      "path": "src/renderer/field/ThresholdLine.ts",
+      "lines": 65,
+      "status": "done",
+      "designed": true,
+      "exports": ["ThresholdLine"],
+      "mtime": "2026-05-03T21:15:54.277207+00:00"
+    },
+    {
+      "component": "DiskEngine",
+      "category": "field",
+      "path": "src/renderer/field/DiskEngine.ts",
+      "lines": 143,
+      "status": "done",
+      "designed": false,
+      "exports": ["DiskEngine"],
+      "mtime": "2026-05-03T20:57:33.665513+00:00"
+    },
+    {
+      "component": "OvalStadium",
+      "category": "field",
+      "path": "src/renderer/field/OvalStadium.ts",
+      "lines": 239,
+      "status": "done",
+      "designed": false,
+      "exports": ["OvalSlot", "OvalStadium"],
+      "mtime": "2026-05-03T20:57:11.121829+00:00"
+    },
+    {
+      "component": "ModulationEngine",
+      "category": "field",
+      "path": "src/renderer/field/ModulationEngine.ts",
+      "lines": 122,
+      "status": "done",
+      "designed": false,
+      "exports": ["DiskBus", "OvalBus", "VoiceBus", "FieldBus", "BusValues", "ModulationEngine"],
+      "mtime": "2026-05-03T20:56:31.158389+00:00"
+    },
+    {
+      "component": "BlockManager",
+      "category": "blocks",
+      "path": "src/renderer/blocks/BlockManager.ts",
+      "lines": 81,
+      "status": "done",
+      "designed": true,
+      "exports": ["ManagedBlock", "BlockManager"],
+      "mtime": "2026-05-03T21:16:37.450609+00:00"
+    },
+    {
+      "component": "CodeBlock",
+      "category": "blocks",
+      "path": "src/renderer/blocks/CodeBlock.ts",
+      "lines": 80,
+      "status": "done",
+      "designed": true,
+      "exports": ["CodeBlockOptions", "CodeBlock"],
+      "mtime": "2026-05-03T21:16:59.985296+00:00"
+    },
+    {
+      "component": "ConversationLayer",
+      "category": "conversation",
+      "path": "src/renderer/conversation/ConversationLayer.ts",
+      "lines": 99,
+      "status": "done",
+      "designed": true,
+      "exports": ["ConversationMessage", "ConversationLayer"],
+      "mtime": "2026-05-03T21:17:37.137782+00:00"
+    },
+    {
+      "component": "FieldState",
+      "category": "state",
+      "path": "src/renderer/state/FieldState.ts",
+      "lines": 26,
+      "status": "done",
+      "designed": true,
+      "exports": ["FieldState"],
+      "mtime": "2026-05-03T20:46:48.989547+00:00"
+    },
+    {
+      "component": "SessionState",
+      "category": "state",
+      "path": "src/renderer/state/SessionState.ts",
+      "lines": 48,
+      "status": "done",
+      "designed": true,
+      "exports": ["SessionData", "SessionState"],
+      "mtime": "2026-05-03T21:15:33.395496+00:00"
+    },
+    {
+      "component": "spaceman",
+      "category": "assets",
+      "path": "assets/spaceman.svg",
+      "lines": 34,
+      "status": "done",
+      "designed": true,
+      "exports": [],
+      "mtime": "2026-05-03T21:18:40.635902+00:00"
+    },
+    {
+      "component": "electron.vite.config",
+      "category": "config",
+      "path": "electron.vite.config.ts",
+      "lines": 17,
+      "status": "done",
+      "designed": true,
+      "exports": [],
+      "mtime": "2026-05-03T20:25:55.985737+00:00"
+    },
+    {
+      "component": "AudioEngine",
+      "category": "audio",
+      "path": "src/renderer/audio/AudioEngine.ts",
+      "lines": 85,
+      "status": "done",
+      "designed": false,
+      "exports": ["AudioParams", "AudioEngine"],
+      "mtime": "2026-05-03T21:17:58.011492+00:00"
+    }
+  ],
+  "ceremony_states": [
+    {
+      "state": "ground",
+      "sustain": 0.12,
+      "lfo_rate": 0.04,
+      "lfo_depth": 0.025,
+      "disk_scale": "0.17",
+      "oval_opacity": "0.12",
+      "voice_alpha": "0.11",
+      "description": "Dim field, small disk, quiet ambient motion"
+    },
+    {
+      "state": "evaluating",
+      "sustain": 0.5,
+      "lfo_rate": 0.18,
+      "lfo_depth": 0.07,
+      "disk_scale": "0.53",
+      "oval_opacity": "0.39",
+      "voice_alpha": "0.45",
+      "description": "Cool-toned disk at ~50%, evaluation pulse ring"
+    },
+    {
+      "state": "floor_rising",
+      "sustain": 1.0,
+      "lfo_rate": 0.22,
+      "lfo_depth": 0.04,
+      "disk_scale": "1.00",
+      "oval_opacity": "0.75",
+      "voice_alpha": "0.90",
+      "description": "Disk scaling toward full, warm arc sweep on rim"
+    },
+    {
+      "state": "voices_appearing",
+      "sustain": 0.85,
+      "lfo_rate": 0.12,
+      "lfo_depth": 0.05,
+      "disk_scale": "0.86",
+      "oval_opacity": "0.64",
+      "voice_alpha": "0.77",
+      "description": "Three holographic figures fade in at field positions"
+    },
+    {
+      "state": "voice_1_active",
+      "sustain": 0.88,
+      "lfo_rate": 0.1,
+      "lfo_depth": 0.06,
+      "disk_scale": "0.89",
+      "oval_opacity": "0.66",
+      "voice_alpha": "0.79",
+      "description": "Voice I (amber/left) speaking, pulsing dot above helmet"
+    },
+    {
+      "state": "voice_2_active",
+      "sustain": 0.88,
+      "lfo_rate": 0.13,
+      "lfo_depth": 0.06,
+      "disk_scale": "0.89",
+      "oval_opacity": "0.66",
+      "voice_alpha": "0.79",
+      "description": "Voice II (silver/center) speaking"
+    },
+    {
+      "state": "voice_3_active",
+      "sustain": 0.88,
+      "lfo_rate": 0.09,
+      "lfo_depth": 0.06,
+      "disk_scale": "0.89",
+      "oval_opacity": "0.66",
+      "voice_alpha": "0.79",
+      "description": "Voice III (gold/right) speaking"
+    },
+    {
+      "state": "elevated",
+      "sustain": 1.0,
+      "lfo_rate": 0.07,
+      "lfo_depth": 0.03,
+      "disk_scale": "1.00",
+      "oval_opacity": "0.75",
+      "voice_alpha": "0.90",
+      "description": "Full brightness, all voices present, disk at max scale"
+    },
+    {
+      "state": "returning",
+      "sustain": 0.25,
+      "lfo_rate": 0.06,
+      "lfo_depth": 0.03,
+      "disk_scale": "0.29",
+      "oval_opacity": "0.21",
+      "voice_alpha": "0.23",
+      "description": "Field dimming, disk contracting, voices fading"
+    },
+    {
+      "state": "denied",
+      "sustain": 0.08,
+      "lfo_rate": 0.35,
+      "lfo_depth": 0.1,
+      "disk_scale": "0.14",
+      "oval_opacity": "0.09",
+      "voice_alpha": "0.07",
+      "description": "Brief flash, rapid LFO flicker, disk shrinks to minimum"
+    }
+  ],
+  "dev_phases": [
+    {
+      "phase": "0",
+      "cycle": "Cleanup",
+      "component": "snapshot.py + xlsx",
+      "depends_on": "-",
+      "effort": "1h",
+      "test_strategy": "manual run",
+      "status": "pending"
+    },
+    {
+      "phase": "0",
+      "cycle": "Cleanup",
+      "component": "npm run typecheck",
+      "depends_on": "-",
+      "effort": "15m",
+      "test_strategy": "CI gate",
+      "status": "pending"
+    },
+    {
+      "phase": "1",
+      "cycle": "Morning",
+      "component": "Vitest setup",
+      "depends_on": "-",
+      "effort": "1h",
+      "test_strategy": "vitest.config.ts + first test",
+      "status": "not_started"
+    },
+    {
+      "phase": "1",
+      "cycle": "Morning",
+      "component": "SessionState.ts",
+      "depends_on": "FieldState.ts",
+      "effort": "2h",
+      "test_strategy": "test: persist/restore round-trip",
+      "status": "not_started"
+    },
+    {
+      "phase": "1",
+      "cycle": "Morning",
+      "component": "ThresholdLine.ts",
+      "depends_on": "ModulationEngine.ts",
+      "effort": "2h",
+      "test_strategy": "test: line draw/dissolve lifecycle",
+      "status": "not_started"
+    },
+    {
+      "phase": "1",
+      "cycle": "Morning",
+      "component": "FieldState smoke tests",
+      "depends_on": "Vitest setup",
+      "effort": "1h",
+      "test_strategy": "test: update + subscribe",
+      "status": "not_started"
+    },
+    {
+      "phase": "1",
+      "cycle": "Morning",
+      "component": "ModulationEngine tests",
+      "depends_on": "Vitest setup",
+      "effort": "1h",
+      "test_strategy": "test: envelope curve, bus output",
+      "status": "not_started"
+    },
+    {
+      "phase": "2",
+      "cycle": "Afternoon",
+      "component": "CodeBlock.ts",
+      "depends_on": "monaco-editor",
+      "effort": "3h",
+      "test_strategy": "test: create/focus/blur/theme",
+      "status": "not_started"
+    },
+    {
+      "phase": "2",
+      "cycle": "Afternoon",
+      "component": "BlockManager.ts",
+      "depends_on": "CodeBlock.ts",
+      "effort": "3h",
+      "test_strategy": "test: CRUD, position, bridge sync",
+      "status": "not_started"
+    },
+    {
+      "phase": "2",
+      "cycle": "Afternoon",
+      "component": "Block spawn animation",
+      "depends_on": "BlockManager.ts",
+      "effort": "2h",
+      "test_strategy": "visual: bridge write trigger",
+      "status": "not_started"
+    },
+    {
+      "phase": "3",
+      "cycle": "Evening",
+      "component": "ConversationLayer.ts",
+      "depends_on": "Field.ts",
+      "effort": "3h",
+      "test_strategy": "test: render + history pruning",
+      "status": "not_started"
+    },
+    {
+      "phase": "3",
+      "cycle": "Evening",
+      "component": "Audio layer",
+      "depends_on": "ModulationEngine.ts",
+      "effort": "3h",
+      "test_strategy": "test: context lifecycle",
+      "status": "not_started"
+    },
+    {
+      "phase": "3",
+      "cycle": "Evening",
+      "component": "Camera panning",
+      "depends_on": "Field.ts",
+      "effort": "2h",
+      "test_strategy": "test: offset tracking",
+      "status": "not_started"
+    },
+    {
+      "phase": "4",
+      "cycle": "Rest",
+      "component": "spaceman.svg",
+      "depends_on": "-",
+      "effort": "2h",
+      "test_strategy": "visual: load as Image",
+      "status": "not_started"
+    },
+    {
+      "phase": "4",
+      "cycle": "Rest",
+      "component": "Voice sequencing",
+      "depends_on": "VoiceLayer",
+      "effort": "2h",
+      "test_strategy": "test: state machine progression",
+      "status": "not_started"
+    },
+    {
+      "phase": "4",
+      "cycle": "Rest",
+      "component": "Oval slot wiring",
+      "depends_on": "OvalStadium.ts",
+      "effort": "1h",
+      "test_strategy": "test: bridge \u2192 slot activation",
+      "status": "not_started"
+    },
+    {
+      "phase": "4",
+      "cycle": "Rest",
+      "component": "Full ceremony test",
+      "depends_on": "all",
+      "effort": "2h",
+      "test_strategy": "integration: ground \u2192 elevated \u2192 return",
+      "status": "not_started"
+    }
+  ]
+}

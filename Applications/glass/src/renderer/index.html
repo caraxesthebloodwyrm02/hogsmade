@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' blob:; style-src 'self' 'unsafe-inline'; worker-src 'self' blob:; media-src 'self'"
+    />
+    <title>glass</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #0a0a0c;
+      }
+      #field {
+        position: fixed;
+        inset: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="field"></canvas>
+    <div
+      id="block-host"
+      style="position: fixed; inset: 0; pointer-events: none; overflow: hidden"
+    ></div>
+    <script type="module" src="./index.ts"></script>
+  </body>
+</html>

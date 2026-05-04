@@ -46,6 +46,8 @@ import { promisify } from "util";
 import * as z from "zod";
 import { getConfig } from "./config.js";
 
+const execFileAsync = promisify(execFile);
+
 // ── Constants ──
 
 const SERVER_NAME = "pulse-server";
@@ -646,22 +648,16 @@ interface TrustScoreEntry {
 }
 
 // Reads low-trust actors from gruff's sqlite DB. Returns null when the feature
-// is disabled (GRUFF_TRUST_SCORES_ENABLED unset) or the DB doesn't exist yet.
-// Path override GRUFF_TRUST_DB_PATH is used in tests to avoid touching real data.
+// is disabled (GRUFF_TRUST_SCORES_ENABLED unset) or on any sqlite3 error
+// (missing DB, corrupt file, etc). GRUFF_TRUST_DB_PATH overrides the default path.
 async function readTrustScores(): Promise<TrustScoreEntry[] | null> {
   if (!process.env.GRUFF_TRUST_SCORES_ENABLED) return null;
   const dbPath = process.env.GRUFF_TRUST_DB_PATH ?? path.join(homedir(), ".gruff", "trust.sqlite");
-  try {
-    await fs.access(dbPath);
-  } catch {
-    return null;
-  }
   const query =
     "SELECT actor, ROUND(score,1), tier, last_seen, event_count " +
     "FROM actor_profile WHERE score < 80 AND actor NOT LIKE 'mcp:%' AND event_count >= 3 " +
     "ORDER BY score ASC;";
   try {
-    const execFileAsync = promisify(execFile);
     const { stdout } = await execFileAsync("sqlite3", ["-readonly", dbPath, query]);
     return stdout
       .trim()

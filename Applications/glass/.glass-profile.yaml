@@ -1,0 +1,75 @@
+# Glass Session Profile
+# Place in your project root. Loaded by glass-server on glass_session_start.
+
+# --- Voices (populated during ceremony) ---
+voices:
+  I:
+    color: amber
+    role: speed
+    label: "Velocity"
+  II:
+    color: silver
+    role: safety
+    label: "Guard"
+  III:
+    color: gold
+    role: clarity
+    label: "Lens"
+
+# --- Ceremony triggers ---
+ceremony:
+  auto_evaluate_after_commits: 5
+  auto_return_after_idle_minutes: 10
+
+# --- Signal thresholds ---
+signals:
+  hot_threshold:
+    git_diff_lines: 200
+    iteration_count: 15
+
+# --- Earth palette (from session-env.jsx) ---
+# Used by bridge consumers to derive field tuning.
+palette:
+  void: "#0a0908"
+  deep: "#111010"
+  ground: "#1a1714"
+  clay: "#2a2420"
+  warm: "#3d3328"
+  ember: "#c4956a"
+  signal: "#d4a574"
+  bright: "#e8c9a0"
+  whisper: "#7a6b5d"
+  ghost: "#4a3f35"
+  green: "#6b8f71"
+  red: "#a0524a"
+  amber: "#c49a3c"
+
+# --- Triadic safeguard (behavioral, not visual) ---
+# Weights shape function behavior: validation strictness,
+# fallback conservatism, merge caution. Not rendered as UI.
+triadic:
+  safety: 1.0
+  correctness: 0.85
+  autonomy: 0.7
+
+# --- Named presets ---
+# Presets are complete bridge state templates for reproducible field states.
+# Load via: glass-preset.sh <preset-name>
+presets:
+  baseline-orbit-v1:
+    description: "First approved instance. Ground state, full orbit visible, spaceman centered. Low cognitive load, expressive palette, balanced visual distribution."
+    captured: "2026-05-04"
+    reference_image: "assets/image-dc870ef9-49a5-4c05-a278-577564ef7583.png"
+    bridge:
+      threshold_state: ground
+      progress: 0
+      agent_state: idle
+      voices: []
+      blocks: []
+      conversation: []
+    modulation_notes:
+      envelope: "ground — sustain: 0.12, lfoRate: 0.04, lfoDepth: 0.025"
+      disk_scale: "~0.17 (base 0.06 + mod 0.12 * recipe 0.94)"
+      oval_opacity: "~0.12 (base 0.03 + mod 0.12 * recipe 0.72)"
+      ambient_intensity: "~0.33 (base 0.28 + mod 0.12 * recipe 0.44)"
+      character: "quiet breath, slow LFO, no ceremony, full geometry visible"
