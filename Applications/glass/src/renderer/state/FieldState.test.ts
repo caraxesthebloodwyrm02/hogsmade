@@ -75,4 +75,14 @@ describe("FieldState", () => {
     expect(fs.blocks).toHaveLength(1);
     expect(fs.conversation).toHaveLength(1);
   });
+
+  it("signals getter returns bridge signals object", () => {
+    const fs = new FieldState();
+    const next: BridgeState = {
+      ...DEFAULT_BRIDGE_STATE,
+      signals: { iteration_count: 7 },
+    };
+    fs.update(next);
+    expect(fs.signals.iteration_count).toBe(7);
+  });
 });

@@ -161,6 +161,12 @@ export interface BridgeSignals {
   session_age_minutes: number;
 }
 
+export interface BridgeHotThreshold {
+  git_diff_lines: number;
+  iteration_count: number;
+  session_age_minutes: number;
+}
+
 export interface BridgeVoice {
   id: VoiceId;
   color: VoiceColor;
@@ -179,6 +185,7 @@ export interface BridgeState {
   progress: number; // 0.0–1.0 — ceremony position within current state
   voices: BridgeVoice[]; // populated during voices_appearing → elevated
   signals: BridgeSignals;
+  _hot_threshold?: BridgeHotThreshold;
 }
 
 export const DEFAULT_BRIDGE_STATE: BridgeState = {
@@ -194,5 +201,10 @@ export const DEFAULT_BRIDGE_STATE: BridgeState = {
     git_diff_lines: 0,
     iteration_count: 0,
     session_age_minutes: 0,
+  },
+  _hot_threshold: {
+    git_diff_lines: 200,
+    iteration_count: 15,
+    session_age_minutes: 60,
   },
 };

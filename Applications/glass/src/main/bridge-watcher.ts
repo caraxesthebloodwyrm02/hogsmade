@@ -171,6 +171,18 @@ function validateBridgeState(raw: unknown): BridgeState {
     session_age_minutes: clampNumber(rawSignals.session_age_minutes, 0, 14_400, 0),
   };
 
+  const rawHt =
+    r._hot_threshold && typeof r._hot_threshold === "object"
+      ? (r._hot_threshold as Record<string, unknown>)
+      : null;
+  const _hot_threshold = rawHt
+    ? {
+        git_diff_lines: clampNumber(rawHt.git_diff_lines, 1, 100_000, 200),
+        iteration_count: clampNumber(rawHt.iteration_count, 1, 10_000, 15),
+        session_age_minutes: clampNumber(rawHt.session_age_minutes, 1, 14_400, 60),
+      }
+    : undefined;
+
   return {
     timestamp: clampString(r.timestamp, 64, new Date().toISOString()),
     session_id: sessionId,
@@ -181,6 +193,7 @@ function validateBridgeState(raw: unknown): BridgeState {
     progress,
     voices,
     signals,
+    _hot_threshold,
   };
 }
 

@@ -1,4 +1,11 @@
-import type { BridgeState, AgentState, ThresholdState, BridgeVoice } from "../../../bridge/schema";
+import type {
+  BridgeState,
+  AgentState,
+  ThresholdState,
+  BridgeVoice,
+  BridgeSignals,
+  BridgeHotThreshold,
+} from "../../../bridge/schema";
 import { DEFAULT_BRIDGE_STATE } from "../../../bridge/schema";
 
 type Listener = (state: FieldState) => void;
@@ -24,6 +31,18 @@ export class FieldState {
   }
   get conversation() {
     return this._bridge.conversation;
+  }
+  get signals(): BridgeSignals {
+    return this._bridge.signals;
+  }
+  get hotThreshold(): BridgeHotThreshold {
+    return (
+      this._bridge._hot_threshold ?? {
+        git_diff_lines: 200,
+        iteration_count: 15,
+        session_age_minutes: 60,
+      }
+    );
   }
 
   update(bridge: BridgeState): void {

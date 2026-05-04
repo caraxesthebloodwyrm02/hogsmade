@@ -11,6 +11,7 @@ import { CodeBlock, type CodeBlockOptions } from "../blocks/CodeBlock";
 import { AssetBlock, type AssetBlockOptions } from "../blocks/AssetBlock";
 import { BlockDragController } from "../blocks/BlockDragController";
 import { BlockSpawnMenu } from "../blocks/BlockSpawnMenu";
+import { computeSignalHeat } from "./signal-heat";
 import type { FieldState } from "../state/FieldState";
 import type { BlockType, ThresholdState } from "../../../bridge/schema";
 
@@ -41,6 +42,9 @@ export class Field {
   private thresholdState: ThresholdState = "ground";
   private ceremonyProgress = 0;
   private signalHeat = 0;
+
+  private paneOpen = false;
+  private paneWidth = 360;
 
   private lastTime = 0;
   private rafId = 0;
@@ -90,7 +94,7 @@ export class Field {
       this.agentPresence.setAgentState(s.agentState);
       this.thresholdState = s.thresholdState;
       this.ceremonyProgress = s.progress;
-      this.signalHeat = Math.min(1, (s.signals.iteration_count ?? 0) / 15);
+      this.signalHeat = computeSignalHeat(s.signals, s.hotThreshold);
       this.voiceLayer.update(s.voices, s.thresholdState);
 
       for (const v of s.voices) {
@@ -217,8 +221,13 @@ export class Field {
     });
   }
 
+  setPaneOpen(open: boolean): void {
+    this.paneOpen = open;
+    this.resize();
+  }
+
   private resize(): void {
-    this.canvas.width = window.innerWidth;
+    this.canvas.width = this.paneOpen ? window.innerWidth - this.paneWidth : window.innerWidth;
     this.canvas.height = window.innerHeight;
     this.thresholdLine?.resize(this.canvas.width, this.canvas.height);
     this.conversationLayer?.resize(this.canvas.width, this.canvas.height);
