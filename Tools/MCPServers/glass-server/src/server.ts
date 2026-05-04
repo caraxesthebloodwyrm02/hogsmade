@@ -21,6 +21,7 @@ import { pathToFileURL } from "url";
 import * as z from "zod";
 import { writeBridge, readBridge, getBridgePath } from "./bridge-writer.js";
 import { appendInventoryAsset, getInventoryPath, readInventory } from "./inventory-writer.js";
+import { computeGitDiffLines } from "./git-stats.js";
 import { loadProfile, type TriadicWeights } from "./profile-reader.js";
 import { applyTriadicGuard } from "./triadic-guard.js";
 
@@ -30,6 +31,7 @@ const VERSION = "1.0.0";
 let activeTriadic: TriadicWeights = { safety: 1.0, correctness: 0.85, autonomy: 0.7 };
 let ceremonyEvalThreshold = 15;
 let ceremonyIdleMinutes: number | null = null;
+let sessionStartedAt: number = Date.now();
 
 /** High-water mark: index of the last conversation entry consumed by the agent. */
 let consumedIndex = 0;
@@ -237,6 +239,12 @@ export function buildServer(): McpServer {
           signals: { git_diff_lines: 0, iteration_count: 0, session_age_minutes: 0 },
         };
 
+        state._hot_threshold = {
+          git_diff_lines: profile?.signals?.hot_threshold?.git_diff_lines ?? 200,
+          iteration_count: profile?.signals?.hot_threshold?.iteration_count ?? 15,
+          session_age_minutes: profile?.signals?.hot_threshold?.session_age_minutes ?? 60,
+        };
+
         if (profile?.voices) {
           state._profile_voices = profile.voices;
         }
@@ -265,6 +273,7 @@ export function buildServer(): McpServer {
         }
 
         consumedIndex = 0;
+        sessionStartedAt = Date.now();
 
         const merged = await writeBridge(state);
 
@@ -398,6 +407,23 @@ export function buildServer(): McpServer {
 
         const patch: Record<string, unknown> = { conversation };
         if (agent_state) patch.agent_state = agent_state;
+
+        const currentSignals =
+          current.signals && typeof current.signals === "object"
+            ? (current.signals as Record<string, unknown>)
+            : {};
+        const updatedSignals: Record<string, unknown> = { ...currentSignals };
+        if (role === "agent") {
+          updatedSignals.iteration_count =
+            (typeof currentSignals.iteration_count === "number"
+              ? currentSignals.iteration_count
+              : 0) + 1;
+        }
+        updatedSignals.session_age_minutes = Math.round((Date.now() - sessionStartedAt) / 60000);
+        const workspace =
+          typeof current._profile_workspace === "string" ? current._profile_workspace : null;
+        updatedSignals.git_diff_lines = computeGitDiffLines(workspace);
+        patch.signals = updatedSignals;
 
         const guard = applyTriadicGuard(patch, current, activeTriadic);
         if (!guard.allowed) {
@@ -761,22 +787,30 @@ export function buildServer(): McpServer {
 
         let updatedBlocks = [...blocks, newBlock];
 
-        // Pruning: remove oldest agent-origin blocks if limit exceeded.
-        // User-origin blocks and 'asset' blocks are unconditionally preserved.
-        const limit = max_blocks ?? 12;
-        const newAgentCount = updatedBlocks.filter(
-          (b) => b.origin === "agent" && b.type !== "asset",
-        ).length;
-        if (newAgentCount > limit) {
-          const excess = newAgentCount - limit;
-          let removed = 0;
-          updatedBlocks = updatedBlocks.filter((b) => {
-            if (b.origin === "agent" && b.type !== "asset" && removed < excess) {
-              removed++;
-              return false;
-            }
-            return true;
-          });
+        // Tier-based eviction: evict from lowest-priority tiers first.
+        // Tier 0: asset (never evict) | Tier 1: user-origin (60)
+        // Tier 2: agent code (80) | Tier 3: agent note (20) | Tier 4: agent output (10)
+        const TIER_LIMITS: Record<string, number> = {
+          output: max_blocks ? Math.min(max_blocks, 10) : 10,
+          note: 20,
+          code: 80,
+          user: 60,
+        };
+
+        function blockTier(b: Record<string, unknown>): string {
+          if (b.type === "asset") return "asset";
+          if (b.origin === "user") return "user";
+          return String(b.type);
+        }
+
+        for (const tier of ["output", "note", "code", "user"] as const) {
+          const tierBlocks = updatedBlocks.filter((b) => blockTier(b) === tier);
+          const limit = TIER_LIMITS[tier];
+          if (tierBlocks.length > limit) {
+            const excess = tierBlocks.length - limit;
+            const evictIds = new Set(tierBlocks.slice(0, excess).map((b) => b.id));
+            updatedBlocks = updatedBlocks.filter((b) => !evictIds.has(b.id));
+          }
         }
 
         const merged = await writeBridge({ blocks: updatedBlocks });

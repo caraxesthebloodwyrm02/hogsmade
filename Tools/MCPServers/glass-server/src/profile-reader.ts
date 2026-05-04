@@ -16,6 +16,7 @@ export interface CeremonyConfig {
 export interface SignalThresholds {
   git_diff_lines?: number;
   iteration_count?: number;
+  session_age_minutes?: number;
 }
 
 export interface TriadicWeights {
@@ -126,6 +127,8 @@ function validateProfile(raw: Record<string, unknown>): GlassProfile {
         hot_threshold: {
           git_diff_lines: typeof ht.git_diff_lines === "number" ? ht.git_diff_lines : undefined,
           iteration_count: typeof ht.iteration_count === "number" ? ht.iteration_count : undefined,
+          session_age_minutes:
+            typeof ht.session_age_minutes === "number" ? ht.session_age_minutes : undefined,
         },
       };
     }
