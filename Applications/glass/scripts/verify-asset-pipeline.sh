@@ -6,31 +6,48 @@
 set -euo pipefail
 
 # Find repository root
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+SHARED_TYPES_DIR="$ROOT_DIR/Components/shared-types"
+GLASS_SERVER_DIR="$ROOT_DIR/Tools/MCPServers/glass-server"
+GLASS_APP_DIR="$ROOT_DIR/Applications/glass"
+
+require_dir() {
+  local dir="$1"
+  local label="$2"
+  if [ ! -d "$dir" ]; then
+    echo "Error: $label directory not found: $dir" >&2
+    echo "Hint: run this script from a valid Glass checkout." >&2
+    exit 1
+  fi
+}
+
+require_dir "$SHARED_TYPES_DIR" "@cascade/shared-types"
+require_dir "$GLASS_SERVER_DIR" "glass-server"
+require_dir "$GLASS_APP_DIR" "glass app"
 
 echo "=== 1. Building Core Dependencies ==="
 echo "Building @cascade/shared-types..."
-cd "$ROOT_DIR/Components/shared-types"
+cd "$SHARED_TYPES_DIR"
 npm run build
 
 echo "Building glass-server..."
-cd "$ROOT_DIR/Tools/MCPServers/glass-server"
+cd "$GLASS_SERVER_DIR"
 npm run build
 
 echo "=== 2. Running Targeted Asset & Ledger Test Suites ==="
 # Shared Types
 echo ">>> [shared-types] Testing Magnetism & Ledger Contracts..."
-cd "$ROOT_DIR/Components/shared-types"
+cd "$SHARED_TYPES_DIR"
 npx vitest run tests/signal-model.test.ts tests/memory-ledger.test.ts
 
 # Glass Server
 echo ">>> [glass-server] Testing Asset Minting & Persistence Gates..."
-cd "$ROOT_DIR/Tools/MCPServers/glass-server"
+cd "$GLASS_SERVER_DIR"
 npx vitest run src/server.test.ts
 
 # Glass App
 echo ">>> [glass app] Testing Rarity Gates & Renderer Integration..."
-cd "$ROOT_DIR/Applications/glass"
+cd "$GLASS_APP_DIR"
 npx vitest run bridge/schema.test.ts src/renderer/blocks/AssetBlock.test.ts src/main/bridge-watcher.test.ts
 
 echo "=== 3. Inspecting Durable Inventory Ledger ==="

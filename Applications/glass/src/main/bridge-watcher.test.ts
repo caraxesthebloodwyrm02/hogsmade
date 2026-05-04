@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import fs from "fs";
 
 vi.mock("fs");
@@ -26,9 +26,13 @@ function mockReadSync(state: Record<string, unknown>): void {
 }
 
 let writtenData: string | null = null;
+let warnSpy: ReturnType<typeof vi.spyOn> | null = null;
+let errorSpy: ReturnType<typeof vi.spyOn> | null = null;
 
 beforeEach(() => {
   vi.resetModules();
+  warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+  errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
   vi.mocked(fs.readFileSync).mockReset();
   vi.mocked(fs.writeFileSync).mockReset();
   vi.mocked(fs.renameSync).mockReset();
@@ -38,6 +42,13 @@ beforeEach(() => {
     writtenData = typeof data === "string" ? data : String(data);
   });
   vi.mocked(fs.renameSync).mockImplementation(() => {});
+});
+
+afterEach(() => {
+  warnSpy?.mockRestore();
+  errorSpy?.mockRestore();
+  warnSpy = null;
+  errorSpy = null;
 });
 
 describe("appendConversationTurn", () => {
