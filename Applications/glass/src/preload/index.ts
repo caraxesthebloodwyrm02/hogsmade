@@ -23,4 +23,11 @@ contextBridge.exposeInMainWorld("glass", {
   patchBlockPosition: (id: string, x: number, y: number) => {
     ipcRenderer.send("bridge:patch-block-position", { id, x, y });
   },
+  onSimilarityResults: (cb: (results: unknown[]) => void) => {
+    ipcRenderer.removeAllListeners("pane:similarity-results");
+    ipcRenderer.on("pane:similarity-results", (_event, results: unknown[]) => cb(results));
+  },
+  togglePane: (open: boolean) => {
+    ipcRenderer.send("pane:toggle", { open });
+  },
 });
