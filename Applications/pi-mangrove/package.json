@@ -27,6 +27,7 @@
   },
   "scripts": {
     "build": "tsc",
+    "lint": "tsc --noEmit",
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {

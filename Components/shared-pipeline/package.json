@@ -27,6 +27,7 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
+    "lint": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "npm run build"
   },
