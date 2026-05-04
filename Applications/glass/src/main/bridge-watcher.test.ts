@@ -131,6 +131,52 @@ describe("addBridgeBlock", () => {
     expect(writtenData).toBeNull();
   });
 
+  it("adds asset blocks when rarity is permitted by current ceremony state", async () => {
+    const { addBridgeBlock } = await import("./bridge-watcher");
+    mockReadSync(makeBridgeState({ threshold_state: "elevated" }));
+    addBridgeBlock({
+      type: "asset",
+      language: "text",
+      content: "Rift-crossing invariant",
+      position: { x: 100, y: 200 },
+      origin: "agent",
+      asset: {
+        category: "relic",
+        rarity: "mythic",
+        label: "Rift Anchor",
+        glyph: "*",
+        acquired_at: "2026-01-01T00:00:00Z",
+        source_ceremony: "elevated",
+        source_session: "test",
+      },
+    });
+    expect(writtenData).not.toBeNull();
+    const state = JSON.parse(writtenData!);
+    expect(state.blocks[0].type).toBe("asset");
+    expect(state.blocks[0].asset.rarity).toBe("mythic");
+  });
+
+  it("rejects asset blocks when rarity exceeds ceremony ceiling", async () => {
+    const { addBridgeBlock } = await import("./bridge-watcher");
+    mockReadSync(makeBridgeState({ threshold_state: "ground" }));
+    addBridgeBlock({
+      type: "asset",
+      language: "text",
+      content: "Too early",
+      position: { x: 0, y: 0 },
+      origin: "agent",
+      asset: {
+        category: "relic",
+        rarity: "mythic",
+        label: "Forbidden Anchor",
+        acquired_at: "2026-01-01T00:00:00Z",
+        source_ceremony: "ground",
+        source_session: "test",
+      },
+    });
+    expect(writtenData).toBeNull();
+  });
+
   it("rejects when blocks at capacity", async () => {
     const { addBridgeBlock } = await import("./bridge-watcher");
     const blocks = Array.from({ length: 200 }, (_, i) => ({

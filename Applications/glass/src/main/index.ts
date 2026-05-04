@@ -109,6 +109,7 @@ ipcMain.on("bridge:add-block", (_event, payload: unknown) => {
           }
         : { x: 0, y: 0 },
     origin: typeof p.origin === "string" ? p.origin : "user",
+    asset: p.asset && typeof p.asset === "object" ? p.asset : undefined,
   });
 });
 

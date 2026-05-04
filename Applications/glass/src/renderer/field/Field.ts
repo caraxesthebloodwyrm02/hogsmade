@@ -8,10 +8,13 @@ import { ConversationLayer, type ConversationMessage } from "../conversation/Con
 import { AudioEngine } from "../audio/AudioEngine";
 import { BlockManager } from "../blocks/BlockManager";
 import { CodeBlock, type CodeBlockOptions } from "../blocks/CodeBlock";
+import { AssetBlock, type AssetBlockOptions } from "../blocks/AssetBlock";
 import { BlockDragController } from "../blocks/BlockDragController";
 import { BlockSpawnMenu } from "../blocks/BlockSpawnMenu";
 import type { FieldState } from "../state/FieldState";
-import type { ThresholdState } from "../../../bridge/schema";
+import type { BlockType, ThresholdState } from "../../../bridge/schema";
+
+type BlockView = CodeBlock | AssetBlock;
 
 export class Field {
   private canvas: HTMLCanvasElement;
@@ -31,11 +34,13 @@ export class Field {
   private blockManager: BlockManager;
   private dragController: BlockDragController;
   private spawnMenu: BlockSpawnMenu;
-  private codeBlocks: Map<string, CodeBlock> = new Map();
+  private blockViews: Map<string, BlockView> = new Map();
+  private blockViewTypes: Map<string, BlockType> = new Map();
   private blockHost: HTMLDivElement;
 
   private thresholdState: ThresholdState = "ground";
   private ceremonyProgress = 0;
+  private signalHeat = 0;
 
   private lastTime = 0;
   private rafId = 0;
@@ -85,6 +90,7 @@ export class Field {
       this.agentPresence.setAgentState(s.agentState);
       this.thresholdState = s.thresholdState;
       this.ceremonyProgress = s.progress;
+      this.signalHeat = Math.min(1, (s.signals.iteration_count ?? 0) / 15);
       this.voiceLayer.update(s.voices, s.thresholdState);
 
       for (const v of s.voices) {
@@ -134,7 +140,7 @@ export class Field {
         const pos = this.dragController.moveDrag(e.clientX, e.clientY);
         if (pos) {
           this.blockManager.move(pos.id, pos.x, pos.y);
-          const cb = this.codeBlocks.get(pos.id);
+          const cb = this.blockViews.get(pos.id);
           cb?.setPosition(pos.x, pos.y);
         }
       }
@@ -145,7 +151,7 @@ export class Field {
         const result = this.dragController.endDragAt(e.clientX, e.clientY);
         if (result) {
           this.blockManager.move(result.id, result.x, result.y);
-          const cb = this.codeBlocks.get(result.id);
+          const cb = this.blockViews.get(result.id);
           cb?.setPosition(result.x, result.y);
           (window as any).glass?.patchBlockPosition?.(result.id, result.x, result.y);
         }
@@ -239,7 +245,12 @@ export class Field {
   private render(dt: number): void {
     const { ctx, canvas } = this;
 
-    const bus = this.modEngine.tick(dt, this.thresholdState, this.ceremonyProgress);
+    const bus = this.modEngine.tick(
+      dt,
+      this.thresholdState,
+      this.ceremonyProgress,
+      this.signalHeat,
+    );
 
     this.camera.tick(dt);
     this.thresholdLine.tick(dt, this.thresholdState);
@@ -289,31 +300,54 @@ export class Field {
     const managed = this.blockManager.getAll();
     const managedIds = new Set(managed.map((b) => b.id));
 
-    for (const [id, cb] of this.codeBlocks) {
+    for (const [id, cb] of this.blockViews) {
       if (!managedIds.has(id)) {
         cb.dispose();
-        this.codeBlocks.delete(id);
+        this.blockViews.delete(id);
+        this.blockViewTypes.delete(id);
       }
     }
 
     for (const block of managed) {
-      if (!this.codeBlocks.has(block.id)) {
+      if (this.blockViewTypes.get(block.id) !== block.type) {
+        this.blockViews.get(block.id)?.dispose();
+        this.blockViews.delete(block.id);
+        this.blockViewTypes.delete(block.id);
+      }
+
+      if (!this.blockViews.has(block.id)) {
         const container = document.createElement("div");
         this.blockHost.appendChild(container);
-        const opts: CodeBlockOptions = {
-          id: block.id,
-          language: block.language,
-          content: block.content,
-          x: block.position.x,
-          y: block.position.y,
-          width: 320,
-          height: 180,
-          origin: block.origin,
-        };
-        const codeBlock = new CodeBlock(opts, container);
-        this.codeBlocks.set(block.id, codeBlock);
+        let blockView: BlockView;
+        if (block.type === "asset" && block.asset) {
+          const opts: AssetBlockOptions = {
+            id: block.id,
+            content: block.content,
+            x: block.position.x,
+            y: block.position.y,
+            width: 220,
+            height: 156,
+            origin: block.origin,
+            asset: block.asset,
+          };
+          blockView = new AssetBlock(opts, container);
+        } else {
+          const opts: CodeBlockOptions = {
+            id: block.id,
+            language: block.language,
+            content: block.content,
+            x: block.position.x,
+            y: block.position.y,
+            width: 320,
+            height: 180,
+            origin: block.origin,
+          };
+          blockView = new CodeBlock(opts, container);
+        }
+        this.blockViews.set(block.id, blockView);
+        this.blockViewTypes.set(block.id, block.type);
 
-        const grip = codeBlock.getGripElement();
+        const grip = blockView.getGripElement();
         grip.addEventListener("mousedown", (e) => {
           if (e.button !== 0) return;
           e.stopPropagation();
@@ -326,18 +360,21 @@ export class Field {
           );
         });
       } else {
-        const cb = this.codeBlocks.get(block.id)!;
+        const cb = this.blockViews.get(block.id)!;
         if (!this.dragController.isDragging() || this.dragController.activeBlockId() !== block.id) {
           cb.setPosition(block.position.x, block.position.y);
         }
         cb.setContent(block.content);
+        if (block.type === "asset" && block.asset && cb instanceof AssetBlock) {
+          cb.setAsset(block.asset);
+        }
       }
     }
   }
 
   private updateBlockOpacities(): void {
     for (const block of this.blockManager.getAll()) {
-      const cb = this.codeBlocks.get(block.id);
+      const cb = this.blockViews.get(block.id);
       cb?.updateOpacity(block.spawnAge);
     }
   }

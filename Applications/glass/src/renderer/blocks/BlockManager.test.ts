@@ -36,6 +36,31 @@ describe("BlockManager", () => {
     expect(mgr.getAll()).toHaveLength(2);
   });
 
+  it("preserves asset metadata from bridge blocks", () => {
+    const bridgeBlocks: BridgeBlock[] = [
+      {
+        id: "asset-1",
+        type: "asset",
+        language: "text",
+        content: "Rift-crossing invariant",
+        position: { x: 100, y: 200 },
+        origin: "agent",
+        asset: {
+          category: "relic",
+          rarity: "mythic",
+          label: "Rift Anchor",
+          glyph: "*",
+          acquired_at: "2026-01-01T00:00:00Z",
+          source_ceremony: "elevated",
+          source_session: "session-1",
+        },
+      },
+    ];
+    mgr.sync(bridgeBlocks);
+    expect(mgr.get("asset-1")?.asset?.category).toBe("relic");
+    expect(mgr.get("asset-1")?.asset?.rarity).toBe("mythic");
+  });
+
   it("preserves existing blocks on re-sync", () => {
     const blocks: BridgeBlock[] = [
       {

@@ -1,6 +1,11 @@
 import { describe, it, expect } from "vitest";
 import {
+  ASSET_CATEGORIES,
+  ASSET_RARITIES,
   DEFAULT_BRIDGE_STATE,
+  isAssetCategory,
+  isAssetRarity,
+  isRarityPermitted,
   type BridgeState,
   type ThresholdState,
   type BridgeVoice,
@@ -60,5 +65,25 @@ describe("bridge schema", () => {
     expect(patched.threshold_state).toBe("evaluating");
     expect(patched.progress).toBe(0.5);
     expect(patched.agent_state).toBe("idle");
+  });
+
+  it("defines runtime asset category and rarity guards", () => {
+    expect(ASSET_CATEGORIES).toContain("relic");
+    expect(ASSET_CATEGORIES).toContain("blueprint");
+    expect(ASSET_RARITIES).toContain("mythic");
+    expect(isAssetCategory("artifact")).toBe(true);
+    expect(isAssetCategory("unknown")).toBe(false);
+    expect(isAssetRarity("rare")).toBe(true);
+    expect(isAssetRarity("forbidden")).toBe(false);
+  });
+
+  it("gates rarity by ceremony threshold state", () => {
+    expect(isRarityPermitted("uncommon", "ground")).toBe(true);
+    expect(isRarityPermitted("rare", "ground")).toBe(false);
+    expect(isRarityPermitted("rare", "floor_rising")).toBe(true);
+    expect(isRarityPermitted("epic", "voice_2_active")).toBe(true);
+    expect(isRarityPermitted("mythic", "voice_2_active")).toBe(false);
+    expect(isRarityPermitted("mythic", "elevated")).toBe(true);
+    expect(isRarityPermitted("uncommon", "denied")).toBe(false);
   });
 });

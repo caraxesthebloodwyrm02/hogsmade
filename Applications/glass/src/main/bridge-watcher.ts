@@ -1,14 +1,28 @@
 import fs from "fs";
 import path from "path";
 import os from "os";
-import { BridgeState, DEFAULT_BRIDGE_STATE } from "../../bridge/schema";
-import type { AgentState, ThresholdState } from "../../bridge/schema";
+import {
+  DEFAULT_BRIDGE_STATE,
+  isAssetCategory,
+  isAssetRarity,
+  isRarityPermitted,
+  type BridgeState,
+} from "../../bridge/schema";
+import type {
+  AgentState,
+  AssetMeta,
+  BlockOrigin,
+  BlockType,
+  BridgeBlock,
+  ThresholdState,
+} from "../../bridge/schema";
 
 const BRIDGE_PATH =
   process.env.GLASS_BRIDGE_PATH ?? path.join(os.homedir(), ".caraxes", "field-bridge.json");
 
 const MAX_ARRAY = 200;
 const MAX_TEXT = 32_768;
+const MAX_BLOCK_TEXT = 1_000_000;
 
 const VALID_AGENT_STATES = new Set<string>([
   "idle",
@@ -29,6 +43,7 @@ const VALID_THRESHOLD_STATES = new Set<string>([
   "returning",
   "denied",
 ]);
+const VALID_BLOCK_TYPES = new Set<string>(["code", "note", "output", "asset"]);
 
 function clampNumber(v: unknown, min: number, max: number, fallback: number): number {
   if (typeof v !== "number" || !isFinite(v)) return fallback;
@@ -38,6 +53,83 @@ function clampNumber(v: unknown, min: number, max: number, fallback: number): nu
 function clampString(v: unknown, max: number, fallback: string): string {
   if (typeof v !== "string") return fallback;
   return v.length > max ? v.slice(0, max) : v;
+}
+
+function isThresholdState(value: unknown): value is ThresholdState {
+  return typeof value === "string" && VALID_THRESHOLD_STATES.has(value);
+}
+
+function validateAssetMeta(
+  raw: unknown,
+  thresholdState: ThresholdState,
+  sessionId: string,
+): AssetMeta | null {
+  if (raw == null || typeof raw !== "object") return null;
+
+  const a = raw as Record<string, unknown>;
+  if (!isAssetCategory(a.category) || !isAssetRarity(a.rarity)) return null;
+
+  const sourceCeremony = isThresholdState(a.source_ceremony) ? a.source_ceremony : thresholdState;
+  if (!isRarityPermitted(a.rarity, sourceCeremony)) return null;
+
+  const label = clampString(a.label, 64, "");
+  if (label.length === 0) return null;
+
+  const meta: AssetMeta = {
+    category: a.category,
+    rarity: a.rarity,
+    label,
+    acquired_at: clampString(a.acquired_at, 64, new Date().toISOString()),
+    source_ceremony: sourceCeremony,
+    source_session: clampString(a.source_session, 128, sessionId),
+  };
+
+  const glyph = clampString(a.glyph, 8, "");
+  if (glyph) meta.glyph = glyph;
+  if (typeof a.consumed === "boolean") meta.consumed = a.consumed;
+  const ledgerId = clampString(a.ledger_id, 128, "");
+  if (ledgerId) meta.ledger_id = ledgerId;
+
+  return meta;
+}
+
+function validateBridgeBlock(
+  raw: unknown,
+  thresholdState: ThresholdState,
+  sessionId: string,
+): BridgeBlock | null {
+  if (raw == null || typeof raw !== "object") return null;
+
+  const b = raw as Record<string, unknown>;
+  if (!VALID_BLOCK_TYPES.has(b.type as string)) return null;
+
+  const id = clampString(b.id, 128, "");
+  if (id.length === 0) return null;
+
+  const type = b.type as BlockType;
+  const position =
+    b.position && typeof b.position === "object" ? (b.position as Record<string, unknown>) : {};
+  const origin: BlockOrigin = b.origin === "agent" ? "agent" : "user";
+
+  const block: BridgeBlock = {
+    id,
+    type,
+    language: clampString(b.language, 64, "text"),
+    content: clampString(b.content, MAX_BLOCK_TEXT, ""),
+    position: {
+      x: clampNumber(position.x, -100_000, 100_000, 0),
+      y: clampNumber(position.y, -100_000, 100_000, 0),
+    },
+    origin,
+  };
+
+  if (type === "asset") {
+    const asset = validateAssetMeta(b.asset, thresholdState, sessionId);
+    if (!asset) return null;
+    block.asset = asset;
+  }
+
+  return block;
 }
 
 function validateBridgeState(raw: unknown): BridgeState {
@@ -55,7 +147,13 @@ function validateBridgeState(raw: unknown): BridgeState {
 
   const progress = clampNumber(r.progress, 0, 1, 0);
 
-  const blocks = Array.isArray(r.blocks) ? r.blocks.slice(0, MAX_ARRAY) : [];
+  const sessionId = clampString(r.session_id, 128, "");
+  const blocks = Array.isArray(r.blocks)
+    ? r.blocks
+        .slice(0, MAX_ARRAY)
+        .map((b) => validateBridgeBlock(b, thresholdState, sessionId))
+        .filter((b): b is BridgeBlock => b !== null)
+    : [];
   const conversation = Array.isArray(r.conversation)
     ? r.conversation.slice(0, MAX_ARRAY).map((m: any) => ({
         role: m?.role === "agent" ? ("agent" as const) : ("user" as const),
@@ -75,7 +173,7 @@ function validateBridgeState(raw: unknown): BridgeState {
 
   return {
     timestamp: clampString(r.timestamp, 64, new Date().toISOString()),
-    session_id: clampString(r.session_id, 128, ""),
+    session_id: sessionId,
     agent_state: agentState,
     blocks,
     conversation,
@@ -131,13 +229,13 @@ export function addBridgeBlock(block: {
   content: string;
   position: { x: number; y: number };
   origin: string;
+  asset?: unknown;
 }): void {
   if (!block || typeof block !== "object") {
     console.warn(`[glass] addBridgeBlock rejected — invalid payload`);
     return;
   }
-  const validTypes = new Set(["code", "note", "output"]);
-  if (!validTypes.has(block.type)) {
+  if (!VALID_BLOCK_TYPES.has(block.type)) {
     console.warn(`[glass] addBridgeBlock rejected — invalid type: ${block.type}`);
     return;
   }
@@ -153,14 +251,23 @@ export function addBridgeBlock(block: {
       return;
     }
     const id = `user-${Date.now()}-${++blockSeq}`;
-    blocks.push({
+    const nextBlock: BridgeBlock = {
       id,
-      type: block.type,
+      type: block.type as BlockType,
       language: block.language || "text",
       content: block.content,
       position: { x: Number(block.position?.x) || 0, y: Number(block.position?.y) || 0 },
       origin: block.origin === "agent" ? "agent" : "user",
-    });
+    };
+    if (nextBlock.type === "asset") {
+      const asset = validateAssetMeta(block.asset, state.threshold_state, state.session_id);
+      if (!asset) {
+        console.warn(`[glass] addBridgeBlock rejected — invalid asset metadata or rarity gate`);
+        return;
+      }
+      nextBlock.asset = asset;
+    }
+    blocks.push(nextBlock);
     state.blocks = blocks;
     const tmp = `${BRIDGE_PATH}.tmp.${process.pid}.add`;
     fs.writeFileSync(tmp, JSON.stringify(state, null, 2), { encoding: "utf-8", mode: 0o600 });

@@ -1,4 +1,10 @@
-import type { BridgeBlock, BlockType, BlockOrigin, BlockPosition } from "../../../bridge/schema";
+import type {
+  AssetMeta,
+  BridgeBlock,
+  BlockOrigin,
+  BlockPosition,
+  BlockType,
+} from "../../../bridge/schema";
 
 export interface ManagedBlock {
   id: string;
@@ -7,6 +13,7 @@ export interface ManagedBlock {
   content: string;
   position: BlockPosition;
   origin: BlockOrigin;
+  asset?: AssetMeta;
   spawnAge: number;
 }
 
@@ -38,6 +45,7 @@ export class BlockManager {
         content: b.content,
         position: { ...b.position },
         origin: b.origin,
+        asset: b.asset,
         spawnAge: this.blocks.get(b.id)?.spawnAge ?? 0,
       });
     }
@@ -49,6 +57,7 @@ export class BlockManager {
     content: string,
     position: BlockPosition,
     origin: BlockOrigin,
+    asset?: AssetMeta,
   ): ManagedBlock {
     const id = `local-${nextLocalId++}`;
     const block: ManagedBlock = {
@@ -58,6 +67,7 @@ export class BlockManager {
       content,
       position: { ...position },
       origin,
+      asset,
       spawnAge: 0,
     };
     this.blocks.set(id, block);
