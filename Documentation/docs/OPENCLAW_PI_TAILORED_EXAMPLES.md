@@ -139,19 +139,15 @@
 ## Best-fit guidance
 
 - **Use OpenClaw memory tools**
-
   - for durable workstation/project recall
 
 - **Use `dio_episode_summary`**
-
   - for structure and phase orientation
 
 - **Use `dio:status`**
-
   - for live cadence constants and cycle framing
 
 - **Use `security:audit`**
-
   - for targeted DIO security checks
 
 - **Rely on `local-guard`**

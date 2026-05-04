@@ -103,8 +103,9 @@ function readBridgeFile(): BridgeState {
 export function patchBridgeBlock(blockId: string, content: string): void {
   if (typeof blockId !== "string" || blockId.length === 0 || blockId.length > 128) {
     console.warn(
-      `[glass] patchBridgeBlock rejected — invalid blockId: ${typeof blockId}, len=${String(blockId)
-        ?.length}`,
+      `[glass] patchBridgeBlock rejected — invalid blockId: ${typeof blockId}, len=${
+        String(blockId)?.length
+      }`,
     );
     return;
   }
@@ -166,7 +167,7 @@ export function startBridgeWatcher(onUpdate: (state: BridgeState) => void): void
   } catch (watchErr) {
     console.warn(
       `[glass] native fs.watch unavailable (${
-        watchErr instanceof Error ? watchErr.code ?? watchErr.message : String(watchErr)
+        watchErr instanceof Error ? (watchErr.code ?? watchErr.message) : String(watchErr)
       }) — falling back to polling`,
     );
     setInterval(() => {

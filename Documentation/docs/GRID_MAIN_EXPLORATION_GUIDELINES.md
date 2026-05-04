@@ -26,13 +26,11 @@ GRID-main/
 ### Phase 1: Understanding the Architecture
 
 - [ ] **Review Main Entry Point**
-
   - `src/application/mothership/main.py` - FastAPI application setup
   - Look for router registrations and middleware
   - Identify configuration loading and environment setup
 
 - [ ] **Examine API Structure**
-
   - `src/application/mothership/routers/` - All API endpoints
   - Key routers: `intelligence.py`, `health.py`, `metrics.py`
   - Note authentication and permission decorators
@@ -46,14 +44,12 @@ GRID-main/
 ### Phase 2: Key Components Deep Dive
 
 - [ ] **RAG Integration**
-
   - `src/tools/rag/` - Complete RAG implementation
   - `rag_engine.py` - Main orchestration
   - `config.py` - Configuration management
   - Test the indexing and query pipeline
 
 - [ ] **Safety & Security**
-
   - Look for `safety/`, `security/`, `boundaries/` modules
   - Understand validation layers and guardrails
   - Review audit trail implementation
@@ -66,13 +62,11 @@ GRID-main/
 ### Phase 3: Data Flow Analysis
 
 - [ ] **Request Processing**
-
   - Trace a request from entry to response
   - Identify middleware and processing stages
   - Document error handling patterns
 
 - [ ] **Context Management**
-
   - How is context tracked across requests?
   - Session management implementation
   - Memory persistence mechanisms
@@ -207,13 +201,11 @@ uv run ruff check .
 ### Key Metrics to Track
 
 1. **API Response Times**
-
    - `/intelligence` endpoint latency
    - RAG query processing time
    - Model inference duration
 
 2. **Resource Usage**
-
    - Memory consumption per request
    - CPU usage patterns
    - Disk I/O for vector operations
@@ -257,13 +249,11 @@ While exploring, document:
 ## 🎯 Next Steps After Exploration
 
 1. **Identify Improvement Opportunities**
-
    - Performance optimizations
    - Security enhancements
    - Feature gaps
 
 2. **Create Integration Examples**
-
    - Sample API calls
    - Common workflows
    - Error handling patterns

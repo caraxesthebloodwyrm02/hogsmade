@@ -84,11 +84,24 @@ The signal channel between the agent and the field.
 
 The /rift quality gate, rendered in the field.
 
-- **Trigger:** When `threshold_state` transitions from `ground` → `evaluating` → `elevated`.
+- **Trigger:** When `threshold_state` transitions through ceremony states.
 - **Ground state:** Normal field. Quiet ambient motion.
 - **Evaluating state:** Field darkens slightly. Spaceman pulses once. A thin horizontal line appears across the field — the threshold line.
-- **Elevated state (rift opens):** Field brightens from the bottom up — a slow floor-rise animation over ~2 seconds. The threshold line dissolves. The Spaceman moves to center. Conversation layer expands to full height.
+- **Floor Rising state (`floor_rising`):** Field begins to brighten from the bottom up — a slow floor-rise animation over ~2 seconds. The threshold line dissolves.
+- **Elevated state (rift opens):** The Spaceman moves to center. Conversation layer expands to full height.
+- **Voices Appearing state (`voices_appearing`):** Ceremony voices enter the field as colored orbs orbiting the Spaceman.
+- **Voice Active states (`voice_1_active`, `voice_2_active`, `voice_3_active`):** The respective voice orb flares and pulses while its message renders in the conversation layer.
+- **Returning state (`returning`):** The field settles. Orbs fade. Spaceman returns to the upper-left quadrant.
 - **Denied state:** Field flashes once (subtle), threshold line persists briefly then fades. Spaceman returns to idle.
+
+### 5.1 Voice System UX
+
+The Voice System represents the Triadic Safeguard. Voices render as colored orbs orbiting the Spaceman when active.
+
+- **Voice I (Velocity):** Amber. Represents autonomy.
+- **Voice II (Guard):** Silver. Represents safety.
+- **Voice III (Lens):** Gold. Represents correctness.
+- The UI handles the orchestration of these voices visually via the `ThresholdState` machine, ensuring each voice receives focus during its turn.
 
 ### 6. Conversation Layer
 

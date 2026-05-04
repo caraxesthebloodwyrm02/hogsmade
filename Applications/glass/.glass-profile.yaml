@@ -43,6 +43,7 @@ palette:
   green: "#6b8f71"
   red: "#a0524a"
   amber: "#c49a3c"
+  cool: "#e8eef4"
 
 # --- Triadic safeguard (behavioral, not visual) ---
 # Weights shape function behavior: validation strictness,
@@ -73,3 +74,16 @@ presets:
       oval_opacity: "~0.12 (base 0.03 + mod 0.12 * recipe 0.72)"
       ambient_intensity: "~0.33 (base 0.28 + mod 0.12 * recipe 0.44)"
       character: "quiet breath, slow LFO, no ceremony, full geometry visible"
+  evaluating-orbit-v1:
+    description: "Regression baseline for the evaluating threshold state."
+    captured: "2026-05-04"
+    bridge:
+      threshold_state: evaluating
+      progress: 0
+      agent_state: idle
+      voices: []
+      blocks: []
+      conversation: []
+    modulation_notes:
+      envelope: "evaluating — sustain: 0.15, lfoRate: 0.06, lfoDepth: 0.04"
+      character: "field darkens, threshold line appears, spaceman pulses"

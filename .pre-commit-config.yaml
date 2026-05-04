@@ -38,12 +38,13 @@ repos:
         pass_filenames: false
         files: ^(mcp_config\.json|mcp_config\.example\.json|mcp_inventory\.manifest\.json|package\.json|Components/scripts/verify_mcp_inventory\.py|Tools/MCPServers/[^/]+/package\.json)$
 
-  # Prettier formatting (mirror stopped at v3.1.0; use local hook for newer prettier)
-  - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v3.1.0
+  # Prettier formatting using local node_modules
+  - repo: local
     hooks:
       - id: prettier
         name: Prettier (repo root)
+        entry: npx prettier --write --ignore-unknown
+        language: system
         types_or: [javascript, jsx, ts, tsx, json, yaml, markdown, css]
         exclude: ^Projects/GRID-main/
 

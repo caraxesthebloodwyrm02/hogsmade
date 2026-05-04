@@ -84,9 +84,8 @@ describe("ori-server registry", () => {
       buildServer: () => unknown;
     });
 
-    ({ loadRegistry, saveRegistry, getProject, listProjects, discoverTestSuites } = await import(
-      "../src/registry.ts"
-    ));
+    ({ loadRegistry, saveRegistry, getProject, listProjects, discoverTestSuites } =
+      await import("../src/registry.ts"));
   });
 
   afterAll(() => {

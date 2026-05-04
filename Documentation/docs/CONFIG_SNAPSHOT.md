@@ -254,8 +254,8 @@ Format differs: `context_servers` with nested `command: { path, args, env }`.
       "command": {
         "path": "npx",
         "args": ["-y", "tsx", "C:\\Users\\USER\\CascadeProjects\\echoes-server\\src\\server.ts"],
-        "env": { "ECHOES_AUDIT_PATH": "C:\\Users\\USER\\.echoes\\audit.ndjson" }
-      }
+        "env": { "ECHOES_AUDIT_PATH": "C:\\Users\\USER\\.echoes\\audit.ndjson" },
+      },
     },
     "grid-server": {
       "command": {
@@ -264,16 +264,16 @@ Format differs: `context_servers` with nested `command: { path, args, env }`.
         "env": {
           "CASCADE_WORKSPACE_ROOT": "C:\\Users\\USER\\CascadeProjects",
           "GATE_DIR": "C:\\Users\\USER\\CascadeProjects\\GATE",
-          "GRID_API_URL": "http://localhost:8080"
-        }
-      }
+          "GRID_API_URL": "http://localhost:8080",
+        },
+      },
     },
     "afloat-server": {
       "command": {
         "path": "npx",
         "args": ["-y", "tsx", "C:\\Users\\USER\\CascadeProjects\\afloat-server\\src\\server.ts"],
-        "env": {}
-      }
+        "env": {},
+      },
     },
     "lots-server": {
       "command": {
@@ -281,23 +281,23 @@ Format differs: `context_servers` with nested `command: { path, args, env }`.
         "args": ["-y", "tsx", "C:\\Users\\USER\\CascadeProjects\\lots-server\\src\\server.ts"],
         "env": {
           "LOTS_EXPERIMENTS_DIR": "C:\\Users\\USER\\CascadeProjects\\experiments",
-          "ECHOES_AUDIT_PATH": "C:\\Users\\USER\\.echoes\\audit.ndjson"
-        }
-      }
+          "ECHOES_AUDIT_PATH": "C:\\Users\\USER\\.echoes\\audit.ndjson",
+        },
+      },
     },
     "seeds-server": {
       "command": {
         "path": "npx",
         "args": ["-y", "tsx", "C:\\Users\\USER\\CascadeProjects\\seeds-server\\src\\server.ts"],
-        "env": { "SEEDS_ROOT": "E:\\Seeds" }
-      }
+        "env": { "SEEDS_ROOT": "E:\\Seeds" },
+      },
     },
     "pulse-server": {
       "command": {
         "path": "npx",
         "args": ["-y", "tsx", "C:\\Users\\USER\\CascadeProjects\\pulse-server\\src\\server.ts"],
-        "env": {}
-      }
+        "env": {},
+      },
     },
     "maintain-server": {
       "command": {
@@ -306,11 +306,11 @@ Format differs: `context_servers` with nested `command: { path, args, env }`.
         "env": {
           "CASCADE_WORKSPACE_ROOT": "C:\\Users\\USER\\CascadeProjects",
           "SEEDS_ROOT": "E:\\Seeds",
-          "ECHOES_AUDIT_PATH": "C:\\Users\\USER\\.echoes\\audit.ndjson"
-        }
-      }
-    }
-  }
+          "ECHOES_AUDIT_PATH": "C:\\Users\\USER\\.echoes\\audit.ndjson",
+        },
+      },
+    },
+  },
 }
 ```
 

@@ -1158,8 +1158,8 @@ export function buildServer(): McpServer {
       const latestSnapshotResult = await getLatestSeedsSnapshot();
       const latestSnapshot = latestSnapshotResult.snapshot;
       const recentExecutions = await listRecentWorkflowExecutions(20);
-      const workflowsToday = recentExecutions.filter(
-        (execution) => execution.startedAt?.startsWith(todayKey()),
+      const workflowsToday = recentExecutions.filter((execution) =>
+        execution.startedAt?.startsWith(todayKey()),
       ).length;
       const ecosystemScore = latestSnapshot?.overallScore ?? (await getLatestEcosystemScore());
       const telemetry = await getLatestTelemetry();
@@ -1925,8 +1925,8 @@ export function buildServer(): McpServer {
       // Cross-server
       const recentAudit = await readRecentAuditEntries(50);
       const todayAudit = recentAudit.filter((e: any) => e.timestamp?.startsWith(dateKey));
-      const workflowsRun = (await listRecentWorkflowExecutions(50)).filter(
-        (execution) => execution.startedAt?.startsWith(dateKey),
+      const workflowsRun = (await listRecentWorkflowExecutions(50)).filter((execution) =>
+        execution.startedAt?.startsWith(dateKey),
       ).length;
       const ecosystemScore = await getLatestEcosystemScore();
 
