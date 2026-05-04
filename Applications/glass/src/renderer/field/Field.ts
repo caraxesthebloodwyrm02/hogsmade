@@ -301,6 +301,17 @@ export class Field {
           this.inventoryMenu.show(screenX, screenY, this.camera.x, this.camera.y);
         }
       }
+      if ((e.ctrlKey || e.metaKey) && e.code === "KeyI") {
+        e.preventDefault();
+        if (this.inventoryMenu.isVisible()) {
+          this.inventoryMenu.hide();
+        } else {
+          this.spawnMenu.hide();
+          const screenX = this.canvas.width / 2 - 140;
+          const screenY = this.canvas.height / 2 - 150;
+          this.inventoryMenu.show(screenX, screenY, this.camera.x, this.camera.y);
+        }
+      }
     });
 
     window.addEventListener("keyup", (e) => {
