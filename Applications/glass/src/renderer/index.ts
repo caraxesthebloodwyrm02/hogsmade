@@ -156,3 +156,17 @@ bootstrap().catch((err: unknown) => {
     `[glass] renderer bootstrap failed: ${err instanceof Error ? err.message : String(err)}`,
   );
 });
+
+const userInput = document.getElementById("user-input") as HTMLInputElement;
+if (userInput) {
+  userInput.addEventListener("keydown", (e) => {
+    e.stopPropagation();
+    if (e.key === "Enter" && userInput.value.trim()) {
+      window.glass.sendMessage(userInput.value.trim());
+      userInput.value = "";
+    }
+    if (e.key === "Escape") {
+      userInput.blur();
+    }
+  });
+}
