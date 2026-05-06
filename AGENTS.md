@@ -46,6 +46,39 @@ For Python work in `Projects/GRID-main`:
 - Naming: `kebab-case` for folders/files, `camelCase` for functions/variables, `PascalCase` for React components/types.
 - Keep server-specific logic inside its workspace; share common code via `Components/*`.
 
+## Symbol and syntax conventions
+
+### The `->` symbol
+
+The `->` symbol has distinct uses across the codebase. Using it correctly prevents parsing errors and maintains clarity in agentic workflows.
+
+**Correct usage by context:**
+
+| Context | Purpose | Example |
+|---------|---------|---------|
+| Python | Return type annotations (required for GRID-main) | `def foo() -> None:` |
+| Markdown | Workflow step delimiters in docs/agents | `Explore -> Plan -> Implement` |
+| Markdown | Mermaid diagram arrows (use `-->`) | `state1 --> state2` |
+| JSON/YAML | Only inside strings (signatures, error messages) | `"signature": "(x: int) -> bool"` |
+
+**Anti-patterns to avoid:**
+
+- **TypeScript**: Never use `->` for arrow functions; use `=>` instead.
+  - ❌ `const fn = (x) -> x * 2`
+  - ✅ `const fn = (x) => x * 2`
+- **Mixed contexts**: Avoid using `->` for multiple purposes in the same file where it could cause parsing ambiguity (e.g., Python return types + workflow steps in same file).
+
+**Agentic workflow usage:**
+
+For agent reasoning traces and state transitions, `->` is the standard delimiter:
+- State transitions: `AirflowSnapshot -> DialState -> LightFunctionState`
+- Workflow steps: `Thought -> Action -> Observation`
+- Session phases: `Explore -> Plan -> Implement -> Verify`
+
+**Lint rules:**
+- TypeScript: ESLint rule to catch `->` tokens (see below)
+- Python: Ruff enforces return type hints (already configured)
+
 ## Testing
 
 - Primary framework: Vitest across TS/JS workspaces. A small set of `glimpse-artifact` tests use `node --test`.

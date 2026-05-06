@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Arrow Geometry 3D — Constraint-Shaped Movement</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #16213e 100%);
+      font-family: 'Courier New', monospace;
+      overflow: hidden;
+      color: #e2e8f0;
+    }
+    #canvas-container {
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+    }
+    #info-panel {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(10px);
+      padding: 20px;
+      border-radius: 12px;
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      max-width: 350px;
+      z-index: 100;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    }
+    #info-panel h2 {
+      color: #8b5cf6;
+      margin-bottom: 12px;
+      font-size: 18px;
+      text-shadow: 0 0 10px rgba(139, 92, 246, 0.5);
+    }
+    .stat {
+      display: flex;
+      justify-content: space-between;
+      margin: 8px 0;
+      font-size: 13px;
+    }
+    .stat-label { color: #94a3b8; }
+    .stat-value { color: #e2e8f0; font-weight: bold; }
+
+    #controls {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(10px);
+      padding: 15px 25px;
+      border-radius: 12px;
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      display: flex;
+      gap: 15px;
+      z-index: 100;
+    }
+    button {
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      border: none;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: bold;
+      transition: all 0.3s;
+      box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+    }
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+    }
+    .legend {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(10px);
+      padding: 15px;
+      border-radius: 12px;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      z-index: 100;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      margin: 6px 0;
+      font-size: 12px;
+    }
+    .legend-color {
+      width: 16px;
+      height: 16px;
+      border-radius: 4px;
+      margin-right: 10px;
+      box-shadow: 0 0 8px currentColor;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container"></div>
+
+  <div id="info-panel">
+    <h2>🔷 Arrow Geometry 3D</h2>
+    <div class="stat">
+      <span class="stat-label">Light Rays (->):</span>
+      <span class="stat-value" id="ray-count">0</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">Context Cylinders:</span>
+      <span class="stat-value" id="cylinder-count">0</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">Geometric Theorems:</span>
+      <span class="stat-value" id="theorem-count">0</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">Constraint Angle:</span>
+      <span class="stat-value" id="angle-display">0°</span>
+    </div>
+    <div style="margin-top: 12px; font-size: 11px; color: #64748b;">
+      Drag to rotate • Scroll to zoom • Randomness shapes spatial patterns
+    </div>
+  </div>
+
+  <div class="legend">
+    <div style="color: #8b5cf6; font-weight: bold; margin-bottom: 8px;">Context Colors</div>
+    <div class="legend-item">
+      <div class="legend-color" style="background: #10b981; color: #10b981;"></div>
+      <span>Python Type Hints</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background: #8b5cf6; color: #8b5cf6;"></div>
+      <span>Agent Workflow</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background: #3b82f6; color: #3b82f6;"></div>
+      <span>Mermaid Arrows</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background: #f59e0b; color: #f59e0b;"></div>
+      <span>Workflow Steps</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background: #ef4444; color: #ef4444;"></div>
+      <span>TypeScript Errors</span>
+    </div>
+  </div>
+
+  <div id="controls">
+    <button onclick="regenerateRandomness()">🎲 Regenerate Randomness</button>
+    <button onclick="toggleAnimation()">⏸️ Toggle Animation</button>
+    <button onclick="resetCamera()">🎥 Reset Camera</button>
+    <button onclick="exportScreenshot()">📸 Screenshot</button>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script>
+    // Scene setup
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x0a0a0f, 0.0008);
+
+    const container = document.getElementById('canvas-container');
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 5000);
+    camera.position.set(200, 150, 200);
+    camera.lookAt(0, 0, 0);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    container.appendChild(renderer.domElement);
+
+    // Lighting
+    const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+    scene.add(ambientLight);
+
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    directionalLight.position.set(100, 200, 50);
+    directionalLight.castShadow = true;
+    scene.add(directionalLight);
+
+    const pointLight1 = new THREE.PointLight(0x8b5cf6, 1, 500);
+    pointLight1.position.set(-100, 100, -100);
+    scene.add(pointLight1);
+
+    const pointLight2 = new THREE.PointLight(0x3b82f6, 1, 500);
+    pointLight2.position.set(100, 100, 100);
+    scene.add(pointLight2);
+
+    // Mouse controls
+    let mouseDown = false;
+    let mouseX = 0, mouseY = 0;
+    let targetRotationX = 0, targetRotationY = 0;
+    let currentRotationX = 0, currentRotationY = 0;
+
+    renderer.domElement.addEventListener('mousedown', (e) => {
+      mouseDown = true;
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+    });
+
+    renderer.domElement.addEventListener('mouseup', () => { mouseDown = false; });
+    renderer.domElement.addEventListener('mousemove', (e) => {
+      if (!mouseDown) return;
+      const deltaX = e.clientX - mouseX;
+      const deltaY = e.clientY - mouseY;
+      targetRotationY += deltaX * 0.01;
+      targetRotationX += deltaY * 0.01;
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+    });
+
+    renderer.domElement.addEventListener('wheel', (e) => {
+      camera.position.z += e.deltaY * 0.2;
+      camera.position.z = Math.max(50, Math.min(500, camera.position.z));
+    });
+
+    // Data structures
+    let cylinders = [];
+    let rays = [];
+    let theorems = [];
+    let animationId = null;
+    let isAnimating = true;
+
+    // Context configuration with vivid colors and constraints
+    const contextConfig = {
+      'python-type-hint': { color: 0x10b981, angleRange: [30, 60], radiusRange: [2, 4], shape: 'cylinder' },
+      'python-async-type-hint': { color: 0x059669, angleRange: [45, 55], radiusRange: [2.5, 3.5], shape: 'cylinder' },
+      'agent-workflow': { color: 0x8b5cf6, angleRange: [80, 100], radiusRange: [3, 5], shape: 'torus' },
+      'mermaid-arrow': { color: 0x3b82f6, angleRange: [170, 190], radiusRange: [1.5, 2.5], shape: 'cylinder' },
+      'workflow-step': { color: 0xf59e0b, angleRange: [110, 130], radiusRange: [3, 4], shape: 'box' },
+      'json-string': { color: 0x6b7280, angleRange: [-10, 10], radiusRange: [1, 2], shape: 'cylinder' },
+      'typescript-invalid': { color: 0xef4444, angleRange: [-50, -40], radiusRange: [0.8, 1.2], shape: 'dodecahedron' },
+      'js-string': { color: 0x8b5cf6, angleRange: [0, 20], radiusRange: [1, 2], shape: 'cylinder' },
+      'markdown-other': { color: 0xec4899, angleRange: [60, 80], radiusRange: [2, 3], shape: 'cylinder' }
+    };
+
+    // Initialize with random spatial distribution
+    function initGeometry() {
+      // Clear existing
+      cylinders.forEach(c => scene.remove(c));
+      rays.forEach(r => scene.remove(r));
+      cylinders = [];
+      rays = [];
+
+      // Generate context cylinders (constraints that shape movement)
+      const contexts = Object.entries(contextConfig);
+      contexts.forEach(([context, config], idx) => {
+        const count = 5 + Math.floor(Math.random() * 10);
+
+        for (let i = 0; i < count; i++) {
+          const geometry = getGeometryForShape(config.shape, config.radiusRange);
+          const material = new THREE.MeshPhongMaterial({
+            color: config.color,
+            transparent: true,
+            opacity: 0.3,
+            wireframe: Math.random() > 0.7
+          });
+
+          const cylinder = new THREE.Mesh(geometry, material);
+
+          // Random spatial positioning with constraint-based clustering
+          const angle = (idx / contexts.length) * Math.PI * 2;
+          const radius = 50 + Math.random() * 100;
+          cylinder.position.x = Math.cos(angle) * radius + (Math.random() - 0.5) * 30;
+          cylinder.position.z = Math.sin(angle) * radius + (Math.random() - 0.5) * 30;
+          cylinder.position.y = (Math.random() - 0.5) * 50;
+
+          cylinder.rotation.x = Math.random() * Math.PI;
+          cylinder.rotation.y = Math.random() * Math.PI;
+
+          cylinder.userData = { context, config, originalY: cylinder.position.y };
+          cylinder.castShadow = true;
+
+          scene.add(cylinder);
+          cylinders.push(cylinder);
+        }
+      });
+
+      // Generate light rays (-> symbols) refracted through cylinders
+      const rayCount = 200 + Math.floor(Math.random() * 300);
+      for (let i = 0; i < rayCount; i++) {
+        const contextEntry = contexts[Math.floor(Math.random() * contexts.length)];
+        const [context, config] = contextEntry;
+        const angle = config.angleRange[0] + Math.random() * (config.angleRange[1] - config.angleRange[0]);
+
+        const rayGeometry = new THREE.BufferGeometry();
+        const startPoint = new THREE.Vector3(
+          (Math.random() - 0.5) * 300,
+          (Math.random() - 0.5) * 200,
+          (Math.random() - 0.5) * 300
+        );
+
+        const length = 30 + Math.random() * 70;
+        const endPoint = new THREE.Vector3(
+          startPoint.x + length * Math.cos(angle * Math.PI / 180),
+          startPoint.y + length * Math.sin(angle * Math.PI / 180) * 0.5,
+          startPoint.z + length * Math.cos(angle * Math.PI / 180 + Math.PI/4)
+        );
+
+        rayGeometry.setAttribute('position', new THREE.BufferAttribute(
+          new Float32Array([startPoint.x, startPoint.y, startPoint.z, endPoint.x, endPoint.y, endPoint.z]), 3
+        ));
+
+        const rayMaterial = new THREE.LineBasicMaterial({
+          color: config.color,
+          linewidth: 2,
+          transparent: true,
+          opacity: 0.6 + Math.random() * 0.4
+        });
+
+        const ray = new THREE.Line(rayGeometry, rayMaterial);
+        ray.userData = { context, angle, originalStart: startPoint, originalEnd: endPoint };
+        scene.add(ray);
+        rays.push(ray);
+      }
+
+      // Update UI
+      document.getElementById('ray-count').textContent = rays.length;
+      document.getElementById('cylinder-count').textContent = cylinders.length;
+      document.getElementById('theorem-count').textContent = Math.floor(cylinders.length / 10);
+      document.getElementById('angle-display').textContent = '45° ± 30°';
+    }
+
+    function getGeometryForShape(shape, radiusRange) {
+      const radius = radiusRange[0] + Math.random() * (radiusRange[1] - radiusRange[0]);
+      switch(shape) {
+        case 'torus': return new THREE.TorusGeometry(radius, 0.5, 8, 16);
+        case 'box': return new THREE.BoxGeometry(radius*2, radius*2, radius*2);
+        case 'dodecahedron': return new THREE.DodecahedronGeometry(radius);
+        default: return new THREE.CylinderGeometry(radius, radius, 10 + Math.random() * 20, 8);
+      }
+    }
+
+    // Animation loop
+    function animate() {
+      animationId = requestAnimationFrame(animate);
+
+      if (isAnimating) {
+        // Smooth rotation
+        currentRotationX += (targetRotationX - currentRotationX) * 0.05;
+        currentRotationY += (targetRotationY - currentRotationY) * 0.05;
+
+        scene.rotation.x = currentRotationX;
+        scene.rotation.y = currentRotationY;
+
+        // Animate cylinders (floating effect)
+        cylinders.forEach((cyl, i) => {
+          cyl.position.y = cyl.userData.originalY + Math.sin(Date.now() * 0.001 + i * 0.1) * 5;
+          cyl.rotation.y += 0.005;
+        });
+
+        // Animate rays (pulsing opacity)
+        rays.forEach((ray, i) => {
+          ray.material.opacity = 0.4 + Math.sin(Date.now() * 0.002 + i * 0.05) * 0.3;
+        });
+      }
+
+      renderer.render(scene, camera);
+    }
+
+    // Control functions
+    window.regenerateRandomness = function() {
+      initGeometry();
+    };
+
+    window.toggleAnimation = function() {
+      isAnimating = !isAnimating;
+      document.querySelector('button[onclick="toggleAnimation()"]').textContent =
+        isAnimating ? '⏸️ Pause Animation' : '▶️ Resume Animation';
+    };
+
+    window.resetCamera = function() {
+      camera.position.set(200, 150, 200);
+      camera.lookAt(0, 0, 0);
+      targetRotationX = 0;
+      targetRotationY = 0;
+      currentRotationX = 0;
+      currentRotationY = 0;
+      scene.rotation.x = 0;
+      scene.rotation.y = 0;
+    };
+
+    window.exportScreenshot = function() {
+      const link = document.createElement('a');
+      link.download = 'arrow-geometry-3d.png';
+      link.href = renderer.domElement.toDataURL();
+      link.click();
+    };
+
+    // Handle resize
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // Initialize and start
+    initGeometry();
+    animate();
+
+    // Log ready state
+    console.log('🔷 Arrow Geometry 3D initialized');
+    console.log('   Light rays act as your glass — revealing distant patterns');
+    console.log('   Constraints shape movement into vivid spatial forms');
+    console.log('   Randomness generates the 3D graphics you see');
+  </script>
+</body>
+</html>

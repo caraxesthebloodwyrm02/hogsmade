@@ -2,6 +2,7 @@ import tsParser from "@typescript-eslint/parser";
 import tsPlugin from "@typescript-eslint/eslint-plugin";
 import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
+import customRules from "../../Tools/MCPServers/eslint-custom-rules.js";
 
 export default [
   {
@@ -44,6 +45,11 @@ export default [
           allowConstantExport: true,
         },
       ],
+      // Custom rule: disallow -> in TypeScript (use => for arrow functions)
+      "no-arrow-dash": "error",
     },
   },
 ];
+
+// Register custom rules
+export const rules = customRules.rules;
