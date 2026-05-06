@@ -9,6 +9,7 @@ import {
   type ProbeResult,
 } from "./probes.js";
 import { readBridge } from "./bridge-writer.js";
+import { isPathAllowed } from "./profile-reader.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -61,7 +62,13 @@ function getGlassAppPath(): string {
       const bridgeText = fs.readFileSync(bridgePath, "utf-8");
       const bridgeState = JSON.parse(bridgeText);
       if (typeof bridgeState._profile_workspace === "string") {
-        return bridgeState._profile_workspace;
+        const candidate = bridgeState._profile_workspace;
+        if (isPathAllowed(candidate)) {
+          return candidate;
+        }
+        console.warn(
+          `[glass-eval] _profile_workspace blocked (outside allowed roots): ${candidate}`,
+        );
       }
     }
   } catch {

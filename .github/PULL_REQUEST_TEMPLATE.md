@@ -1,6 +1,6 @@
-## Motivation
+## Objective
 
-<!-- What problem does this PR solve? -->
+<!-- What problem does this PR solve? What is the goal? -->
 
 ## Scope
 
@@ -23,9 +23,9 @@
 
 - <!-- CascadeProjects / GRID-main / mcp-tool-experiment / other -->
 
-## Test Evidence
+## Tests Run
 
-- <!-- e.g. cd grid-server && npm test, or link to CI run -->
+- <!-- e.g. cd glass-server && npm test — all N tests pass -->
 
 ## Security Impact
 

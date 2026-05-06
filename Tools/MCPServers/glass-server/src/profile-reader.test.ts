@@ -34,6 +34,16 @@ describe("profile-reader", () => {
     expect(err).toHaveBeenCalledWith(expect.stringMatching(/outside allowed roots/i));
   });
 
+  it("blocks a path that shares the allowed-root prefix but is a sibling directory (CVE: prefix bypass)", async () => {
+    // e.g. if allowedRoot = /tmp  then /tmp-evil must NOT be allowed,
+    // even though "/tmp-evil".startsWith("/tmp") is true without the sep guard.
+    const err = vi.spyOn(console, "error").mockImplementation(() => {});
+    const sibling = (process.env.CASCADE_WORKSPACE_ROOT ?? "") + "-evil-sibling";
+    const result = await loadProfile(sibling);
+    expect(result).toBeNull();
+    expect(err).toHaveBeenCalledWith(expect.stringMatching(/outside allowed roots/i));
+  });
+
   it("parses a valid profile", async () => {
     const ws = await writeProfile(`
 voices:

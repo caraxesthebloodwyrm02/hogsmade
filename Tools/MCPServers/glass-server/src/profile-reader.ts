@@ -1,5 +1,5 @@
 import { readFile } from "fs/promises";
-import { join, resolve } from "path";
+import { join, resolve, sep } from "path";
 import { homedir } from "os";
 
 export interface VoiceProfile {
@@ -251,9 +251,12 @@ function getAllowedRoots(): string[] {
   return [process.env.CASCADE_WORKSPACE_ROOT, homedir()].filter(Boolean) as string[];
 }
 
-function isPathAllowed(target: string): boolean {
+export function isPathAllowed(target: string): boolean {
   const resolved = resolve(target);
-  return getAllowedRoots().some((root) => resolved.startsWith(resolve(root)));
+  return getAllowedRoots().some((root) => {
+    const resolvedRoot = resolve(root);
+    return resolved === resolvedRoot || resolved.startsWith(resolvedRoot + sep);
+  });
 }
 
 export async function loadProfile(workspacePath: string): Promise<GlassProfile | null> {
