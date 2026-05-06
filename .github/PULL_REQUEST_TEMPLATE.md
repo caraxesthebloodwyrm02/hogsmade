@@ -1,4 +1,4 @@
-## Objective
+## Motivation
 
 <!-- What problem does this PR solve? What is the goal? -->
 
@@ -23,7 +23,7 @@
 
 - <!-- CascadeProjects / GRID-main / mcp-tool-experiment / other -->
 
-## Tests Run
+## Test Evidence
 
 - <!-- e.g. cd glass-server && npm test — all N tests pass -->
 
