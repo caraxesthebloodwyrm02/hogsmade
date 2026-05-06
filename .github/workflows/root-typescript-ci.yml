@@ -119,7 +119,7 @@ jobs:
         run: npm run build -w @cascade/shared-types
 
       - name: Build shared-resilience
-        if: matrix.project == 'grid-server'
+        if: matrix.project == 'grid-server' || matrix.project == 'echoes-server'
         run: npm run build -w @cascade/shared-resilience
 
       - name: Build shared-pipeline

@@ -179,6 +179,34 @@
     "school-server": {
       "command": "npx",
       "args": ["-y", "tsx", "$HOME/CascadeProjects/Tools/MCPServers/school-server/src/index.ts"]
+    },
+    "craft-server": {
+      "command": "npx",
+      "args": ["-y", "tsx", "$HOME/CascadeProjects/Tools/MCPServers/craft-server/src/server.ts"],
+      "env": {}
+    },
+    "glimpse-server": {
+      "command": "npx",
+      "args": ["-y", "tsx", "$HOME/CascadeProjects/Tools/MCPServers/glimpse-server/src/server.ts"],
+      "env": {}
+    },
+    "mangrove-server": {
+      "command": "npx",
+      "args": ["-y", "tsx", "$HOME/CascadeProjects/Tools/MCPServers/mangrove-server/src/server.ts"],
+      "env": {}
+    },
+    "glass-server": {
+      "command": "npx",
+      "args": ["-y", "tsx", "$HOME/CascadeProjects/Tools/MCPServers/glass-server/src/server.ts"],
+      "env": {
+        "CASCADE_WORKSPACE_ROOT": "$HOME/CascadeProjects"
+      }
+    },
+    "personal-rag": {
+      "command": "$HOME/personal-rag/.venv/bin/python",
+      "args": ["$HOME/personal-rag/mcp_server.py"],
+      "env": {},
+      "cwd": "$HOME/personal-rag"
     }
   },
   "_python_mcp_audit": "grid-intelligence + grid-rag-enhanced: import-verified 2026-04-08 (GRID-main .venv); keep entries."
