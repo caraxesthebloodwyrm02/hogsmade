@@ -5,6 +5,7 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+      day: "monday"
     open-pull-requests-limit: 5
     labels:
       - "dependencies"
@@ -25,6 +26,7 @@ updates:
     directory: "/Components/shared-types"
     schedule:
       interval: "weekly"
+      day: "monday"
     open-pull-requests-limit: 5
     labels:
       - "dependencies"
@@ -45,6 +47,7 @@ updates:
     directory: "/Components/shared-resilience"
     schedule:
       interval: "weekly"
+      day: "monday"
     open-pull-requests-limit: 5
     labels:
       - "dependencies"
@@ -65,6 +68,7 @@ updates:
     directory: "/Components/shared-pipeline"
     schedule:
       interval: "weekly"
+      day: "monday"
     open-pull-requests-limit: 5
     labels:
       - "dependencies"
@@ -85,6 +89,7 @@ updates:
     directory: "/Tools/MCPServers/afloat-server"
     schedule:
       interval: "weekly"
+      day: "monday"
     open-pull-requests-limit: 5
     labels:
       - "dependencies"
@@ -105,6 +110,7 @@ updates:
     directory: "/Tools/MCPServers/echoes-server"
     schedule:
       interval: "weekly"
+      day: "monday"
     open-pull-requests-limit: 5
     labels:
       - "dependencies"
@@ -125,6 +131,7 @@ updates:
     directory: "/Tools/MCPServers/eligibility-server"
     schedule:
       interval: "weekly"
+      day: "monday"
     open-pull-requests-limit: 5
     labels:
       - "dependencies"
@@ -145,6 +152,7 @@ updates:
     directory: "/Tools/MCPServers/glimpse-server"
     schedule:
       interval: "weekly"
+      day: "monday"
     open-pull-requests-limit: 5
     labels:
       - "dependencies"
@@ -165,6 +173,7 @@ updates:
     directory: "/Tools/MCPServers/grid-server"
     schedule:
       interval: "weekly"
+      day: "monday"
     open-pull-requests-limit: 5
     labels:
       - "dependencies"
@@ -185,6 +194,7 @@ updates:
     directory: "/Tools/MCPServers/lots-server"
     schedule:
       interval: "weekly"
+      day: "monday"
     open-pull-requests-limit: 5
     labels:
       - "dependencies"
@@ -205,6 +215,7 @@ updates:
     directory: "/Tools/MCPServers/maintain-server"
     schedule:
       interval: "weekly"
+      day: "monday"
     open-pull-requests-limit: 5
     labels:
       - "dependencies"
@@ -225,6 +236,7 @@ updates:
     directory: "/Tools/MCPServers/mangrove-server"
     schedule:
       interval: "weekly"
+      day: "monday"
     open-pull-requests-limit: 5
     labels:
       - "dependencies"
@@ -245,6 +257,7 @@ updates:
     directory: "/Tools/MCPServers/overview-server"
     schedule:
       interval: "weekly"
+      day: "monday"
     open-pull-requests-limit: 5
     labels:
       - "dependencies"
@@ -265,6 +278,7 @@ updates:
     directory: "/Tools/MCPServers/pulse-server"
     schedule:
       interval: "weekly"
+      day: "monday"
     open-pull-requests-limit: 5
     labels:
       - "dependencies"
@@ -285,6 +299,7 @@ updates:
     directory: "/Tools/MCPServers/seeds-server"
     schedule:
       interval: "weekly"
+      day: "monday"
     open-pull-requests-limit: 5
     labels:
       - "dependencies"
@@ -305,6 +320,7 @@ updates:
     directory: "/Applications/glimpse-artifact"
     schedule:
       interval: "weekly"
+      day: "monday"
     open-pull-requests-limit: 5
     labels:
       - "dependencies"
@@ -315,6 +331,48 @@ updates:
       include: "scope"
     groups:
       glimpse-artifact:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  - package-ecosystem: "pip"
+    directory: "/Projects/GRID-main"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "python"
+      - "automated"
+    commit-message:
+      prefix: "deps(python)"
+      include: "scope"
+    groups:
+      python-dependencies:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  - package-ecosystem: "pip"
+    directory: "/Projects/apiguard"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "python"
+      - "automated"
+    commit-message:
+      prefix: "deps(python)"
+      include: "scope"
+    groups:
+      python-dependencies:
         patterns:
           - "*"
         update-types:

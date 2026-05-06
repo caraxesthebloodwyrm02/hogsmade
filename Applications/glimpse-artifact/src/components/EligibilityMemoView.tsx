@@ -307,7 +307,7 @@ function ScoreBar({
   rank: number;
   band?: string;
 }) {
-  const bandColor = band ? BAND_COLORS[band] ?? "var(--sediment-mid)" : "var(--teal-500)";
+  const bandColor = band ? (BAND_COLORS[band] ?? "var(--sediment-mid)") : "var(--teal-500)";
   const width = Math.max(2, score * 100);
 
   return (

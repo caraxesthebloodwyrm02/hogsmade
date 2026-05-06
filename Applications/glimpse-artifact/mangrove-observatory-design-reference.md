@@ -224,11 +224,10 @@ body::before {
   content: "";
   position: fixed;
   inset: 0;
-  background: var(--gradient-depth), radial-gradient(
-      ellipse at 70% 80%,
-      rgba(240, 168, 48, 0.03) 0%,
-      transparent 50%
-    ), radial-gradient(circle at 50% 50%, rgba(78, 205, 196, 0.02) 0%, transparent 70%);
+  background:
+    var(--gradient-depth),
+    radial-gradient(ellipse at 70% 80%, rgba(240, 168, 48, 0.03) 0%, transparent 50%),
+    radial-gradient(circle at 50% 50%, rgba(78, 205, 196, 0.02) 0%, transparent 70%);
   pointer-events: none;
   z-index: 0;
 }
@@ -740,7 +739,8 @@ function ConfidenceMeter({ value, label }: { value: number; label: string }) {
         rgba(240, 168, 48, 0.15) 50%,
         rgba(78, 205, 196, 0.05) 60%,
         rgba(78, 205, 196, 0.3)
-      ) border-box;
+      )
+      border-box;
   animation: rotate-border 8s linear infinite;
   border-radius: 12px;
 }

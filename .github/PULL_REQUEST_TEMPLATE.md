@@ -1,10 +1,14 @@
 ## Objective
 
-<!-- What problem does this PR solve? -->
+<!-- What problem does this PR solve? What is the goal? -->
 
 ## Scope
 
 <!-- Which projects or surfaces changed? -->
+
+## Blast Radius
+
+<!-- What downstream systems does this affect? -->
 
 ## Acceptance Criteria
 
@@ -21,7 +25,7 @@
 
 ## Tests Run
 
-- <!-- e.g. cd grid-server && npm test -->
+- <!-- e.g. cd glass-server && npm test — all N tests pass -->
 
 ## Security Impact
 

@@ -103,7 +103,6 @@ Root `.env.example` exists with: `CASCADE_WORKSPACE_ROOT`, `GATE_DIR`, `LOTS_EXP
 ## Exact Next Actions
 
 1. **Create the first workspace-root commit**
-
    - Stage files per spec (exclude node_modules, build artifacts, secrets; respect `.gitignore`).
    - Commit with a message that reflects Phase 1 baseline (e.g. initial housekeeping).
    - This unblocks tracking all further work at workspace root.

@@ -28,7 +28,7 @@ import { promises as fs } from "fs";
 import { homedir } from "os";
 import path from "path";
 import { pathToFileURL } from "url";
-import { RetryExhaustedError, RetryPolicy } from "@cascade/shared-resilience";
+import { RetryPolicy } from "@cascade/shared-resilience";
 import * as z from "zod";
 import { CHARACTER_QUERY_CLUSTERS, findRelevantClusters } from "./character-clusters.js";
 import { getConfig } from "./config.js";
@@ -171,12 +171,11 @@ async function appendAuditEntry(entry: AuditEntry): Promise<void> {
       serviceName: "echoes-audit-write",
       operationName: "appendFile",
       startTime: Date.now(),
-      attempt: 1,
     });
   } catch (err) {
     process.stderr.write(
       `[echoes-server] audit write exhausted after retries: ${
-        err instanceof RetryExhaustedError ? err.message : String(err)
+        err instanceof Error ? err.message : String(err)
       }\n`,
     );
     throw err;

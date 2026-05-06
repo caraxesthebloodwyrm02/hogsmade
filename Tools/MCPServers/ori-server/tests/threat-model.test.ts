@@ -40,9 +40,8 @@ describe("threat model parser", () => {
     process.env.ORI_DATA_DIR = path.join(tempRoot, ".ori");
     mkdirSync(process.env.ORI_DATA_DIR, { recursive: true });
 
-    ({ parseThreatModel, buildCoverageMap, routeThreatToTests } = await import(
-      "../src/threat-model.ts"
-    ));
+    ({ parseThreatModel, buildCoverageMap, routeThreatToTests } =
+      await import("../src/threat-model.ts"));
   });
 
   afterAll(() => {

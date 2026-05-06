@@ -9,13 +9,11 @@ The Pattern Registry system extends the Glimpse engine with reusable analytical 
 ### Core Components
 
 1. **PatternRegistry** (`core/registry.js`)
-
    - Central registry for pattern definitions
    - Pattern matching and evaluation engine
    - Caching system for performance
 
 2. **Pattern Collections** (`patterns/`)
-
    - `temporal.js` - Time-based patterns (clustering, waves, sequences)
    - `influence.js` - Network influence patterns (cascades, hubs, cross-pollination)
    - `geographic.js` - Spatial patterns (hotspots, regional clusters)
@@ -191,12 +189,10 @@ registerPatternFunctions(registry);
 The system includes example datasets that demonstrate pattern reuse:
 
 1. **Innovation Network** (`examples/use-case-innovation-network.mjs`)
-
    - Historical innovations across domains
    - Demonstrates temporal clustering, influence cascades, domain bridging
 
 2. **Citation Network** (`examples/citation-network.mjs`)
-
    - Academic paper citations and influence
    - Shows temporal patterns, influence networks, geographic clustering
 

@@ -188,8 +188,8 @@ describe("lots-server smoke", () => {
       content: Array<{ text: string }>;
     };
     const listPayload = JSON.parse(listResult.content[0].text);
-    const suggestedDrafts = listPayload.experiments.filter(
-      (e: any) => e.tags?.includes("suggested"),
+    const suggestedDrafts = listPayload.experiments.filter((e: any) =>
+      e.tags?.includes("suggested"),
     );
     expect(suggestedDrafts.length).toBeGreaterThan(0);
   });

@@ -138,7 +138,8 @@ export function AuditStreamPanel({
                   className={cn(
                     "text-xs font-medium px-2.5 py-1 rounded-full transition-all border",
                     activeFilters.has(src) || activeFilters.size === 0
-                      ? SOURCE_COLORS[src] ?? "bg-surface-raised text-ink-muted border-border-color"
+                      ? (SOURCE_COLORS[src] ??
+                          "bg-surface-raised text-ink-muted border-border-color")
                       : "bg-transparent text-ink-muted border-border-color/30 opacity-40",
                     activeFilters.has(src) ? "ring-1 ring-teal-500/40" : "",
                   )}

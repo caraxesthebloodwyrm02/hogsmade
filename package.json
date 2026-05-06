@@ -24,9 +24,11 @@
     "Tools/MCPServers/glimpse-server",
     "Tools/MCPServers/mangrove-server",
     "Tools/MCPServers/craft-server",
+    "Tools/MCPServers/glass-server",
     "Applications/pi-mangrove",
     "Applications/glimpse-artifact",
-    "Applications/glimpse-engine"
+    "Applications/glimpse-engine",
+    "Applications/glass"
   ],
   "scripts": {
     "postinstall": "node Components/scripts/init-submodules.mjs",

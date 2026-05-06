@@ -1,0 +1,31 @@
+name: Cascade Dispatch
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dispatch to Apiguard
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.DISPATCH_TOKEN }}
+          repository: caraxesthebloodwyrm02/apiguard
+          event-type: cascade-sync
+
+      - name: Dispatch to x-change
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.DISPATCH_TOKEN }}
+          repository: caraxesthebloodwyrm02/x-change
+          event-type: cascade-sync
+
+      - name: Dispatch to personal-rag
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.DISPATCH_TOKEN }}
+          repository: caraxesthebloodwyrm02/personal-rag
+          event-type: cascade-sync

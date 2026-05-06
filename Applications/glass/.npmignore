@@ -1,0 +1,12 @@
+src/
+scripts/
+*.test.ts
+vitest.config.ts
+tsconfig*.json
+coverage/
+.git/
+.github/
+AGENTS.md
+CLAUDE.md
+README.md
+assets/

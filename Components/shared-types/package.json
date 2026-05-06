@@ -34,6 +34,18 @@
       "types": "./dist/precedent.d.ts",
       "default": "./dist/precedent.js"
     },
+    "./signal-model": {
+      "types": "./dist/signal-model.d.ts",
+      "default": "./dist/signal-model.js"
+    },
+    "./memory-ledger": {
+      "types": "./dist/memory-ledger.d.ts",
+      "default": "./dist/memory-ledger.js"
+    },
+    "./behavioral-schema": {
+      "types": "./dist/behavioral-schema.d.ts",
+      "default": "./dist/behavioral-schema.js"
+    },
     "./trace-context": {
       "types": "./dist/trace-context.d.ts",
       "default": "./dist/trace-context.js"

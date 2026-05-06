@@ -265,11 +265,9 @@ visualFeedback.renderCurrentView();
 ### Common Issues
 
 1. **"getHour is not a function"**
-
    - Fixed: Use `getHours()` instead of `getHour()`
 
 2. **"entries is not a function"**
-
    - Fixed: Ensure Map objects are properly deserialized from JSON
 
 3. **Empty dashboard**

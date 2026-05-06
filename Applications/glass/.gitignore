@@ -1,0 +1,16 @@
+node_modules/
+dist/
+release/
+out/
+*.tsbuildinfo
+.DS_Store
+prompts/
+.cursor
+snapshots/
+assets/
+REFACTORING-MARKERS-SIMPLE.md
+.windsurf/
+.devin/
+.vscode/
+assets/
+snapshots/

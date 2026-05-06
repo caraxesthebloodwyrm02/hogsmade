@@ -317,6 +317,8 @@ Audit Results and Todo Items.md
 zed_config.jsonc
 config/
 !config/.gitkeep
+!Applications/glass/config/
+!Applications/glass/config/field-profile.json
 
 # Response discipline contract (local-only)
 .response-discipline-contract.yaml

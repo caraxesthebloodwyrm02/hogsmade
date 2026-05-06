@@ -18,6 +18,7 @@
   },
   "scripts": {
     "build": "echo 'glimpse-engine is a library - no build step required'",
+    "lint": "echo 'glimpse-engine is a JS library - no lint step required'",
     "test": "node --test tests/*.test.js tests/**/*.test.js",
     "test:validators": "node --test tests/validators/*.test.js",
     "test:drift": "node --test tests/drift-guard/*.test.js",

@@ -159,3 +159,62 @@ export function buildBarterRecord(
     zoneMultiplier,
   };
 }
+
+// ── Behavioral Magnetism & Attraction Logic ─────────────────────────────────
+
+export type AgentBias = "safety" | "correctness" | "autonomy" | "speed" | "clarity" | "neutral";
+
+/**
+ * The Attraction Matrix separates signal from noise by weighting token types
+ * differently based on the agent's current behavioral bias.
+ */
+export const BIAS_ATTRACTION_MATRIX: Record<AgentBias, Partial<Record<TokenType, number>>> = {
+  safety: { gate_armed: 1.5, anomaly: 1.8, gate_unarmed: 0.8 },
+  correctness: { transistor: 1.4, decorated_var: 1.2 },
+  autonomy: { ambient: 1.3, transistor: 1.1, anomaly: 1.2 },
+  speed: { ambient: 1.2, decorated_var: 1.1, transistor: 1.0 },
+  clarity: { transistor: 1.5, decorated_var: 1.3, anomaly: 0.2 },
+  neutral: {}, // Defaults to 1.0 for all
+};
+
+export interface MagnetismInput {
+  tokenType: TokenType;
+  agentBias: AgentBias;
+  /** Optional override for the token's intrinsic weight */
+  baseWeight?: number;
+  /** Conceptual distance (0.0 to 1.0). 0 is immediate/closest, 1 is distant. */
+  distance: number;
+}
+
+export interface MagnetismResult {
+  /** The gravitational pull of the data point. Positive = high attraction. */
+  pullForce: number;
+  /** The contextual weight of the data point after bias is applied. */
+  effectiveWeight: number;
+}
+
+/**
+ * Calculates the magnetic attraction of a data point based on the agent's current bias.
+ * This allows agents to dynamically filter noise: a 'safety' biased agent will be
+ * strongly pulled toward 'anomaly' tokens, while a 'clarity' agent might repel them.
+ */
+export function computeMagneticPull(input: MagnetismInput): MagnetismResult {
+  const { tokenType, agentBias, distance } = input;
+  const baseWeight = input.baseWeight ?? TOKEN_TYPE_WEIGHTS[tokenType];
+
+  // Apply bias multiplier (default to 1.0 if unspecified for the token type)
+  const attractionMultiplier = BIAS_ATTRACTION_MATRIX[agentBias]?.[tokenType] ?? 1.0;
+  const effectiveWeight = baseWeight * attractionMultiplier;
+
+  // Inverse square law analogue for distance, smoothed to avoid infinity
+  // distance=0 -> factor=1.0 | distance=1 -> factor=0.2
+  const distanceFactor = 1.0 / (1.0 + (distance * 2) ** 2);
+
+  // Pull force modulates the effective weight by how "close" the data point is
+  const pullForce = effectiveWeight * distanceFactor;
+
+  return {
+    pullForce,
+    effectiveWeight,
+  };
+}

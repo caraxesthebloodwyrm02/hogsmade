@@ -1,0 +1,66 @@
+name: glass
+
+on:
+  push:
+    paths:
+      - "Applications/glass/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/glass-ci.yml"
+  pull_request:
+    paths:
+      - "Applications/glass/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/glass-ci.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: glass-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify-and-package-linux:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Applications/glass
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            Applications/glass/package-lock.json
+
+      - name: Install monorepo
+        run: npm ci
+        working-directory: .
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      - name: Package Linux
+        run: npm run package:linux
+
+      - name: Prepare share manifest
+        run: npm run share:prep
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: glass-linux-artifacts
+          path: |
+            Applications/glass/release/Glass-*.AppImage
+            Applications/glass/release/glass_*_amd64.deb
+            Applications/glass/release/SHA256SUMS
+          if-no-files-found: error
