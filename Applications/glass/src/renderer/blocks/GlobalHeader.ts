@@ -13,13 +13,20 @@ const CEREMONY_LABELS: Record<ThresholdState, string> = {
   denied: "Deny",
 };
 
+interface GlobalHeaderCallbacks {
+  onRecenter?: () => void;
+  onSeed?: () => void;
+}
+
 export class GlobalHeader {
   private host: HTMLElement;
   private menu: HTMLDivElement | null = null;
   private menuOpen = false;
+  private callbacks?: GlobalHeaderCallbacks;
 
-  constructor(host: HTMLElement) {
+  constructor(host: HTMLElement, callbacks?: GlobalHeaderCallbacks) {
     this.host = host;
+    this.callbacks = callbacks;
     this.render();
   }
 
@@ -45,6 +52,59 @@ export class GlobalHeader {
     brand.style.letterSpacing = "0.15em";
     brand.style.textTransform = "lowercase";
     brand.style.userSelect = "none";
+
+    const recenterBtn = document.createElement("button");
+    recenterBtn.textContent = "⊙";
+    recenterBtn.title = "Return to origin (Home)";
+    recenterBtn.style.background = "none";
+    recenterBtn.style.border = "1px solid rgba(200, 184, 154, 0.18)";
+    recenterBtn.style.borderRadius = "3px";
+    recenterBtn.style.color = "rgba(200, 184, 154, 0.75)";
+    recenterBtn.style.fontFamily = "'IBM Plex Mono', 'Fira Code', monospace";
+    recenterBtn.style.fontSize = "13px";
+    recenterBtn.style.padding = "3px 8px";
+    recenterBtn.style.cursor = "pointer";
+    recenterBtn.style.userSelect = "none";
+    recenterBtn.style.lineHeight = "1";
+
+    recenterBtn.addEventListener("mouseenter", () => {
+      recenterBtn.style.background = "rgba(200, 184, 154, 0.08)";
+    });
+    recenterBtn.addEventListener("mouseleave", () => {
+      recenterBtn.style.background = "none";
+    });
+    recenterBtn.addEventListener("click", () => {
+      this.callbacks?.onRecenter?.();
+    });
+
+    const touchBaseBtn = document.createElement("button");
+    touchBaseBtn.textContent = "Seed";
+    touchBaseBtn.title =
+      "Seed: center of gravity — recenter and open discussion (Ctrl/Cmd+Shift+Home)";
+    touchBaseBtn.style.background = "none";
+    touchBaseBtn.style.border = "1px solid rgba(200, 184, 154, 0.18)";
+    touchBaseBtn.style.borderRadius = "3px";
+    touchBaseBtn.style.color = "rgba(200, 184, 154, 0.75)";
+    touchBaseBtn.style.fontFamily = "'IBM Plex Mono', 'Fira Code', monospace";
+    touchBaseBtn.style.fontSize = "11px";
+    touchBaseBtn.style.padding = "3px 10px";
+    touchBaseBtn.style.cursor = "pointer";
+    touchBaseBtn.style.userSelect = "none";
+
+    touchBaseBtn.addEventListener("mouseenter", () => {
+      touchBaseBtn.style.background = "rgba(200, 184, 154, 0.08)";
+    });
+    touchBaseBtn.addEventListener("mouseleave", () => {
+      touchBaseBtn.style.background = "none";
+    });
+    touchBaseBtn.addEventListener("click", () => {
+      this.callbacks?.onSeed?.();
+    });
+
+    const rightCluster = document.createElement("div");
+    rightCluster.style.display = "flex";
+    rightCluster.style.alignItems = "center";
+    rightCluster.style.gap = "6px";
 
     const ceremonyBtn = document.createElement("button");
     ceremonyBtn.textContent = "Ceremony ▾";
@@ -76,8 +136,12 @@ export class GlobalHeader {
       }
     });
 
+    rightCluster.appendChild(recenterBtn);
+    rightCluster.appendChild(touchBaseBtn);
+    rightCluster.appendChild(ceremonyBtn);
+
     bar.appendChild(brand);
-    bar.appendChild(ceremonyBtn);
+    bar.appendChild(rightCluster);
     this.host.appendChild(bar);
   }
 
@@ -120,7 +184,7 @@ export class GlobalHeader {
       });
       row.addEventListener("click", (e) => {
         e.stopPropagation();
-        (window as any).glass?.triggerCeremony?.(state);
+        window.glass.triggerCeremony(state);
         this.hideMenu();
       });
 

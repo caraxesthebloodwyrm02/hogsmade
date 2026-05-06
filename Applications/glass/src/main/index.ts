@@ -107,12 +107,18 @@ function createWindow(): BrowserWindow {
   return win;
 }
 
-ipcMain.on("bridge:patch-block", (_event, payload: unknown) => {
+function asObject(payload: unknown, channel: string): Record<string, unknown> | null {
   if (typeof payload !== "object" || payload === null) {
-    console.warn(`[glass] bridge:patch-block rejected — payload is not an object`);
-    return;
+    console.warn(`[glass] ${channel} rejected — payload is not an object`);
+    return null;
   }
-  const { id, content } = payload as Record<string, unknown>;
+  return payload as Record<string, unknown>;
+}
+
+ipcMain.on("bridge:patch-block", (_event, payload: unknown) => {
+  const p = asObject(payload, "bridge:patch-block");
+  if (!p) return;
+  const { id, content } = p;
   if (typeof id !== "string" || typeof content !== "string") {
     console.warn(
       `[glass] bridge:patch-block rejected — id or content is not a string (id: ${typeof id}, content: ${typeof content})`,
@@ -123,11 +129,9 @@ ipcMain.on("bridge:patch-block", (_event, payload: unknown) => {
 });
 
 ipcMain.on("bridge:send-message", (_event, payload: unknown) => {
-  if (typeof payload !== "object" || payload === null) {
-    console.warn(`[glass] bridge:send-message rejected — payload is not an object`);
-    return;
-  }
-  const { text } = payload as Record<string, unknown>;
+  const p = asObject(payload, "bridge:send-message");
+  if (!p) return;
+  const { text } = p;
   if (typeof text !== "string") {
     console.warn(`[glass] bridge:send-message rejected — text is not a string`);
     return;
@@ -136,11 +140,8 @@ ipcMain.on("bridge:send-message", (_event, payload: unknown) => {
 });
 
 ipcMain.on("bridge:add-block", (_event, payload: unknown) => {
-  if (typeof payload !== "object" || payload === null) {
-    console.warn(`[glass] bridge:add-block rejected — payload is not an object`);
-    return;
-  }
-  const p = payload as Record<string, unknown>;
+  const p = asObject(payload, "bridge:add-block");
+  if (!p) return;
   if (typeof p.type !== "string" || typeof p.language !== "string") {
     console.warn(`[glass] bridge:add-block rejected — missing type or language`);
     return;
@@ -162,11 +163,9 @@ ipcMain.on("bridge:add-block", (_event, payload: unknown) => {
 });
 
 ipcMain.on("bridge:patch-block-position", (_event, payload: unknown) => {
-  if (typeof payload !== "object" || payload === null) {
-    console.warn(`[glass] bridge:patch-block-position rejected — payload is not an object`);
-    return;
-  }
-  const { id, x, y } = payload as Record<string, unknown>;
+  const p = asObject(payload, "bridge:patch-block-position");
+  if (!p) return;
+  const { id, x, y } = p;
   if (typeof id !== "string" || typeof x !== "number" || typeof y !== "number") {
     console.warn(`[glass] bridge:patch-block-position rejected — invalid id, x, or y`);
     return;
@@ -175,11 +174,9 @@ ipcMain.on("bridge:patch-block-position", (_event, payload: unknown) => {
 });
 
 ipcMain.on("bridge:delete-block", (_event, payload: unknown) => {
-  if (typeof payload !== "object" || payload === null) {
-    console.warn(`[glass] bridge:delete-block rejected — payload is not an object`);
-    return;
-  }
-  const { id } = payload as Record<string, unknown>;
+  const p = asObject(payload, "bridge:delete-block");
+  if (!p) return;
+  const { id } = p;
   if (typeof id !== "string") {
     console.warn(`[glass] bridge:delete-block rejected — id is not a string`);
     return;
@@ -214,11 +211,9 @@ ipcMain.handle("config:get-field-profile", async () => {
 });
 
 ipcMain.on("bridge:trigger-ceremony", (_event, payload: unknown) => {
-  if (typeof payload !== "object" || payload === null) {
-    console.warn("[glass] bridge:trigger-ceremony rejected — payload is not an object");
-    return;
-  }
-  const { state } = payload as Record<string, unknown>;
+  const p = asObject(payload, "bridge:trigger-ceremony");
+  if (!p) return;
+  const { state } = p;
   if (typeof state !== "string") {
     console.warn("[glass] bridge:trigger-ceremony rejected — state is not a string");
     return;

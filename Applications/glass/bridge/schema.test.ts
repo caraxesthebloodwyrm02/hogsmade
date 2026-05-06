@@ -7,6 +7,7 @@ import {
   isAssetCategory,
   isAssetRarity,
   isRarityPermitted,
+  isThresholdState,
   type RarityGateMap,
   type BridgeState,
   type ThresholdState,
@@ -88,5 +89,23 @@ describe("bridge schema", () => {
     expect(isRarityPermitted("mythic", "voice_2_active", gate)).toBe(false);
     expect(isRarityPermitted("mythic", "elevated", gate)).toBe(true);
     expect(isRarityPermitted("uncommon", "denied", gate)).toBe(false);
+  });
+});
+
+describe("isThresholdState", () => {
+  it("returns true for all 10 valid ThresholdState values", () => {
+    for (const s of THRESHOLD_STATES) {
+      expect(isThresholdState(s)).toBe(true);
+    }
+  });
+
+  it("returns false for an unknown string", () => {
+    expect(isThresholdState("not_a_state")).toBe(false);
+  });
+
+  it("returns false for non-string inputs", () => {
+    expect(isThresholdState(null)).toBe(false);
+    expect(isThresholdState(42)).toBe(false);
+    expect(isThresholdState(undefined)).toBe(false);
   });
 });

@@ -413,3 +413,103 @@ describe("validateBridgeState voices", () => {
     ]);
   });
 });
+
+describe("deleteBridgeBlock", () => {
+  it("deletes a user-owned block by id", async () => {
+    vi.resetModules();
+    await configureWatcherProfile();
+    const { deleteBridgeBlock } = await import("./bridge-watcher");
+    mockReadSync(
+      makeBridgeState({
+        blocks: [
+          { id: "b1", type: "code", language: "ts", content: "", x: 0, y: 0, origin: "user" },
+        ],
+      }),
+    );
+    deleteBridgeBlock("b1");
+    const state = JSON.parse(writtenData!);
+    expect(state.blocks).toHaveLength(0);
+  });
+
+  it("skips unknown block id and does not write", async () => {
+    vi.resetModules();
+    await configureWatcherProfile();
+    const { deleteBridgeBlock } = await import("./bridge-watcher");
+    mockReadSync(makeBridgeState({ blocks: [] }));
+    deleteBridgeBlock("nonexistent");
+    expect(writtenData).toBeNull();
+    expect(warnSpy).toHaveBeenCalled();
+  });
+
+  it("rejects agent-owned block and does not write", async () => {
+    vi.resetModules();
+    await configureWatcherProfile();
+    const { deleteBridgeBlock } = await import("./bridge-watcher");
+    mockReadSync(
+      makeBridgeState({
+        blocks: [
+          { id: "b2", type: "code", language: "ts", content: "", x: 0, y: 0, origin: "agent" },
+        ],
+      }),
+    );
+    deleteBridgeBlock("b2");
+    expect(writtenData).toBeNull();
+    expect(warnSpy).toHaveBeenCalled();
+  });
+
+  it("no-ops when state.blocks is not an array", async () => {
+    vi.resetModules();
+    await configureWatcherProfile();
+    const { deleteBridgeBlock } = await import("./bridge-watcher");
+    mockReadSync(makeBridgeState({ blocks: null }));
+    deleteBridgeBlock("b1");
+    expect(writtenData).toBeNull();
+    expect(warnSpy).toHaveBeenCalled();
+  });
+});
+
+describe("setBridgeThresholdState", () => {
+  it("persists a valid ThresholdState", async () => {
+    vi.resetModules();
+    const { setBridgeThresholdState } = await import("./bridge-watcher");
+    mockReadSync(makeBridgeState({ threshold_state: "ground" }));
+    setBridgeThresholdState("elevated");
+    expect(writtenData).not.toBeNull();
+    const state = JSON.parse(writtenData!);
+    expect(state.threshold_state).toBe("elevated");
+  });
+
+  it("rejects an invalid state string and does not write", async () => {
+    vi.resetModules();
+    const { setBridgeThresholdState } = await import("./bridge-watcher");
+    mockReadSync(makeBridgeState());
+    (setBridgeThresholdState as (s: string) => void)("not_a_state");
+    expect(writtenData).toBeNull();
+    expect(warnSpy).toHaveBeenCalled();
+  });
+
+  it("persists each valid ThresholdState value", async () => {
+    const states = [
+      "ground",
+      "evaluating",
+      "floor_rising",
+      "voices_appearing",
+      "voice_1_active",
+      "voice_2_active",
+      "voice_3_active",
+      "elevated",
+      "returning",
+      "denied",
+    ] as const;
+    for (const s of states) {
+      vi.resetModules();
+      writtenData = null;
+      const { setBridgeThresholdState } = await import("./bridge-watcher");
+      mockReadSync(makeBridgeState());
+      setBridgeThresholdState(s);
+      expect(writtenData).not.toBeNull();
+      const state = JSON.parse(writtenData!);
+      expect(state.threshold_state).toBe(s);
+    }
+  });
+});

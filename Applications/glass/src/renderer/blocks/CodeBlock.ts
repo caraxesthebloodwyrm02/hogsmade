@@ -138,7 +138,7 @@ export class CodeBlock {
     });
     btn.addEventListener?.("click", (e) => {
       e.stopPropagation();
-      (window as any).glass?.deleteBlock?.(this.id);
+      window.glass.deleteBlock(this.id);
     });
 
     this.container.appendChild(btn);

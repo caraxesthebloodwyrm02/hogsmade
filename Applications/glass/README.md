@@ -62,12 +62,27 @@ Glass is an Electron app with three process boundaries and a file-based state co
 
 ```
 src/main/index.ts         — Electron main: IPC handlers, bridge watcher, window
-src/preload/index.ts      — contextBridge: exposes window.glass.{...} to renderer
+src/preload/index.ts      — contextBridge: exposes the explicit window.glass API
 src/renderer/index.ts     — Canvas render loop, FieldState, user input
 bridge/schema.ts          — Shared types compiled by both main and renderer
 ```
 
-`contextIsolation: true`, `nodeIntegration: false`, `sandbox: true` — the renderer has no Node access. It only receives bridge state via IPC and sends user actions back via five exposed methods.
+`contextIsolation: true`, `nodeIntegration: false`, `sandbox: true` — the renderer has no Node access. It receives bridge state via IPC and sends user actions back through the explicit `window.glass` preload API.
+
+**Current `window.glass` surface:**
+
+| Method                                                | Direction       | Purpose                                    |
+| ----------------------------------------------------- | --------------- | ------------------------------------------ |
+| `onBridgeUpdate(cb)`                                  | main → renderer | Subscribe to `BridgeState` updates         |
+| `patchBlock(id, content)`                             | renderer → main | Persist user-owned block edits             |
+| `sendMessage(text)`                                   | renderer → main | Append a user conversation turn            |
+| `addBlock(type, language, content, position, asset?)` | renderer → main | Add a user-origin block                    |
+| `patchBlockPosition(id, x, y)`                        | renderer → main | Persist drag/reposition events             |
+| `deleteBlock(id)`                                     | renderer → main | Delete a user-owned block                  |
+| `listAssets()`                                        | renderer → main | Read durable inventory assets              |
+| `searchSemantic(query, limit?)`                       | renderer → main | Search visible blocks and inventory assets |
+| `getFieldProfile()`                                   | renderer → main | Read the active field profile/config       |
+| `triggerCeremony(state)`                              | renderer → main | Request a ceremony state transition        |
 
 ### The Bridge File
 
@@ -106,6 +121,11 @@ The bridge is the single source of truth. The agent writes it; the renderer read
 | renderer → main | `bridge:send-message`         | `{ text }`                                              |
 | renderer → main | `bridge:add-block`            | `{ type, language, content, position, origin, asset? }` |
 | renderer → main | `bridge:patch-block-position` | `{ id, x, y }`                                          |
+| renderer → main | `bridge:delete-block`         | `{ id }`                                                |
+| renderer → main | `bridge:list-assets`          | none                                                    |
+| renderer → main | `search:semantic`             | `{ query, limit }`                                      |
+| renderer → main | `config:get-field-profile`    | none                                                    |
+| renderer → main | `bridge:trigger-ceremony`     | `{ state }`                                             |
 
 ---
 
@@ -275,14 +295,38 @@ triadic_weights:
 
 The glass-server MCP provides the agent-side API:
 
-| Tool                   | Purpose                                                                                 |
-| ---------------------- | --------------------------------------------------------------------------------------- |
-| `glass_session_start`  | Initialize bridge for a new session; detects `.glass-profile.yaml`                      |
-| `glass_session_resume` | Restore field state from a previous session; read conversation for new user messages    |
-| `glass_emit_turn`      | Append agent message to conversation; update `agent_state` and optional `signals` patch |
-| `glass_bridge_write`   | Low-level full or partial bridge write for direct state control                         |
+| Group                  | Tool                        | Purpose                                                                                 |
+| ---------------------- | --------------------------- | --------------------------------------------------------------------------------------- |
+| Session / bridge       | `glass_session_start`       | Initialize bridge for a new session; detects `.glass-profile.yaml`                      |
+| Session / bridge       | `glass_session_resume`      | Restore field state from a previous session; read conversation for new user messages    |
+| Session / bridge       | `glass_bridge_write`        | Low-level full or partial bridge write for direct state control                         |
+| Conversation / signals | `glass_emit_turn`           | Append agent message to conversation; update `agent_state` and optional `signals` patch |
+| Conversation / signals | `glass_update_signals`      | Update modulation-driving field signals                                                 |
+| Conversation / signals | `glass_pending_messages`    | Return unread user messages since the last agent consumption mark                       |
+| Blocks / assets        | `glass_emit_block`          | Add an agent-origin code, note, output, or asset block                                  |
+| Blocks / assets        | `glass_assets_list`         | List durable semantic assets from the inventory ledger                                  |
+| Blocks / assets        | `glass_query_spatial_state` | Read block positions, distance from the Spaceman anchor, and staleness scores           |
+| Ceremony               | `glass_evaluate_ceremony`   | Evaluate the ceremony threshold and transition to `evaluating` when eligible            |
+| Eval / scheduler       | `glass_eval_run`            | Run all eval probes immediately                                                         |
+| Eval / scheduler       | `glass_eval_schedule`       | Arm or disarm the process-local eval scheduler loop                                     |
+| Eval / scheduler       | `glass_eval_status`         | Return scheduler status, latest in-process report, and eval log path                    |
 
 The MCP server is the only valid write path to the bridge during an agent session. Direct file writes bypass validation and the rarity gate.
+
+`glass_eval_schedule` is process-local. The durable eval artifact is the NDJSON log at the path returned by `glass_eval_status`.
+
+---
+
+## Post-Phase-3 Runway
+
+| Lane                           | Primary surface                                    | First gate                                                                                                      | Parallelization note                                         |
+| ------------------------------ | -------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| Eval probe hardening           | `Tools/MCPServers/glass-server/src/probes.ts`      | Replace shell-dependent `execSync("npm ...")` calls with argv-based process execution and richer failure detail | Independent; next executable code slice                      |
+| Schema versioning / migrations | `bridge/schema.ts`, bridge/inventory files         | Define version fields and migration semantics before durable state expands                                      | Should precede durable undo/history                          |
+| Undo / history                 | Renderer + bridge mutation journal                 | Decide persisted mutation journal shape                                                                         | Depends on schema versioning decisions                       |
+| Inventory / indexing / search  | Inventory writer + local search                    | Confirm schema shape for durable inventory/index entries                                                        | Can proceed after schema versioning shape is known           |
+| Scheduler persistence          | `Tools/MCPServers/glass-server/src/eval-runner.ts` | Decide whether process-local scheduling is insufficient                                                         | Deferred unless process-local scheduler becomes unacceptable |
+| Observability                  | Audit/eval logs + docs                             | Keep eval log, MCP audit, and docs in sync                                                                      | Can proceed incrementally                                    |
 
 ---
 

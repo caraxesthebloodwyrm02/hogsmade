@@ -1,5 +1,10 @@
 import { contextBridge, ipcRenderer } from "electron";
-import type { BridgeState, FieldProfile, SemanticSearchResult } from "../../bridge/schema";
+import type {
+  AssetMeta,
+  BridgeState,
+  FieldProfile,
+  SemanticSearchResult,
+} from "../../bridge/schema";
 
 contextBridge.exposeInMainWorld("glass", {
   onBridgeUpdate: (cb: (state: BridgeState) => void) => {
@@ -17,7 +22,7 @@ contextBridge.exposeInMainWorld("glass", {
     language: string,
     content: string,
     position: { x: number; y: number },
-    asset?: any,
+    asset?: AssetMeta,
   ) => {
     ipcRenderer.send("bridge:add-block", {
       type,

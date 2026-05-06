@@ -237,6 +237,14 @@ function readBridgeFile(): BridgeState {
   }
 }
 
+function withBridgeState(tag: string, mutate: (s: BridgeState) => boolean): void {
+  const state = readBridgeFile();
+  if (!mutate(state)) return;
+  const tmp = `${BRIDGE_PATH}.tmp.${process.pid}.${tag}`;
+  fs.writeFileSync(tmp, JSON.stringify(state, null, 2), { encoding: "utf-8", mode: 0o600 });
+  fs.renameSync(tmp, BRIDGE_PATH);
+}
+
 export function appendConversationTurn(text: string): void {
   if (typeof text !== "string" || text.length === 0 || text.length > MAX_TEXT) {
     console.warn(
@@ -245,14 +253,13 @@ export function appendConversationTurn(text: string): void {
     return;
   }
   try {
-    const state = readBridgeFile();
-    const conversation = Array.isArray(state.conversation) ? [...state.conversation] : [];
-    conversation.push({ role: "user", text, timestamp: new Date().toISOString() });
-    if (conversation.length > MAX_ARRAY) conversation.splice(0, conversation.length - MAX_ARRAY);
-    state.conversation = conversation;
-    const tmp = `${BRIDGE_PATH}.tmp.${process.pid}.msg`;
-    fs.writeFileSync(tmp, JSON.stringify(state, null, 2), { encoding: "utf-8", mode: 0o600 });
-    fs.renameSync(tmp, BRIDGE_PATH);
+    withBridgeState("msg", (state) => {
+      const conversation = Array.isArray(state.conversation) ? [...state.conversation] : [];
+      conversation.push({ role: "user", text, timestamp: new Date().toISOString() });
+      if (conversation.length > MAX_ARRAY) conversation.splice(0, conversation.length - MAX_ARRAY);
+      state.conversation = conversation;
+      return true;
+    });
   } catch (err) {
     console.error(
       `[glass] appendConversationTurn failed: ${err instanceof Error ? err.message : String(err)}`,
@@ -283,34 +290,33 @@ export function addBridgeBlock(block: {
     return;
   }
   try {
-    const state = readBridgeFile();
-    const blocks = Array.isArray(state.blocks) ? [...state.blocks] : [];
-    if (blocks.length >= MAX_ARRAY) {
-      console.warn(`[glass] addBridgeBlock rejected — blocks array at capacity (${MAX_ARRAY})`);
-      return;
-    }
-    const id = `user-${Date.now()}-${++blockSeq}`;
-    const nextBlock: BridgeBlock = {
-      id,
-      type: block.type as BlockType,
-      language: block.language || "text",
-      content: block.content,
-      position: { x: Number(block.position?.x) || 0, y: Number(block.position?.y) || 0 },
-      origin: block.origin === "agent" ? "agent" : "user",
-    };
-    if (nextBlock.type === "asset") {
-      const asset = validateAssetMeta(block.asset, state.threshold_state, state.session_id);
-      if (!asset) {
-        console.warn(`[glass] addBridgeBlock rejected — invalid asset metadata or rarity gate`);
-        return;
+    withBridgeState("add", (state) => {
+      const blocks = Array.isArray(state.blocks) ? [...state.blocks] : [];
+      if (blocks.length >= MAX_ARRAY) {
+        console.warn(`[glass] addBridgeBlock rejected — blocks array at capacity (${MAX_ARRAY})`);
+        return false;
       }
-      nextBlock.asset = asset;
-    }
-    blocks.push(nextBlock);
-    state.blocks = blocks;
-    const tmp = `${BRIDGE_PATH}.tmp.${process.pid}.add`;
-    fs.writeFileSync(tmp, JSON.stringify(state, null, 2), { encoding: "utf-8", mode: 0o600 });
-    fs.renameSync(tmp, BRIDGE_PATH);
+      const id = `user-${Date.now()}-${++blockSeq}`;
+      const nextBlock: BridgeBlock = {
+        id,
+        type: block.type as BlockType,
+        language: block.language || "text",
+        content: block.content,
+        position: { x: Number(block.position?.x) || 0, y: Number(block.position?.y) || 0 },
+        origin: block.origin === "agent" ? "agent" : "user",
+      };
+      if (nextBlock.type === "asset") {
+        const asset = validateAssetMeta(block.asset, state.threshold_state, state.session_id);
+        if (!asset) {
+          console.warn(`[glass] addBridgeBlock rejected — invalid asset metadata or rarity gate`);
+          return false;
+        }
+        nextBlock.asset = asset;
+      }
+      blocks.push(nextBlock);
+      state.blocks = blocks;
+      return true;
+    });
   } catch (err) {
     console.error(
       `[glass] addBridgeBlock failed: ${err instanceof Error ? err.message : String(err)}`,
@@ -328,29 +334,25 @@ export function patchBridgeBlockPosition(blockId: string, x: number, y: number):
     return;
   }
   try {
-    const state = readBridgeFile();
-    if (!Array.isArray(state.blocks)) {
-      console.warn(`[glass] patchBridgeBlockPosition skipped — state.blocks is not an array`);
-      return;
-    }
-    const idx = state.blocks.findIndex((b) => b.id === blockId);
-    if (idx === -1) {
-      console.warn(`[glass] patchBridgeBlockPosition skipped — blockId "${blockId}" not found`);
-      return;
-    }
-    if (state.blocks[idx].origin !== "user") {
-      console.warn(
-        `[glass] patchBridgeBlockPosition rejected — block "${blockId}" is not user-owned`,
-      );
-      return;
-    }
-    state.blocks[idx] = {
-      ...state.blocks[idx],
-      position: { x, y },
-    };
-    const tmp = `${BRIDGE_PATH}.tmp.${process.pid}.pos`;
-    fs.writeFileSync(tmp, JSON.stringify(state, null, 2), { encoding: "utf-8", mode: 0o600 });
-    fs.renameSync(tmp, BRIDGE_PATH);
+    withBridgeState("pos", (state) => {
+      if (!Array.isArray(state.blocks)) {
+        console.warn(`[glass] patchBridgeBlockPosition skipped — state.blocks is not an array`);
+        return false;
+      }
+      const idx = state.blocks.findIndex((b) => b.id === blockId);
+      if (idx === -1) {
+        console.warn(`[glass] patchBridgeBlockPosition skipped — blockId "${blockId}" not found`);
+        return false;
+      }
+      if (state.blocks[idx].origin !== "user") {
+        console.warn(
+          `[glass] patchBridgeBlockPosition rejected — block "${blockId}" is not user-owned`,
+        );
+        return false;
+      }
+      state.blocks[idx] = { ...state.blocks[idx], position: { x, y } };
+      return true;
+    });
   } catch (err) {
     console.error(
       `[glass] patchBridgeBlockPosition failed: ${err instanceof Error ? err.message : String(err)}`,
@@ -372,27 +374,23 @@ export function patchBridgeBlock(blockId: string, content: string): void {
     return;
   }
   try {
-    const state = readBridgeFile();
-    if (!Array.isArray(state.blocks)) {
-      console.warn(`[glass] patchBridgeBlock skipped — state.blocks is not an array`);
-      return;
-    }
-    const idx = state.blocks.findIndex((b) => b.id === blockId);
-    if (idx === -1) {
-      console.warn(`[glass] patchBridgeBlock skipped — blockId "${blockId}" not found`);
-      return;
-    }
-    if (state.blocks[idx].origin !== "user") {
-      console.warn(`[glass] patchBridgeBlock rejected — block "${blockId}" is not user-owned`);
-      return;
-    }
-    state.blocks[idx] = {
-      ...state.blocks[idx],
-      content,
-    };
-    const tmp = `${BRIDGE_PATH}.tmp.${process.pid}.edit`;
-    fs.writeFileSync(tmp, JSON.stringify(state, null, 2), { encoding: "utf-8", mode: 0o600 });
-    fs.renameSync(tmp, BRIDGE_PATH);
+    withBridgeState("edit", (state) => {
+      if (!Array.isArray(state.blocks)) {
+        console.warn(`[glass] patchBridgeBlock skipped — state.blocks is not an array`);
+        return false;
+      }
+      const idx = state.blocks.findIndex((b) => b.id === blockId);
+      if (idx === -1) {
+        console.warn(`[glass] patchBridgeBlock skipped — blockId "${blockId}" not found`);
+        return false;
+      }
+      if (state.blocks[idx].origin !== "user") {
+        console.warn(`[glass] patchBridgeBlock rejected — block "${blockId}" is not user-owned`);
+        return false;
+      }
+      state.blocks[idx] = { ...state.blocks[idx], content };
+      return true;
+    });
   } catch (err) {
     console.error(
       `[glass] patchBridgeBlock failed — renderer edit not persisted: ${
@@ -412,24 +410,23 @@ export function deleteBridgeBlock(blockId: string): void {
     return;
   }
   try {
-    const state = readBridgeFile();
-    if (!Array.isArray(state.blocks)) {
-      console.warn(`[glass] deleteBridgeBlock skipped — state.blocks is not an array`);
-      return;
-    }
-    const idx = state.blocks.findIndex((b) => b.id === blockId);
-    if (idx === -1) {
-      console.warn(`[glass] deleteBridgeBlock skipped — blockId "${blockId}" not found`);
-      return;
-    }
-    if (state.blocks[idx].origin !== "user") {
-      console.warn(`[glass] deleteBridgeBlock rejected — block "${blockId}" is not user-owned`);
-      return;
-    }
-    state.blocks.splice(idx, 1);
-    const tmp = `${BRIDGE_PATH}.tmp.${process.pid}.del`;
-    fs.writeFileSync(tmp, JSON.stringify(state, null, 2), { encoding: "utf-8", mode: 0o600 });
-    fs.renameSync(tmp, BRIDGE_PATH);
+    withBridgeState("del", (state) => {
+      if (!Array.isArray(state.blocks)) {
+        console.warn(`[glass] deleteBridgeBlock skipped — state.blocks is not an array`);
+        return false;
+      }
+      const idx = state.blocks.findIndex((b) => b.id === blockId);
+      if (idx === -1) {
+        console.warn(`[glass] deleteBridgeBlock skipped — blockId "${blockId}" not found`);
+        return false;
+      }
+      if (state.blocks[idx].origin !== "user") {
+        console.warn(`[glass] deleteBridgeBlock rejected — block "${blockId}" is not user-owned`);
+        return false;
+      }
+      state.blocks.splice(idx, 1);
+      return true;
+    });
   } catch (err) {
     console.error(
       `[glass] deleteBridgeBlock failed — renderer delete not persisted: ${
@@ -445,11 +442,10 @@ export function setBridgeThresholdState(state: ThresholdState): void {
     return;
   }
   try {
-    const current = readBridgeFile();
-    current.threshold_state = state;
-    const tmp = `${BRIDGE_PATH}.tmp.${process.pid}.ceremony`;
-    fs.writeFileSync(tmp, JSON.stringify(current, null, 2), { encoding: "utf-8", mode: 0o600 });
-    fs.renameSync(tmp, BRIDGE_PATH);
+    withBridgeState("ceremony", (current) => {
+      current.threshold_state = state;
+      return true;
+    });
   } catch (err) {
     console.error(
       `[glass] setBridgeThresholdState failed: ${err instanceof Error ? err.message : String(err)}`,

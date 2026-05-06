@@ -75,12 +75,9 @@ export class InventoryMenu {
     ts.marginBottom = "4px";
     this.menu.appendChild(title);
 
-    let assets: Record<string, unknown>[] = [];
+    let assets: AssetMeta[] = [];
     try {
-      assets = ((await (window as any).glass?.listAssets?.()) || []).filter(
-        (item: unknown): item is Record<string, unknown> =>
-          item !== null && typeof item === "object",
-      );
+      assets = await window.glass.listAssets();
     } catch (e) {
       console.warn("Failed to load inventory assets", e);
     }
@@ -95,11 +92,7 @@ export class InventoryMenu {
     }
 
     // Sort by most recent
-    assets.sort(
-      (a, b) =>
-        new Date(String(b.created_at ?? b.acquired_at ?? "")).getTime() -
-        new Date(String(a.created_at ?? a.acquired_at ?? "")).getTime(),
-    );
+    assets.sort((a, b) => new Date(b.acquired_at).getTime() - new Date(a.acquired_at).getTime());
 
     for (const item of assets) {
       const rarityColors: Record<string, string> = {
@@ -160,19 +153,13 @@ export class InventoryMenu {
           rarity,
           label,
           glyph,
-          acquired_at: String(item.acquired_at ?? item.created_at ?? new Date().toISOString()),
+          acquired_at: item.acquired_at,
           source_ceremony: sourceCeremony,
           source_session: String(item.source_session ?? ""),
         };
         if (typeof item.ledger_id === "string") assetMeta.ledger_id = item.ledger_id;
 
-        this.callbacks.onSpawn(
-          "asset",
-          "text",
-          String(item.content ?? ""),
-          { x: this.worldX, y: this.worldY },
-          assetMeta,
-        );
+        this.callbacks.onSpawn("asset", "text", "", { x: this.worldX, y: this.worldY }, assetMeta);
         this.hide();
       });
 

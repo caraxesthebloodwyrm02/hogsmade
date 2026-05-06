@@ -45,8 +45,7 @@ beforeEach(() => {
           rarity: "epic",
           label: "Test Artifact",
           glyph: "✧",
-          content: "Some content",
-          created_at: "2026-05-04T10:00:00Z",
+          acquired_at: "2026-05-04T10:00:00Z",
           source_ceremony: "elevated",
           source_session: "test-session",
         },
@@ -90,8 +89,7 @@ describe("InventoryMenu", () => {
         rarity: "epic",
         label: "<img src=x onerror=alert(1)>",
         glyph: "<svg>",
-        content: "Some content",
-        created_at: "2026-05-04T10:00:00Z",
+        acquired_at: "2026-05-04T10:00:00Z",
         source_ceremony: "elevated",
         source_session: "test-session",
       },
@@ -119,7 +117,7 @@ describe("InventoryMenu", () => {
     expect(onSpawn).toHaveBeenCalledWith(
       "asset",
       "text",
-      "Some content",
+      "",
       { x: 110, y: 220 },
       {
         category: "artifact",

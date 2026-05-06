@@ -7,6 +7,7 @@ Electron + Canvas2D spatial development environment. Vanilla TypeScript — no R
 ```bash
 npm run dev              # Electron dev server with HMR (renderer on localhost:5173)
 npm run build            # electron-vite production build -> out/
+npm run lint             # tsc --noEmit (same gate as typecheck)
 npm run typecheck        # tsc --noEmit (split tsconfigs, see below)
 npm test                 # vitest run (node environment)
 npm run test:watch       # vitest watch mode
@@ -14,7 +15,7 @@ npm run snapshot         # requires uv: uv run --with openpyxl python scripts/sn
 GLASS_DEVTOOLS=1 npm run dev   # opens detached DevTools in dev mode
 ```
 
-No ESLint or Prettier config. No lint script in package.json.
+No ESLint or Prettier config. `npm run lint` exists as a `tsc --noEmit` alias, matching `npm run typecheck`.
 
 ## TypeScript — Split Configs
 
@@ -33,23 +34,42 @@ Root `tsconfig.json` is reference-only (no `compilerOptions`). Two real configs:
 
 ```
 src/main/index.ts       — Electron main: IPC handlers, bridge watcher, window creation
-src/preload/index.ts    — contextBridge: exposes window.glass.{onBridgeUpdate, patchBlock,
-                          sendMessage, addBlock, patchBlockPosition} to renderer
+src/preload/index.ts    — contextBridge: exposes the explicit window.glass API to renderer
 src/renderer/index.ts   — Renderer entry: Field (canvas), FieldState, SessionState, user input
 bridge/schema.ts        — Shared types: BridgeState, BridgeBlock, ThresholdState, etc.
 ```
 
-`contextIsolation: true`, `nodeIntegration: false`, `sandbox: true` — renderer has no Node access, only the five methods exposed via preload.
+`contextIsolation: true`, `nodeIntegration: false`, `sandbox: true` — renderer has no Node access, only the preload API exposed as `window.glass`.
+
+Current `window.glass` surface:
+
+| Method                                                | Purpose                                    |
+| ----------------------------------------------------- | ------------------------------------------ |
+| `onBridgeUpdate(cb)`                                  | Subscribe to `BridgeState` updates         |
+| `patchBlock(id, content)`                             | Persist user-owned block edits             |
+| `sendMessage(text)`                                   | Append a user conversation turn            |
+| `addBlock(type, language, content, position, asset?)` | Add a user-origin block                    |
+| `patchBlockPosition(id, x, y)`                        | Persist drag/reposition events             |
+| `deleteBlock(id)`                                     | Delete a user-owned block                  |
+| `listAssets()`                                        | Read durable inventory assets              |
+| `searchSemantic(query, limit?)`                       | Search visible blocks and inventory assets |
+| `getFieldProfile()`                                   | Read the active field profile/config       |
+| `triggerCeremony(state)`                              | Request a ceremony state transition        |
 
 ## IPC Channels
 
-| Direction       | Channel                       | Payload                                         |
-| --------------- | ----------------------------- | ----------------------------------------------- |
-| main → renderer | `bridge:update`               | `BridgeState`                                   |
-| renderer → main | `bridge:patch-block`          | `{ id, content }`                               |
-| renderer → main | `bridge:send-message`         | `{ text }`                                      |
-| renderer → main | `bridge:add-block`            | `{ type, language, content, position, origin }` |
-| renderer → main | `bridge:patch-block-position` | `{ id, x, y }`                                  |
+| Direction       | Channel                       | Payload                                                 |
+| --------------- | ----------------------------- | ------------------------------------------------------- |
+| main → renderer | `bridge:update`               | `BridgeState`                                           |
+| renderer → main | `bridge:patch-block`          | `{ id, content }`                                       |
+| renderer → main | `bridge:send-message`         | `{ text }`                                              |
+| renderer → main | `bridge:add-block`            | `{ type, language, content, position, origin, asset? }` |
+| renderer → main | `bridge:patch-block-position` | `{ id, x, y }`                                          |
+| renderer → main | `bridge:delete-block`         | `{ id }`                                                |
+| renderer → main | `bridge:list-assets`          | none                                                    |
+| renderer → main | `search:semantic`             | `{ query, limit }`                                      |
+| renderer → main | `config:get-field-profile`    | none                                                    |
+| renderer → main | `bridge:trigger-ceremony`     | `{ state }`                                             |
 
 ## Bridge File
 
@@ -106,7 +126,25 @@ npx vitest run src/main/bridge-watcher.test.ts
 
 ## MCP Servers (this workspace)
 
-`.claude/settings.local.json` enables only: `glass-server`, `nexus-server`, `school-server`. All other Cascade MCPs are disabled. `glass-server` provides: `glass_session_start`, `glass_bridge_write`, `glass_emit_turn`, `glass_session_resume`.
+`.claude/settings.local.json` enables only: `glass-server`, `nexus-server`, `school-server`. All other Cascade MCPs are disabled.
+
+`glass-server` provides 13 tools:
+
+- `glass_bridge_write`
+- `glass_session_start`
+- `glass_session_resume`
+- `glass_emit_turn`
+- `glass_update_signals`
+- `glass_pending_messages`
+- `glass_emit_block`
+- `glass_assets_list`
+- `glass_query_spatial_state`
+- `glass_evaluate_ceremony`
+- `glass_eval_run`
+- `glass_eval_schedule`
+- `glass_eval_status`
+
+`glass_eval_schedule` is process-local. The durable eval artifact is the NDJSON eval log returned by `glass_eval_status`.
 
 ## Gitignored — Don't Create These
 
@@ -115,3 +153,9 @@ npx vitest run src/main/bridge-watcher.test.ts
 ## Current Phase
 
 Phase 3 (Live Agent Integration) is complete — see `PHASE3.md` for workstream outcomes and `PHASE3_SIGNOFF.md` for closure evidence. Phases 1 (render pipeline) and 2 (interactivity) are complete. Workstream order was W1 (session lifecycle) → W2 (signals) → W5 (conversation) → W4 (blocks) → W3 (ceremony).
+
+## Current Next Slices
+
+1. Documentation truth sync: keep `REFACTORING-MARKERS.md`, `README.md`, and this file aligned with source.
+2. Eval probe hardening: replace shell-dependent `execSync("npm ...")` calls in `Tools/MCPServers/glass-server/src/probes.ts` with argv-based process execution and richer failure detail.
+3. Feature lanes: schema versioning/migrations before durable undo/history; inventory/indexing/search after schema shape is known; scheduler persistence only if process-local scheduling becomes unacceptable.

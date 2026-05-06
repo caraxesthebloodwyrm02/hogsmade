@@ -76,7 +76,22 @@ async function bootstrap(): Promise<void> {
 
   const headerHost = document.getElementById("global-header") as HTMLDivElement;
   if (headerHost) {
-    new GlobalHeader(headerHost);
+    new GlobalHeader(headerHost, {
+      onRecenter: () => field.recenterCamera(),
+      onSeed: () => triggerSeed(),
+    });
+  }
+
+  function triggerSeed(): void {
+    const camera = field.getCameraOffset();
+    field.recenterCamera();
+    window.glass.sendMessage(
+      "Seed \u00b7 canvas center (0, 0) \u2014 returning from (" +
+        Math.round(camera.x) +
+        ", " +
+        Math.round(camera.y) +
+        ")",
+    );
   }
 
   const paneHost = document.getElementById("similarity-pane") as HTMLDivElement | null;
@@ -94,6 +109,11 @@ async function bootstrap(): Promise<void> {
     : null;
 
   window.addEventListener("keydown", (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.code === "Home") {
+      e.preventDefault();
+      triggerSeed();
+      return;
+    }
     if ((e.ctrlKey || e.metaKey) && e.code === "KeyK") {
       e.preventDefault();
       void similarityPane?.toggle();
@@ -109,11 +129,20 @@ async function bootstrap(): Promise<void> {
 
   const userInput = document.getElementById("user-input") as HTMLInputElement;
   if (userInput) {
+    const RECENTER_COMMANDS = new Set(["/home", "/origin", "/recenter"]);
     userInput.addEventListener("keydown", (e) => {
       e.stopPropagation();
-      if (e.key === "Enter" && userInput.value.trim()) {
-        window.glass.sendMessage(userInput.value.trim());
-        userInput.value = "";
+      if (e.key === "Enter") {
+        const val = userInput.value.trim();
+        if (RECENTER_COMMANDS.has(val.toLowerCase())) {
+          userInput.value = "";
+          field.recenterCamera();
+          return;
+        }
+        if (val) {
+          window.glass.sendMessage(val);
+          userInput.value = "";
+        }
       }
       if (e.key === "Escape") {
         userInput.blur();

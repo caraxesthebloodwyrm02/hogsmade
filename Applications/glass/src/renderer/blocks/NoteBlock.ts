@@ -180,7 +180,7 @@ export class NoteBlock {
     });
     btn.addEventListener?.("click", (e) => {
       e.stopPropagation();
-      (window as any).glass?.deleteBlock?.(this.id);
+      window.glass.deleteBlock(this.id);
     });
 
     this.container.appendChild(btn);
@@ -284,6 +284,7 @@ export class NoteBlock {
       return `<p>${p.replace(/\n/g, "<br/>")}</p>`;
     });
 
-    this.contentElement.innerHTML = paragraphs.join("");
+    const safe = paragraphs.join("").replace(/<script[\s\S]*?<\/script>/gi, "");
+    this.contentElement.innerHTML = safe;
   }
 }

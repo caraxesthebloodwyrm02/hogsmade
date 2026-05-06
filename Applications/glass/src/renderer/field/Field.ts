@@ -56,6 +56,8 @@ const FALLBACK_MODULATION: FieldModulationSpec = {
 export class Field {
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
+  private noiseBuffer = new Float32Array(2048);
+  private noiseCursor = 0;
 
   private userPresence: UserPresence;
   private agentPresence: AgentPresence;
@@ -114,21 +116,25 @@ export class Field {
 
     this.dragController = new BlockDragController({
       onDragEnd: (id, x, y) => {
-        (window as any).glass?.patchBlockPosition?.(id, x, y);
+        window.glass.patchBlockPosition(id, x, y);
       },
     });
 
     this.spawnMenu = new BlockSpawnMenu(blockHost, {
       onSpawn: (type, language, content, position) => {
-        (window as any).glass?.addBlock?.(type, language, content, position);
+        window.glass.addBlock(type, language, content, position);
       },
     });
 
     this.inventoryMenu = new InventoryMenu(blockHost, {
       onSpawn: (type, language, content, position, asset) => {
-        (window as any).glass?.addBlock?.(type, language, content, position, asset);
+        window.glass.addBlock(type, language, content, position, asset);
       },
     });
+
+    for (let i = 0; i < this.noiseBuffer.length; i++) {
+      this.noiseBuffer[i] = Math.random();
+    }
 
     window.addEventListener("resize", () => this.resize());
     this.bindInputs();
@@ -163,6 +169,15 @@ export class Field {
 
   restoreCameraOffset(x: number, y: number): void {
     this.camera.setPosition(x, y);
+  }
+
+  getCameraOffset(): { x: number; y: number } {
+    return { x: this.camera.x, y: this.camera.y };
+  }
+
+  recenterCamera(): void {
+    this.camera.setTarget(0, 0);
+    this.notifyCameraPan();
   }
 
   panToBlock(blockId: string): void {
@@ -213,7 +228,7 @@ export class Field {
           this.blockManager.move(result.id, result.x, result.y);
           const cb = this.blockViews.get(result.id);
           cb?.setPosition(result.x, result.y);
-          (window as any).glass?.patchBlockPosition?.(result.id, result.x, result.y);
+          window.glass.patchBlockPosition(result.id, result.x, result.y);
         }
       }
       if (this.panning && (e.button === 0 || e.button === 1)) {
@@ -269,7 +284,11 @@ export class Field {
         e.preventDefault();
         const cx = this.camera.x + this.canvas.width / 2;
         const cy = this.camera.y + this.canvas.height / 2;
-        (window as any).glass?.addBlock?.("code", "typescript", "", { x: cx, y: cy });
+        window.glass.addBlock("code", "typescript", "", { x: cx, y: cy });
+      }
+      if (e.code === "Home") {
+        e.preventDefault();
+        this.recenterCamera();
       }
       if ((e.ctrlKey || e.metaKey) && e.code === "KeyI") {
         e.preventDefault();
@@ -349,8 +368,7 @@ export class Field {
     this.thresholdLine.tick(dt, this.thresholdState);
     this.conversationLayer.tick(dt);
     this.blockManager.tick(dt);
-    this.updateBlockOpacities(bus.block.levitationMod);
-    this.updateBlockColorTemp(this.thresholdState);
+    this.updateBlocks(bus.block.levitationMod, this.thresholdState);
 
     const audioParams = AudioEngine.deriveParams(bus.field.ambientIntensity, this.thresholdState);
     this.audioEngine.update(audioParams);
@@ -383,9 +401,14 @@ export class Field {
     ctx.save();
     ctx.globalAlpha = 0.008 + intensity * 0.012;
     const count = Math.floor(300 + intensity * 200);
+    ctx.fillStyle = "#ffffff";
     for (let i = 0; i < count; i++) {
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(Math.random() * canvas.width, Math.random() * canvas.height, 1, 1);
+      ctx.fillRect(
+        this.noiseBuffer[this.noiseCursor++ & 2047] * canvas.width,
+        this.noiseBuffer[this.noiseCursor++ & 2047] * canvas.height,
+        1,
+        1,
+      );
     }
     ctx.restore();
   }
@@ -477,16 +500,11 @@ export class Field {
     }
   }
 
-  private updateBlockOpacities(levitationMod: number): void {
+  private updateBlocks(levitationMod: number, state: ThresholdState): void {
     for (const block of this.blockManager.getAll()) {
       const cb = this.blockViews.get(block.id);
       cb?.updateOpacity(block.spawnAge, levitationMod);
-    }
-  }
-
-  private updateBlockColorTemp(state: ThresholdState): void {
-    for (const cb of this.blockViews.values()) {
-      cb.setThresholdState(state);
+      cb?.setThresholdState(state);
     }
   }
 
