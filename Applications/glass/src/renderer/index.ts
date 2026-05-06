@@ -203,6 +203,11 @@ async function bootstrap(): Promise<void> {
     : null;
 
   window.addEventListener("keydown", (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.code === "Home") {
+      e.preventDefault();
+      triggerSeed();
+      return;
+    }
     if ((e.ctrlKey || e.metaKey) && e.code === "KeyK") {
       e.preventDefault();
       void similarityPane?.toggle();
@@ -218,11 +223,20 @@ async function bootstrap(): Promise<void> {
 
   const userInput = document.getElementById("user-input") as HTMLInputElement;
   if (userInput) {
+    const RECENTER_COMMANDS = new Set(["/home", "/origin", "/recenter"]);
     userInput.addEventListener("keydown", (e) => {
       e.stopPropagation();
-      if (e.key === "Enter" && userInput.value.trim()) {
-        window.glass.sendMessage(userInput.value.trim());
-        userInput.value = "";
+      if (e.key === "Enter") {
+        const val = userInput.value.trim();
+        if (RECENTER_COMMANDS.has(val.toLowerCase())) {
+          userInput.value = "";
+          field.recenterCamera();
+          return;
+        }
+        if (val) {
+          window.glass.sendMessage(val);
+          userInput.value = "";
+        }
       }
       if (e.key === "Escape") {
         userInput.blur();
