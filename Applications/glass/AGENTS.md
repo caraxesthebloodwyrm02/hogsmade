@@ -93,7 +93,7 @@ Requires `jq`. Writes initial bridge state, preserving existing `blocks[]`. Outp
 Place in a project root to mark it as a Glass-profiled workspace. Controls:
 
 - Voice roles/colors (I=Velocity/amber, II=Guard/silver, III=Lens/gold)
-- Ceremony triggers (`auto_evaluate_after_commits: 5`, `auto_return_after_idle_minutes: 10`)
+  - Ceremony triggers (`auto_evaluate_after_commits: 15`, `auto_return_after_idle_minutes: 10`)
 - Signal hot thresholds (`git_diff_lines: 200`, `iteration_count: 15`)
 - Named presets (reproducible bridge states for regression baselines)
 - Triadic weights (`safety: 1.0`, `correctness: 0.85`, `autonomy: 0.7`)

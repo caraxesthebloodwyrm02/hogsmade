@@ -28,6 +28,12 @@ const MAX_ARRAY = 200;
 const MAX_TEXT = 32_768;
 const MAX_BLOCK_TEXT = 1_000_000;
 
+let previousThresholdState: ThresholdState = "ground";
+
+export function getPreviousThresholdState(): ThresholdState {
+  return previousThresholdState;
+}
+
 const VALID_AGENT_STATES = new Set<string>([
   "idle",
   "thinking",
@@ -52,6 +58,9 @@ function clampString(v: unknown, max: number, fallback: string): string {
 }
 
 let activeFieldProfile: FieldProfile | null = null;
+
+let lastBridgeWriteTime = 0;
+let heartbeatInterval: ReturnType<typeof setInterval> | null = null;
 
 export function setBridgeFieldProfile(profile: FieldProfile): void {
   activeFieldProfile = profile;
@@ -243,6 +252,7 @@ function withBridgeState(tag: string, mutate: (s: BridgeState) => boolean): void
   const tmp = `${BRIDGE_PATH}.tmp.${process.pid}.${tag}`;
   fs.writeFileSync(tmp, JSON.stringify(state, null, 2), { encoding: "utf-8", mode: 0o600 });
   fs.renameSync(tmp, BRIDGE_PATH);
+  lastBridgeWriteTime = Date.now();
 }
 
 export function appendConversationTurn(text: string): void {
@@ -443,6 +453,7 @@ export function setBridgeThresholdState(state: ThresholdState): void {
   }
   try {
     withBridgeState("ceremony", (current) => {
+      previousThresholdState = current.threshold_state;
       current.threshold_state = state;
       return true;
     });
@@ -454,6 +465,9 @@ export function setBridgeThresholdState(state: ThresholdState): void {
 }
 export function startBridgeWatcher(onUpdate: (state: BridgeState) => void): void {
   onUpdate(readBridgeFile());
+
+  // Track writes so heartbeat can skip when real writes are happening
+  lastBridgeWriteTime = Date.now();
 
   if (!fs.existsSync(BRIDGE_PATH)) {
     fs.mkdirSync(path.dirname(BRIDGE_PATH), { recursive: true, mode: 0o700 });
@@ -501,5 +515,30 @@ export function startBridgeWatcher(onUpdate: (state: BridgeState) => void): void
       }
     }, 200);
     console.log(`[glass] watching bridge (polling): ${BRIDGE_PATH}`);
+  }
+
+  // Heartbeat: keep timestamp fresh on idle sessions (every 60s if no write in last 50s)
+  heartbeatInterval = setInterval(() => {
+    const elapsed = Date.now() - lastBridgeWriteTime;
+    if (elapsed < 50_000) return; // recent write — skip this tick
+    try {
+      withBridgeState("beat", (state) => {
+        state.timestamp = new Date().toISOString();
+        return true;
+      });
+    } catch (err) {
+      console.warn(
+        `[glass] heartbeat write failed: ${
+          err instanceof Error ? err.message : String(err)
+        }`,
+      );
+    }
+    }, 60_000);
+}
+
+export function stopBridgeWatcher(): void {
+  if (heartbeatInterval) {
+    clearInterval(heartbeatInterval);
+    heartbeatInterval = null;
   }
 }

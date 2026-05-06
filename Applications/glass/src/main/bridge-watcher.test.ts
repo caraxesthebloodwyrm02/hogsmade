@@ -513,3 +513,43 @@ describe("setBridgeThresholdState", () => {
     }
   });
 });
+
+describe("getPreviousThresholdState", () => {
+  it("returns 'ground' initially before any threshold state changes", async () => {
+    vi.resetModules();
+    const { getPreviousThresholdState } = await import("./bridge-watcher");
+    expect(getPreviousThresholdState()).toBe("ground");
+  });
+
+  it("returns the previous state after a threshold state transition", async () => {
+    vi.resetModules();
+    const { getPreviousThresholdState, setBridgeThresholdState } =
+      await import("./bridge-watcher");
+    mockReadSync(makeBridgeState({ threshold_state: "evaluating" }));
+    setBridgeThresholdState("elevated");
+    expect(getPreviousThresholdState()).toBe("evaluating");
+  });
+
+  it("tracks consecutive transitions correctly", async () => {
+    vi.resetModules();
+    const { getPreviousThresholdState, setBridgeThresholdState } =
+      await import("./bridge-watcher");
+    mockReadSync(makeBridgeState({ threshold_state: "ground" }));
+    expect(getPreviousThresholdState()).toBe("ground");
+    setBridgeThresholdState("evaluating");
+    expect(getPreviousThresholdState()).toBe("ground");
+    setBridgeThresholdState("voices_appearing");
+    expect(getPreviousThresholdState()).toBe("evaluating");
+    setBridgeThresholdState("elevated");
+    expect(getPreviousThresholdState()).toBe("voices_appearing");
+  });
+
+  it("does not update the previous state when an invalid state is passed", async () => {
+    vi.resetModules();
+    const { getPreviousThresholdState, setBridgeThresholdState } =
+      await import("./bridge-watcher");
+    mockReadSync(makeBridgeState({ threshold_state: "ground" }));
+    (setBridgeThresholdState as (s: string) => void)("not_a_state");
+    expect(getPreviousThresholdState()).toBe("ground");
+  });
+});

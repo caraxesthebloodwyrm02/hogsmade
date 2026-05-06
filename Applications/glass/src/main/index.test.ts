@@ -107,6 +107,7 @@ describe("main bridge window routing", () => {
   let readFileMock: ReturnType<typeof vi.fn>;
   let app: Record<string, ReturnType<typeof vi.fn>>;
   let ipcMain: Record<string, ReturnType<typeof vi.fn>>;
+  let childProcessSpawnMock: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     vi.resetModules();
@@ -115,6 +116,7 @@ describe("main bridge window routing", () => {
     bridgeUpdate = null;
     ipcHandles = {};
     readFileMock = vi.fn();
+    childProcessSpawnMock = vi.fn();
     MockBrowserWindow.windows = [];
     MockBrowserWindow.getAllWindows.mockImplementation(() => MockBrowserWindow.windows);
 
@@ -153,6 +155,9 @@ describe("main bridge window routing", () => {
       default: { homedir: () => "/mock-home" },
       homedir: () => "/mock-home",
     }));
+    vi.doMock("child_process", () => ({
+      spawn: childProcessSpawnMock,
+    }));
 
     vi.doMock("./bridge-watcher", () => ({
       startBridgeWatcher: vi.fn((cb: (state: BridgeState) => void) => {
@@ -164,6 +169,9 @@ describe("main bridge window routing", () => {
       patchBridgeBlockPosition: vi.fn(),
       deleteBridgeBlock: vi.fn(),
       setBridgeFieldProfile: vi.fn(),
+      setBridgeThresholdState: vi.fn(),
+      getPreviousThresholdState: vi.fn(() => "ground"),
+      touchBridgeTimestamp: vi.fn(),
     }));
     vi.doMock("./field-profile", () => ({
       loadFieldProfile: vi.fn(() => ({
@@ -327,5 +335,93 @@ describe("main bridge window routing", () => {
       expect.stringContaining("bridge:delete-block rejected"),
     );
     consoleWarn.mockRestore();
+  });
+
+  it("spawns USEB submission when ceremony reaches elevated", async () => {
+    process.env.GLASS_STUDENT_ID = "test-student";
+    const mockChild = {
+      on: vi.fn(),
+      unref: vi.fn(),
+    };
+    childProcessSpawnMock.mockReturnValue(mockChild);
+    await importMain();
+
+    const handler = (ipcMain.on as ReturnType<typeof vi.fn>).mock.calls.find(
+      (call: unknown[]) => call[0] === "bridge:trigger-ceremony",
+    )?.[1] as Handler | undefined;
+
+    handler?.(null, { state: "elevated" });
+
+    expect(childProcessSpawnMock).toHaveBeenCalledTimes(1);
+    expect(childProcessSpawnMock).toHaveBeenCalledWith(
+      "python3",
+      expect.arrayContaining(["--contract-satisfied", "--no-grid"]),
+      expect.objectContaining({ stdio: "ignore", detached: true }),
+    );
+    const args = (childProcessSpawnMock.mock.calls[0] as unknown[])[1] as string[];
+    expect(args).toContain("--student-id");
+    expect(args).toContain("test-student");
+    expect(mockChild.on).toHaveBeenCalled();
+    expect(mockChild.unref).toHaveBeenCalled();
+    delete process.env.GLASS_STUDENT_ID;
+  });
+
+  it("spawns USEB submission when returning from elevated", async () => {
+    process.env.GLASS_STUDENT_ID = "test-student";
+    const mockChild = { on: vi.fn(), unref: vi.fn() };
+    childProcessSpawnMock.mockReturnValue(mockChild);
+    const { getPreviousThresholdState } = await import("./bridge-watcher");
+    (getPreviousThresholdState as ReturnType<typeof vi.fn>).mockReturnValue("elevated");
+    await importMain();
+
+    const handler = (ipcMain.on as ReturnType<typeof vi.fn>).mock.calls.find(
+      (call: unknown[]) => call[0] === "bridge:trigger-ceremony",
+    )?.[1] as Handler | undefined;
+
+    handler?.(null, { state: "returning" });
+
+    expect(childProcessSpawnMock).toHaveBeenCalledTimes(1);
+    expect(childProcessSpawnMock).toHaveBeenCalledWith(
+      "python3",
+      expect.arrayContaining(["--contract-satisfied", "--no-grid"]),
+      expect.any(Object),
+    );
+    delete process.env.GLASS_STUDENT_ID;
+  });
+
+  it("does not spawn USEB for non-elevated, non-returning-from-elevated transitions", async () => {
+    process.env.GLASS_STUDENT_ID = "test-student";
+    const mockChild = { on: vi.fn(), unref: vi.fn() };
+    childProcessSpawnMock.mockReturnValue(mockChild);
+    await importMain();
+
+    const handler = (ipcMain.on as ReturnType<typeof vi.fn>).mock.calls.find(
+      (call: unknown[]) => call[0] === "bridge:trigger-ceremony",
+    )?.[1] as Handler | undefined;
+
+    handler?.(null, { state: "ground" });
+
+    expect(childProcessSpawnMock).not.toHaveBeenCalled();
+    delete process.env.GLASS_STUDENT_ID;
+  });
+
+  it("warns and skips USEB when GLASS_STUDENT_ID is not set", async () => {
+    delete process.env.GLASS_STUDENT_ID;
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const mockChild = { on: vi.fn(), unref: vi.fn() };
+    childProcessSpawnMock.mockReturnValue(mockChild);
+    await importMain();
+
+    const handler = (ipcMain.on as ReturnType<typeof vi.fn>).mock.calls.find(
+      (call: unknown[]) => call[0] === "bridge:trigger-ceremony",
+    )?.[1] as Handler | undefined;
+
+    handler?.(null, { state: "elevated" });
+
+    expect(childProcessSpawnMock).not.toHaveBeenCalled();
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining("GLASS_STUDENT_ID not set"),
+    );
+    warnSpy.mockRestore();
   });
 });

@@ -1,4 +1,5 @@
 import { app, BrowserWindow, session, ipcMain } from "electron";
+import { spawn } from "child_process";
 import { readFile } from "fs/promises";
 import os from "os";
 import path from "path";
@@ -11,6 +12,7 @@ import {
   deleteBridgeBlock,
   setBridgeFieldProfile,
   setBridgeThresholdState,
+  stopBridgeWatcher,
 } from "./bridge-watcher";
 import { loadFieldProfile } from "./field-profile";
 import { searchLocalSemantic } from "./local-search";
@@ -40,6 +42,49 @@ async function readInventoryAssets(): Promise<Record<string, unknown>[]> {
       );
     }
     return [];
+  }
+}
+
+const USEB_SCRIPT =
+  process.env.GLASS_USEB_SCRIPT_PATH ??
+  path.join(os.homedir(), "x-change", "scripts", "useb_submit.py");
+
+function spawnUsebSubmission(): void {
+  const studentId = process.env.GLASS_STUDENT_ID;
+  if (!studentId) {
+    console.warn("[glass] USEB auto-ingest skipped — GLASS_STUDENT_ID not set");
+    return;
+  }
+  const args = [
+    USEB_SCRIPT,
+    "--student-id", studentId,
+    "--contract-satisfied",
+    "--no-grid",
+  ];
+  const rewardId = process.env.GLASS_REWARD_ID;
+  if (rewardId) {
+    args.push("--reward-id", rewardId);
+  }
+  const python = process.env.GLASS_PYTHON_PATH ?? "python3";
+  try {
+    const child = spawn(python, args, {
+      env: process.env,
+      stdio: "ignore",
+      detached: true,
+    });
+    child.on("error", (err) => {
+      console.warn(`[glass] USEB auto-ingest failed to start: ${err.message}`);
+    });
+    child.on("close", (code) => {
+      if (code !== 0 && code !== null) {
+        console.warn(`[glass] USEB auto-ingest exited with code ${code}`);
+      }
+    });
+    child.unref();
+  } catch (err) {
+    console.warn(
+      `[glass] USEB auto-ingest spawn error: ${err instanceof Error ? err.message : String(err)}`,
+    );
   }
 }
 
@@ -218,7 +263,11 @@ ipcMain.on("bridge:trigger-ceremony", (_event, payload: unknown) => {
     console.warn("[glass] bridge:trigger-ceremony rejected — state is not a string");
     return;
   }
-  setBridgeThresholdState(state);
+  setBridgeThresholdState(state as ThresholdState);
+  const prev = getPreviousThresholdState();
+  if (state === "elevated" || (state === "returning" && prev === "elevated")) {
+    spawnUsebSubmission();
+  }
 });
 
 app.whenReady().then(() => {
@@ -244,5 +293,8 @@ app.whenReady().then(() => {
 });
 
 app.on("window-all-closed", () => {
-  if (process.platform !== "darwin") app.quit();
+  if (process.platform !== "darwin") {
+    stopBridgeWatcher();
+    app.quit();
+  }
 });
