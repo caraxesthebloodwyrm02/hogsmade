@@ -54,7 +54,9 @@
     "protobufjs": ">=7.5.5",
     "basic-ftp": ">=5.2.2",
     "hono": ">=4.12.14",
-    "fast-xml-parser": ">=5.7.0"
+    "fast-xml-parser": ">=5.7.0",
+    "vitest": "4.1.5",
+    "@vitest/coverage-v8": "4.1.5"
   },
   "engines": {
     "node": ">=22.0.0"
