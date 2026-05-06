@@ -263,7 +263,8 @@ export function buildServer(): McpServer {
         // Store ceremony thresholds in-memory so they survive Electron bridge round-trips
         // that strip unknown keys via validateBridgeState().
         ceremonyEvalThreshold =
-          profile?.ceremony?.auto_evaluate_after_iterations ??
+          profile?.ceremony?.auto_evaluate_after_commits ??
+          profile?.ceremony?.auto_evaluate_after_iterations ?? // legacy key — remove after migration
           profile?.signals?.hot_threshold?.iteration_count ??
           15;
         if (profile?.ceremony?.auto_return_after_idle_minutes !== undefined) {
