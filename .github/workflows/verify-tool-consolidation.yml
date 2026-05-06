@@ -4,6 +4,6 @@ jobs:
   matrix-check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Check topic x tool matrix
         run: python3 Components/scripts/verify_tool_consolidation.py
