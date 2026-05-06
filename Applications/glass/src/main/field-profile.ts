@@ -5,6 +5,7 @@ import {
   THRESHOLD_STATES,
   isAssetRarity,
   type FieldEnvelope,
+  type FieldEngineSpec,
   type FieldModulationSpec,
   type FieldProfile,
   type RarityGateMap,

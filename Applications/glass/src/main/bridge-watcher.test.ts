@@ -77,6 +77,19 @@ const TEST_PROFILE: FieldProfile = {
     functions: [],
     lanes: [],
   },
+  engine: {
+    physics: {
+      pulseRadiusBase: 32,
+      pulseIntensityMod: 6,
+      transitionSpeedUp: 0.003,
+      transitionSpeedDown: 0.005,
+    },
+    visuals: {
+      ovalAlphaMod: 0.4,
+      slotIntensityMod: 3.5,
+      presenceAlphaBase: 0.3,
+    },
+  },
 };
 
 async function configureWatcherProfile(): Promise<void> {

@@ -18,6 +18,7 @@
  *   glass_eval_run             — run all eval probes (typecheck, tests, bridge, ceremony)
  *   glass_eval_schedule        — arm or disarm the eval scheduler loop
  *   glass_eval_status          — get eval scheduler status and last report
+ *   glass_reward_state         — poll x-change reward state and render badge block
  */
 
 import { emitAudit } from "@cascade/shared-types/audit-client";
@@ -31,6 +32,7 @@ import { computeGitDiffLines } from "./git-stats.js";
 import { loadProfile, type TriadicWeights } from "./profile-reader.js";
 import { applyTriadicGuard } from "./triadic-guard.js";
 import { runAllProbes, armEval, disarmEval, getEvalStatus } from "./eval-runner.js";
+import { armRewardPoller, getRewardPollerStatus } from "./reward-poller.js";
 
 const SERVER_NAME = "glass-server";
 const VERSION = "1.0.0";
@@ -1331,6 +1333,73 @@ export function buildServer(): McpServer {
           status: "error",
           durationMs: Date.now() - startMs,
           metadata: { error: String(error) },
+        });
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({ error: String(error) }) }],
+          isError: true,
+        };
+      }
+    },
+  );
+
+  // ── glass_reward_state ──
+
+  tool(
+    "glass_reward_state",
+    "Poll x-change for the current reward state and render it as a badge block in the Glass field. Arms a background poll loop at the given interval (default 120 s). Requires XCHANGE_INGEST_TOKEN env var; XCHANGE_URL defaults to http://127.0.0.1:8788.",
+    {
+      reward_id: z.string().max(128).describe("x-change reward ID to poll"),
+      poll_interval_seconds: z
+        .number()
+        .int()
+        .min(0)
+        .max(3600)
+        .optional()
+        .describe("Poll interval in seconds (default: 120, 0 = single shot)"),
+    },
+    async ({
+      reward_id,
+      poll_interval_seconds,
+    }: {
+      reward_id: string;
+      poll_interval_seconds?: number;
+    }) => {
+      const startMs = Date.now();
+      try {
+        const status = await armRewardPoller(reward_id, poll_interval_seconds ?? 120);
+        emitAudit({
+          source: SERVER_NAME,
+          tool: "glass_reward_state",
+          status: "success",
+          durationMs: Date.now() - startMs,
+          metadata: {
+            reward_id,
+            block_id: status.blockId,
+            state: status.lastState,
+            poller_state: status.pollerState,
+          },
+        });
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: JSON.stringify({
+                state: status.lastState,
+                last_polled: status.lastPolled,
+                block_id: status.blockId,
+                poller_state: status.pollerState,
+                interval_seconds: status.intervalSeconds,
+              }),
+            },
+          ],
+        };
+      } catch (error) {
+        emitAudit({
+          source: SERVER_NAME,
+          tool: "glass_reward_state",
+          status: "error",
+          durationMs: Date.now() - startMs,
+          metadata: { reward_id, error: String(error) },
         });
         return {
           content: [{ type: "text" as const, text: JSON.stringify({ error: String(error) }) }],

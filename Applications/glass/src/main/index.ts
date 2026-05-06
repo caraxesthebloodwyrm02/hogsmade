@@ -13,11 +13,11 @@ import {
   setBridgeFieldProfile,
   setBridgeThresholdState,
   getPreviousThresholdState,
-  touchBridgeTimestamp,
+  stopBridgeWatcher,
 } from "./bridge-watcher";
 import { loadFieldProfile } from "./field-profile";
 import { searchLocalSemantic, rebuildIndexDebounced } from "./local-search";
-import type { BridgeState, FieldProfile } from "../../bridge/schema";
+import type { BridgeState, FieldProfile, ThresholdState } from "../../bridge/schema";
 
 if (process.platform === "linux" && process.env.NODE_ENV === "development") {
   app.commandLine.appendSwitch("disable-gpu");

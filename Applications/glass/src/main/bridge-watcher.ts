@@ -28,12 +28,6 @@ const MAX_ARRAY = 200;
 const MAX_TEXT = 32_768;
 const MAX_BLOCK_TEXT = 1_000_000;
 
-let previousThresholdState: ThresholdState = "ground";
-
-export function getPreviousThresholdState(): ThresholdState {
-  return previousThresholdState;
-}
-
 const VALID_AGENT_STATES = new Set<string>([
   "idle",
   "thinking",

@@ -1306,4 +1306,66 @@ describe("glass-server tools", () => {
       expect(parsed.blocks[0].staleness_score).toBe(1);
     });
   });
+
+  describe("glass_reward_state", () => {
+    afterEach(() => {
+      vi.restoreAllMocks();
+      delete process.env.XCHANGE_INGEST_TOKEN;
+      delete process.env.XCHANGE_URL;
+    });
+
+    it("returns error when XCHANGE_INGEST_TOKEN is not set", async () => {
+      delete process.env.XCHANGE_INGEST_TOKEN;
+      vi.resetModules();
+      const { client } = await makeClient();
+      const result = await client.callTool({
+        name: "glass_reward_state",
+        arguments: { reward_id: "r-no-token", poll_interval_seconds: 0 },
+      });
+      expect(toolIsError(result)).toBe(true);
+      const parsed = JSON.parse(toolText(result));
+      expect(parsed.error).toContain("XCHANGE_INGEST_TOKEN");
+    });
+
+    it("returns state and block_id on successful poll", async () => {
+      process.env.XCHANGE_INGEST_TOKEN = "test-tok";
+      process.env.XCHANGE_URL = "http://127.0.0.1:18788";
+      const payload = {
+        reward_id: "r-srv",
+        state: "earned",
+        reward_token_amount: 50,
+        updated_at: "2026-01-01T00:00:00Z",
+      };
+      vi.stubGlobal(
+        "fetch",
+        vi.fn().mockResolvedValue({ ok: true, json: async () => payload }),
+      );
+      vi.resetModules();
+      const { client } = await makeClient();
+      const result = await client.callTool({
+        name: "glass_reward_state",
+        arguments: { reward_id: "r-srv", poll_interval_seconds: 0 },
+      });
+      expect(toolIsError(result)).toBeUndefined();
+      const parsed = JSON.parse(toolText(result));
+      expect(parsed.state).toBe("earned");
+      expect(parsed.block_id).toBe("reward-state-r-srv");
+      expect(parsed.poller_state).toBe("disarmed");
+    });
+
+    it("returns error when x-change returns non-ok status", async () => {
+      process.env.XCHANGE_INGEST_TOKEN = "test-tok";
+      process.env.XCHANGE_URL = "http://127.0.0.1:18788";
+      vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 404 }));
+      vi.resetModules();
+      const { client } = await makeClient();
+      const result = await client.callTool({
+        name: "glass_reward_state",
+        arguments: { reward_id: "r-404", poll_interval_seconds: 0 },
+      });
+      expect(toolIsError(result)).toBe(true);
+      const parsed = JSON.parse(toolText(result));
+      expect(parsed.error).toContain("HTTP 404");
+    });
+  });
 });
