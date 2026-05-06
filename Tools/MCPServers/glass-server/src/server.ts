@@ -11,8 +11,13 @@
  *   glass_session_resume       — read bridge state summary
  *   glass_update_signals       — lightweight signal-only update (drives field modulation)
  *   glass_pending_messages     — return unread user messages since last consumption (HWM)
+ *   glass_emit_block           — add agent-origin block to the field (code/note/output/asset)
  *   glass_assets_list          — list durable semantic assets from the inventory ledger
  *   glass_query_spatial_state  — read block positions, distance from Spaceman, staleness scores
+ *   glass_evaluate_ceremony    — check ceremony gate, transition ground → evaluating if eligible
+ *   glass_eval_run             — run all eval probes (typecheck, tests, bridge, ceremony)
+ *   glass_eval_schedule        — arm or disarm the eval scheduler loop
+ *   glass_eval_status          — get eval scheduler status and last report
  */
 
 import { emitAudit } from "@cascade/shared-types/audit-client";
@@ -25,6 +30,7 @@ import { appendInventoryAsset, getInventoryPath, readInventory } from "./invento
 import { computeGitDiffLines } from "./git-stats.js";
 import { loadProfile, type TriadicWeights } from "./profile-reader.js";
 import { applyTriadicGuard } from "./triadic-guard.js";
+import { runAllProbes, armEval, disarmEval, getEvalStatus } from "./eval-runner.js";
 
 const SERVER_NAME = "glass-server";
 const VERSION = "1.0.0";
@@ -1164,6 +1170,163 @@ export function buildServer(): McpServer {
         emitAudit({
           source: SERVER_NAME,
           tool: "glass_evaluate_ceremony",
+          status: "error",
+          durationMs: Date.now() - startMs,
+          metadata: { error: String(error) },
+        });
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({ error: String(error) }) }],
+          isError: true,
+        };
+      }
+    },
+  );
+
+  // ── glass_eval_run ──
+
+  tool(
+    "glass_eval_run",
+    "Run all eval probes (typecheck, tests, bridge validation, ceremony gate) immediately. Returns a structured EvalReport with per-probe status and summary.",
+    {},
+    async () => {
+      const startMs = Date.now();
+      try {
+        const report = await runAllProbes();
+        emitAudit({
+          source: SERVER_NAME,
+          tool: "glass_eval_run",
+          status: "success",
+          durationMs: Date.now() - startMs,
+          metadata: {
+            report_id: report.id,
+            passed: report.summary.passed,
+            failed: report.summary.failed,
+            errored: report.summary.errored,
+          },
+        });
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: JSON.stringify(report, null, 2),
+            },
+          ],
+        };
+      } catch (error) {
+        emitAudit({
+          source: SERVER_NAME,
+          tool: "glass_eval_run",
+          status: "error",
+          durationMs: Date.now() - startMs,
+          metadata: { error: String(error) },
+        });
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({ error: String(error) }) }],
+          isError: true,
+        };
+      }
+    },
+  );
+
+  // ── glass_eval_schedule ──
+
+  tool(
+    "glass_eval_schedule",
+    "Arm or disarm the eval scheduler loop. When armed, probes run at the specified interval (seconds). Safe to call repeatedly.",
+    {
+      action: z
+        .enum(["arm", "disarm"])
+        .describe("Scheduler action: 'arm' to start the loop, 'disarm' to stop"),
+      interval_seconds: z
+        .number()
+        .int()
+        .min(30)
+        .max(86400)
+        .optional()
+        .describe("Interval in seconds for eval cycles (default 300, min 30, max 86400)"),
+    },
+    async ({ action, interval_seconds }: { action: string; interval_seconds?: number }) => {
+      const startMs = Date.now();
+      try {
+        const interval = interval_seconds ?? 300;
+        let state;
+
+        if (action === "arm") {
+          state = await armEval(interval);
+        } else if (action === "disarm") {
+          state = await disarmEval();
+        } else {
+          throw new Error(`Invalid action: ${action}`);
+        }
+
+        emitAudit({
+          source: SERVER_NAME,
+          tool: "glass_eval_schedule",
+          status: "success",
+          durationMs: Date.now() - startMs,
+          metadata: {
+            action,
+            state: state.schedulerState,
+            intervalSeconds: state.intervalSeconds,
+          },
+        });
+
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: JSON.stringify(state, null, 2),
+            },
+          ],
+        };
+      } catch (error) {
+        emitAudit({
+          source: SERVER_NAME,
+          tool: "glass_eval_schedule",
+          status: "error",
+          durationMs: Date.now() - startMs,
+          metadata: { error: String(error) },
+        });
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({ error: String(error) }) }],
+          isError: true,
+        };
+      }
+    },
+  );
+
+  // ── glass_eval_status ──
+
+  tool(
+    "glass_eval_status",
+    "Get the current eval scheduler status, including armed/disarmed state, last report, and log file path.",
+    {},
+    async () => {
+      const startMs = Date.now();
+      try {
+        const status = await getEvalStatus();
+        emitAudit({
+          source: SERVER_NAME,
+          tool: "glass_eval_status",
+          status: "success",
+          durationMs: Date.now() - startMs,
+          metadata: {
+            schedulerState: status.schedulerState,
+            intervalSeconds: status.intervalSeconds,
+          },
+        });
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: JSON.stringify(status, null, 2),
+            },
+          ],
+        };
+      } catch (error) {
+        emitAudit({
+          source: SERVER_NAME,
+          tool: "glass_eval_status",
           status: "error",
           durationMs: Date.now() - startMs,
           metadata: { error: String(error) },

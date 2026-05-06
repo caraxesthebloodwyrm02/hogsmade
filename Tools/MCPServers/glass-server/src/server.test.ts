@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterAll, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, afterAll, vi } from "vitest";
 import { rm, mkdir, writeFile } from "fs/promises";
 import { join } from "path";
 import { tmpdir } from "os";
@@ -872,6 +872,167 @@ describe("glass-server tools", () => {
       expect(contents).toContain("A common field marker");
       expect(contents).toContain("agent2");
       expect(contents).not.toContain("agent1");
+    });
+  });
+
+  describe("glass_eval_run", () => {
+    beforeEach(() => {
+      // Point probes at a non-existent path so typecheck/tests fail fast
+      // (execSync throws ENOENT) rather than running the full Glass app suite.
+      process.env.GLASS_APP_PATH = join(TMP_DIR, "no-such-app");
+    });
+
+    afterEach(() => {
+      delete process.env.GLASS_APP_PATH;
+    });
+
+    it("returns an EvalReport with 4 probes", async () => {
+      const { client } = await makeClient();
+      await client.callTool({ name: "glass_session_start", arguments: {} });
+      const result = await client.callTool({ name: "glass_eval_run", arguments: {} });
+      expect(toolIsError(result)).toBeFalsy();
+      const parsed = JSON.parse(toolText(result));
+      expect(typeof parsed.id).toBe("string");
+      expect(typeof parsed.timestamp).toBe("string");
+      expect(typeof parsed.durationMs).toBe("number");
+      expect(Array.isArray(parsed.probes)).toBe(true);
+      expect(parsed.probes).toHaveLength(4);
+    });
+
+    it("each probe has name, status, durationMs, and detail", async () => {
+      const { client } = await makeClient();
+      await client.callTool({ name: "glass_session_start", arguments: {} });
+      const result = await client.callTool({ name: "glass_eval_run", arguments: {} });
+      const parsed = JSON.parse(toolText(result));
+      for (const probe of parsed.probes) {
+        expect(typeof probe.name).toBe("string");
+        expect(["pass", "fail", "error"]).toContain(probe.status);
+        expect(typeof probe.durationMs).toBe("number");
+        expect(typeof probe.detail).toBe("object");
+      }
+    });
+
+    it("summary total is 4 and counts sum correctly", async () => {
+      const { client } = await makeClient();
+      await client.callTool({ name: "glass_session_start", arguments: {} });
+      const result = await client.callTool({ name: "glass_eval_run", arguments: {} });
+      const parsed = JSON.parse(toolText(result));
+      expect(parsed.summary.total).toBe(4);
+      expect(parsed.summary.passed + parsed.summary.failed + parsed.summary.errored).toBe(4);
+    });
+
+    it("bridge probe passes when session has been started", async () => {
+      const { client } = await makeClient();
+      await client.callTool({ name: "glass_session_start", arguments: {} });
+      const result = await client.callTool({ name: "glass_eval_run", arguments: {} });
+      const parsed = JSON.parse(toolText(result));
+      const bridgeProbe = parsed.probes.find((p: { name: string }) => p.name === "bridge");
+      expect(bridgeProbe).toBeDefined();
+      expect(bridgeProbe.status).toBe("pass");
+    });
+
+    it("ceremony_gate probe reports eligible=false when iteration_count is 0", async () => {
+      const { client } = await makeClient();
+      await client.callTool({ name: "glass_session_start", arguments: {} });
+      const result = await client.callTool({ name: "glass_eval_run", arguments: {} });
+      const parsed = JSON.parse(toolText(result));
+      const gateProbe = parsed.probes.find((p: { name: string }) => p.name === "ceremony_gate");
+      expect(gateProbe).toBeDefined();
+      expect(gateProbe.detail.eligible).toBe(false);
+    });
+  });
+
+  describe("glass_eval_schedule", () => {
+    it("arm returns schedulerState armed with provided interval", async () => {
+      const { client } = await makeClient();
+      const result = await client.callTool({
+        name: "glass_eval_schedule",
+        arguments: { action: "arm", interval_seconds: 60 },
+      });
+      expect(toolIsError(result)).toBeFalsy();
+      const parsed = JSON.parse(toolText(result));
+      expect(parsed.schedulerState).toBe("armed");
+      expect(parsed.intervalSeconds).toBe(60);
+      // Disarm to clean up the timer.
+      await client.callTool({ name: "glass_eval_schedule", arguments: { action: "disarm" } });
+    });
+
+    it("arm uses default interval of 300 when not specified", async () => {
+      const { client } = await makeClient();
+      const result = await client.callTool({
+        name: "glass_eval_schedule",
+        arguments: { action: "arm" },
+      });
+      const parsed = JSON.parse(toolText(result));
+      expect(parsed.schedulerState).toBe("armed");
+      expect(parsed.intervalSeconds).toBe(300);
+      await client.callTool({ name: "glass_eval_schedule", arguments: { action: "disarm" } });
+    });
+
+    it("disarm after arm returns schedulerState disarmed", async () => {
+      const { client } = await makeClient();
+      await client.callTool({
+        name: "glass_eval_schedule",
+        arguments: { action: "arm", interval_seconds: 60 },
+      });
+      const result = await client.callTool({
+        name: "glass_eval_schedule",
+        arguments: { action: "disarm" },
+      });
+      const parsed = JSON.parse(toolText(result));
+      expect(parsed.schedulerState).toBe("disarmed");
+    });
+
+    it("status reflects armed state immediately after arm", async () => {
+      const { client } = await makeClient();
+      await client.callTool({
+        name: "glass_eval_schedule",
+        arguments: { action: "arm", interval_seconds: 90 },
+      });
+      const statusResult = await client.callTool({ name: "glass_eval_status", arguments: {} });
+      const parsed = JSON.parse(toolText(statusResult));
+      expect(parsed.schedulerState).toBe("armed");
+      expect(parsed.intervalSeconds).toBe(90);
+      await client.callTool({ name: "glass_eval_schedule", arguments: { action: "disarm" } });
+    });
+  });
+
+  describe("glass_eval_status", () => {
+    it("returns schedulerState idle before any schedule action", async () => {
+      const { client } = await makeClient();
+      const result = await client.callTool({ name: "glass_eval_status", arguments: {} });
+      expect(toolIsError(result)).toBeFalsy();
+      const parsed = JSON.parse(toolText(result));
+      expect(parsed.schedulerState).toBe("idle");
+    });
+
+    it("log_path ends with glass-eval-log.ndjson", async () => {
+      const { client } = await makeClient();
+      const result = await client.callTool({ name: "glass_eval_status", arguments: {} });
+      const parsed = JSON.parse(toolText(result));
+      expect(parsed.log_path).toMatch(/glass-eval-log\.ndjson$/);
+    });
+
+    it("lastReport is undefined before any eval run", async () => {
+      const { client } = await makeClient();
+      const result = await client.callTool({ name: "glass_eval_status", arguments: {} });
+      const parsed = JSON.parse(toolText(result));
+      expect(parsed.lastReport).toBeUndefined();
+    });
+
+    it("lastReport is populated after glass_eval_run", async () => {
+      process.env.GLASS_APP_PATH = join(TMP_DIR, "no-such-app");
+      try {
+        const { client } = await makeClient();
+        await client.callTool({ name: "glass_session_start", arguments: {} });
+        await client.callTool({ name: "glass_eval_run", arguments: {} });
+        const statusResult = await client.callTool({ name: "glass_eval_status", arguments: {} });
+        const parsed = JSON.parse(toolText(statusResult));
+        expect(parsed.lastReport).toBeDefined();
+        expect(parsed.lastReport.summary.total).toBe(4);
+      } finally {
+        delete process.env.GLASS_APP_PATH;
+      }
     });
   });
 
