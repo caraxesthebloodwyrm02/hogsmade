@@ -18,7 +18,7 @@ voices:
 
 # --- Ceremony triggers ---
 ceremony:
-  auto_evaluate_after_iterations: 15
+  auto_evaluate_after_commits: 15
   auto_return_after_idle_minutes: 10
 
 # --- Signal thresholds ---

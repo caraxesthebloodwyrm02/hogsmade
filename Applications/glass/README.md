@@ -274,7 +274,7 @@ voice_roles:
   III: Lens # gold
 
 ceremony_triggers:
-  auto_evaluate_after_commits: 5
+  auto_evaluate_after_commits: 15
   auto_return_after_idle_minutes: 10
 
 signals:

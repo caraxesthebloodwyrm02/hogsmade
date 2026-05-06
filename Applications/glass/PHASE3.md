@@ -86,7 +86,7 @@ git diff --stat -> agent reads line count -> glass_emit_turn({signals: {git_diff
 **Current state:**
 
 - Full ceremony rendering implemented (ThresholdLine, VoiceSequencer, VoiceLayer, DiskEngine states, floor-rise animation)
-- `.glass-profile.yaml` defines triggers: `auto_evaluate_after_commits: 5`, `auto_return_after_idle_minutes: 10`
+- `.glass-profile.yaml` defines triggers: `auto_evaluate_after_commits: 15`, `auto_return_after_idle_minutes: 10`
 - Triadic guard in `glass-server` enforces valid state transitions (cannot jump ground -> elevated)
 - Nothing evaluates these triggers
 
