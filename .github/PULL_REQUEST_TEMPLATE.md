@@ -1,10 +1,14 @@
-## Objective
+## Motivation
 
 <!-- What problem does this PR solve? -->
 
 ## Scope
 
 <!-- Which projects or surfaces changed? -->
+
+## Blast Radius
+
+<!-- What downstream systems does this affect? -->
 
 ## Acceptance Criteria
 
@@ -19,9 +23,9 @@
 
 - <!-- CascadeProjects / GRID-main / mcp-tool-experiment / other -->
 
-## Tests Run
+## Test Evidence
 
-- <!-- e.g. cd grid-server && npm test -->
+- <!-- e.g. cd grid-server && npm test, or link to CI run -->
 
 ## Security Impact
 
