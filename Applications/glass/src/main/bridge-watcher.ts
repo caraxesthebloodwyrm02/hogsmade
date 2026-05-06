@@ -61,6 +61,11 @@ let activeFieldProfile: FieldProfile | null = null;
 
 let lastBridgeWriteTime = 0;
 let heartbeatInterval: ReturnType<typeof setInterval> | null = null;
+let previousThresholdState: ThresholdState = "ground";
+
+export function getPreviousThresholdState(): ThresholdState {
+  return previousThresholdState;
+}
 
 export function setBridgeFieldProfile(profile: FieldProfile): void {
   activeFieldProfile = profile;
@@ -463,6 +468,7 @@ export function setBridgeThresholdState(state: ThresholdState): void {
     );
   }
 }
+
 export function startBridgeWatcher(onUpdate: (state: BridgeState) => void): void {
   onUpdate(readBridgeFile());
 

@@ -86,7 +86,8 @@ function tf(term: string, docId: string): number {
 function idf(term: string): number {
   const postings = currentIndex.get(term);
   if (!postings || postings.size === 0) return 0;
-  return Math.log(totalDocCount / postings.size);
+  // Add 1 to avoid zero IDF when there's only one document
+  return Math.log(1 + totalDocCount / postings.size);
 }
 
 // TF-IDF score for a term in a document
@@ -123,7 +124,7 @@ export function expandSearchTerms(query: string): string[] {
   for (const token of tokenizeSearchText(query)) {
     expanded.add(token);
     for (const synonym of TERM_SYNONYMS[token] ?? []) {
-      expanded.add(synonym);
+      expanded.add(normalizeToken(synonym));
     }
   }
   return [...expanded];
@@ -295,10 +296,8 @@ export function searchLocalSemantic(
   const terms = expandSearchTerms(query);
   if (terms.length === 0) return [];
 
-  // Rebuild index on every search if no prior build or stale
-  if (totalDocCount === 0) {
-    rebuildIndex(bridgeState, inventoryAssets);
-  }
+  // Always rebuild index to ensure fresh results
+  rebuildIndex(bridgeState, inventoryAssets);
 
   const scored: Array<{ doc: SearchDocument; score: number; matchedTerms: string[] }> = [];
 

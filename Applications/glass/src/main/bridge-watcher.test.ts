@@ -538,8 +538,10 @@ describe("getPreviousThresholdState", () => {
     expect(getPreviousThresholdState()).toBe("ground");
     setBridgeThresholdState("evaluating");
     expect(getPreviousThresholdState()).toBe("ground");
+    mockReadSync(JSON.parse(writtenData!));
     setBridgeThresholdState("voices_appearing");
     expect(getPreviousThresholdState()).toBe("evaluating");
+    mockReadSync(JSON.parse(writtenData!));
     setBridgeThresholdState("elevated");
     expect(getPreviousThresholdState()).toBe("voices_appearing");
   });
