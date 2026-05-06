@@ -6,18 +6,7 @@ import type {
 } from "../../bridge/schema";
 
 const STOP_WORDS = new Set([
-  "a",
-  "an",
-  "and",
-  "for",
-  "in",
-  "is",
-  "of",
-  "on",
-  "or",
-  "the",
-  "to",
-  "with",
+  "a", "an", "and", "for", "in", "is", "of", "on", "or", "the", "to", "with",
 ]);
 
 const TERM_SYNONYMS: Record<string, string[]> = {
@@ -40,6 +29,71 @@ interface SearchDocument {
   language?: string;
   position?: BridgeBlock["position"];
   asset?: AssetMeta;
+}
+
+// Inverted index: term -> { docId -> term frequency in that doc }
+type PostingList = Map<string, number>;
+type InvertedIndex = Map<string, PostingList>;
+
+let currentIndex: InvertedIndex = new Map();
+let currentDocs: Map<string, SearchDocument> = new Map();
+let totalDocCount = 0;
+let rebuildTimer: ReturnType<typeof setTimeout> | null = null;
+
+function clearCurrentIndex(): void {
+  currentIndex = new Map();
+  currentDocs = new Map();
+  totalDocCount = 0;
+}
+
+function addTermToIndex(term: string, docId: string): void {
+  if (!currentIndex.has(term)) {
+    currentIndex.set(term, new Map());
+  }
+  const postings = currentIndex.get(term)!;
+  postings.set(docId, (postings.get(docId) || 0) + 1);
+}
+
+function indexDocument(doc: SearchDocument): void {
+  currentDocs.set(doc.id, doc);
+  totalDocCount++;
+
+  const allTerms = new Set([
+    ...doc.titleTerms,
+    ...doc.keywordTerms,
+    ...doc.contentTerms,
+  ]);
+
+  for (const term of allTerms) {
+    let count = 0;
+    if (doc.titleTerms.has(term)) count += 3; // title weight
+    if (doc.keywordTerms.has(term)) count += 2; // keyword weight
+    if (doc.contentTerms.has(term)) count += 1; // content weight
+
+    if (!currentIndex.has(term)) {
+      currentIndex.set(term, new Map());
+    }
+    currentIndex.get(term)!.set(doc.id, count);
+  }
+}
+
+// Term Frequency: raw count of term in document
+function tf(term: string, docId: string): number {
+  return currentIndex.get(term)?.get(docId) ?? 0;
+}
+
+// Inverse Document Frequency: log(totalDocs / docsWithTerm)
+function idf(term: string): number {
+  const postings = currentIndex.get(term);
+  if (!postings || postings.size === 0) return 0;
+  return Math.log(totalDocCount / postings.size);
+}
+
+// TF-IDF score for a term in a document
+function tfidfScore(term: string, docId: string): number {
+  const t = tf(term, docId);
+  const i = idf(term);
+  return t * i;
 }
 
 function normalizeToken(token: string): string {
@@ -180,7 +234,7 @@ function buildSnippet(source: string, matchedTerms: string[]): string {
   return `${prefix}${compact.slice(start, end)}${suffix}`;
 }
 
-function scoreDocument(
+function scoreDocumentTFIDF(
   terms: string[],
   doc: SearchDocument,
 ): { score: number; matchedTerms: string[] } {
@@ -188,20 +242,48 @@ function scoreDocument(
   const matchedTerms: string[] = [];
 
   for (const term of terms) {
-    let termScore = 0;
-    if (doc.titleTerms.has(term)) termScore += 5;
-    if (doc.keywordTerms.has(term)) termScore += 2;
-    if (doc.contentTerms.has(term)) termScore += 1;
+    const termScore = tfidfScore(term, doc.id);
     if (termScore > 0) {
       matchedTerms.push(term);
       score += termScore;
     }
   }
 
-  if (matchedTerms.length > 1) score += matchedTerms.length;
-  if (doc.source === "block") score += 5;
+  // Bonus for multi-term matches (relevance signal)
+  if (matchedTerms.length > 1) score += matchedTerms.length * 0.5;
+  // Blocks get slight boost (more likely to be current workspace artifacts)
+  if (doc.source === "block") score += 0.2;
 
   return { score, matchedTerms };
+}
+
+function rebuildIndex(
+  bridgeState: BridgeState | null,
+  inventoryAssets: InventoryAssetRecord[],
+): void {
+  clearCurrentIndex();
+
+  for (const block of bridgeState?.blocks ?? []) {
+    indexDocument(createBlockDocument(block));
+  }
+  for (const asset of inventoryAssets) {
+    indexDocument(createAssetDocument(asset));
+  }
+}
+
+export function rebuildIndexDebounced(
+  bridgeState: BridgeState | null,
+  inventoryAssets: InventoryAssetRecord[],
+): void {
+  if (rebuildTimer) clearTimeout(rebuildTimer);
+  // Build immediately on first call, debounce subsequent
+  if (totalDocCount === 0) {
+    rebuildIndex(bridgeState, inventoryAssets);
+  }
+  rebuildTimer = setTimeout(() => {
+    rebuildIndex(bridgeState, inventoryAssets);
+    rebuildTimer = null;
+  }, 2000);
 }
 
 export function searchLocalSemantic(
@@ -213,31 +295,33 @@ export function searchLocalSemantic(
   const terms = expandSearchTerms(query);
   if (terms.length === 0) return [];
 
-  const documents: SearchDocument[] = [];
-  for (const block of bridgeState?.blocks ?? []) {
-    documents.push(createBlockDocument(block));
-  }
-  for (const asset of inventoryAssets) {
-    documents.push(createAssetDocument(asset));
+  // Rebuild index on every search if no prior build or stale
+  if (totalDocCount === 0) {
+    rebuildIndex(bridgeState, inventoryAssets);
   }
 
-  return documents
-    .map((doc) => {
-      const { score, matchedTerms } = scoreDocument(terms, doc);
-      return {
-        id: doc.id,
-        source: doc.source,
-        title: doc.title,
-        snippet: buildSnippet(doc.snippetSource, matchedTerms),
-        score,
-        matchedTerms,
-        blockType: doc.blockType,
-        language: doc.language,
-        position: doc.position,
-        asset: doc.asset,
-      } satisfies SemanticSearchResult;
-    })
-    .filter((result) => result.score > 0)
-    .sort((left, right) => right.score - left.score || left.title.localeCompare(right.title))
-    .slice(0, limit);
+  const scored: Array<{ doc: SearchDocument; score: number; matchedTerms: string[] }> = [];
+
+  for (const doc of currentDocs.values()) {
+    const { score, matchedTerms } = scoreDocumentTFIDF(terms, doc);
+    if (score > 0) {
+      scored.push({ doc, score, matchedTerms });
+    }
+  }
+
+  return scored
+    .sort((left, right) => right.score - left.score || left.doc.title.localeCompare(right.doc.title))
+    .slice(0, limit)
+    .map(({ doc, score, matchedTerms }) => ({
+      id: doc.id,
+      source: doc.source,
+      title: doc.title,
+      snippet: buildSnippet(doc.snippetSource, matchedTerms),
+      score,
+      matchedTerms,
+      blockType: doc.blockType,
+      language: doc.language,
+      position: doc.position,
+      asset: doc.asset,
+    }));
 }

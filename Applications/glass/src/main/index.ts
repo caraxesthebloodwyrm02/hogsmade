@@ -12,10 +12,11 @@ import {
   deleteBridgeBlock,
   setBridgeFieldProfile,
   setBridgeThresholdState,
-  stopBridgeWatcher,
+  getPreviousThresholdState,
+  touchBridgeTimestamp,
 } from "./bridge-watcher";
 import { loadFieldProfile } from "./field-profile";
-import { searchLocalSemantic } from "./local-search";
+import { searchLocalSemantic, rebuildIndexDebounced } from "./local-search";
 import type { BridgeState, FieldProfile } from "../../bridge/schema";
 
 if (process.platform === "linux" && process.env.NODE_ENV === "development") {
@@ -285,6 +286,14 @@ app.whenReady().then(() => {
   startBridgeWatcher((state) => {
     latestBridgeState = state;
     broadcastBridgeUpdate(state);
+
+    readInventoryAssets()
+      .then((assets) => rebuildIndexDebounced(state, assets as any))
+      .catch((err) =>
+        console.warn(
+          `[glass] index rebuild failed: ${err instanceof Error ? err.message : String(err)}`,
+        ),
+      );
   });
 
   app.on("activate", () => {
