@@ -3,5 +3,11 @@
     "AGENTS.md": "markdown",
     "CLAUDE.md": "markdown"
   },
+  "json.schemas": [
+    {
+      "fileMatch": ["/mcp_config.json"],
+      "url": "./Documentation/docs/schemas/editor-mcp.schema.json"
+    }
+  ],
   "markdown.extension.toc.omittedFromToc": true
 }
