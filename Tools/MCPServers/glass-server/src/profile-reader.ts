@@ -9,6 +9,9 @@ export interface VoiceProfile {
 }
 
 export interface CeremonyConfig {
+  /** Current key — use this. */
+  auto_evaluate_after_commits?: number;
+  /** Legacy key — kept for backward compat, prefer auto_evaluate_after_commits. */
   auto_evaluate_after_iterations?: number;
   auto_return_after_idle_minutes?: number;
 }
@@ -177,6 +180,9 @@ function validateProfile(raw: Record<string, unknown>): GlassProfile {
   if (raw.ceremony && typeof raw.ceremony === "object") {
     const c = raw.ceremony as Record<string, unknown>;
     profile.ceremony = {};
+    if (typeof c.auto_evaluate_after_commits === "number") {
+      profile.ceremony.auto_evaluate_after_commits = c.auto_evaluate_after_commits;
+    }
     if (typeof c.auto_evaluate_after_iterations === "number") {
       profile.ceremony.auto_evaluate_after_iterations = c.auto_evaluate_after_iterations;
     }
