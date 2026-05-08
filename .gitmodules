@@ -2,3 +2,6 @@
 	path = Projects/GRID-main
 	url = https://github.com/GRID-INTELLIGENCE/GRID.git
 	ignore = dirty
+[submodule "Applications/glass"]
+	path = Applications/glass
+	url = https://github.com/caraxesthebloodwyrm02/glass.git
