@@ -1,8 +1,16 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "fs";
 import os from "os";
 import path from "path";
+import { fileURLToPath } from "url";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import type { ProjectEntry } from "../src/types.js";
+
+// Set before any dynamic imports so config.ts module-level constant picks it up.
+// The threat model file lives at <hogsmade-root>/Documentation/docs/.
+process.env.CASCADE_WORKSPACE_ROOT = path.resolve(
+  fileURLToPath(import.meta.url),
+  "../../../../..",
+);
 
 function parseToolJson(raw: { content: Array<{ text: string }>; isError?: boolean }) {
   const first = JSON.parse(raw.content[0].text);
@@ -301,6 +309,7 @@ describe("threat model tools", () => {
 
   afterAll(() => {
     unstubFetch?.();
+    delete process.env.CASCADE_WORKSPACE_ROOT;
     delete process.env.ORI_DATA_DIR;
     delete process.env.ECHOES_DATA_DIR;
     delete process.env.ECHOES_AUDIT_PATH;
