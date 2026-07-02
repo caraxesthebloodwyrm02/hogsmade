@@ -431,3 +431,16 @@ docs/session-handoff-*.md
 
 # Local triage snapshot (machine/session generated)
 .dirty-state-report.md
+# === 3PAA-SHADOW residual containment (travels with repo) ===
+# Decommissioned-tool stubs/markers — denied so re-creation stays uncommittable.
+# Authority: operator containment decision; mirrors ~/.config/git/ignore baseline.
+GEMINI.md
+.geminiignore
+.gemini/
+.antigravity/
+.antigravitycli/
+.antigravity-ide/
+.windsurf/
+.cursor/
+.cursorignore
+.cursorrules
