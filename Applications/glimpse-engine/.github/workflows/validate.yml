@@ -26,6 +26,16 @@ jobs:
           cd glimpse-engine
           npm ci
 
+      - name: Security-focused unit tests
+        run: |
+          cd glimpse-engine
+          node --test \
+            tests/digest-validator.test.js \
+            tests/pathway-redaction.test.js \
+            tests/ceremony-validator.test.js \
+            tests/config-sanitization.test.js \
+            tests/dom-injection-safety.test.js
+
       - name: Run smoke test
         run: |
           cd glimpse-engine

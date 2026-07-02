@@ -7,6 +7,7 @@ import {
   runContextPipeline,
   validateConfigWithRegistry,
 } from "./core/engine.js";
+import { deepSanitizePaths } from "./core/config-sanitizer.js";
 import {
   createRulePreview,
   downloadMasterConfig,
@@ -15,8 +16,31 @@ import {
   saveMasterConfigToHandle,
   serializeMasterConfig,
 } from "./master-config.js";
+import {
+  digestAgeStale,
+  sha256HexUniversal,
+  validateDigestPrefix,
+} from "./core/digest-validator.js";
+import { validatePipelineCeremony } from "./core/ceremony-validator.js";
+import { escHtml as esc, sanitizeCssClass } from "./core/dom-safe.js";
 import { buildPathwayEntry, logPathway } from "./pathway-logger.js";
 import { rankViews, renderView, VIEW_SPECS } from "./view-specs.js";
+
+/** Must be passed by trusted call sites so console cannot invoke the pipeline without closure access. */
+const PIPELINE_INTERNAL = Symbol("glimpse.pipeline.internal");
+
+let boundSessionDigest = null;
+let boundSessionDigestAt = 0;
+
+async function bindSessionDigestFromYamlText(yamlText) {
+  if (!yamlText) {
+    boundSessionDigest = null;
+    boundSessionDigestAt = 0;
+    return;
+  }
+  boundSessionDigest = await sha256HexUniversal(yamlText);
+  boundSessionDigestAt = Date.now();
+}
 
 const PHASES = [
   { num: 1, label: "Ingest" },
@@ -88,19 +112,12 @@ function restoreFocus(saved) {
   window.scrollTo(0, saved.scrollY);
 }
 
-function esc(value) {
-  return String(value ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
-
 async function boot() {
   const { config, source, yamlText } = await loadMasterConfig();
   G.masterConfig = config;
   G.masterConfigSource = source;
   G.masterYamlText = yamlText;
+  await bindSessionDigestFromYamlText(yamlText);
   G.activePreset = config.defaults?.active_preset || "analyst";
   render();
 }
@@ -116,7 +133,7 @@ function handleFile(file) {
         G.rawData = JSON.parse(text);
         G.phase = 1;
         render();
-        window.setTimeout(runPipeline, 120);
+        window.setTimeout(() => runPipeline(PIPELINE_INTERNAL), 120);
       })
       .catch((error) => alert(`Invalid JSON: ${error.message}`));
   } else if (ext === "csv") {
@@ -125,15 +142,42 @@ function handleFile(file) {
       G.rawData = parseCSV(text);
       G.phase = 1;
       render();
-      window.setTimeout(runPipeline, 120);
+      window.setTimeout(() => runPipeline(PIPELINE_INTERNAL), 120);
     });
   } else {
     alert("Unsupported format. Use .json or .csv");
   }
 }
 
-function runPipeline() {
+function runPipeline(internalToken, clientDigestPrefix = null) {
+  if (internalToken !== PIPELINE_INTERNAL) {
+    console.error("[glimpse] Pipeline refused: unauthorized entrypoint (digest gate)");
+    return;
+  }
   if (!G.masterConfig) return;
+  if (!boundSessionDigest) {
+    console.error("[glimpse] Pipeline refused: session digest not bound");
+    return;
+  }
+  if (digestAgeStale(boundSessionDigestAt)) {
+    alert("Session digest expired. Reload the page or reload master YAML.");
+    return;
+  }
+  const prefix = clientDigestPrefix ?? boundSessionDigest.slice(0, 16);
+  const gate = validateDigestPrefix(boundSessionDigest, prefix);
+  if (!gate.valid) {
+    console.error("[glimpse] Pipeline refused:", gate.reason);
+    return;
+  }
+  const ceremony = validatePipelineCeremony({
+    phase: G.phase,
+    hasRawData: Boolean(G.rawData),
+    hasMaster: Boolean(G.masterConfig),
+  });
+  if (!ceremony.valid) {
+    console.error("[glimpse] Ceremony rejected:", ceremony.reason);
+    return;
+  }
   G.phase = 2;
   render();
   const ctx = runContextPipeline(G.rawData, G.fileType, G.masterConfig, {
@@ -153,8 +197,11 @@ function runPipeline() {
   render();
 
   // Pathway logging — persistent root/branch trace
-  const entry = buildPathwayEntry(ctx, G.fileName || "unknown");
-  logPathway(entry)
+  void buildPathwayEntry(ctx, G.fileName || "unknown", {
+    redact: true,
+    sessionDigestHex: boundSessionDigest || null,
+  })
+    .then((entry) => logPathway(entry))
     .then((result) => {
       if (result?.logged) console.info("[pathway] Trace logged:", result.file);
     })
@@ -203,7 +250,7 @@ function renderMasterPanel() {
   const presetOptions = Object.entries(G.masterConfig?.presets || {})
     .map(
       ([id, preset]) =>
-        `<option value="${id}"${G.activePreset === id ? " selected" : ""}>${esc(
+        `<option value="${esc(id)}"${G.activePreset === id ? " selected" : ""}>${esc(
           preset.label || id,
         )}</option>`,
     )
@@ -268,7 +315,7 @@ function renderLensPills() {
   return G.ctx.contextLenses
     .map(
       (lens) =>
-        `<span class="lens-pill ${lens.role}">${esc(lens.label)} <strong>${Math.round(
+        `<span class="lens-pill ${sanitizeCssClass(lens.role)}">${esc(lens.label)} <strong>${Math.round(
           lens.score * 100,
         )}%</strong></span>`,
     )
@@ -296,9 +343,7 @@ function renderContextSummary() {
     ctx.relations.length
   } relations</span></div><div class="context-body"><div class="lens-row">${renderLensPills()}</div><div class="dim-tags" style="margin-top:0.75rem">${descriptors}</div><div class="summary-grid"><div class="summary-card"><div class="master-kicker">Primary Lens</div><strong>${esc(
     ctx.primaryLens?.label || "General",
-  )}</strong><p>${generateLensReason(
-    ctx.primaryLens,
-  )}</p></div><div class="summary-card"><div class="master-kicker">View Recommendation</div><strong>${esc(
+  )}</strong><p>${esc(generateLensReason(ctx.primaryLens))}</p></div><div class="summary-card"><div class="master-kicker">View Recommendation</div><strong>${esc(
     topView?.label || "Explorer",
   )}</strong><p>${
     topView
@@ -362,7 +407,7 @@ function renderModeBar() {
       if (!spec) return "";
       return `<button class="mode-btn${
         G.mode === viewId ? " active" : ""
-      }" data-mode="${viewId}">${esc(spec.label)}${
+      }" data-mode="${esc(viewId)}">${esc(spec.label)}${
         ranking ? ` <span class="mode-score">${ranking.score.toFixed(2)}</span>` : ""
       }</button>`;
     })
@@ -778,7 +823,7 @@ function bindDelegatedEvents() {
       G.saveStatus = `Preset switched to ${
         G.masterConfig.presets[G.activePreset]?.label || G.activePreset
       }.`;
-      if (G.rawData) runPipeline();
+      if (G.rawData) runPipeline(PIPELINE_INTERNAL);
       else render();
       return;
     }
@@ -848,10 +893,11 @@ async function handleLoadMaster() {
       G.masterConfig = parseMasterConfig(yamlText);
       G.masterConfigSource = "external-file";
       G.masterYamlText = yamlText;
+      await bindSessionDigestFromYamlText(yamlText);
       G.masterHandle = handle;
       G.activePreset = G.masterConfig.defaults?.active_preset || G.activePreset;
       G.saveStatus = `Loaded ${file.name}.`;
-      if (G.rawData) runPipeline();
+      if (G.rawData) runPipeline(PIPELINE_INTERNAL);
       else render();
       return;
     }
@@ -912,6 +958,7 @@ async function handleSaveRule() {
     G.masterConfig.rule_sets[packId].rules.push(G.ruleDraftResult.rule.id);
   }
   G.masterYamlText = serializeMasterConfig(G.masterConfig);
+  await bindSessionDigestFromYamlText(G.masterYamlText);
   G.saveStatus = `Saved rule ${G.ruleDraftResult.rule.id} into the master config state.`;
   G.ruleDraft = "";
   G.ruleDraftResult = null;
@@ -920,7 +967,7 @@ async function handleSaveRule() {
     await saveMasterConfigToHandle(G.masterHandle, G.masterConfig);
     G.saveStatus = "Saved the new rule directly into the loaded master YAML.";
   }
-  if (G.rawData) runPipeline();
+  if (G.rawData) runPipeline(PIPELINE_INTERNAL);
   else render();
 }
 
@@ -967,7 +1014,7 @@ function exportJSON() {
     functionInventory: G.ctx.functionInventory,
   };
   downloadBlob(
-    new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" }),
+    new Blob([JSON.stringify(deepSanitizePaths(payload), null, 2)], { type: "application/json" }),
     "glimpse-context.json",
   );
 }

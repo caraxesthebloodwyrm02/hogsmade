@@ -1,12 +1,5 @@
 import { computeClusters } from "./core/engine.js";
-
-function esc(value) {
-  return String(value ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
+import { escHtml as esc } from "./core/dom-safe.js";
 
 function forceLayout(nodes, edges, width, height) {
   const count = nodes.length;
@@ -172,7 +165,7 @@ function renderConstellation(context, state) {
   nodes.forEach((node) => {
     const radius = Math.min(18, 7 + node.score * 0.6);
     svg.push(
-      `<g data-eid="${node.id}" data-name="${esc(node.name)}"><circle class="node-circle" cx="${
+      `<g data-eid="${esc(node.id)}" data-name="${esc(node.name)}"><circle class="node-circle" cx="${
         node.x
       }" cy="${
         node.y
@@ -268,7 +261,7 @@ function renderTimeline(context) {
     const jitter = (countBySlot[key] - 1) * 14 - 7;
     const y = pad.t + laneIndex * laneHeight + laneHeight / 2 + jitter;
     svg.push(
-      `<g data-eid="${entity.id}" data-name="${esc(
+      `<g data-eid="${esc(entity.id)}" data-name="${esc(
         entity.name,
       )}"><circle class="node-circle" cx="${x}" cy="${y}" r="8" fill="var(--amber-400)" opacity="0.9"/><text class="node-label" x="${x}" y="${
         y + 20
@@ -310,7 +303,7 @@ function renderClusters(context, state) {
       const ex = cx + Math.cos(angle) * radius * 0.64;
       const ey = cy + Math.sin(angle) * radius * 0.64;
       svg.push(
-        `<g data-eid="${entity.id}" data-name="${esc(
+        `<g data-eid="${esc(entity.id)}" data-name="${esc(
           entity.name,
         )}"><circle class="node-circle" cx="${ex}" cy="${ey}" r="9" fill="var(--emerald-500)" opacity="0.9"/>${
           cluster.entities.length <= 8

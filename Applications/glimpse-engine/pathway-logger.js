@@ -17,7 +17,18 @@
  *   - View preferences are CANOPY (what becomes visible)
  */
 
+import { sha256HexUniversal } from "./core/digest-validator.js";
+
 const PATHWAY_DIR = "E:/Pathways/Networks/glimpse-traces";
+
+/** Default: redact identifying fields in persisted pathway entries (`redact: false` for full debug). */
+export const PATHWAY_REDACT_DEFAULT = true;
+
+/** Bump when pathway JSONL entry shape changes materially. */
+export const PATHWAY_SCHEMA_VERSION = "1";
+
+/** Keep in sync with package.json version (browser bundle cannot import package.json). */
+export const PATHWAY_ENGINE_VERSION = "0.5.0";
 
 function pad2(n) {
   return String(n).padStart(2, "0");
@@ -35,12 +46,24 @@ function isoNow() {
 /**
  * Build a pathway log entry from a completed pipeline result.
  * Lightweight — extracts only what matters for tracing.
+ *
+ * @param {object} options
+ * @param {boolean} [options.redact=true] When true, replaces dataset filename with a SHA256 prefix.
+ * @param {string|null} [options.sessionDigestHex] When set (bound session digest), first 12 hex chars stored as digest_prefix for log correlation.
  */
-export function buildPathwayEntry(pipelineResult, fileName) {
+export async function buildPathwayEntry(pipelineResult, fileName, options = {}) {
+  const redact = options.redact ?? PATHWAY_REDACT_DEFAULT;
+  const sessionDigestHex = options.sessionDigestHex ?? null;
   if (!pipelineResult) return null;
 
   const { profile, contextLenses, primaryLens, viewPreferences, ruleTraces, records } =
     pipelineResult;
+
+  let fileField = fileName || "unknown";
+  if (redact && fileField !== "unknown") {
+    const h = await sha256HexUniversal(fileField);
+    fileField = `sha256:${h.slice(0, 16)}`;
+  }
 
   // Root signals: which rules fired and what they found
   const roots = (ruleTraces || [])
@@ -77,9 +100,20 @@ export function buildPathwayEntry(pipelineResult, fileName) {
       .map(([k]) => k.replace("has_", "").replace("_dimension", "")),
   };
 
+  const digestPrefix =
+    typeof sessionDigestHex === "string" &&
+    /^[0-9a-f]+$/i.test(sessionDigestHex) &&
+    sessionDigestHex.length >= 8
+      ? sessionDigestHex.slice(0, 12).toLowerCase()
+      : null;
+
   return {
     timestamp: isoNow(),
-    file: fileName || "unknown",
+    schemaVersion: PATHWAY_SCHEMA_VERSION,
+    glimpseVersion: PATHWAY_ENGINE_VERSION,
+    ...(digestPrefix ? { digest_prefix: digestPrefix } : {}),
+    file: fileField,
+    telemetry_redacted: redact,
     soil,
     trunk,
     branches,

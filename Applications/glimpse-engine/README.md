@@ -23,6 +23,14 @@ npm run demo:portfolio
 - `core/engine.js` — pipeline runtime (ingest → profile → rules → articulate)
 - `view-specs.js` — constellation, timeline, clusters, matrix, flow, map, explorer
 
+## Security and privacy
+
+- **DOM:** Dynamic text and attributes use shared escaping (`core/dom-safe.js`). Lens roles are restricted for CSS class tokens. The main UI still renders via `innerHTML` composed from templates; high-risk interpolations are sanitized—see tests under `tests/dom-injection-safety.test.js`.
+- **Pipeline:** Running `runPipeline` requires an internal symbol and validated session digest prefix (`core/digest-validator.js`); ceremony validation gates phase transitions (`core/ceremony-validator.js`).
+- **Pathway logs:** JSONL entries include `schemaVersion`, `glimpseVersion`, and optionally `digest_prefix` (first 12 hex chars of the bound session digest) when a digest is bound; filenames are redacted by default. See `pathway-logger.js`.
+- **Exports:** `exportJSON` deep-sanitizes paths (`core/config-sanitizer.js`).
+- **Reporting:** See [SECURITY.md](SECURITY.md).
+
 ## Notes
 
 - Pure JavaScript (ES modules), no build step required.

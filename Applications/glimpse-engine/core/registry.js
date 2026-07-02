@@ -190,8 +190,8 @@ export class PatternRegistry {
       }
 
       return { passed, score, confidence, result };
-    } catch (error) {
-      console.warn(`Pattern condition evaluation failed: ${error.message}`);
+    } catch {
+      console.warn("Pattern condition evaluation failed (rule condition error)");
       return { passed: false, score: 0, confidence: 0 };
     }
   }

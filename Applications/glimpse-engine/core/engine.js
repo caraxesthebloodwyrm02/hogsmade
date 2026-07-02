@@ -77,7 +77,7 @@ export { applyRules, summarizeLenses, validateConfigWithRegistry } from "../func
 // PIPELINE & MODES
 // ═══════════════════════════════════════════════════════════════════
 
-export { computeClusters, runContextPipeline } from "./pipeline.js";
+export { computeClusters, runContextPipeline, runContextPipelineAsync } from "./pipeline.js";
 
 export {
   PIPELINE_MODES,

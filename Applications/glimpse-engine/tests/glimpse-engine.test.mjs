@@ -5,16 +5,16 @@ import { execFile } from "node:child_process";
 import path from "node:path";
 import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
-import { parseMasterConfig } from "../glimpse-engine/master-config.js";
-import { DEFAULT_MASTER_YAML } from "../glimpse-engine/default-master.js";
+import { parseMasterConfig } from "../master-config.js";
+import { DEFAULT_MASTER_YAML } from "../default-master.js";
 import {
   runContextPipeline,
   runContextPipelineAsync,
   compileRuleFromConversation,
   parseQueryIntent,
   validateConfigWithRegistry,
-} from "../glimpse-engine/core/engine.js";
-import { rankViews } from "../glimpse-engine/view-specs.js";
+} from "../core/engine.js";
+import { rankViews } from "../view-specs.js";
 
 const config = parseMasterConfig(DEFAULT_MASTER_YAML);
 const execFileAsync = promisify(execFile);

@@ -495,7 +495,7 @@
 
         renderHeatmap() {
           const container = document.getElementById("heatmap");
-          container.innerHTML = "";
+          container.replaceChildren();
 
           const days = this.getDaysForRange();
           days.forEach((day) => {
@@ -517,7 +517,7 @@
 
         renderTraffic() {
           const container = document.getElementById("traffic-chart");
-          container.innerHTML = "";
+          container.replaceChildren();
 
           const traffic = this.data.traffic.slice(-24);
           const maxActivity = Math.max(...traffic.map((t) => t.activity), 1);
