@@ -30,7 +30,7 @@ jobs:
     name: MCP inventory vs canonical config
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Verify manifest alignment
         run: python3 Components/scripts/verify_mcp_inventory.py --cascade-root "${GITHUB_WORKSPACE}"

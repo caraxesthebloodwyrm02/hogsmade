@@ -43,7 +43,7 @@ jobs:
     name: Shared Types Build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           submodules: false
 
@@ -61,7 +61,7 @@ jobs:
     needs: shared-types
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           submodules: false
 
@@ -102,7 +102,7 @@ jobs:
           - pulse-server
           - seeds-server
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           submodules: false
 
@@ -139,7 +139,7 @@ jobs:
     name: Glimpse Artifact Check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           submodules: false
 
@@ -171,7 +171,7 @@ jobs:
     name: Glimpse Engine Verification
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           submodules: false
 
