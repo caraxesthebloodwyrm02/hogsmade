@@ -1,11 +1,19 @@
 {
   "$schema": "https://unpkg.com/knip@5/schema.json",
+  "entry": [
+    "Components/scripts/*.{mjs,ts}",
+    "Components/tests/**/*.{test.ts,test.mjs}",
+    "scripts/*.mjs"
+  ],
   "ignore": [
     "Projects/**",
     "Documentation/**",
     ".cursor/**",
     ".agents/**",
-    "Applications/glimpse-engine/**"
+    "Applications/glimpse-engine/**",
+    "shared-types/**",
+    "shared-resilience/**",
+    "shared-pipeline/**"
   ],
   "workspaces": {
     "Components/shared-types": {
